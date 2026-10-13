@@ -2,21 +2,25 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import voluptuous as vol
 from homeassistant.components import frontend, websocket_api
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.storage import Store
 
 from .const import (CONF_ADMIN, CONF_ICON, CONF_TITLE, DEFAULT_ICON, DEFAULT_TITLE,
                     DOMAIN, PANEL_URL, STATIC_URL, VERSION)
 
 FRONTEND_DIR = Path(__file__).parent / "frontend"
+STORE_VERSION = 1
+EVENT_LAYOUT = f"{DOMAIN}_layout_updated"
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Pubblica i file della plancia e aggiunge la voce nella barra laterale."""
+    """Pubblica i file della plancia, carica le scelte del wizard e aggiunge la voce nella barra laterale."""
     data = hass.data.setdefault(DOMAIN, {})
     if not data.get("static"):
         # la versione nell'indirizzo fa scaricare i file nuovi a ogni aggiornamento
@@ -24,7 +28,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             [StaticPathConfig(f"{STATIC_URL}/{VERSION}", str(FRONTEND_DIR), True)]
         )
         websocket_api.async_register_command(hass, ws_config)
+        websocket_api.async_register_command(hass, ws_save_layout)
         data["static"] = True
+    if "store" not in data:
+        data["store"] = Store(hass, STORE_VERSION, f"{DOMAIN}.layout")
+        data["layout"] = await data["store"].async_load() or {}
     data["entry"] = entry
     _register_panel(hass, entry)
     entry.async_on_unload(entry.add_update_listener(_reload))
@@ -56,10 +64,31 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Integrazione rimossa: cancello anche le scelte del wizard."""
+    await Store(hass, STORE_VERSION, f"{DOMAIN}.layout").async_remove()
+    hass.data.pop(DOMAIN, None)
+
+
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/config"})
 @callback
 def ws_config(hass: HomeAssistant, connection, msg) -> None:
-    """La plancia chiede le sue impostazioni (entità scelte nella configurazione)."""
-    entry = hass.data.get(DOMAIN, {}).get("entry")
+    """La plancia chiede le impostazioni e le scelte fatte nel wizard."""
+    data = hass.data.get(DOMAIN, {})
+    entry = data.get("entry")
     opt = {**entry.data, **entry.options} if entry else {}
-    connection.send_result(msg["id"], {"version": VERSION, "options": opt})
+    connection.send_result(msg["id"], {"version": VERSION, "options": opt, "layout": data.get("layout", {})})
+
+
+@websocket_api.require_admin
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/save_layout", vol.Required("layout"): dict})
+@websocket_api.async_response
+async def ws_save_layout(hass: HomeAssistant, connection, msg) -> None:
+    """Il wizard salva le scelte (solo amministratori): valgono per tutti i dispositivi."""
+    data = hass.data.setdefault(DOMAIN, {})
+    layout: dict[str, Any] = msg["layout"]
+    data["layout"] = layout
+    if "store" in data:
+        await data["store"].async_save(layout)
+    hass.bus.async_fire(EVENT_LAYOUT, {})
+    connection.send_result(msg["id"], {"ok": True})

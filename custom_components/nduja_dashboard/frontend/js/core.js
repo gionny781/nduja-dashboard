@@ -11,6 +11,10 @@ export const DEVICES = {};    // device_id -> { name, area, model, maker }
 export const ACT = {};        // azioni: data-act="nome"
 export const CHG = {};        // azioni su change (slider, select)
 export const UI = { page: null, sheet: null, user: null, opt: {}, version: "" };
+/* scelte del wizard, salvate in Home Assistant e uguali su tutti i dispositivi:
+   { configured, hiddenAreas:[], areaOrder:[], exclude:[], sensors:{area:{temp,hum}}, weather, pages:{id:false} } */
+export const LAYOUT = {};
+export const isAdmin = () => !!UI.user?.is_admin;
 export let conn = null;
 
 export const $ = s => document.querySelector(s);
@@ -46,7 +50,11 @@ export const ago = iso => {
 export const hhmm = d => new Date(d).toLocaleTimeString(LOC, { hour: "2-digit", minute: "2-digit" });
 export const domain = id => id.split(".")[0];
 /** entità visibili di un dominio (niente nascoste, di configurazione o diagnostica) */
-export const ents = (dom, pred = () => true) => Object.keys(S).filter(id => id.startsWith(dom + ".") && !REG[id]?.hidden && REG[id]?.cat == null && pred(id, S[id]));
+export const excluded = id => (LAYOUT.exclude || []).includes(id) || (!!REG[id]?.area && (LAYOUT.hiddenAreas || []).includes(REG[id].area));
+/** tutte le entità di un dominio che hanno senso in una plancia (senza filtri del wizard) */
+export const allEnts = (dom, pred = () => true) => Object.keys(S).filter(id => id.startsWith(dom + ".") && !REG[id]?.hidden && REG[id]?.cat == null && pred(id, S[id]));
+/** entità visibili: come sopra, meno quelle tolte nel wizard */
+export const ents = (dom, pred = () => true) => allEnts(dom, pred).filter(id => !excluded(id));
 export const areaOf = id => REG[id]?.area || null;
 export const inArea = (area, dom, pred) => ents(dom, pred).filter(id => areaOf(id) === area);
 export const deviceClass = id => attr(id, "device_class");
@@ -57,12 +65,15 @@ export function shortName(id) {
   return n;
 }
 /** stanze ordinate per piano */
-export function areasSorted() {
-  const fl = f => FLOORS[f]?.level ?? 99;
-  return Object.keys(AREAS).sort((a, b) => fl(AREAS[a].floor) - fl(AREAS[b].floor) || AREAS[a].name.localeCompare(AREAS[b].name, LOC));
+export function areasSorted(all) {
+  const fl = f => FLOORS[f]?.level ?? 99, ord = LAYOUT.areaOrder || [];
+  const pos = a => { const i = ord.indexOf(a); return i < 0 ? 999 : i; };
+  return Object.keys(AREAS).filter(a => all || !(LAYOUT.hiddenAreas || []).includes(a))
+    .sort((a, b) => fl(AREAS[a].floor) - fl(AREAS[b].floor) || pos(a) - pos(b) || AREAS[a].name.localeCompare(AREAS[b].name, LOC));
 }
 /** temperatura e umidità di una stanza: il primo sensore adatto nell'area */
-const climateSensor = (area, dc) => inArea(area, "sensor", id => deviceClass(id) === dc && ok(id) && !/batter|cpu|chip|processor|disk|nas|router|modem|esterna|outdoor|outside/i.test(id + nm(id)))[0];
+export const climateSensors = (area, dc) => allEnts("sensor", id => REG[id]?.area === area && deviceClass(id) === dc && ok(id));
+const climateSensor = (area, dc) => { const k = dc === "temperature" ? "temp" : "hum", sc = LAYOUT.sensors?.[area]?.[k]; if (sc === "none") return null; if (sc && S[sc]) return sc; return inArea(area, "sensor", id => deviceClass(id) === dc && ok(id) && !/batter|cpu|chip|processor|disk|nas|router|modem|esterna|outdoor|outside/i.test(id + nm(id)))[0]; };
 export const roomTemp = area => { const c = inArea(area, "climate").find(id => attr(id, "current_temperature") != null); const s = climateSensor(area, "temperature"); return s ? val(s) : c ? attr(c, "current_temperature") : null; };
 export const roomHum = area => { const s = climateSensor(area, "humidity"); return s ? val(s) : null; };
 export const OPENING = ["door", "window", "opening", "garage_door"];
@@ -92,6 +103,7 @@ export function cached(key, ttl, loader) {
   loader().then(v => { cache[key] = { t: Date.now(), v }; render(); }).catch(e => { console.warn(key, e); cache[key] = { t: Date.now(), v: c?.v }; });
   return c?.v;
 }
+export const weatherEnt = () => (LAYOUT.weather && S[LAYOUT.weather]) ? LAYOUT.weather : ents("weather")[0];
 export const forecast = (eid, type = "daily") => cached("fc:" + eid + type, 30 * 60000, async () => (await svcResp("weather", "get_forecasts", { type }, eid))?.[eid]?.forecast || []) || [];
 
 /* ================= componenti ================= */
@@ -182,9 +194,9 @@ CHG.bright = el => svc("light", "turn_on", { brightness_pct: +el.value }, { enti
 export const PAGES = {};
 /** registra una pagina: { title, short, icon, render, badge, order, show } */
 export function page(id, def) { PAGES[id] = { order: 50, show: () => true, ...def }; if (conn) render(); }
-const visible = () => Object.keys(PAGES).filter(k => PAGES[k].show()).sort((a, b) => PAGES[a].order - PAGES[b].order);
+const visible = () => Object.keys(PAGES).filter(k => PAGES[k].show() && LAYOUT.pages?.[k] !== false && (!PAGES[k].admin || isAdmin())).sort((a, b) => PAGES[a].order - PAGES[b].order);
 export function go(id) {
-  if (!PAGES[id] || !PAGES[id].show()) id = "home";
+  if (!PAGES[id] || !PAGES[id].show() || (PAGES[id].admin && !isAdmin())) id = "home";
   UI.page = id; sSet("page", id);
   try { if (location.hash !== "#" + id) history.replaceState(null, "", "#" + id); } catch {}
   $("#more").classList.remove("open");
@@ -245,7 +257,7 @@ function renderNav() {
 /* pillole in alto: meteo, persone, luci accese, energia (se configurata) */
 export const STRIP = [];
 function renderStrip() {
-  const w = ents("weather")[0], home = ents("person").filter(p => S[p].state === "home").length, L = lightsOn().length;
+  const w = weatherEnt(), home = ents("person").filter(p => S[p].state === "home").length, L = lightsOn().length;
   const extra = STRIP.map(f => { try { return f(); } catch { return ""; } }).join("");
   patch($("#strip"), `${extra}
     ${ents("person").length ? `<span class="pillv">🏠 ${home} ${t("in casa", "home")}</span>` : ""}
@@ -281,6 +293,14 @@ async function loadRegistry() {
   (dr || []).forEach(d => DEVICES[d.id] = { name: d.name_by_user || d.name, area: d.area_id, model: d.model, maker: d.manufacturer, disabled: !!d.disabled_by });
   (er?.entities || []).forEach(e => REG[e.ei] = { area: e.ai || (e.di && DEVICES[e.di]?.area) || null, device: e.di || null, hidden: !!e.hb, cat: e.ec ?? null, platform: e.pl });
 }
+async function loadConfig() {
+  try { const c = await ws({ type: "nduja_dashboard/config" }); UI.opt = c.options || {}; UI.version = c.version || ""; for (const k in LAYOUT) delete LAYOUT[k]; Object.assign(LAYOUT, c.layout || {}); } catch {}
+}
+/** salva le scelte del wizard in Home Assistant (solo amministratori) */
+export async function saveLayout(layout) {
+  await ws({ type: "nduja_dashboard/save_layout", layout });
+  for (const k in LAYOUT) delete LAYOUT[k]; Object.assign(LAYOUT, layout); render();
+}
 /* abbonamento agli stati in formato compatto (come fa Home Assistant stesso) */
 function toState(id, c) {
   const lc = c.lc ? new Date(c.lc * 1000).toISOString() : undefined;
@@ -306,13 +326,16 @@ async function start() {
   conn = await getConn();
   if (!conn) { $("#connect").classList.add("show"); return; }
   try { UI.user = await ws({ type: "auth/current_user" }); } catch {}
-  try { const c = await ws({ type: "nduja_dashboard/config" }); UI.opt = c.options || {}; UI.version = c.version || ""; } catch {}
+  await loadConfig();
   await loadRegistry();
   conn.addEventListener("ready", () => loadRegistry().then(() => render()));
   conn.addEventListener("disconnected", () => render());
   /* registri cambiati (nuove aree, dispositivi spostati): li ricarico */
   for (const ev of ["area_registry_updated", "device_registry_updated", "entity_registry_updated", "floor_registry_updated"])
     conn.subscribeEvents(() => { clearTimeout(start._r); start._r = setTimeout(() => loadRegistry().then(() => render()), 1500); }, ev).catch(() => {});
+  /* scelte cambiate da un altro dispositivo */
+  conn.subscribeEvents(() => loadConfig().then(() => render()), "nduja_dashboard_layout_updated").catch(() => {});
+  window.addEventListener("focus", () => loadConfig().then(() => render()));
   conn.subscribeMessage(onEntities, { type: "subscribe_entities" });
 }
 setInterval(() => render(), 15000);

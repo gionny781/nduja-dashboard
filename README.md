@@ -23,6 +23,7 @@ it builds itself from your **areas, floors and devices**.
 - **Climate** – thermostats and air conditioners by room, plus a temperature/humidity overview of every room.
 - **Updates** – install Home Assistant, add-on, HACS and firmware updates right from the dashboard: release notes, backup before installing, progress bar, *Install all* (Home Assistant last), skip/restore versions.
 - Glass design for tablets and phones, Italian and English (follows your Home Assistant language).
+- **Setup wizard** (⚙️ Settings, admins only): choose rooms and their order, lights, thermostats, the temperature sensor of each room, devices, people, weather, scenes and pages. Choices are saved in Home Assistant and apply to every device.
 - Pages show up only when you have the matching devices.
 
 ### Installation
@@ -51,6 +52,7 @@ si costruisce da sola dalle tue **aree, piani e dispositivi**.
 - **Clima** – termostati e condizionatori per stanza, più la temperatura e l'umidità di ogni stanza.
 - **Aggiornamenti** – installa dalla plancia gli aggiornamenti di Home Assistant, dei componenti aggiuntivi, di HACS e dei firmware: novità, backup prima di installare, avanzamento, *Installa tutti* (Home Assistant per ultimo), versioni saltate.
 - Grafica in vetro per tablet e telefono, in italiano e in inglese (segue la lingua di Home Assistant).
+- **Wizard di configurazione** (⚙️ Impostazioni, solo amministratori): scegli stanze e ordine, luci, termostati, il sensore di temperatura di ogni stanza, dispositivi, persone, meteo, scene e pagine. Le scelte si salvano in Home Assistant e valgono su tutti i dispositivi.
 - Le pagine compaiono solo se hai i dispositivi giusti.
 
 ### Installazione
@@ -73,6 +75,8 @@ si costruisce da sola dalle tue **aree, piani e dispositivi**.
 | ![Lights](docs/lights.png) | ![Climate](docs/climate.png) |
 | **Room / Stanza** | **Updates / Aggiornamenti** |
 | ![Room](docs/room.png) | ![Updates](docs/updates.png) |
+| **Wizard** | |
+| ![Wizard](docs/wizard.png) | |
 
 ## License
 MIT © gionny781

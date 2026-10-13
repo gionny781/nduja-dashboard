@@ -1,7 +1,7 @@
 /* Home: saluto e riepilogo, meteo, stanze (per piano), persone, scene, cose da sistemare.
    Tutto viene dalle aree e dai dispositivi di Home Assistant: niente da configurare. */
 import { S, AREAS, FLOORS, UI, ACT, t, LOC, esc, fnum, attr, ok, val, nm, ents, inArea, areaOf, areasSorted, roomTemp, roomHum,
-  openings, lightsOn, isOn, card, empty, lightTile, climateCard, entityRow, openSheet, page, WX, HVAC, forecast, deviceClass, shortName, svc, toast, ago } from "../core.js";
+  openings, lightsOn, isOn, card, empty, lightTile, climateCard, entityRow, openSheet, page, WX, HVAC, forecast, deviceClass, shortName, svc, toast, ago, weatherEnt, LAYOUT, isAdmin } from "../core.js";
 
 const saluto = () => { const h = new Date().getHours(); return h < 6 ? t("Buonanotte", "Good night") : h < 13 ? t("Buongiorno", "Good morning") : h < 18 ? t("Buon pomeriggio", "Good afternoon") : t("Buonasera", "Good evening"); };
 const climaAttivi = () => ents("climate", id => ok(id) && S[id].state !== "off");
@@ -28,7 +28,7 @@ function riepilogo() {
 const scene = () => ents("scene").sort((a, b) => nm(a).localeCompare(nm(b), LOC));
 
 function meteo() {
-  const w = ents("weather")[0]; if (!w) return "";
+  const w = weatherEnt(); if (!w) return "";
   const a = S[w].attributes, [ic, txt] = WX()[S[w].state] || ["🌡️", S[w].state];
   const fc = forecast(w).slice(0, 5);
   return card(`${ic} ${t("Meteo", "Weather")}`, `<div class="row" style="gap:14px"><div class="wxbig1">${fnum(a.temperature, 0)}°</div>
@@ -72,6 +72,16 @@ function sistemare() {
   </div>` : `<div class="small muted">${t("Nessuna finestra aperta, nessuna pila scarica, nessun aggiornamento.", "No open windows, no low batteries, no updates.")}</div>`);
 }
 
+/* primo avvio: invito a scegliere cosa mostrare (solo per gli amministratori) */
+function benvenuto() {
+  if (LAYOUT.configured || !isAdmin()) return "";
+  return `<section class="card span3 wel1"><div class="row" style="gap:16px;flex-wrap:wrap"><span style="font-size:40px">🌶️</span>
+    <div style="flex:1;min-width:220px"><b style="font-size:18px">${t("Benvenuto in 'Nduja!", "Welcome to 'Nduja!")}</b>
+    <div class="small muted" style="margin-top:4px;line-height:1.5">${t("Ho preparato la plancia con tutto quello che ho trovato in casa. Scegli tu stanze, luci, clima e dispositivi da mostrare: ci vogliono due minuti.", "I built the dashboard from everything I found in your home. Choose the rooms, lights, climate and devices to show: it takes two minutes.")}</div></div>
+    <button class="btn pri" data-act="go" data-id="impostazioni">⚙️ ${t("Configura la plancia", "Set up the dashboard")}</button>
+    <button class="btn" data-act="wzAuto">${t("Va bene così", "Keep it as is")}</button></div></section>`;
+}
+
 /* finestra della stanza */
 function schedaStanza(a) {
   const ar = AREAS[a]; if (!ar) return "";
@@ -90,4 +100,4 @@ function schedaStanza(a) {
 ACT.room = el => { const a = el.dataset.id; openSheet(() => schedaStanza(a)); };
 
 page("home", { title: "Home", short: "Home", icon: "🏠", order: 0,
-  render: () => `<div class="g g3">${riepilogo()}${meteo()}${stanze()}${sistemare()}${persone()}</div>` });
+  render: () => `<div class="g g3">${benvenuto()}${riepilogo()}${meteo()}${stanze()}${sistemare()}${persone()}</div>` });
