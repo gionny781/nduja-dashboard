@@ -6,6 +6,8 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/)
 ![Validate](https://github.com/gionny781/nduja-dashboard/actions/workflows/validate.yml/badge.svg)
 
+![Welcome](docs/welcome.png)
+
 ![Home](docs/home.png)
 
 > ⚠️ **Work in progress.** Version 1.0 is being built in stages. Home, Lights, Climate and Updates are ready; Energy, the 3D floor plan, robot vacuum and cameras are coming next.
@@ -23,6 +25,9 @@ it builds itself from your **areas, floors and devices**.
 - **Climate** – thermostats and air conditioners by room, plus a temperature/humidity overview of every room.
 - **Updates** – install Home Assistant, add-on, HACS and firmware updates right from the dashboard: release notes, backup before installing, progress bar, *Install all* (Home Assistant last), skip/restore versions.
 - Glass design for tablets and phones, Italian and English (follows your Home Assistant language).
+- **First start**: choose **Automatic** (everything is found for you) or **Manual** (start empty and add what you want).
+- **✏️ Edit on every page** (admins): ＋ Add with search, rename, move to another room, ✕ remove. **＋ New page** to create your own pages.
+- **Plugs and devices** page: plugs, switches, covers, fans, TVs, locks, vacuums by room.
 - **Setup wizard** (⚙️ Settings, admins only): choose rooms and their order, lights, thermostats, the temperature sensor of each room, devices, people, weather, scenes and pages. Choices are saved in Home Assistant and apply to every device.
 - Pages show up only when you have the matching devices.
 
@@ -52,6 +57,9 @@ si costruisce da sola dalle tue **aree, piani e dispositivi**.
 - **Clima** – termostati e condizionatori per stanza, più la temperatura e l'umidità di ogni stanza.
 - **Aggiornamenti** – installa dalla plancia gli aggiornamenti di Home Assistant, dei componenti aggiuntivi, di HACS e dei firmware: novità, backup prima di installare, avanzamento, *Installa tutti* (Home Assistant per ultimo), versioni saltate.
 - Grafica in vetro per tablet e telefono, in italiano e in inglese (segue la lingua di Home Assistant).
+- **Primo avvio**: scegli **Automatica** (trovo tutto io) o **Manuale** (parti da zero e aggiungi quello che vuoi).
+- **✏️ Modifica in ogni pagina** (amministratori): ＋ Aggiungi con ricerca, cambia nome, sposta in un'altra stanza, ✕ togli. **＋ Nuova pagina** per creare pagine tue.
+- Pagina **Prese e dispositivi**: prese, interruttori, tapparelle, ventilatori, TV, serrature, robot per stanza.
 - **Wizard di configurazione** (⚙️ Impostazioni, solo amministratori): scegli stanze e ordine, luci, termostati, il sensore di temperatura di ogni stanza, dispositivi, persone, meteo, scene e pagine. Le scelte si salvano in Home Assistant e valgono su tutti i dispositivi.
 - Le pagine compaiono solo se hai i dispositivi giusti.
 
@@ -75,8 +83,8 @@ si costruisce da sola dalle tue **aree, piani e dispositivi**.
 | ![Lights](docs/lights.png) | ![Climate](docs/climate.png) |
 | **Room / Stanza** | **Updates / Aggiornamenti** |
 | ![Room](docs/room.png) | ![Updates](docs/updates.png) |
-| **Wizard** | |
-| ![Wizard](docs/wizard.png) | |
+| **Wizard** | **Edit / Modifica** |
+| ![Wizard](docs/wizard.png) | ![Edit](docs/edit.png) |
 
 ## License
 MIT © gionny781

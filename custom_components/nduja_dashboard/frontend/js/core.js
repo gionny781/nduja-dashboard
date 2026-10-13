@@ -10,9 +10,10 @@ export const FLOORS = {};     // floor_id -> { name, level, icon }
 export const DEVICES = {};    // device_id -> { name, area, model, maker }
 export const ACT = {};        // azioni: data-act="nome"
 export const CHG = {};        // azioni su change (slider, select)
-export const UI = { page: null, sheet: null, user: null, opt: {}, version: "" };
-/* scelte del wizard, salvate in Home Assistant e uguali su tutti i dispositivi:
-   { configured, hiddenAreas:[], areaOrder:[], exclude:[], sensors:{area:{temp,hum}}, weather, pages:{id:false} } */
+export const UI = { page: null, sheet: null, user: null, opt: {}, version: "", edit: false };
+/* scelte dell'utente, salvate in Home Assistant e uguali su tutti i dispositivi:
+   { configured, mode:"auto"|"manual", include:[] (manuale), exclude:[] (automatica), hiddenAreas:[], areaOrder:[],
+     names:{id:nome}, rooms:{id:area}, sensors:{area:{temp,hum}}, weather, pages:{id:false}, customPages:[{id,title,icon,items}] } */
 export const LAYOUT = {};
 export const isAdmin = () => !!UI.user?.is_admin;
 export let conn = null;
@@ -35,7 +36,9 @@ export const fnum = (v, d = 1) => (v == null || v === "" || isNaN(+v)) ? "—" :
 export const val = id => ok(id) && !isNaN(+S[id].state) ? +S[id].state : null;
 export const attr = (id, a) => S[id]?.attributes?.[a];
 export const unit = id => attr(id, "unit_of_measurement") || "";
-export const nm = id => String(S[id]?.attributes?.friendly_name || id.split(".")[1].replace(/_/g, " ")).trim();
+export const nmHA = id => String(S[id]?.attributes?.friendly_name || id.split(".")[1].replace(/_/g, " ")).trim();
+/** nome da mostrare: quello scelto dall'utente, altrimenti quello di Home Assistant */
+export const nm = id => LAYOUT.names?.[id] || nmHA(id);
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 export const watts = w => w == null ? "—" : Math.abs(w) >= 1000 ? fnum(w / 1000, 2) + " kW" : Math.round(w) + " W";
 /** potenza in W qualunque sia l'unità (W, kW, MW) */
@@ -49,13 +52,18 @@ export const ago = iso => {
 };
 export const hhmm = d => new Date(d).toLocaleTimeString(LOC, { hour: "2-digit", minute: "2-digit" });
 export const domain = id => id.split(".")[0];
-/** entità visibili di un dominio (niente nascoste, di configurazione o diagnostica) */
-export const excluded = id => (LAYOUT.exclude || []).includes(id) || (!!REG[id]?.area && (LAYOUT.hiddenAreas || []).includes(REG[id].area));
+/* in modalità manuale queste cose si vedono solo se l'utente le ha aggiunte */
+export const MANUAL = ["light", "climate", "switch", "cover", "fan", "media_player", "lock", "humidifier", "vacuum", "valve", "siren", "scene", "person"];
+export const OPENING = ["door", "window", "opening", "garage_door"];
+export const manualKind = id => MANUAL.includes(id.split(".")[0]) || (id.startsWith("binary_sensor.") && OPENING.includes(S[id]?.attributes?.device_class));
+export const isManual = () => LAYOUT.mode === "manual";
+export const excluded = id => (isManual() ? manualKind(id) && !(LAYOUT.include || []).includes(id) : (LAYOUT.exclude || []).includes(id))
+  || (!!areaOf(id) && (LAYOUT.hiddenAreas || []).includes(areaOf(id)));
 /** tutte le entità di un dominio che hanno senso in una plancia (senza filtri del wizard) */
 export const allEnts = (dom, pred = () => true) => Object.keys(S).filter(id => id.startsWith(dom + ".") && !REG[id]?.hidden && REG[id]?.cat == null && pred(id, S[id]));
 /** entità visibili: come sopra, meno quelle tolte nel wizard */
 export const ents = (dom, pred = () => true) => allEnts(dom, pred).filter(id => !excluded(id));
-export const areaOf = id => REG[id]?.area || null;
+export const areaOf = id => LAYOUT.rooms?.[id] || REG[id]?.area || null;
 export const inArea = (area, dom, pred) => ents(dom, pred).filter(id => areaOf(id) === area);
 export const deviceClass = id => attr(id, "device_class");
 /** nome breve: toglie il nome della stanza davanti ("Cucina Luce" → "Luce") */
@@ -76,7 +84,6 @@ export const climateSensors = (area, dc) => allEnts("sensor", id => REG[id]?.are
 const climateSensor = (area, dc) => { const k = dc === "temperature" ? "temp" : "hum", sc = LAYOUT.sensors?.[area]?.[k]; if (sc === "none") return null; if (sc && S[sc]) return sc; return inArea(area, "sensor", id => deviceClass(id) === dc && ok(id) && !/batter|cpu|chip|processor|disk|nas|router|modem|esterna|outdoor|outside/i.test(id + nm(id)))[0]; };
 export const roomTemp = area => { const c = inArea(area, "climate").find(id => attr(id, "current_temperature") != null); const s = climateSensor(area, "temperature"); return s ? val(s) : c ? attr(c, "current_temperature") : null; };
 export const roomHum = area => { const s = climateSensor(area, "humidity"); return s ? val(s) : null; };
-export const OPENING = ["door", "window", "opening", "garage_door"];
 export const openings = () => ents("binary_sensor", id => OPENING.includes(deviceClass(id)));
 export const lightsOn = (area) => ents("light", id => S[id].state === "on" && (!area || areaOf(id) === area));
 
@@ -192,11 +199,16 @@ CHG.bright = el => svc("light", "turn_on", { brightness_pct: +el.value }, { enti
 
 /* ================= pagine e navigazione ================= */
 export const PAGES = {};
+/** funzioni chiamate prima di ogni disegno (per esempio le pagine create dall'utente) */
+export const HOOKS = [];
 /** registra una pagina: { title, short, icon, render, badge, order, show } */
 export function page(id, def) { PAGES[id] = { order: 50, show: () => true, ...def }; if (conn) render(); }
-const visible = () => Object.keys(PAGES).filter(k => PAGES[k].show() && LAYOUT.pages?.[k] !== false && (!PAGES[k].admin || isAdmin())).sort((a, b) => PAGES[a].order - PAGES[b].order);
+const visible = () => Object.keys(PAGES).filter(k => !PAGES[k].hiddenNav && PAGES[k].show() && LAYOUT.pages?.[k] !== false && (!PAGES[k].admin || isAdmin())).sort((a, b) => PAGES[a].order - PAGES[b].order);
 export function go(id) {
+  HOOKS.forEach(f => { try { f(); } catch (e) { console.error(e); } });
+  if (!LAYOUT.configured && isAdmin() && PAGES.benvenuto && id !== "impostazioni") id = "benvenuto";
   if (!PAGES[id] || !PAGES[id].show() || (PAGES[id].admin && !isAdmin())) id = "home";
+  if (UI.page !== id) UI.edit = false;
   UI.page = id; sSet("page", id);
   try { if (location.hash !== "#" + id) history.replaceState(null, "", "#" + id); } catch {}
   $("#more").classList.remove("open");
@@ -235,7 +247,9 @@ export function render(now) {
   requestAnimationFrame(() => {
     pending = false;
     if (!conn || !UI.page) return;
+    HOOKS.forEach(f => { try { f(); } catch (e) { console.error(e); } });
     const P = PAGES[UI.page]; if (!P) return go("home");
+    document.body.classList.toggle("editing", UI.edit);
     try {
       $("#pageTitle").textContent = P.title;
       document.title = P.title + " · 'Nduja";
@@ -249,17 +263,19 @@ export function render(now) {
 function renderNav() {
   const v = visible();
   const nav = k => `<button class="nav ${k === UI.page ? "act" : ""}" data-act="go" data-id="${k}"><span class="i">${PAGES[k].icon}</span>${PAGES[k].short || PAGES[k].title}${PAGES[k].badge?.() ? '<span class="dot"></span>' : ""}</button>`;
-  patch($("#rail"), `<div class="logo" title="'Nduja ${esc(UI.version)}">🌶️</div>` + v.map(nav).join(""));
+  const nuova = isAdmin() && UI.edit ? `<button class="nav nw1" data-act="edNewPage"><span class="i">＋</span>${t("Pagina", "Page")}</button>` : "";
+  patch($("#rail"), `<div class="logo" title="'Nduja ${esc(UI.version)}">🌶️</div>` + v.map(nav).join("") + nuova);
   const main = v.slice(0, 4);
   patch($("#tabbar"), main.map(nav).join("") + (v.length > 4 ? `<button class="nav ${main.includes(UI.page) ? "" : "act"}" data-act="more"><span class="i">☰</span>${t("Altro", "More")}</button>` : ""));
-  patch($("#more"), v.slice(4).map(nav).join(""));
+  patch($("#more"), v.slice(4).map(nav).join("") + nuova);
 }
 /* pillole in alto: meteo, persone, luci accese, energia (se configurata) */
 export const STRIP = [];
 function renderStrip() {
   const w = weatherEnt(), home = ents("person").filter(p => S[p].state === "home").length, L = lightsOn().length;
   const extra = STRIP.map(f => { try { return f(); } catch { return ""; } }).join("");
-  patch($("#strip"), `${extra}
+  const P = PAGES[UI.page], canEdit = isAdmin() && P?.editable;
+  patch($("#strip"), `${canEdit ? `<button class="pillv edt1 ${UI.edit ? "on" : ""}" data-act="edToggle">${UI.edit ? "✓ " + t("Fatto", "Done") : "✏️ " + t("Modifica", "Edit")}</button>` : ""}${extra}
     ${ents("person").length ? `<span class="pillv">🏠 ${home} ${t("in casa", "home")}</span>` : ""}
     ${L ? `<span class="pillv sun" data-act="go" data-id="luci">💡 ${L}</span>` : ""}
     ${w ? `<span class="pillv">${(WX()[S[w].state] || ["🌡️"])[0]} ${fnum(attr(w, "temperature"))}°</span>` : ""}
