@@ -11,6 +11,8 @@
 
 ![Home](docs/home.png)
 
+![Home – light](docs/home-light.png)
+
 > 🧪 **BETA** — 🇮🇹 la plancia è giovane: funziona, ma può cambiare e avere difetti; segnalali nelle [Issues](https://github.com/gionny781/nduja-dashboard/issues). · 🇬🇧 young project: it works, but may change and have bugs; please report them in [Issues](https://github.com/gionny781/nduja-dashboard/issues).
 >
 > ⚠️ **Work in progress.** Version 1.0 is being built in stages. Home, Lights, Climate and Updates are ready; Energy is here; the 3D floor plan, robot vacuum and cameras are coming next.
@@ -28,7 +30,7 @@ it builds itself from your **areas, floors and devices**.
 - **Lights** – all lights by floor and room, brightness sliders, "turn off" per room and for the whole house.
 - **Climate** – thermostats and air conditioners by room, plus a temperature/humidity overview of every room.
 - **Updates** – install Home Assistant, add-on, HACS and firmware updates right from the dashboard: release notes, backup before installing, progress bar, *Install all* (Home Assistant last), skip/restore versions.
-- Glass design for tablets and phones, Italian and English (follows your Home Assistant language).
+- Glass design for tablets and phones, **light, dark or automatic theme** (◐ at the top), Italian and English (follows your Home Assistant language).
 - **First start**: choose **Automatic** (everything is found for you) or **Manual** (start empty and add what you want).
 - **✏️ Edit on every page** (admins): ＋ Add with search, rename, move to another room, ✕ remove. **＋ New page** to create your own pages.
 - **Plugs and devices** page: plugs, switches, covers, fans, TVs, locks, vacuums by room.
@@ -61,7 +63,7 @@ si costruisce da sola dalle tue **aree, piani e dispositivi**.
 - **Luci** – tutte le luci per piano e stanza, con regolazione della luminosità, «spegni» per stanza e per tutta la casa.
 - **Clima** – termostati e condizionatori per stanza, più la temperatura e l'umidità di ogni stanza.
 - **Aggiornamenti** – installa dalla plancia gli aggiornamenti di Home Assistant, dei componenti aggiuntivi, di HACS e dei firmware: novità, backup prima di installare, avanzamento, *Installa tutti* (Home Assistant per ultimo), versioni saltate.
-- Grafica in vetro per tablet e telefono, in italiano e in inglese (segue la lingua di Home Assistant).
+- Grafica in vetro per tablet e telefono, **tema chiaro, scuro o automatico** (◐ in alto), in italiano e in inglese (segue la lingua di Home Assistant).
 - **Primo avvio**: scegli **Automatica** (trovo tutto io) o **Manuale** (parti da zero e aggiungi quello che vuoi).
 - **✏️ Modifica in ogni pagina** (amministratori): ＋ Aggiungi con ricerca, cambia nome, sposta in un'altra stanza, ✕ togli. **＋ Nuova pagina** per creare pagine tue.
 - Pagina **Prese e dispositivi**: prese, interruttori, tapparelle, ventilatori, TV, serrature, robot per stanza.

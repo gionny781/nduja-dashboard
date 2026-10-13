@@ -60,6 +60,7 @@ function flusso() {
   const { s, pv, rete, bat, casa, soc } = letture(), haPv = !!s.pv, haBat = !!(s.battery || s.soc);
   const sole = (pv || 0) > 20, compra = rete != null && rete > 20, vende = rete != null && rete < -20, scarica = bat != null && bat > 20, carica = bat != null && bat < -20;
   const bil = pv != null && casa != null ? pv - casa : null, socC = soc == null ? "#8e8e93" : soc < 20 ? "#ff453a" : soc < 40 ? "#ff9f0a" : "#30d158";
+  if (window.innerWidth < 700) return flussoTel({ s, pv, rete, bat, casa, soc, haPv, haBat, sole, compra, vende, scarica, carica, bil, socC });
   return `<section class="card span3 fw68"><div class="ch"><h2>⚡ ${t("Adesso", "Now")}</h2><span class="muted small">${bil == null ? "" : bil >= 0 ? t(`surplus ${watts(bil)}`, `surplus ${watts(bil)}`) : t(`mancano ${watts(-bil)}`, `short by ${watts(-bil)}`)}</span></div>
   <svg viewBox="0 30 1000 ${haBat ? 470 : 360}" class="sv68" role="img" aria-label="${t("Flusso di energia", "Energy flow")}">
     ${haPv ? `<g class="sun68 ${sole ? "on" : ""}" transform="translate(330 80)"><circle r="15"/>${[0, 45, 90, 135, 180, 225, 270, 315].map(a => `<line x1="0" y1="-21" x2="0" y2="-28" transform="rotate(${a})"/>`).join("")}</g>
@@ -79,6 +80,26 @@ function flusso() {
   </svg>
   ${!haEnergia() ? `<div class="note1">${t("Non ho trovato i sensori dell'energia. Configurali in Home Assistant (Impostazioni → Plance → Energia) oppure con ✏️ Modifica → ⚙️ Sensori.", "No energy sensors found. Set them up in Home Assistant (Settings → Dashboards → Energy) or with ✏️ Edit → ⚙️ Sensors.")}</div>` : ""}</section>`;
 }
+
+/* versione per il telefono: stesso schema, più stretto, scritte più grandi */
+function flussoTel(o) {
+  const { pv, rete, bat, casa, soc, haPv, haBat, sole, compra, vende, scarica, carica, bil, socC } = o, y0 = haPv ? 0 : -90;
+  return `<section class="card span3 fw68"><div class="ch"><h2>⚡ ${t("Adesso", "Now")}</h2><span class="muted small">${bil == null ? "" : bil >= 0 ? `+${watts(bil)}` : `−${watts(-bil)}`}</span></div>
+  <svg viewBox="0 ${y0} 400 ${(haBat ? 380 : 250) - y0}" class="sv68 tel68" role="img" aria-label="${t("Flusso di energia", "Energy flow")}">
+    ${haPv ? `${box(110, 4, 180, 76, "☀ " + t("SOLE", "SOLAR"), watts(pv), "", sole ? "sol" : "")}${ln("M200 80 V142", "#ffd60a", sole)}` : ""}
+    ${ln("M124 190 H152", compra ? "#ff6961" : "#30d158", compra || vende, vende)}
+    ${box(4, 150, 120, 80, t("RETE", "GRID"), watts(rete == null ? null : Math.abs(rete)), compra ? t("prelievo", "import") : vende ? t("immissione", "export") : t("in pari", "idle"), compra ? "red" : vende ? "grn" : "")}
+    <g class="inv68"><circle cx="200" cy="190" r="48" class="body"/><text x="200" y="190" class="t">${casa == null ? "—" : watts(casa)}</text><text x="200" y="210" class="s">${t("casa", "home")}</text></g>
+    ${ln("M248 190 H276", "#64d2ff", (casa || 0) > 20)}
+    ${box(276, 150, 120, 80, "🏠 " + t("CASA", "HOME"), watts(casa), t("consumo", "use"), "home")}
+    ${haBat ? `${ln("M200 238 V276", "#30d158", carica || scarica, scarica)}
+      <g class="bt68"><rect x="160" y="276" width="80" height="40" rx="8" class="case"/><rect x="240" y="289" width="7" height="14" rx="2" class="case"/>
+      <rect x="164" y="280" width="${soc == null ? 0 : Math.max(3, Math.min(72, 72 * soc / 100)).toFixed(1)}" height="32" rx="6" style="fill:${socC}"/></g>
+      <text x="200" y="352" class="soc68" style="fill:${socC}">${soc == null ? "—" : Math.round(soc) + "%"}</text>
+      ${box(266, 284, 130, 72, carica ? t("CARICA", "CHARGE") : scarica ? t("SCARICA", "DISCHARGE") : "🔋", watts(bat == null ? null : Math.abs(bat)), "", carica || scarica ? "grn" : "")}` : ""}
+  </svg></section>`;
+}
+window.addEventListener("resize", () => { clearTimeout(window.__enR); window.__enR = setTimeout(() => render(true), 300); });
 
 /* ---------- oggi ---------- */
 function cardOggi() {

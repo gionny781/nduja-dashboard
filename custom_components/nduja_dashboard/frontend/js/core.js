@@ -242,6 +242,22 @@ export function patch(el, html) {
   bc.forEach((n, i) => { if (i < ac.length) morph(ac[i], n); else el.appendChild(n); });
   for (let i = bc.length; i < ac.length; i++) ac[i].remove();
 }
+/* ---------- tema: automatico (come Home Assistant), chiaro o scuro; scelto per ogni dispositivo ---------- */
+export const tema = () => sGet("theme") || "auto";
+function haScuro() {
+  try { const h = parent.document.querySelector("home-assistant")?.hass; if (h?.themes && typeof h.themes.darkMode === "boolean") return h.themes.darkMode; } catch {}
+  return matchMedia("(prefers-color-scheme: dark)").matches;
+}
+export function applyTheme() {
+  const m = tema(), scuro = m === "dark" || (m === "auto" && haScuro());
+  document.body.classList.toggle("light", !scuro);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", scuro ? "#05070d" : "#eef2f8");
+}
+ACT.theme = () => { const o = ["auto", "light", "dark"], m = o[(o.indexOf(tema()) + 1) % 3]; sSet("theme", m); applyTheme(); render(true);
+  toast({ auto: t("Tema automatico (come Home Assistant)", "Automatic theme (follows Home Assistant)"), light: t("Tema chiaro", "Light theme"), dark: t("Tema scuro", "Dark theme") }[m]); };
+try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { applyTheme(); }); } catch {}
+applyTheme();
+
 let pending = false;
 export function render(now) {
   if (pending && !now) return; pending = true;
@@ -250,7 +266,7 @@ export function render(now) {
     if (!conn || !UI.page) return;
     HOOKS.forEach(f => { try { f(); } catch (e) { console.error(e); } });
     const P = PAGES[UI.page]; if (!P) return go("home");
-    document.body.classList.toggle("editing", UI.edit);
+    document.body.classList.toggle("editing", UI.edit); applyTheme();
     try {
       $("#pageTitle").textContent = P.title;
       document.title = P.title + " · 'Nduja";
@@ -280,6 +296,7 @@ function renderStrip() {
     ${ents("person").length ? `<span class="pillv">🏠 ${home} ${t("in casa", "home")}</span>` : ""}
     ${L ? `<span class="pillv sun" data-act="go" data-id="luci">💡 ${L}</span>` : ""}
     ${w ? `<span class="pillv">${(WX()[S[w].state] || ["🌡️"])[0]} ${fnum(attr(w, "temperature"))}°</span>` : ""}
+    <button class="pillv th1" data-act="theme" title="${t("Tema", "Theme")}">${{ auto: "◐", light: "☀︎", dark: "☾" }[tema()]}</button>
     <span class="pillv"><span class="st ${conn?.connected ? "ok" : ""}"></span>${hhmm(Date.now())}</span>`);
 }
 

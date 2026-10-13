@@ -196,3 +196,5 @@
 .cn1 span{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cn1 i{height:7px;border-radius:4px;background:rgba(255,255,255,.07);overflow:hidden}.cn1 i b{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#ffd60a,#ff9f0a)}
 .cn1 em{font-style:normal;text-align:right;font-variant-numeric:tabular-nums;font-size:13px;font-weight:600}
+.pillv.th1{cursor:pointer;min-width:34px;justify-content:center;font-size:14px}
+@media (max-width:860px){.strip .pillv.th1{display:inline-flex!important}}
