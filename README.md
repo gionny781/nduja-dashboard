@@ -1,0 +1,78 @@
+# 🌶️ 'Nduja Dashboard
+
+**A spicy, glass-style control deck for Home Assistant.**
+*Una plancia in stile vetro, piccante, per Home Assistant.*
+
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/)
+![Validate](https://github.com/gionny781/nduja-dashboard/actions/workflows/validate.yml/badge.svg)
+
+![Home](docs/home.png)
+
+> ⚠️ **Work in progress.** Version 1.0 is being built in stages. Home, Lights, Climate and Updates are ready; Energy, the 3D floor plan, robot vacuum and cameras are coming next.
+
+---
+
+## 🇬🇧 English
+
+'Nduja Dashboard adds a full-page dashboard to the Home Assistant sidebar. You don't write any YAML:
+it builds itself from your **areas, floors and devices**.
+
+**What you get**
+- **Home** – greeting and a one-line summary of the house, weather with 5-day forecast, every room by floor (temperature, humidity, lights on, open windows, climate), people, scenes, and a *Needs attention* list (open windows, low batteries, pending updates). Tap a room to control everything in it.
+- **Lights** – all lights by floor and room, brightness sliders, "turn off" per room and for the whole house.
+- **Climate** – thermostats and air conditioners by room, plus a temperature/humidity overview of every room.
+- **Updates** – install Home Assistant, add-on, HACS and firmware updates right from the dashboard: release notes, backup before installing, progress bar, *Install all* (Home Assistant last), skip/restore versions.
+- Glass design for tablets and phones, Italian and English (follows your Home Assistant language).
+- Pages show up only when you have the matching devices.
+
+### Installation
+1. HACS → ⋮ → **Custom repositories** → add `https://github.com/gionny781/nduja-dashboard`, category **Integration**.
+2. Search **'Nduja Dashboard** in HACS → **Download**.
+3. Restart Home Assistant.
+4. **Settings → Devices & services → Add integration → 'Nduja Dashboard**.
+5. Open **🌶️ 'Nduja** in the sidebar.
+
+**Options** (Settings → Devices & services → 'Nduja Dashboard → Configure): sidebar name and icon, admin-only access, and the energy sensors (optional – left empty, the dashboard looks for them by itself).
+
+### Tips
+- Assign every device to an **area**, and areas to **floors**: that's what the dashboard uses to draw your house.
+- Hidden entities and configuration/diagnostic entities are ignored.
+
+---
+
+## 🇮🇹 Italiano
+
+'Nduja Dashboard aggiunge alla barra laterale di Home Assistant una plancia a pagina intera. Niente YAML:
+si costruisce da sola dalle tue **aree, piani e dispositivi**.
+
+**Cosa trovi**
+- **Home** – saluto e riepilogo della casa in una riga, meteo con le previsioni a 5 giorni, tutte le stanze divise per piano (temperatura, umidità, luci accese, finestre aperte, clima), persone, scene e la lista *Da sistemare* (finestre aperte, pile scariche, aggiornamenti). Tocca una stanza per comandare tutto quello che c'è dentro.
+- **Luci** – tutte le luci per piano e stanza, con regolazione della luminosità, «spegni» per stanza e per tutta la casa.
+- **Clima** – termostati e condizionatori per stanza, più la temperatura e l'umidità di ogni stanza.
+- **Aggiornamenti** – installa dalla plancia gli aggiornamenti di Home Assistant, dei componenti aggiuntivi, di HACS e dei firmware: novità, backup prima di installare, avanzamento, *Installa tutti* (Home Assistant per ultimo), versioni saltate.
+- Grafica in vetro per tablet e telefono, in italiano e in inglese (segue la lingua di Home Assistant).
+- Le pagine compaiono solo se hai i dispositivi giusti.
+
+### Installazione
+1. HACS → ⋮ → **Archivi digitali personalizzati** → aggiungi `https://github.com/gionny781/nduja-dashboard`, categoria **Integrazione**.
+2. Cerca **'Nduja Dashboard** in HACS → **Scarica**.
+3. Riavvia Home Assistant.
+4. **Impostazioni → Dispositivi e servizi → Aggiungi integrazione → 'Nduja Dashboard**.
+5. Apri **🌶️ 'Nduja** nella barra laterale.
+
+**Opzioni** (Impostazioni → Dispositivi e servizi → 'Nduja Dashboard → Configura): nome e icona nella barra laterale, accesso solo per amministratori, sensori dell'energia (facoltativi: se li lasci vuoti la plancia li cerca da sola).
+
+### Consigli
+- Assegna ogni dispositivo a un'**area** e le aree ai **piani**: è da lì che la plancia disegna la casa.
+- Le entità nascoste e quelle di configurazione o diagnostica vengono ignorate.
+
+---
+
+| Lights / Luci | Climate / Clima |
+|---|---|
+| ![Lights](docs/lights.png) | ![Climate](docs/climate.png) |
+| **Room / Stanza** | **Updates / Aggiornamenti** |
+| ![Room](docs/room.png) | ![Updates](docs/updates.png) |
+
+## License
+MIT © gionny781
