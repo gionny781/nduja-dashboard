@@ -5,6 +5,7 @@ import "./pages/benvenuto.js";
 import "./pages/home.js";
 import "./pages/luci.js";
 import "./pages/clima.js";
+import "./pages/energia.js";
 import "./pages/dispositivi.js";
 import "./pages/custom.js";
 import "./pages/aggiornamenti.js";
