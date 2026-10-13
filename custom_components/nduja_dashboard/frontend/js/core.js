@@ -226,6 +226,7 @@ function morph(a, b) {
   if (a.nodeType === 3 || a.nodeType === 8) { if (a.nodeValue !== b.nodeValue) a.nodeValue = b.nodeValue; return; }
   if (a.nodeType !== 1) return;
   if (a.hasAttribute("data-keep") && b.hasAttribute("data-keep")) return;
+  if (a.getAttribute("data-sure") === "1") return;   // pulsante in attesa di conferma: non lo tocco finché non scade
   for (const at of [...a.attributes]) if (!b.hasAttribute(at.name)) a.removeAttribute(at.name);
   for (const at of [...b.attributes]) if (a.getAttribute(at.name) !== at.value) a.setAttribute(at.name, at.value);
   if (a.tagName === "INPUT" && a.type === "range" && a !== dragging) a.value = b.getAttribute("value") ?? a.value;

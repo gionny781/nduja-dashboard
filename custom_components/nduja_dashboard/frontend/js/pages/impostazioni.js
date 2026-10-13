@@ -92,13 +92,16 @@ function passoPagine() {
 function passoFine() {
   const d = draft(), tolte = d.mode === "manual" ? d.include.filter(id => S[id]).length : d.exclude.filter(id => S[id]).length;
   return `<div class="wz-h"><span>✅</span><div><h3>${t("Tutto pronto", "All set")}</h3><p>${t(`Modalità ${d.mode === "manual" ? "manuale" : "automatica"} · stanze nascoste: ${d.hiddenAreas.length} · elementi ${d.mode === "manual" ? "scelti" : "tolti"}: ${tolte}. Premi «Salva»: le scelte valgono su tutti i tablet e telefoni. Per cambiarle torna in ⚙️ Impostazioni.`, `${d.mode === "manual" ? "Manual" : "Automatic"} mode · hidden rooms: ${d.hiddenAreas.length} · items ${d.mode === "manual" ? "chosen" : "removed"}: ${tolte}. Press «Save»: your choices apply to every tablet and phone. To change them come back to ⚙️ Settings.`)}</p></div></div>
-    <button class="btn sm" data-act="wzReset" style="margin-top:10px">↺ ${t("Ricomincia da capo (mostra tutto)", "Start over (show everything)")}</button>`;
+    <button class="btn sm" data-act="wzReset" style="margin-top:10px">↺ ${t("Annulla le scelte di questi passi", "Undo the choices in these steps")}</button>`;
 }
 
 function pagina() {
   if (!isAdmin()) return `<div class="g">${`<section class="card">${t("Solo un amministratore può cambiare le impostazioni.", "Only an administrator can change the settings.")}</section>`}</div>`;
   const P = PASSI(), s = W.step, corpo = [passoInizio, passoStanze, passoLuci, passoClima, passoDispositivi, passoCasa, passoPagine, passoFine][s]();
-  return `<div class="g"><section class="card wz1">
+  return `<div class="g"><section class="card rst1"><div class="row" style="gap:12px;flex-wrap:wrap"><span style="font-size:28px">🌶️</span>
+      <div style="flex:1;min-width:200px"><b>${t("Ricomincia dal benvenuto", "Restart from the welcome screen")}</b><div class="small muted">${t("Riparte la configurazione da zero: scegli di nuovo Automatica o Manuale. Le pagine create da te restano.", "Setup starts over: choose Automatic or Manual again. Pages you created are kept.")}</div></div>
+      <button class="btn warm" data-act="wzRestart">🔄 ${t("Riavvia il wizard", "Restart the wizard")}</button></div></section>
+    <section class="card wz1">
     <div class="wz-steps">${P.map((n, i) => `<button class="${i === s ? "act" : i < s ? "done" : ""}" data-act="wzGo" data-v="${i}"><i>${i < s ? "✓" : i + 1}</i><span>${n}</span></button>`).join("")}</div>
     <div class="wz-body">${corpo}</div>
     <div class="wz-nav"><button class="btn" data-act="wzGo" data-v="${s - 1}" ${s === 0 ? "disabled" : ""}>← ${t("Indietro", "Back")}</button><span class="grow"></span>
@@ -129,6 +132,11 @@ Object.assign(ACT, {
     const d = draft(), A = stanzeOrdinate(), i = A.indexOf(el.dataset.id), j = i + +el.dataset.v;
     if (j < 0 || j >= A.length || AREAS[A[j]].floor !== AREAS[A[i]].floor) return;
     [A[i], A[j]] = [A[j], A[i]]; d.areaOrder = A; render();
+  },
+  wzRestart: async el => {
+    if (el.dataset.sure !== "1") { el.dataset.sure = "1"; el.textContent = t("Sicuro? Tocca ancora", "Sure? Tap again"); setTimeout(() => { if (el.isConnected) { el.dataset.sure = ""; el.textContent = "🔄 " + t("Riavvia il wizard", "Restart the wizard"); } }, 3500); return; }
+    try { await saveLayout({ configured: false, customPages: LAYOUT.customPages || [] }); W.d = null; W.step = 0; go("benvenuto"); }
+    catch (e) { toast(t("Non riuscito: ", "Failed: ") + (e.message || e.code), true); }
   },
   wzReset: () => { W.d = { mode: draft().mode, hiddenAreas: [], areaOrder: [], exclude: [], include: [], sensors: {}, pages: {}, weather: null, customPages: draft().customPages || [] }; render(); },
   wzSave: async () => {

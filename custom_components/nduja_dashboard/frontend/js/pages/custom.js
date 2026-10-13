@@ -59,7 +59,7 @@ Object.assign(ACT, {
     catch (e) { toast(t("Non salvato: ", "Not saved: ") + (e.message || e.code), true); }
   },
   pgDel: async el => {
-    if (el.dataset.sure !== "1") { el.dataset.sure = "1"; el.textContent = t("Sicuro? Tocca ancora", "Sure? Tap again"); return; }
+    if (el.dataset.sure !== "1") { const old = el.textContent; el.dataset.sure = "1"; el.textContent = t("Sicuro? Tocca ancora", "Sure? Tap again"); setTimeout(() => { if (el.isConnected) { el.dataset.sure = ""; el.textContent = old; } }, 3500); return; }
     const l = copia(); l.customPages = (l.customPages || []).filter(p => p.id !== el.dataset.id);
     await saveLayout(l).catch(() => {}); go("home"); toast("🗑 " + t("Pagina eliminata", "Page deleted"));
   },
