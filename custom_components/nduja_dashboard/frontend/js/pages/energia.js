@@ -16,22 +16,55 @@ function rateDaPrefs(tipo) {
   return null;
 }
 const potenze = () => allEnts("sensor", id => deviceClass(id) === "power");
-const cerca = re => potenze().find(id => re.test(id + " " + nm(id)));
+/* sensori da non usare mai per il flusso: previsioni, stime, valori futuri */
+const PREVISIONE = /forecast|previs|stimat|estimat|next|prossim|tomorrow|domani|_\d+h|hour|ora\b/i;
+/** dispositivo dei sensori di energia scelti nella configurazione Energia (per riconoscere l'inverter) */
+function dispositiviPrefs(tipo) {
+  const P = prefs(), out = new Set();
+  for (const s of (P.energy_sources || []).filter(x => x.type === tipo))
+    for (const id of [s.stat_energy_from, s.stat_energy_to, ...(s.flow_from || []).map(f => f.stat_energy_from), ...(s.flow_to || []).map(f => f.stat_energy_to)])
+      if (id && REG[id]?.device) out.add(REG[id].device);
+  return out;
+}
+/** sceglie il sensore più adatto: nome giusto, stesso dispositivo dell'impianto, niente previsioni */
+function cerca(re, tipo, bonusDev = 3) {
+  const dev = tipo ? dispositiviPrefs(tipo) : new Set();
+  let best = null, top = 0;
+  for (const id of potenze()) {
+    const n = id + " " + nm(id); if (PREVISIONE.test(n)) continue;
+    let sc = re.test(n) ? 2 : 0; if (!sc) continue;
+    if (dev.has(REG[id]?.device)) sc += bonusDev;
+    if (/total|totale|instant|generat|attuale|now\b/i.test(n)) sc += 1;
+    if (!tipo && /house|home|casa/i.test(n)) sc += 1;
+    if (/pv\s?[12]\b|pv[12]_|string|stringa|mppt/i.test(n)) sc -= 1;
+    if (ok(id)) sc += .5;
+    if (sc > top) { top = sc; best = id; }
+  }
+  return best;
+}
 /** sensore usato per ogni ruolo */
 export function sensori() {
   const E = LAYOUT.energy || {}, O = UI.opt || {};
-  const pick = (k, opt, tipo, re) => E[k] || O[opt] || (tipo && rateDaPrefs(tipo)) || (re && cerca(re)) || null;
+  const pick = (k, opt, tipo, re, bonus) => E[k] || O[opt] || (tipo && rateDaPrefs(tipo)) || (re && cerca(re, tipo, bonus)) || null;
   return {
-    pv: pick("pv", "pv_power", "solar", /solar|solare|fotovolt|\bpv\b|pv_power|produzione/i),
-    grid: pick("grid", "grid_power", "grid", /\bgrid\b|grid_power|\brete\b|scambio|contatore/i),
-    battery: pick("battery", "battery_power", "battery", /battery_power|batteria_potenza|potenza_batteria|battery.*power/i),
+    pv: pick("pv", "pv_power", "solar", /solar|solare|fotovolt|photovolt|\bpv|produzione|production|generat/i, 3),
+    grid: pick("grid", "grid_power", "grid", /\bgrid|\brete\b|_rete\b|scambio|contatore|meter\b/i, 1),
+    battery: pick("battery", "battery_power", "battery", /batter/i, 3),
     soc: E.soc || O.battery_soc || allEnts("sensor", id => deviceClass(id) === "battery" && /inverter|storage|accumul|batteria_casa|home_battery|battery_level|zcs|solis|huawei|growatt|sofar|fronius|victron|deye|sunsynk/i.test(id + nm(id)))[0] || null,
-    home: E.home || O.home_power || cerca(/house|home_power|load|consumo_casa|casa_consumo|consumption/i) || null,
+    home: E.home || O.home_power || cerca(/house|home|\bcasa\b|_casa|load|consumo|consumption/i, null) || null,
     gridInv: !!E.gridInv, batInv: !!E.batInv,
   };
 }
+/* se il sensore del sole è una sola stringa (PV1), sommo le altre stringhe dello stesso inverter */
+function stringhe(id) {
+  if (!id || (LAYOUT.energy || {}).pv || !/pv\s?_?1\b|pv1|string.?1|stringa.?1|mppt.?1/i.test(id + " " + nm(id))) return [id];
+  const dev = REG[id]?.device;
+  const altre = potenze().filter(x => x !== id && REG[x]?.device === dev && /pv\s?_?[2-9]\b|pv[2-9]|string.?[2-9]|stringa.?[2-9]|mppt.?[2-9]/i.test(x + " " + nm(x)));
+  return [id, ...altre];
+}
 function letture() {
-  const s = sensori(), g = W(s.grid), b = W(s.battery), pv = s.pv ? Math.max(0, W(s.pv) ?? 0) : null;
+  const s = sensori(), g = W(s.grid), b = W(s.battery);
+  const pvL = s.pv ? stringhe(s.pv).map(W).filter(v => v != null) : [], pv = s.pv ? Math.max(0, pvL.reduce((a, v) => a + v, 0)) : null;
   const rete = g == null ? null : s.gridInv ? -g : g, bat = b == null ? null : s.batInv ? -b : b;
   let casa = s.home ? W(s.home) : null;
   if (casa == null && (pv != null || rete != null)) casa = Math.max(0, (pv || 0) + (rete || 0) + (bat || 0));
