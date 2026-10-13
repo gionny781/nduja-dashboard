@@ -5,7 +5,7 @@ import { startManual } from "./impostazioni.js";
 function pagina() {
   const n = d => allEnts(d).length;
   return `<div class="wel2">
-    <div class="wel2h"><span>🌶️</span><h2>${t("Benvenuto in 'Nduja!", "Welcome to 'Nduja!")}</h2>
+    <div class="wel2h"><span>🌶️</span><h2>${t("Benvenuto in 'Nduja!", "Welcome to 'Nduja!")} <sup class="beta1">BETA</sup></h2>
       <p>${t("Come vuoi preparare la tua plancia?", "How do you want to set up your dashboard?")}</p></div>
     <div class="wel2c">
       <button class="wel2b" data-act="wAuto"><span class="i">✨</span><b>${t("Automatica", "Automatic")}</b>
@@ -14,7 +14,7 @@ function pagina() {
       <button class="wel2b" data-act="wManual"><span class="i">🛠️</span><b>${t("Manuale", "Manual")}</b>
         <p>${t("Parti da una plancia vuota e scegli tu, sezione per sezione, le luci, il clima, le prese e tutto il resto.", "Start from an empty dashboard and choose, section by section, lights, climate, plugs and everything else.")}</p></button>
     </div>
-    <p class="wel2f">${t("Potrai cambiare tutto quando vuoi: in ogni pagina c'è ✏️ Modifica, e in ⚙️ Impostazioni trovi la procedura guidata.", "You can change everything later: every page has ✏️ Edit, and ⚙️ Settings has the guided setup.")}</p>
+    <p class="wel2f">🧪 ${t("Versione beta: se qualcosa non va, segnalalo su GitHub.", "Beta version: if something is wrong, report it on GitHub.")}<br>${t("Potrai cambiare tutto quando vuoi: in ogni pagina c'è ✏️ Modifica, e in ⚙️ Impostazioni trovi la procedura guidata.", "You can change everything later: every page has ✏️ Edit, and ⚙️ Settings has the guided setup.")}</p>
   </div>`;
 }
 Object.assign(ACT, {

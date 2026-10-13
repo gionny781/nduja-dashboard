@@ -149,3 +149,7 @@
 .cam1{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:16/9;background:#000;width:100%}.cam1 img{width:100%;height:100%;object-fit:cover}
 .cam1 span{position:absolute;left:10px;bottom:8px;font-size:12.5px;font-weight:700;text-shadow:0 1px 4px #000}
 .rst1{border-color:rgba(255,159,10,.35)}
+
+.beta1{display:block;width:max-content;margin:-8px auto 10px;padding:2px 7px;border-radius:7px;font-size:9.5px;font-weight:900;letter-spacing:.12em;color:#ff9f0a;background:rgba(255,159,10,.16);border:1px solid rgba(255,159,10,.35)}
+.wel2h sup.beta1{display:inline-block;margin:0 0 0 6px;vertical-align:super;font-size:11px}
+@media (max-width:860px){.rail .beta1{display:none}}

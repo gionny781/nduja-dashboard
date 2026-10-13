@@ -1,5 +1,12 @@
 # Changelog
 
+> 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
+> 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
+
+## 0.3.2-beta
+- 🇮🇹 Le versioni ora sono segnate **beta**; scritta BETA nella plancia.
+- 🇬🇧 Versions are now marked **beta**; BETA label in the dashboard.
+
 ## 0.3.1
 - 🇮🇹 ⚙️ Impostazioni → **🔄 Riavvia il wizard**: torna al benvenuto e si sceglie di nuovo Automatica o Manuale (le pagine create restano).
 - 🇮🇹 Corretto: i pulsanti «tocca ancora per confermare» (Installa, Elimina pagina…) a volte non accettavano il secondo tocco.

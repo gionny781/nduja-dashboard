@@ -265,7 +265,7 @@ function renderNav() {
   const v = visible();
   const nav = k => `<button class="nav ${k === UI.page ? "act" : ""}" data-act="go" data-id="${k}"><span class="i">${PAGES[k].icon}</span>${PAGES[k].short || PAGES[k].title}${PAGES[k].badge?.() ? '<span class="dot"></span>' : ""}</button>`;
   const nuova = isAdmin() && UI.edit ? `<button class="nav nw1" data-act="edNewPage"><span class="i">＋</span>${t("Pagina", "Page")}</button>` : "";
-  patch($("#rail"), `<div class="logo" title="'Nduja ${esc(UI.version)}">🌶️</div>` + v.map(nav).join("") + nuova);
+  patch($("#rail"), `<div class="logo" title="'Nduja ${esc(UI.version)}">🌶️</div><div class="beta1">BETA</div>` + v.map(nav).join("") + nuova);
   const main = v.slice(0, 4);
   patch($("#tabbar"), main.map(nav).join("") + (v.length > 4 ? `<button class="nav ${main.includes(UI.page) ? "" : "act"}" data-act="more"><span class="i">☰</span>${t("Altro", "More")}</button>` : ""));
   patch($("#more"), v.slice(4).map(nav).join("") + nuova);

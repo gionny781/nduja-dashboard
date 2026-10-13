@@ -3,6 +3,7 @@
 **A spicy, glass-style control deck for Home Assistant.**
 *Una plancia in stile vetro, piccante, per Home Assistant.*
 
+![beta](https://img.shields.io/badge/status-beta-orange.svg)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/)
 ![Validate](https://github.com/gionny781/nduja-dashboard/actions/workflows/validate.yml/badge.svg)
 
@@ -10,6 +11,8 @@
 
 ![Home](docs/home.png)
 
+> 🧪 **BETA** — 🇮🇹 la plancia è giovane: funziona, ma può cambiare e avere difetti; segnalali nelle [Issues](https://github.com/gionny781/nduja-dashboard/issues). · 🇬🇧 young project: it works, but may change and have bugs; please report them in [Issues](https://github.com/gionny781/nduja-dashboard/issues).
+>
 > ⚠️ **Work in progress.** Version 1.0 is being built in stages. Home, Lights, Climate and Updates are ready; Energy, the 3D floor plan, robot vacuum and cameras are coming next.
 
 ---
