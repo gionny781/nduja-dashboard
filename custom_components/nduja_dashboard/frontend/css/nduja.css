@@ -59,3 +59,9 @@
 .nt69 h4{margin:14px 0 4px;color:var(--tx);font-size:15px}.nt69 ul{margin:4px 0;padding-left:20px}.nt69 code{font-size:12px;background:rgba(255,255,255,.08);padding:1px 4px;border-radius:4px}
 .nt69 a{color:#64d2ff}
 @media (max-width:760px){.up69{grid-template-columns:28px minmax(0,1fr)}.up69 .ac{grid-column:1/-1;justify-content:flex-start}}
+/* peperoncino molto sfumato sullo sfondo, dietro il vetro */
+.bg .chili{position:absolute;right:-8vmax;bottom:-10vmax;width:64vmax;height:64vmax;background:url(../img/chili.svg) center/contain no-repeat;
+  opacity:.2;filter:blur(9px) saturate(1.1);transform:rotate(-14deg);pointer-events:none;animation:chili1 40s ease-in-out infinite alternate}
+@keyframes chili1{to{transform:rotate(-8deg) translate(-2vmax,-1.5vmax) scale(1.04)}}
+@media (max-width:760px){.bg .chili{width:90vmax;height:90vmax;right:-30vmax;bottom:-18vmax;opacity:.15}}
+@media (prefers-reduced-motion:reduce){.bg .chili{animation:none}}
