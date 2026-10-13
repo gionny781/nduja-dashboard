@@ -3,6 +3,10 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.4.3-beta
+- 🇮🇹 Benvenuto e Impostazioni senza i dati in alto (sole, rete, persone…); nel benvenuto niente menu, solo le due scelte.
+- 🇬🇧 Welcome and Settings without the top data pills; the welcome screen hides the menu and shows only the two choices.
+
 ## 0.4.2-beta
 - 🇮🇹 Energia: riconoscimento dei sensori più furbo. Non usa più le **previsioni** del fotovoltaico come produzione; preferisce i sensori dello stesso inverter della configurazione Energia; se trova solo la stringa PV1 somma anche PV2, PV3….
 - 🇬🇧 Energy: smarter sensor detection. Solar **forecasts** are no longer used as production; sensors of the same inverter as the Energy configuration are preferred; if only string PV1 is found, PV2, PV3… are added.

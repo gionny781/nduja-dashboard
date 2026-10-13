@@ -148,7 +148,7 @@ Object.assign(ACT, {
 CHG.wzSensor = el => { const d = draft(), a = el.dataset.id; d.sensors[a] = { ...(d.sensors[a] || {}), [el.dataset.k]: el.value || undefined }; };
 CHG.wzWeather = el => { draft().weather = el.value || null; };
 
-page("impostazioni", { title: t("Impostazioni", "Settings"), short: t("Impost.", "Settings"), icon: "⚙️", order: 99, admin: true, render: pagina });
+page("impostazioni", { title: t("Impostazioni", "Settings"), short: t("Impost.", "Settings"), icon: "⚙️", order: 99, admin: true, bare: true, render: pagina });
 
 /** dal benvenuto: modalità manuale, si parte da zero e si va ai passi */
 export function startManual() {

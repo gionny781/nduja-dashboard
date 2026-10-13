@@ -266,7 +266,7 @@ export function render(now) {
     if (!conn || !UI.page) return;
     HOOKS.forEach(f => { try { f(); } catch (e) { console.error(e); } });
     const P = PAGES[UI.page]; if (!P) return go("home");
-    document.body.classList.toggle("editing", UI.edit); applyTheme();
+    document.body.classList.toggle("editing", UI.edit); document.body.classList.toggle("nonav", !!P.noNav); applyTheme();
     try {
       $("#pageTitle").textContent = P.title;
       document.title = P.title + " · 'Nduja";
@@ -292,6 +292,7 @@ function renderStrip() {
   const w = weatherEnt(), home = ents("person").filter(p => S[p].state === "home").length, L = lightsOn().length;
   const extra = STRIP.map(f => { try { return f(); } catch { return ""; } }).join("");
   const P = PAGES[UI.page], canEdit = isAdmin() && P?.editable;
+  if (P?.bare) { patch($("#strip"), ""); return; }   // benvenuto e configurazione: niente dati in alto
   patch($("#strip"), `${canEdit ? `<button class="pillv edt1 ${UI.edit ? "on" : ""}" data-act="edToggle">${UI.edit ? "✓ " + t("Fatto", "Done") : "✏️ " + t("Modifica", "Edit")}</button>` : ""}${extra}
     ${ents("person").length ? `<span class="pillv">🏠 ${home} ${t("in casa", "home")}</span>` : ""}
     ${L ? `<span class="pillv sun" data-act="go" data-id="luci">💡 ${L}</span>` : ""}

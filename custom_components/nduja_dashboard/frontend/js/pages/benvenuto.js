@@ -24,4 +24,4 @@ Object.assign(ACT, {
   },
   wManual: () => startManual(),
 });
-page("benvenuto", { title: "'Nduja", icon: "🌶️", order: -1, hiddenNav: true, admin: true, render: pagina });
+page("benvenuto", { title: "'Nduja", icon: "🌶️", order: -1, hiddenNav: true, admin: true, bare: true, noNav: true, render: pagina });
