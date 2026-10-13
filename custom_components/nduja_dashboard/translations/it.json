@@ -1,0 +1,40 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "'Nduja Dashboard",
+        "description": "Aggiunge alla barra laterale una plancia a pagina intera in stile vetro. Stanze, luci, clima, elettrodomestici e aggiornamenti vengono trovati da soli.",
+        "data": {
+          "sidebar_title": "Nome nella barra laterale",
+          "sidebar_icon": "Icona",
+          "require_admin": "Solo per amministratori"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "'Nduja Dashboard è già installata."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "'Nduja Dashboard",
+        "description": "Lascia vuoti i sensori dell'energia e la plancia prova a trovarli da sola.",
+        "data": {
+          "sidebar_title": "Nome nella barra laterale",
+          "sidebar_icon": "Icona",
+          "require_admin": "Solo per amministratori",
+          "pv_power": "Potenza fotovoltaico (W/kW)",
+          "grid_power": "Potenza rete (+ prelievo / − immissione)",
+          "home_power": "Consumo casa",
+          "battery_power": "Potenza batteria (+ scarica / − carica)",
+          "battery_soc": "Carica batteria (%)",
+          "pv_today": "Produzione di oggi (kWh)",
+          "grid_import_today": "Prelevato oggi (kWh)",
+          "grid_export_today": "Immesso oggi (kWh)",
+          "home_today": "Consumato oggi (kWh)"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "'Nduja Dashboard",
+        "description": "Adds a full-page glass dashboard to the sidebar. Rooms, lights, climate, appliances and updates are found automatically.",
+        "data": {
+          "sidebar_title": "Sidebar title",
+          "sidebar_icon": "Icon",
+          "require_admin": "Admins only"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "'Nduja Dashboard is already installed."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "'Nduja Dashboard",
+        "description": "Leave the energy sensors empty to let the dashboard find them by itself.",
+        "data": {
+          "sidebar_title": "Sidebar title",
+          "sidebar_icon": "Icon",
+          "require_admin": "Admins only",
+          "pv_power": "Solar power (W/kW)",
+          "grid_power": "Grid power (+ import / − export)",
+          "home_power": "Home consumption",
+          "battery_power": "Battery power (+ discharge / − charge)",
+          "battery_soc": "Battery charge (%)",
+          "pv_today": "Solar today (kWh)",
+          "grid_import_today": "Imported today (kWh)",
+          "grid_export_today": "Exported today (kWh)",
+          "home_today": "Consumed today (kWh)"
+        }
+      }
+    }
+  }
+}
