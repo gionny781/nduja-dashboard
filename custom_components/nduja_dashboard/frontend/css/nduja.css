@@ -388,3 +388,9 @@ button.tr1{width:100%;text-align:left;padding:4px 6px;margin:0 -6px;border-radiu
 .ssd1{font-size:clamp(18px,3vw,32px);font-weight:300;margin-top:6px;text-transform:capitalize;opacity:.9}
 .ssi1{display:flex;gap:22px;flex-wrap:wrap;margin-top:18px;font-size:clamp(16px,2.4vw,26px);font-weight:400}
 .ssi1 small{font-size:.7em;opacity:.8}
+/* grafici */
+.gr1{width:100%;height:auto;max-height:320px;display:block}
+.gg1{stroke:rgba(255,255,255,.08);stroke-width:1;vector-effect:non-scaling-stroke}
+.gl1{fill:rgba(235,235,245,.5);font-size:11px}
+.grs1{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:12.5px;color:var(--tx2)}
+.grs1 b{color:var(--tx)}.grs1 i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}

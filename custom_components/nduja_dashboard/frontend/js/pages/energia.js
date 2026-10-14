@@ -2,9 +2,10 @@
    I sensori si trovano da soli: prima le scelte dell'utente (✏️ Modifica → ⚙️ Sensori), poi le opzioni
    dell'integrazione, poi la configurazione «Energia» di Home Assistant, infine i nomi dei sensori.
    Segni: rete + = prelievo / − = immissione; batteria + = scarica / − = carica (come Home Assistant). */
-import { S, ACT, CHG, LAYOUT, UI, STRIP, t, esc, fnum, nm, ok, val, attr, W, watts, ws, cached, card, empty, page, isAdmin,
+import { S, ACT, CHG, LAYOUT, UI, STRIP, t, LOC, esc, fnum, nm, ok, val, attr, W, watts, ws, cached, card, empty, page, isAdmin,
   saveLayout, toast, openSheet, closeSheet, render, allEnts, deviceClass, REG, DEVICES } from "../core.js";
 import { scegli, cambia } from "../edit.js";
+import { statistiche, barre } from "../grafici.js";
 
 /* ---------- da dove leggo ---------- */
 const prefs = () => cached("energy:prefs", 10 * 60000, () => ws({ type: "energy/get_prefs" }).catch(() => ({}))) || {};
@@ -163,6 +164,7 @@ function cardOggi() {
     <div><small>${t("Prodotto", "Produced")}</small><b style="color:#ffd60a">${k(T.pv)}</b></div><div><small>${t("Consumato", "Consumed")}</small><b style="color:#64d2ff">${k(T.casa)}</b></div>
     <div><small>${t("Prelevato", "Imported")}</small><b style="color:#ff6961">${k(T.imp)}</b></div><div><small>${t("Immesso", "Exported")}</small><b style="color:#30d158">${k(T.exp)}</b></div>
     ${auto != null ? `<div><small>${t("Autoconsumo", "Self-consumption")}</small><b>${auto}%</b></div>` : ""}${suff != null ? `<div><small>${t("Autosufficienza", "Self-sufficiency")}</small><b>${suff}%</b></div>` : ""}
+    ${prezzi().compra != null && T.imp != null ? `<div><small>${t("Spesa di oggi", "Today's cost")}</small><b>${euro(T.imp * prezzi().compra - (T.exp || 0) * (prezzi().vende || 0))}</b></div>` : ""}
     ${T.bIn != null ? `<div><small>${t("Batteria caricata", "Battery charged")}</small><b>${k(T.bIn)}</b></div><div><small>${t("Batteria scaricata", "Battery discharged")}</small><b>${k(T.bOut)}</b></div>` : ""}
   </div>`);
 }
@@ -207,9 +209,13 @@ function scheda() {
         <button class="add1" data-act="enAdd" data-k="${k}"><span>＋</span>${L.length ? t("Aggiungi un altro sensore", "Add another sensor") : t("Scegli il sensore", "Choose the sensor")}</button></div>
       ${inv ? `<label class="row" style="gap:8px;margin-top:8px;font-size:13px"><input type="checkbox" data-chg="enInv" data-k="${inv}" ${E[inv] ? "checked" : ""}> ${t("Il mio sensore ha i segni al contrario", "My sensor has the opposite sign")}</label>` : ""}</div>`; };
   return `<div class="sh-head"><div><h3>⚙️ ${t("Sensori dell'energia", "Energy sensors")}</h3><div class="small muted">${t("Puoi scegliere qualsiasi sensore della casa. Le modifiche si salvano subito.", "You can choose any sensor in the house. Changes save immediately.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
-    ${VOCI().map(voce).join("")}`;
+    ${VOCI().map(voce).join("")}
+    <div class="en2"><b>💶 ${t("Prezzi (facoltativi)", "Prices (optional)")}</b><small class="muted"> ${t("Vuoto = quelli della configurazione Energia.", "Empty = those of the Energy configuration.")}</small>
+      <div class="row" style="gap:10px"><label class="fld1" style="flex:1"><span>${t("Prelievo €/kWh", "Import €/kWh")}</span><input type="number" step="0.001" min="0" value="${esc(E.prezzo ?? "")}" data-chg="enPrezzo" data-k="prezzo" placeholder="${prezzi().compra ?? ""}"></label>
+      <label class="fld1" style="flex:1"><span>${t("Immissione €/kWh", "Export €/kWh")}</span><input type="number" step="0.001" min="0" value="${esc(E.prezzoVendita ?? "")}" data-chg="enPrezzo" data-k="prezzoVendita" placeholder="${prezzi().vende ?? ""}"></label></div></div>`;
 }
 const salvaE = (fn, msg) => cambia(l => { l.energy = { ...(l.energy || {}) }; fn(l.energy); }, msg).then(() => { if (!UI.sheet) openSheet(scheda); });
+CHG.enPrezzo = el => salvaE(e => { if (el.value === "") delete e[el.dataset.k]; else e[el.dataset.k] = +el.value; }, "💶 " + t("Salvato", "Saved"));
 CHG.enInv = el => salvaE(e => { e[el.dataset.k] = el.checked; });
 Object.assign(ACT, {
   enSensors: () => openSheet(scheda),
@@ -228,10 +234,50 @@ function cardStringhe() {
     <div class="row between" style="margin-top:4px"><b>${t("Totale", "Total")}</b><b>${watts(pv)}</b></div></div>`, { right: isAdmin() ? `<button class="btn sm" data-act="enSensors">⚙️</button>` : "" });
 }
 
+/* ---------- storico e costi: settimana, mese, anno ---------- */
+function idsEnergia() {
+  const P = prefs(), src = P.energy_sources || [], grid = src.filter(x => x.type === "grid");
+  const own = k => scelti(k).length ? scelti(k) : null;
+  return {
+    pv: own("pvKwh") || src.filter(x => x.type === "solar").map(x => x.stat_energy_from).filter(Boolean),
+    imp: own("impKwh") || grid.flatMap(g => [...(g.flow_from || []).map(f => f.stat_energy_from), g.stat_energy_from]).filter(Boolean),
+    exp: own("expKwh") || grid.flatMap(g => [...(g.flow_to || []).map(f => f.stat_energy_to), g.stat_energy_to]).filter(Boolean),
+  };
+}
+/** prezzi €/kWh: dalla configurazione Energia (numero fisso o sensore del prezzo), oppure scelti in ⚙️ */
+function prezzi() {
+  const E = LAYOUT.energy || {}, g = (prefs().energy_sources || []).find(x => x.type === "grid") || {};
+  const num = (n, ent) => n != null ? +n : ent && S[ent] ? val(ent) : null;
+  return { compra: E.prezzo != null && E.prezzo !== "" ? +E.prezzo : num(g.number_energy_price, g.entity_energy_price), vende: E.prezzoVendita != null && E.prezzoVendita !== "" ? +E.prezzoVendita : num(g.number_energy_price_export, g.entity_energy_price_export) };
+}
+const euro = v => v == null || isNaN(v) ? "—" : v.toLocaleString(LOC, { style: "currency", currency: "EUR" });
+const VS = { p: "settimana" };
+function cardStorico() {
+  const I = idsEnergia(), tutti = [...I.pv, ...I.imp, ...I.exp]; if (!tutti.length) return "";
+  const [giorni, periodo] = { settimana: [7, "day"], mese: [30, "day"], anno: [365, "month"] }[VS.p];
+  const start = new Date(); start.setHours(0, 0, 0, 0); start.setDate(start.getDate() - giorni + 1); if (periodo === "month") start.setDate(1);
+  const r = statistiche(tutti, start, periodo, ["change"]);
+  const somma = ids => { const m = {}; for (const id of ids) for (const p of (r?.[id] || [])) m[p.start] = (m[p.start] || 0) + (p.change || 0); return Object.entries(m).map(([x, v]) => ({ x: +x, v: Math.max(0, v) })); };
+  const pv = somma(I.pv), imp = somma(I.imp), exp = somma(I.exp), tot = L => L.reduce((a, q) => a + q.v, 0);
+  const pr = prezzi(), spesa = pr.compra != null ? tot(imp) * pr.compra : null, guad = pr.vende != null ? tot(exp) * pr.vende : null;
+  const risp = pr.compra != null && I.pv.length ? Math.max(0, tot(pv) - tot(exp)) * pr.compra : null;
+  return card("📊 " + t("Storico e costi", "History and costs"), `
+    <div class="seg" style="margin-bottom:10px">${[["settimana", t("Settimana", "Week")], ["mese", t("Mese", "Month")], ["anno", t("Anno", "Year")]].map(([k, n]) => `<button class="${VS.p === k ? "act" : ""}" data-act="enStor" data-v="${k}">${n}</button>`).join("")}</div>
+    ${r === undefined ? `<div class="small muted">${t("Carico…", "Loading…")}</div>` : barre([...(I.pv.length ? [{ nome: t("Prodotto", "Produced"), colore: "#ffd60a", valori: pv }] : []), { nome: t("Prelevato", "Imported"), colore: "#ff6961", valori: imp }, { nome: t("Immesso", "Exported"), colore: "#30d158", valori: exp }], { u: "kWh", periodo })}
+    <div class="og68" style="margin-top:12px">
+      <div><small>${t("Spesa in bolletta", "Grid cost")}</small><b style="color:#ff6961">${euro(spesa)}</b></div>
+      <div><small>${t("Guadagno immissione", "Export earnings")}</small><b style="color:#30d158">${euro(guad)}</b></div>
+      ${risp != null ? `<div><small>${t("Risparmio dal sole", "Saved by solar")}</small><b style="color:#ffd60a">${euro(risp)}</b></div>` : ""}
+      <div><small>${t("Netto", "Net")}</small><b>${euro(spesa != null ? spesa - (guad || 0) : null)}</b></div>
+    </div>
+    ${pr.compra == null ? `<div class="small muted" style="margin-top:8px">${t("Per i costi imposta il prezzo in ⚙️ Sensori o nella configurazione Energia di Home Assistant.", "For costs set the price in ⚙️ Sensors or in Home Assistant's Energy configuration.")}</div>` : `<div class="small muted" style="margin-top:8px">${t("Prezzi", "Prices")}: ${euro(pr.compra)}/kWh ${t("prelievo", "import")}${pr.vende != null ? ` · ${euro(pr.vende)}/kWh ${t("immissione", "export")}` : ""}</div>`}`, { cls: "span3" });
+}
+ACT.enStor = el => { VS.p = el.dataset.v; render(); };
+
 function pagina() {
   return `<div class="g g3">
     ${isAdmin() ? `<section class="card span3 row between" style="flex-wrap:wrap;gap:8px"><span class="muted">${t("Scegli tu i sensori: stringhe del fotovoltaico, rete, casa, batterie, contatori di oggi.", "Choose your sensors: solar strings, grid, home, batteries, today's meters.")}</span><button class="btn" data-act="enSensors">⚙️ ${t("Sensori", "Sensors")}</button></section>` : ""}
-    ${flusso()}${cardStringhe()}${cardOggi()}${consumi()}
+    ${flusso()}${cardStringhe()}${cardOggi()}${cardStorico()}${consumi()}
   </div>`;
 }
 page("energia", { title: t("Energia", "Energy"), short: t("Energia", "Energy"), icon: "⚡", order: 15, editable: true, show: () => haEnergia() || isAdmin(), render: pagina });

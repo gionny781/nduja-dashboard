@@ -2,6 +2,7 @@
 import "./core.js";
 import "./edit.js";
 import "./salvaschermo.js";
+import "./grafici.js";
 import "./pages/benvenuto.js";
 import "./pages/home.js";
 import "./pages/mappa.js";
