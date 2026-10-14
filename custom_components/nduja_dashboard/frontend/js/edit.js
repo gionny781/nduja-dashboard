@@ -2,7 +2,7 @@
    «＋ Aggiungi» apre l'elenco dei dispositivi di quel tipo con la ricerca, «✏️» su un elemento cambia nome e stanza,
    «✕» lo toglie dalla plancia. Ogni modifica si salva subito in Home Assistant. */
 import { S, AREAS, FLOORS, REG, ACT, LAYOUT, UI, t, LOC, esc, nm, nmHA, ok, attr, allEnts, areaOf, areasSorted, excluded,
-  isManual, saveLayout, render, toast, openSheet, closeSheet, domain, deviceClass, OPENING } from "./core.js";
+  isManual, defaultOff, saveLayout, render, toast, openSheet, closeSheet, domain, deviceClass, OPENING } from "./core.js";
 
 const copia = () => JSON.parse(JSON.stringify(LAYOUT));
 async function salva(l, msg) {
@@ -16,6 +16,7 @@ export const TIPI = () => ({
   scene: ["🎬", t("Scene", "Scenes"), t("scena", "scene")], person: ["👤", t("Persone", "People"), t("persona", "person")],
   sensor: ["📈", t("Sensori", "Sensors"), t("sensore", "sensor")], binary_sensor: ["🚪", t("Porte, finestre e sensori", "Doors, windows and sensors"), t("sensore", "sensor")],
   camera: ["📷", t("Telecamere", "Cameras"), t("telecamera", "camera")], script: ["▶️", "Script", "script"], input_boolean: ["🔘", t("Interruttori virtuali", "Toggles"), t("interruttore", "toggle")],
+  alarm_control_panel: ["🛡️", t("Allarmi", "Alarms"), t("allarme", "alarm")],
   valve: ["🚰", t("Valvole", "Valves"), t("valvola", "valve")], siren: ["🚨", t("Sirene", "Sirens"), t("sirena", "siren")],
 });
 const custom = pid => (LAYOUT.customPages || []).find(p => p.id === pid);
@@ -35,7 +36,7 @@ export function addBtn(doms, { area = "", page = "", label = "", big = false } =
 
 /* ---------- elenco per aggiungere ---------- */
 const PK = { doms: [], area: "", page: "", q: "", dom: "" };
-const visibileOra = (id) => PK.page ? (custom(PK.page)?.items || []).includes(id) : !excluded(id);
+const visibileOra = (id) => PK.page ? (custom(PK.page)?.items || []).includes(id) : !excluded(id) && (isManual() || !defaultOff(id));
 function candidati() {
   const doms = PK.dom ? [PK.dom] : PK.doms;
   return doms.flatMap(d => allEnts(d, id => d !== "binary_sensor" || PK.page || OPENING.includes(deviceClass(id))))
@@ -78,7 +79,7 @@ Object.assign(ACT, {
     const id = el.dataset.id, l = copia();
     if (PK.page) { const p = (l.customPages || []).find(x => x.id === PK.page); if (p && !p.items.includes(id)) p.items.push(id); }
     else {
-      if (isManual()) l.include = [...new Set([...(l.include || []), id])]; else l.exclude = (l.exclude || []).filter(x => x !== id);
+      if (isManual()) l.include = [...new Set([...(l.include || []), id])]; else { l.exclude = (l.exclude || []).filter(x => x !== id); if (defaultOff(id)) l.show = [...new Set([...(l.show || []), id])]; }
       if (PK.area && !areaOf(id)) l.rooms = { ...(l.rooms || {}), [id]: PK.area };
       if (areaOf(id) && (l.hiddenAreas || []).includes(areaOf(id))) l.hiddenAreas = l.hiddenAreas.filter(a => a !== areaOf(id));
     }
@@ -88,7 +89,7 @@ Object.assign(ACT, {
     const id = el.dataset.id, pid = el.dataset.page, l = copia();
     if (pid) { const p = (l.customPages || []).find(x => x.id === pid); if (p) p.items = p.items.filter(x => x !== id); }
     else if (isManual()) l.include = (l.include || []).filter(x => x !== id);
-    else l.exclude = [...new Set([...(l.exclude || []), id])];
+    else { l.exclude = [...new Set([...(l.exclude || []), id])]; l.show = (l.show || []).filter(x => x !== id); }
     if (UI.sheet) closeSheet();
     salva(l, "✕ " + nm(id));
   },

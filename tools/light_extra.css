@@ -27,3 +27,5 @@ body.light .tt68 b[style*="#30d158"],body.light .og68 b[style*="#30d158"]{color:
 body.light .av2{color:#fff;background-color:#8e8e93;border-color:rgba(0,0,0,.12)}body.light .ps2.home .av2{border-color:var(--green)}
 body.light .av2 b{border-color:#fff}body.light .pb2{border-color:rgba(0,0,0,.35)}
 body.light .x3{background:rgba(0,0,0,.06)}
+body.light .vb1,body.light .vr1 button,body.light .kpd1 button,body.light .kpv1{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.08)}
+body.light .kpd1 button.ok{background:#0a84ff;color:#fff}

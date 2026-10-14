@@ -53,7 +53,10 @@ export const ago = iso => {
 export const hhmm = d => new Date(d).toLocaleTimeString(LOC, { hour: "2-digit", minute: "2-digit" });
 export const domain = id => id.split(".")[0];
 /* in modalità manuale queste cose si vedono solo se l'utente le ha aggiunte */
-export const MANUAL = ["light", "climate", "switch", "cover", "fan", "media_player", "lock", "humidifier", "vacuum", "valve", "siren", "scene", "person"];
+export const MANUAL = ["light", "climate", "switch", "cover", "fan", "media_player", "lock", "humidifier", "vacuum", "valve", "siren", "scene", "person", "camera", "alarm_control_panel"];
+/** entità nascoste finché l'utente non le aggiunge (doppioni delle telecamere, mappe dei robot…): funzioni registrate dalle pagine */
+export const DEFAULT_OFF = [];
+export const defaultOff = id => DEFAULT_OFF.some(f => { try { return f(id); } catch { return false; } }) && !(LAYOUT.show || []).includes(id);
 export const OPENING = ["door", "window", "opening", "garage_door"];
 export const manualKind = id => MANUAL.includes(id.split(".")[0]) || (id.startsWith("binary_sensor.") && OPENING.includes(S[id]?.attributes?.device_class));
 export const isManual = () => LAYOUT.mode === "manual";
@@ -62,7 +65,7 @@ export const excluded = id => (isManual() ? manualKind(id) && !(LAYOUT.include |
 /** tutte le entità di un dominio che hanno senso in una plancia (senza filtri del wizard) */
 export const allEnts = (dom, pred = () => true) => Object.keys(S).filter(id => id.startsWith(dom + ".") && !REG[id]?.hidden && REG[id]?.cat == null && pred(id, S[id]));
 /** entità visibili: come sopra, meno quelle tolte nel wizard */
-export const ents = (dom, pred = () => true) => allEnts(dom, pred).filter(id => !excluded(id));
+export const ents = (dom, pred = () => true) => allEnts(dom, pred).filter(id => !excluded(id) && !(isManual() ? false : defaultOff(id)));
 export const areaOf = id => LAYOUT.rooms?.[id] || REG[id]?.area || null;
 export const inArea = (area, dom, pred) => ents(dom, pred).filter(id => areaOf(id) === area);
 export const deviceClass = id => attr(id, "device_class");

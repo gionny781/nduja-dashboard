@@ -10,8 +10,12 @@
 - [x] Avvisi intelligenti nella Home (lavatrice finita, finestra aperta col clima acceso, batteria scarica…)
 - [x] File ricaricati quando cambiano davvero (per provare «main» senza problemi di cache)
 
+## 0.6.0-beta ✅ pubblicata
+- [x] Robot aspirapolvere
+- [x] Telecamere
+- [x] Sicurezza (allarme, serrature, porte, fumo/gas/acqua, movimento)
+
 ## Dopo
-- 0.6 — Robot aspirapolvere, telecamere, sicurezza (porte, allarme, fumo)
 - 0.7 — Mappa della casa generata dalle aree
 - 0.8 — Guida COME_INSTALLARE con foto, traduzioni, ritocchi
 - 1.0 — via «beta», segnalazione all'elenco ufficiale HACS

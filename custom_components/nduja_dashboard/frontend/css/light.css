@@ -98,6 +98,13 @@ body.light .x3:hover{background:rgba(0,0,0,0.080)!important}
 body.light .rfc1 select{background:rgba(0,0,0,0.040)!important;border:1px solid rgba(0,0,0,0.084)!important}
 body.light .hct1 button{background:rgba(0,0,0,0.050)!important}
 body.light button.tr1:hover{background:rgba(0,0,0,0.030)!important}
+body.light .vb1{background:rgba(0,0,0,0.035)!important}
+body.light .vr1 button{background:rgba(0,0,0,0.035)!important;border:1px solid rgba(0,0,0,0.070)!important}
+body.light .cmn1{color:#1c1c1e!important}
+body.light .cmo1 button{color:#1c1c1e!important}
+body.light .kpv1{background:rgba(0,0,0,0.030)!important}
+body.light .kpd1 button{background:rgba(0,0,0,0.040)!important}
+body.light .kpd1 button.ok{color:#1c1c1e!important}
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
 body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
@@ -127,4 +134,6 @@ body.light .tt68 b[style*="#30d158"],body.light .og68 b[style*="#30d158"]{color:
 body.light .av2{color:#fff;background-color:#8e8e93;border-color:rgba(0,0,0,.12)}body.light .ps2.home .av2{border-color:var(--green)}
 body.light .av2 b{border-color:#fff}body.light .pb2{border-color:rgba(0,0,0,.35)}
 body.light .x3{background:rgba(0,0,0,.06)}
+body.light .vb1,body.light .vr1 button,body.light .kpd1 button,body.light .kpv1{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.08)}
+body.light .kpd1 button.ok{background:#0a84ff;color:#fff}
 

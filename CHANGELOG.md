@@ -3,6 +3,14 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.6.0-beta
+- 🇮🇹 **Robot aspirapolvere**: stato, batteria, metri e minuti, mappa, Pulisci / Pausa / Ferma / Alla base / Trova, **pulizia di singole stanze** (Dreame e Roborock), impostazioni rapide (potenza, modalità…) scelte con ✏️, manutenzione di spazzole e filtro con ↺ azzera.
+- 🇮🇹 **Telecamere**: anteprime aggiornate ogni 10 secondi, tocca per la diretta; doppioni (sub stream, transcodifiche, mappe dei robot, non raggiungibili) nascosti finché non li aggiungi; ordine con ◀ ▶; vista piccola o grande.
+- 🇮🇹 **Sicurezza**: allarme con tastierino per il codice (in casa, fuori casa, notte, vacanza), serrature, porte e finestre, fumo/gas/acqua, movimento. Allarme scattato e sensori di pericolo compaiono negli Avvisi della Home.
+- 🇬🇧 **Robot vacuum**: status, battery, area and time, map, Clean / Pause / Stop / Dock / Locate, **single-room cleaning** (Dreame and Roborock), quick settings (suction, mode…) chosen with ✏️, brush and filter maintenance with ↺ reset.
+- 🇬🇧 **Cameras**: snapshots refreshed every 10 seconds, tap for live view; duplicates (sub streams, transcodes, vacuum maps, unavailable) hidden until you add them; ◀ ▶ order; small or large view.
+- 🇬🇧 **Security**: alarm with code keypad (home, away, night, vacation), locks, doors and windows, smoke/gas/water, motion. Triggered alarm and danger sensors show up in Home alerts.
+
 ## 0.5.0-beta
 - 🇮🇹 **Persone**: schede con foto, dove sono e da quanto, distanza da casa, batteria del telefono (⚡ se in carica). Il telefono si trova da solo; con ✏️ si cambiano nome, batteria, sensore di ricarica e distanza.
 - 🇮🇹 **Calendario**: nuova pagina con gli eventi di oggi, della settimana o del mese, ＋ Evento, scelta dei calendari; agenda di oggi e domani nella Home.

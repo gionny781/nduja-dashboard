@@ -7,6 +7,7 @@
    Ogni avviso si può nascondere con ✕ (torna se la situazione cambia). */
 import { S, ACT, t, esc, nm, ok, val, attr, ents, allEnts, isOn, ago, deviceClass, areaOf, openings, shortName, card, render, sGet, sSet, weatherEnt, forecast } from "./core.js";
 import { ritiri, chip } from "./raccolta.js";
+import { pericoli } from "./pages/sicurezza.js";
 
 const MIN = 6e4;
 const vecchio = id => Date.now() - new Date(S[id].last_changed).getTime();
@@ -42,6 +43,8 @@ const pioggia = () => {
 export function avvisi() {
   seguiElettro();
   const A = [], aperte = openings().filter(isOn);
+  ents("alarm_control_panel", id => S[id].state === "triggered").forEach(id => A.push({ k: "al:" + id + S[id].last_changed, ic: "🚨", b: esc(nm(id)) + " — " + t("ALLARME!", "TRIGGERED!"), s: ago(S[id].last_changed), go: "sicurezza", cls: "alert" }));
+  pericoli().forEach(id => A.push({ k: "pe:" + id + S[id].last_changed, ic: { smoke: "🔥", gas: "💨", carbon_monoxide: "☠️", moisture: "💧" }[deviceClass(id)] || "⚠️", b: esc(nm(id)), s: t("rilevato", "detected") + " · " + ago(S[id].last_changed), id, cls: "alert" }));
   const clima = ents("climate", id => ok(id) && S[id].state !== "off");
   for (const o of aperte) {
     const conClima = clima.find(c => areaOf(c) && areaOf(c) === areaOf(o));
