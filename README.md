@@ -6,6 +6,7 @@
 ![beta](https://img.shields.io/badge/status-beta-orange.svg)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/)
 ![Validate](https://github.com/gionny781/nduja-dashboard/actions/workflows/validate.yml/badge.svg)
+[![Dona con PayPal](https://img.shields.io/badge/PayPal-Offrimi%20un%20caff%C3%A8%20%E2%98%95-00457C?logo=paypal&logoColor=white)](https://www.paypal.me/gionny781)
 
 ![Welcome](docs/welcome.png)
 
@@ -108,6 +109,14 @@ si costruisce da sola dalle tue **aree, piani e dispositivi**.
 | ![Map](docs/map.png) | ![Appliances](docs/appliances.png) |
 | **3D** | |
 | ![3D](docs/map3d.png) | |
+
+## ☕ Supporta il progetto / Support the project
+
+🇮🇹 Se 'Nduja Dashboard ti piace e vuoi aiutarmi a portarla avanti, puoi offrirmi un caffè: **[paypal.me/gionny781](https://www.paypal.me/gionny781)**. Grazie! 🌶️
+
+🇬🇧 If you enjoy 'Nduja Dashboard and want to help it grow, you can buy me a coffee: **[paypal.me/gionny781](https://www.paypal.me/gionny781)**. Thank you! 🌶️
+
+[![PayPal](https://img.shields.io/badge/PayPal-Dona%20%2F%20Donate-00457C?logo=paypal&logoColor=white&style=for-the-badge)](https://www.paypal.me/gionny781)
 
 ## License
 MIT © gionny781
