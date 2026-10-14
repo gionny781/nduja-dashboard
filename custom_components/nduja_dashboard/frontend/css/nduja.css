@@ -356,3 +356,15 @@ button.tr1{width:100%;text-align:left;padding:4px 6px;margin:0 -6px;border-radiu
 .mpd2.on{background:rgba(255,214,10,.4);box-shadow:0 0 8px rgba(255,214,10,.4)}
 .mpd2 .dx{font-size:9px;padding:2px 4px;color:#ff6961}
 .mpd2.add{padding:2px 7px;color:var(--green);font-weight:700}
+/* ---------- mappa 3D ---------- */
+.m3c{perspective:1400px;perspective-origin:50% 30%;padding:50px 10% 90px;overflow:hidden;border-radius:20px;background:radial-gradient(ellipse at 50% 30%,rgba(255,255,255,.06),rgba(0,0,0,.25));touch-action:none;cursor:grab}
+.m3p{position:relative;width:100%;transform-style:preserve-3d;transition:transform .15s;background:rgba(255,255,255,.03);border-radius:4px;box-shadow:0 30px 60px rgba(0,0,0,.45)}
+.m3f{position:absolute;background:rgba(70,78,100,.75);transform-style:preserve-3d}
+.m3f.lit{background:rgba(255,214,10,.55);box-shadow:0 0 40px rgba(255,214,10,.5)}
+.m3f.open{background:rgba(255,159,10,.45)}.m3f.cust{background:rgba(120,125,150,.5)}
+.m3w{position:absolute;background:linear-gradient(rgba(240,240,250,.95),rgba(190,195,210,.85));transform-style:preserve-3d;border:1px solid rgba(0,0,0,.15)}
+.m3w.h{transform-origin:top;transform:rotateX(-90deg);margin-left:0}
+.m3w.v{transform-origin:left;transform:rotateY(90deg)}
+.m3lab{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
+.m3l{position:absolute;transform:translate(-50%,-50%) translateZ(70px) rotateZ(var(--rz)) rotateX(var(--rx));pointer-events:auto;display:flex;flex-direction:column;align-items:center;padding:4px 9px;border-radius:10px;background:rgba(0,0,0,.55);color:#fff;white-space:nowrap;backdrop-filter:blur(4px)}
+.m3l b{font-size:12px}.m3l small{font-size:10.5px;opacity:.85}

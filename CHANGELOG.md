@@ -3,6 +3,10 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.4-beta
+- 🇮🇹 **Mappa in 3D**: pulsante 2D / 3D; la casa viene costruita dalla tua mappa con pavimenti e muri alzati, le stanze con le luci accese si illuminano. Trascina per girarla e inclinarla (o usa ⟲ ⟳ ⤒ ⤓); la vista si ricorda per ogni dispositivo.
+- 🇬🇧 **3D map**: 2D / 3D button; the house is built from your map with floors and raised walls, rooms with lights on glow. Drag to rotate and tilt (or use ⟲ ⟳ ⤒ ⤓); the view is remembered per device.
+
 ## 0.7.3-beta
 - 🇮🇹 **Elettrodomestici**: oltre 70 icone tra cui scegliere, oppure un'immagine o **GIF tua** (/local/…); quando l'elettrodomestico parte l'icona **si anima** (gira, vibra, pulsa, salta, vapore — automatica in base al tipo o scelta da te).
 - 🇮🇹 **Mappa con i dispositivi**: in ogni stanza le icone dei suoi dispositivi (luci, prese, tapparelle, clima, TV, serrature, robot, telecamere); tocca per accendere o spegnere. In ✏️ Modifica: **＋** aggiunge qualsiasi dispositivo della casa alla stanza (anche alle stanze solo-mappa), **✕** lo toglie; «✨ Dispositivi automatici / ✋ Solo scelti» per piano.

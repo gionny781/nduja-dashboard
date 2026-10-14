@@ -100,15 +100,45 @@ function pagina() {
   const cur = P.find(p => p.f === sGet("mapFloor")) || P[0], pos = posizioni(cur.f, cur.stanze);
   const righe = Math.max(4, ...Object.values(pos).flatMap(p => pezzi(p).map(r => r.y + r.h))), img = LAYOUT.map?.[cur.f]?.img;
   return `<div class="g"><section class="card mp1">
-    <div class="ch"><div class="seg">${P.map(p => `<button class="${p.f === cur.f ? "act" : ""}" data-act="mpFloor" data-v="${p.f}">${esc(p.nome)}</button>`).join("")}</div>
+    <div class="ch"><div class="row" style="gap:8px;flex-wrap:wrap"><div class="seg">${["2D", "3D"].map(v => `<button class="${(sGet("map3") === "1") === (v === "3D") ? "act" : ""}" data-act="m3Toggle" data-v="${v}">${v}</button>`).join("")}</div><div class="seg">${P.map(p => `<button class="${p.f === cur.f ? "act" : ""}" data-act="mpFloor" data-v="${p.f}">${esc(p.nome)}</button>`).join("")}</div></div>
       ${isAdmin() && UI.edit ? `<span class="row" style="gap:6px"><div class="seg">${[["auto", "✨ " + t("Dispositivi automatici", "Auto devices")], ["manual", "✋ " + t("Solo scelti", "Chosen only")]].map(([k, n]) => `<button class="${(mp(cur.f).devMode || "auto") === k ? "act" : ""}" data-act="mpDevMode" data-v="${k}" data-f="${cur.f}">${n}</button>`).join("")}</div><button class="btn sm pri" data-act="mpNew" data-v="${cur.f}">＋ ${t("Stanza", "Room")}</button><button class="btn sm" data-act="mpImg" data-v="${cur.f}">🖼️ ${t("Piantina", "Floor plan")}</button><button class="btn sm" data-act="mpReset" data-v="${cur.f}">↺ ${t("Disposizione automatica", "Auto layout")}</button></span>` : ""}</div>
-    <div class="mpw1"><div class="mpg1 ${UI.edit ? "edit" : ""}" style="grid-template-rows:repeat(${righe},64px)${img ? `;background-image:url('${esc(img)}')` : ""}">${cur.stanze.map(a => stanza(a, pos[a], cur.f)).join("")}</div>
-      <svg class="mpm1" viewBox="0 0 ${COL} ${righe}" preserveAspectRatio="none" aria-hidden="true"><path d="${muri(pos, cur.stanze)}"/></svg></div>
+    ${sGet("map3") === "1" && !UI.edit ? vista3d(cur, pos, righe) : `<div class="mpw1"><div class="mpg1 ${UI.edit ? "edit" : ""}" style="grid-template-rows:repeat(${righe},64px)${img ? `;background-image:url('${esc(img)}')` : ""}">${cur.stanze.map(a => stanza(a, pos[a], cur.f)).join("")}</div>
+      <svg class="mpm1" viewBox="0 0 ${COL} ${righe}" preserveAspectRatio="none" aria-hidden="true"><path d="${muri(pos, cur.stanze)}"/></svg></div>`}
     ${UI.edit && cur.nascoste.length ? `<div class="fl1">${t("Tolte dalla mappa", "Removed from the map")}</div><div class="vr1">${cur.nascoste.map(a => `<button data-act="mpShow" data-id="${a}" data-f="${cur.f}">👁 ${esc(nomeStanza(a, cur.f))}</button>`).join("")}</div>` : ""}
     ${UI.edit ? `<p class="small muted" style="margin-top:10px">${t("«＋ Stanza» aggiunge una stanza solo nella mappa (anche se non esiste in Home Assistant: ripostiglio, scale, terrazzo…). ← ↑ ↓ → sposta, ⇠ ⇢ larghezza, ⇡ ⇣ altezza. «＋ pezzo (L)» aggiunge un altro rettangolo alla stanza: mettilo accanto per fare una stanza a L, a T o di qualsiasi forma; i muri si uniscono da soli. «Piantina» mette sotto un'immagine (/local/piantina.png).", "← ↑ ↓ → move, ⇠ ⇢ width, ⇡ ⇣ height. «＋ piece (L)» adds another rectangle to the room: put it alongside to make an L, T or any shape; walls join automatically. «Floor plan» puts an image underneath (/local/plan.png).")}</p>`
       : `<p class="small muted" style="margin-top:10px">${t("Tocca una stanza per comandarla, 💡 per spegnere o accendere le sue luci.", "Tap a room to control it, 💡 to switch its lights.")}</p>`}
   </section></div>`;
 }
+
+/* ---------- vista 3D: pavimenti colorati, muri alzati dal contorno, si ruota trascinando ---------- */
+const V3 = { rz: +(sGet("map3rz") || -30), rx: +(sGet("map3rx") || 55) };
+function vista3d(cur, pos, righe) {
+  const H = 64, Wp = 100 / COL, Hp = 100 / righe, wall = 46;
+  const pav = cur.stanze.flatMap(a => { const L = AREAS[a] ? lightsOn(a).length : 0, O = AREAS[a] ? inArea(a, "binary_sensor", id => ["door", "window", "opening", "garage_door"].includes(deviceClass(id)) && isOn(id)).length : 0;
+    return pezzi(pos[a]).map(r => `<div class="m3f ${L ? "lit" : ""} ${O ? "open" : ""} ${AREAS[a] ? "" : "cust"}" style="left:${r.x * Wp}%;top:${r.y * Hp}%;width:${r.w * Wp}%;height:${r.h * Hp}%"></div>`); }).join("");
+  const seg = [];
+  for (const a of cur.stanze) {
+    const C = new Set(); pezzi(pos[a]).forEach(r => { for (let x = r.x; x < r.x + r.w; x++) for (let y = r.y; y < r.y + r.h; y++) C.add(x + "," + y); });
+    for (const c of C) { const [x, y] = c.split(",").map(Number);
+      if (!C.has(x + "," + (y - 1))) seg.push(["h", x, y]); if (!C.has(x + "," + (y + 1))) seg.push(["h", x, y + 1]);
+      if (!C.has((x - 1) + "," + y)) seg.push(["v", x, y]); if (!C.has((x + 1) + "," + y)) seg.push(["v", x + 1, y]); }
+  }
+  const visti = new Set(), muri3 = seg.filter(s => { const k = s.join(); if (visti.has(k)) return false; visti.add(k); return true; }).map(([o, x, y]) => o === "h"
+    ? `<div class="m3w h" style="left:${x * Wp}%;top:${y * Hp}%;width:${Wp}%;height:${wall}px"></div>`
+    : `<div class="m3w v" style="left:${x * Wp}%;top:${y * Hp}%;height:${Hp}%;width:${wall}px"></div>`).join("");
+  const etichette = cur.stanze.map(a => { const r = pos[a], T = AREAS[a] ? roomTemp(a) : null, L = AREAS[a] ? lightsOn(a).length : 0;
+    return `<button class="m3l" data-act="${AREAS[a] ? "room" : ""}" data-id="${a}" style="left:${(r.x + r.w / 2) * Wp}%;top:${(r.y + r.h / 2) * Hp}%"><b>${esc(nomeStanza(a, cur.f))}</b>${T != null ? `<small>${fnum(T)}°${L ? " · 💡" + L : ""}</small>` : L ? `<small>💡${L}</small>` : ""}</button>`; }).join("");
+  return `<div class="m3c" id="m3c"><div class="m3p" style="height:${righe * H}px;transform:scale(.82) rotateX(${V3.rx}deg) rotateZ(${V3.rz}deg)">${pav}${muri3}
+    <div class="m3lab" style="--rz:${-V3.rz}deg;--rx:${-V3.rx}deg">${etichette}</div></div></div>
+    <div class="row" style="gap:6px;justify-content:center;margin-top:8px"><button class="btn sm" data-act="m3Rot" data-v="-20">⟲</button><button class="btn sm" data-act="m3Tilt" data-v="-10">⤓</button><button class="btn sm" data-act="m3Tilt" data-v="10">⤒</button><button class="btn sm" data-act="m3Rot" data-v="20">⟳</button></div>`;
+}
+const salva3 = () => { sSet("map3rz", V3.rz); sSet("map3rx", V3.rx); };
+/* trascinare per ruotare */
+let drag3 = null;
+document.addEventListener("pointerdown", e => { if (e.target.closest("#m3c") && !e.target.closest("button")) drag3 = { x: e.clientX, y: e.clientY, rz: V3.rz, rx: V3.rx }; });
+document.addEventListener("pointermove", e => { if (!drag3) return; V3.rz = drag3.rz + (e.clientX - drag3.x) / 3; V3.rx = Math.max(0, Math.min(75, drag3.rx - (e.clientY - drag3.y) / 4));
+  const p = document.querySelector(".m3p"), l = document.querySelector(".m3lab"); if (p) p.style.transform = `scale(.82) rotateX(${V3.rx}deg) rotateZ(${V3.rz}deg)`; if (l) { l.style.setProperty("--rz", -V3.rz + "deg"); l.style.setProperty("--rx", -V3.rx + "deg"); } });
+document.addEventListener("pointerup", () => { if (drag3) { drag3 = null; salva3(); } });
 
 /** copia modificabile delle posizioni del piano della stanza a */
 function modifica(a, fn, f = AREAS[a]?.floor || "_") {
@@ -120,6 +150,9 @@ function modifica(a, fn, f = AREAS[a]?.floor || "_") {
   });
 }
 Object.assign(ACT, {
+  m3Toggle: el => { sSet("map3", el.dataset.v === "3D" ? "1" : "0"); render(true); },
+  m3Rot: el => { V3.rz += +el.dataset.v; salva3(); render(true); },
+  m3Tilt: el => { V3.rx = Math.max(0, Math.min(75, V3.rx + +el.dataset.v)); salva3(); render(true); },
   mpFloor: el => { sSet("mapFloor", el.dataset.v); render(true); },
   mpLights: el => { const a = el.dataset.id, on = lightsOn(a), all = inArea(a, "light");
     svc("light", on.length ? "turn_off" : "turn_on", {}, { entity_id: on.length ? on : all }); },
