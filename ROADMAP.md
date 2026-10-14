@@ -1,6 +1,6 @@
 # 🌶️ 'Nduja Dashboard — roadmap
 
-## 0.5.0-beta (pronta su «main», da provare)
+## 0.5.0-beta ✅ pubblicata
 - [x] Barra di navigazione: **sempre visibile** o **a scomparsa** (scelta per dispositivo, in ⚙️ Impostazioni)
 - [x] Meteo: scelta automatica del meteo di casa (scartare meteo di altri posti, es. F1) + ✏️ sulla scheda Meteo
 - [x] Temperatura stanze: scartare caldaie (mandata/ritorno/setpoint), temperature interne dei dispositivi, CPU, batterie

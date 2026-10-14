@@ -12,7 +12,7 @@ function pagina() {
     const n = L.filter(id => S[id].state === "on").length, f = a === "_" ? "_" : AREAS[a].floor;
     const intest = f !== piano && Object.keys(FLOORS).length > 1 ? `<div class="fl1 span3">${esc(FLOORS[f]?.name || t("Altre", "Other"))}</div>` : ""; piano = f;
     return intest + card(`${esc(a === "_" ? t("Senza stanza", "No room") : AREAS[a].name)} ${n ? `<span class="tag warn">${n}</span>` : ""}`,
-      `<div class="tiles">${L.map(id => item(id, lightTile(id))).join("")}${addBtn(["light"], { area: a === "_" ? "" : a })}</div>`, { cls: L.length > 4 ? "span2" : "", right: n ? `<button class="btn sm" data-act="lightsOff" ${a === "_" ? "" : `data-area="${a}"`}>${t("Spegni", "Off")}</button>` : "" });
+      `<div class="tiles">${L.map(id => item(id, lightTile(id))).join("")}${addBtn(["light"], { area: a === "_" ? "" : a })}</div>`, { cls: L.length > 4 ? "span2" : "", right: (UI.edit && a !== "_" ? `<button class="btn sm" data-act="rmEdit" data-id="${a}">✏️ ${t("Stanza", "Room")}</button>` : "") + (n ? `<button class="btn sm" data-act="lightsOff" ${a === "_" ? "" : `data-area="${a}"`}>${t("Spegni", "Off")}</button>` : "") });
   });
   return `<div class="g g3">
     <section class="card span3 row between" style="flex-wrap:wrap"><div><b style="font-size:22px">${on.length}</b> <span class="muted">${t(`accese su ${tutte.length}`, `on of ${tutte.length}`)}</span></div>

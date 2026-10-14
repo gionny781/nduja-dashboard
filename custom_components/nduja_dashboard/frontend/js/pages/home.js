@@ -1,6 +1,6 @@
 /* Home: saluto e riepilogo, meteo, stanze (per piano), persone, scene, cose da sistemare.
    Tutto viene dalle aree e dai dispositivi di Home Assistant: niente da configurare. */
-import { S, AREAS, FLOORS, UI, ACT, t, LOC, esc, fnum, attr, ok, val, nm, ents, inArea, areaOf, areasSorted, roomTemp, roomHum,
+import { S, AREAS, FLOORS, UI, ACT, CHG, t, LOC, esc, fnum, attr, ok, val, nm, ents, inArea, areaOf, areasSorted, roomTemp, roomHum,
   openings, lightsOn, isOn, card, empty, lightTile, climateCard, entityRow, openSheet, closeSheet, page, WX, HVAC, forecast, deviceClass, shortName, svc, toast, ago, weatherEnt, LAYOUT, isAdmin, saveLayout } from "../core.js";
 import { item, addBtn, scegli, isTemp, isHum, cambia } from "../edit.js";
 import { personeCard } from "../people.js";
@@ -106,7 +106,7 @@ function editStanza(a) {
     return `<button class="li" data-act="rmSensor" data-id="${a}" data-k="${k}"><span class="ic">${ic}</span><div class="tx"><b>${label}</b><span>${v === "none" ? t("nessuno", "none") : v && S[v] ? esc(nm(v)) + " · " + esc(S[v].state) + " " + esc(attr(v, "unit_of_measurement") || "") : "✨ " + t("automatico", "automatic") + (k === "temp" ? (roomTemp(a) != null ? " · " + fnum(roomTemp(a)) + "°" : "") : (roomHum(a) != null ? " · " + Math.round(roomHum(a)) + "%" : ""))}</span></div><span class="st">›</span></button>`; };
   const nascosta = (LAYOUT.hiddenAreas || []).includes(a);
   return `<div class="sh-head"><div><h3>✏️ ${esc(ar.name)}</h3><div class="small muted">${t("Cambia solo nella plancia, non in Home Assistant.", "Changes only the dashboard, not Home Assistant.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
-    <label class="fld1"><span>${t("Nome della stanza", "Room name")}</span><input id="rm1n" type="text" value="${esc(LAYOUT.areaNames?.[a] || "")}" placeholder="${esc(ar.nameHA || ar.name)}"></label>
+    <label class="fld1"><span>${t("Nome della stanza", "Room name")}</span><input id="rm1n" type="text" data-chg="rmName" data-id="${a}" enterkeyhint="done" value="${esc(LAYOUT.areaNames?.[a] || "")}" placeholder="${esc(ar.nameHA || ar.name)}"></label>
     <div class="stack" style="margin-top:12px">${voce("temp", "🌡️", t("Sensore di temperatura", "Temperature sensor"))}${voce("hum", "💧", t("Sensore di umidità", "Humidity sensor"))}</div>
     <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap">
       <button class="btn pri" data-act="rmSave" data-id="${a}">💾 ${t("Salva nome", "Save name")}</button>
@@ -114,6 +114,8 @@ function editStanza(a) {
       <button class="btn ${nascosta ? "" : "bad"}" data-act="rmHide" data-id="${a}">${nascosta ? "👁 " + t("Mostra la stanza", "Show room") : "🙈 " + t("Nascondi la stanza", "Hide room")}</button></div>
     <p class="small muted" style="margin-top:12px">${t("Per aggiungere o togliere luci, clima e dispositivi di questa stanza usa ✏️ Modifica nelle pagine Luci, Clima e Prese.", "To add or remove lights, climate and devices of this room use ✏️ Edit on the Lights, Climate and Plugs pages.")}</p>`;
 }
+CHG.rmName = el => ACT.rmSave(el);
+document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.id === "rm1n") e.target.blur(); });
 Object.assign(ACT, {
   rmEdit: el => { const a = el.dataset.id; openSheet(() => editStanza(a)); },
   rmSensor: el => {
@@ -122,7 +124,7 @@ Object.assign(ACT, {
       filtro: temp ? isTemp : isHum, area: a, attuale: LAYOUT.sensors?.[a]?.[k] || "", nessuno: true,
       onPick: id => cambia(l => { l.sensors = l.sensors || {}; l.sensors[a] = { ...(l.sensors[a] || {}) }; if (id) l.sensors[a][k] = id; else delete l.sensors[a][k]; }, "💾 " + AREAS[a].name).then(() => openSheet(() => editStanza(a))) });
   },
-  rmSave: el => { const a = el.dataset.id, n = document.getElementById("rm1n").value.trim();
+  rmSave: el => { const a = el.dataset.id, n = (document.getElementById("rm1n")?.value || "").trim(); if ((LAYOUT.areaNames?.[a] || "") === n) return;
     cambia(l => { l.areaNames = { ...(l.areaNames || {}) }; if (n && n !== AREAS[a].nameHA) l.areaNames[a] = n; else delete l.areaNames[a]; }, "💾 " + (n || AREAS[a].nameHA)); },
   rmHide: el => { const a = el.dataset.id; cambia(l => { const h = new Set(l.hiddenAreas || []); h.has(a) ? h.delete(a) : h.add(a); l.hiddenAreas = [...h]; }); closeSheet(); },
   rmMove: el => { const a = el.dataset.id, d = +el.dataset.v;

@@ -264,3 +264,4 @@ button.li{width:100%;text-align:left}
 .sns2{display:flex;justify-content:space-between;width:100%;margin-top:6px;text-align:left}.sns2 small{color:var(--tx2);margin-left:4px}
 .sh-head .btn.sm{margin-left:auto;margin-right:8px}
 .rms1>.ed1{display:block}.rms1>.ed1>.rm1{width:100%;height:100%}
+button.tr1{width:100%;text-align:left;padding:4px 6px;margin:0 -6px;border-radius:10px;color:inherit}button.tr1:hover{background:rgba(255,255,255,.06)}

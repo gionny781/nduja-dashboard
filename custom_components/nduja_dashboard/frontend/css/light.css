@@ -97,6 +97,7 @@ body.light .x3{background:rgba(0,0,0,0.035)!important}
 body.light .x3:hover{background:rgba(0,0,0,0.080)!important}
 body.light .rfc1 select{background:rgba(0,0,0,0.040)!important;border:1px solid rgba(0,0,0,0.084)!important}
 body.light .hct1 button{background:rgba(0,0,0,0.050)!important}
+body.light button.tr1:hover{background:rgba(0,0,0,0.030)!important}
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
 body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}

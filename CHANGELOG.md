@@ -13,6 +13,7 @@
 - 🇮🇹 Temperatura delle stanze senza caldaie, mandate, setpoint e temperature interne dei dispositivi.
 - 🇮🇹 Barra di navigazione **sempre visibile** o **a scomparsa**, e tema, scelti per ogni dispositivo in ⚙️ Impostazioni → Questo dispositivo.
 - 🇮🇹 **Personalizzazione**: in Home con ✏️ Modifica ogni scheda si sposta ▲▼ o si nasconde; ✏️ su ogni stanza per nome, ordine, nascondere e scegliere **qualsiasi** sensore di temperatura o umidità della casa (con ricerca). Nuova sezione 🎨 Personalizza in Impostazioni.
+- 🇮🇹 Stanze personalizzabili ovunque: tocca una stanza in Clima → «Temperature in casa», o ✏️ Stanza in Luci e Clima; il nome si salva appena esci dal campo.
 - 🇮🇹 Orologio grande in Home sopra la data.
 - 🇮🇹 I file si ricaricano appena cambiano: installare «main» da HACS funziona senza svuotare la cache.
 - 🇬🇧 **People**: cards with photo, where they are and since when, distance from home, phone battery (⚡ when charging). The phone is found automatically; ✏️ changes name, battery, charging sensor and distance.
@@ -23,6 +24,7 @@
 - 🇬🇧 Better home weather detection; room temperatures ignore boilers, setpoints and device-internal temperatures.
 - 🇬🇧 Navigation bar **always visible** or **auto-hide**, and theme, per device in ⚙️ Settings → This device.
 - 🇬🇧 **Customization**: on Home, ✏️ Edit lets you move ▲▼ or hide every card; ✏️ on each room for name, order, hiding and choosing **any** temperature or humidity sensor in the house (searchable). New 🎨 Customize section in Settings.
+- 🇬🇧 Rooms customizable everywhere: tap a room in Climate → «Indoor temperatures», or ✏️ Room in Lights and Climate; the name saves as soon as you leave the field.
 - 🇬🇧 Big clock on Home above the date.
 - 🇬🇧 Files reload as soon as they change: installing "main" from HACS works without clearing the cache.
 
