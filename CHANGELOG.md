@@ -3,6 +3,16 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.7-beta
+- 🇮🇹 **Salvaschermo** (⚙️ Impostazioni → Questo dispositivo): dopo 1, 5, 10 o 30 minuti senza tocchi mostra un orologio grande con data, meteo, temperatura di casa e persone in casa, oppure le **tue foto** da una cartella dei Media di Home Assistant (in dissolvenza); di notte si attenua, si sveglia al tocco.
+- 🇮🇹 **Grafici**: tocca un sensore con un numero (temperatura, umidità, consumi…) e vedi l'andamento di 24 ore, 7 o 30 giorni con minimo, massimo e media, dentro la plancia.
+- 🇮🇹 **Energia → Storico e costi**: settimana, mese, anno con prodotto, prelevato e immesso; **spesa in bolletta, guadagno dall'immissione, risparmio dal sole e netto in euro** (prezzi dalla configurazione Energia o scelti in ⚙️ Sensori). Nella scheda Oggi c'è la spesa del giorno.
+- 🇮🇹 **Momenti**: pulsanti che fanno più cose insieme («Esco», «Notte», «Buongiorno», «Film»…), nella scheda Momenti della Home; si salvano in Home Assistant come script. Nuova azione **Allarme** (inserisci/disinserisci) anche nelle automazioni.
+- 🇬🇧 **Screensaver** (⚙️ Settings → This device): after 1, 5, 10 or 30 idle minutes shows a big clock with date, weather, home temperature and people home, or **your photos** from a Home Assistant Media folder (cross-fading); dims at night, wakes on touch.
+- 🇬🇧 **Charts**: tap any numeric sensor (temperature, humidity, power…) for a 24 h, 7 or 30 day chart with min, max and average, inside the dashboard.
+- 🇬🇧 **Energy → History and costs**: week, month, year with produced, imported and exported; **grid cost, export earnings, solar savings and net in euros** (prices from the Energy configuration or set in ⚙️ Sensors). Today's cost in the Today card.
+- 🇬🇧 **Moments**: buttons doing several things at once («Leaving», «Night», «Good morning», «Movie»…), in Home's Moments card; saved in Home Assistant as scripts. New **Alarm** action (arm/disarm) in automations too.
+
 ## 0.7.6-beta
 - 🇮🇹 **Tutto schermo**: pulsante ⛶ in alto accanto al tema; la plancia occupa tutto lo schermo (dove il browser lo permette). Di nuovo per uscire (o tasto Esc).
 - 🇮🇹 **Modalità chiosco** (⚙️ Impostazioni → Questo dispositivo): nasconde barra laterale e intestazione di Home Assistant su quel dispositivo, a ogni apertura — ideale per il tablet a muro; funziona anche su iPhone, dove il tutto schermo non c'è.

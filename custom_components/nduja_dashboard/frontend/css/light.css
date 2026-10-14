@@ -119,6 +119,7 @@ body.light .au2{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0
 body.light .ssc1{color:#1c1c1e!important}
 body.light .gg1{stroke:rgba(0,0,0,0.056)!important}
 body.light .gl1{fill:rgba(28,28,30,.5)!important}
+body.light .mob1{background:rgba(0,0,0,0.035)!important;border:1px solid rgba(0,0,0,0.056)!important}
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
 body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
@@ -155,4 +156,5 @@ body.light .apg1>*{background:rgba(0,0,0,.05)}
 body.light .mpd2{background:rgba(0,0,0,.07)}
 body.light .ss1{background:#000}body.light .ssc1{color:#fff}body.light .ssv1{background:linear-gradient(180deg,rgba(0,0,0,.05) 40%,rgba(0,0,0,.65))}
 body.light .gg1{stroke:rgba(0,0,0,.08)}body.light .gl1{fill:rgba(0,0,0,.5)}
+body.light .mob1{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08)}
 

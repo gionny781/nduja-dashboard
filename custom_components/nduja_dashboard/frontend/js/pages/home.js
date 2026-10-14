@@ -7,6 +7,7 @@ import { personeCard } from "../people.js";
 import { avvisiCard } from "../avvisi.js";
 import { raccoltaCard } from "../raccolta.js";
 import { agendaCard } from "./calendario.js";
+import { momentiCard } from "../momenti.js";
 
 const saluto = () => { const h = new Date().getHours(); return h < 6 ? t("Buonanotte", "Good night") : h < 13 ? t("Buongiorno", "Good morning") : h < 18 ? t("Buon pomeriggio", "Good afternoon") : t("Buonasera", "Good evening"); };
 const climaAttivi = () => ents("climate", id => ok(id) && S[id].state !== "off");
@@ -134,6 +135,7 @@ Object.assign(ACT, {
 /* ---------- schede della Home: ordine e visibilità (✏️ Modifica) ---------- */
 const SCHEDE = () => ({
   riepilogo: [t("Saluto e orologio", "Greeting and clock"), riepilogo],
+  momenti: [t("Momenti", "Moments"), momentiCard],
   meteo: [t("Meteo", "Weather"), meteo, "wxEdit"],
   stanze: [t("Stanze", "Rooms"), stanze],
   avvisi: [t("Avvisi", "Alerts"), avvisiCard],
