@@ -3,6 +3,12 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.1-beta
+- 🇮🇹 **Energia → Oggi**: ora mostra davvero prodotto, consumato, prelevato e immesso (la richiesta delle statistiche era sbagliata); i contatori giornalieri (today/daily) si leggono direttamente.
+- 🇮🇹 **Mappa: stanze a L** (e di qualsiasi forma): «＋ pezzo (L)» aggiunge un rettangolo alla stanza, ognuno si sposta e si ridimensiona da solo; i **muri** vengono disegnati sul contorno e si uniscono da soli.
+- 🇬🇧 **Energy → Today**: now really shows produced, consumed, imported and exported (the statistics request was wrong); daily meters (today/daily) are read directly.
+- 🇬🇧 **Map: L-shaped rooms** (and any shape): «＋ piece (L)» adds a rectangle to the room, each one moves and resizes on its own; **walls** are drawn on the outline and join automatically.
+
 ## 0.7.0-beta
 - 🇮🇹 **Mappa della casa**: le stanze di ogni piano disegnate da sole dalle aree, con luci accese (si illuminano), finestre aperte, clima, movimento, allarmi fumo/gas/acqua e temperatura. Tocca una stanza per comandarla, 💡 per accendere o spegnere le sue luci.
 - 🇮🇹 In ✏️ Modifica: sposta ← ↑ ↓ →, allarga ⇠ ⇢, cambia altezza ⇡ ⇣, «Disposizione automatica» per ricominciare, «Piantina» per mettere sotto un'immagine della tua casa (/local/…).

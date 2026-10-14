@@ -23,10 +23,31 @@ function posizioni(f, stanze) {
     out[a] = { x, y, w, h }; x += w; hRiga = Math.max(hRiga, h);
   }
   /* le stanze salvate non devono finire sotto quelle automatiche: le automatiche partono sotto l'ultima salvata */
-  const salvate = stanze.filter(a => M[a]), fondo = Math.max(0, ...salvate.map(a => M[a].y + M[a].h));
+  const salvate = stanze.filter(a => M[a]), fondo = Math.max(0, ...salvate.flatMap(a => [M[a], ...(M[a].extra || [])].map(r => r.y + r.h)));
   if (salvate.length && salvate.length < stanze.length) stanze.filter(a => !M[a]).forEach(a => out[a] = { ...out[a], y: out[a].y + fondo });
   return out;
 }
+
+/** pezzi di una stanza: il rettangolo principale più quelli aggiunti (per le stanze a L, a T…) */
+const pezzi = p => [{ x: p.x, y: p.y, w: p.w, h: p.h }, ...(p.extra || [])];
+/** muri: il contorno dell'unione delle celle di ogni stanza (così una L ha un solo contorno) */
+function muri(pos, stanze) {
+  const seg = [];
+  for (const a of stanze) {
+    const C = new Set();
+    pezzi(pos[a]).forEach(r => { for (let x = r.x; x < r.x + r.w; x++) for (let y = r.y; y < r.y + r.h; y++) C.add(x + "," + y); });
+    for (const c of C) { const [x, y] = c.split(",").map(Number);
+      if (!C.has(x + "," + (y - 1))) seg.push(`M${x} ${y}H${x + 1}`);
+      if (!C.has(x + "," + (y + 1))) seg.push(`M${x} ${y + 1}H${x + 1}`);
+      if (!C.has((x - 1) + "," + y)) seg.push(`M${x} ${y}V${y + 1}`);
+      if (!C.has((x + 1) + "," + y)) seg.push(`M${x + 1} ${y}V${y + 1}`); }
+  }
+  return seg.join("");
+}
+const comandi = (a, i) => `<div class="mpe1">
+  <button data-act="mpMove" data-id="${a}" data-i="${i}" data-v="x,-1">←</button><button data-act="mpMove" data-id="${a}" data-i="${i}" data-v="y,-1">↑</button><button data-act="mpMove" data-id="${a}" data-i="${i}" data-v="y,1">↓</button><button data-act="mpMove" data-id="${a}" data-i="${i}" data-v="x,1">→</button>
+  <button data-act="mpMove" data-id="${a}" data-i="${i}" data-v="w,-1">⇠</button><button data-act="mpMove" data-id="${a}" data-i="${i}" data-v="w,1">⇢</button><button data-act="mpMove" data-id="${a}" data-i="${i}" data-v="h,-1">⇡</button><button data-act="mpMove" data-id="${a}" data-i="${i}" data-v="h,1">⇣</button>
+  ${i === 0 ? `<button class="wide" data-act="mpPiece" data-id="${a}">＋ ${t("pezzo (L)", "piece (L)")}</button>` : `<button class="wide bad" data-act="mpPieceDel" data-id="${a}" data-i="${i}">✕ ${t("pezzo", "piece")}</button>`}</div>`;
 
 function stanza(a, p) {
   const T = roomTemp(a), H = roomHum(a), L = lightsOn(a).length, nL = inArea(a, "light").length;
@@ -34,44 +55,53 @@ function stanza(a, p) {
   const mov = inArea(a, "binary_sensor", id => ["motion", "occupancy", "presence"].includes(deviceClass(id)) && isOn(id)).length;
   const C = inArea(a, "climate").find(id => ok(id) && S[id].state !== "off"), freddo = C && ["cool", "dry"].includes(S[C].state);
   const pericolo = inArea(a, "binary_sensor", id => ["smoke", "gas", "moisture", "carbon_monoxide"].includes(deviceClass(id)) && isOn(id)).length;
-  const ed = UI.edit ? `<div class="mpe1">
-      <button data-act="mpMove" data-id="${a}" data-v="x,-1">←</button><button data-act="mpMove" data-id="${a}" data-v="y,-1">↑</button><button data-act="mpMove" data-id="${a}" data-v="y,1">↓</button><button data-act="mpMove" data-id="${a}" data-v="x,1">→</button>
-      <button data-act="mpMove" data-id="${a}" data-v="w,-1">⇠</button><button data-act="mpMove" data-id="${a}" data-v="w,1">⇢</button><button data-act="mpMove" data-id="${a}" data-v="h,-1">⇡</button><button data-act="mpMove" data-id="${a}" data-v="h,1">⇣</button></div>` : "";
-  return `<div class="mpr1 ${L ? "lit" : ""} ${O ? "open" : ""} ${mov ? "mov" : ""} ${pericolo ? "dang" : ""}" style="grid-column:${p.x + 1} / span ${p.w};grid-row:${p.y + 1} / span ${p.h}">
-    <button class="mpb1" data-act="room" data-id="${a}"><b>${esc(AREAS[a].name)}</b>
+  const cls = `mpr1 ${L ? "lit" : ""} ${O ? "open" : ""} ${mov ? "mov" : ""} ${pericolo ? "dang" : ""}`;
+  return pezzi(p).map((r, i) => `<div class="${cls} ${i ? "pz" : ""}" style="grid-column:${r.x + 1} / span ${r.w};grid-row:${r.y + 1} / span ${r.h}">
+    ${i === 0 ? `<button class="mpb1" data-act="room" data-id="${a}"><b>${esc(AREAS[a].name)}</b>
       <span class="mpt1">${T != null ? fnum(T) + "°" : ""}${H != null ? `<small>${Math.round(H)}%</small>` : ""}</span></button>
-    <div class="mpi1">${nL ? `<button class="${L ? "on" : ""}" data-act="mpLights" data-id="${a}" title="${t("Luci", "Lights")}">💡${L ? " " + L : ""}</button>` : ""}${O ? `<i class="al">🪟 ${O}</i>` : ""}${C ? `<i>${freddo ? "❄️" : "🔥"}</i>` : ""}${mov ? `<i>🏃</i>` : ""}${pericolo ? `<i class="al">🚨</i>` : ""}</div>${ed}</div>`;
+    <div class="mpi1">${nL ? `<button class="${L ? "on" : ""}" data-act="mpLights" data-id="${a}" title="${t("Luci", "Lights")}">💡${L ? " " + L : ""}</button>` : ""}${O ? `<i class="al">🪟 ${O}</i>` : ""}${C ? `<i>${freddo ? "❄️" : "🔥"}</i>` : ""}${mov ? `<i>🏃</i>` : ""}${pericolo ? `<i class="al">🚨</i>` : ""}</div>`
+      : `<button class="mpb1" data-act="room" data-id="${a}" aria-label="${esc(AREAS[a].name)}"></button>`}
+    ${UI.edit ? comandi(a, i) : ""}</div>`).join("");
 }
 
 function pagina() {
   const P = piani();
   if (!P.length) return `<div class="g">${card("🗺️ " + t("Mappa", "Map"), empty(t("Crea le aree in Home Assistant (Impostazioni → Aree) e assegna i dispositivi: la mappa si disegna da sola.", "Create areas in Home Assistant (Settings → Areas) and assign devices: the map draws itself.")))}</div>`;
   const cur = P.find(p => p.f === sGet("mapFloor")) || P[0], pos = posizioni(cur.f, cur.stanze);
-  const righe = Math.max(4, ...Object.values(pos).map(p => p.y + p.h)), img = LAYOUT.map?.[cur.f]?.img;
+  const righe = Math.max(4, ...Object.values(pos).flatMap(p => pezzi(p).map(r => r.y + r.h))), img = LAYOUT.map?.[cur.f]?.img;
   return `<div class="g"><section class="card mp1">
     <div class="ch"><div class="seg">${P.map(p => `<button class="${p.f === cur.f ? "act" : ""}" data-act="mpFloor" data-v="${p.f}">${esc(p.nome)}</button>`).join("")}</div>
       ${isAdmin() && UI.edit ? `<span class="row" style="gap:6px"><button class="btn sm" data-act="mpImg" data-v="${cur.f}">🖼️ ${t("Piantina", "Floor plan")}</button><button class="btn sm" data-act="mpReset" data-v="${cur.f}">↺ ${t("Disposizione automatica", "Auto layout")}</button></span>` : ""}</div>
-    <div class="mpg1 ${UI.edit ? "edit" : ""}" style="grid-template-rows:repeat(${righe},minmax(54px,auto))${img ? `;background-image:url('${esc(img)}')` : ""}">${cur.stanze.map(a => stanza(a, pos[a])).join("")}</div>
-    ${UI.edit ? `<p class="small muted" style="margin-top:10px">${t("← ↑ ↓ → sposta la stanza, ⇠ ⇢ la allarga o la stringe, ⇡ ⇣ cambia l'altezza. «Piantina» mette sotto un'immagine (per esempio /local/piantina.png caricata nella cartella www).", "← ↑ ↓ → move the room, ⇠ ⇢ change its width, ⇡ ⇣ its height. «Floor plan» puts an image underneath (for example /local/plan.png uploaded to the www folder).")}</p>`
+    <div class="mpw1"><div class="mpg1 ${UI.edit ? "edit" : ""}" style="grid-template-rows:repeat(${righe},64px)${img ? `;background-image:url('${esc(img)}')` : ""}">${cur.stanze.map(a => stanza(a, pos[a])).join("")}</div>
+      <svg class="mpm1" viewBox="0 0 ${COL} ${righe}" preserveAspectRatio="none" aria-hidden="true"><path d="${muri(pos, cur.stanze)}"/></svg></div>
+    ${UI.edit ? `<p class="small muted" style="margin-top:10px">${t("← ↑ ↓ → sposta, ⇠ ⇢ larghezza, ⇡ ⇣ altezza. «＋ pezzo (L)» aggiunge un altro rettangolo alla stanza: mettilo accanto per fare una stanza a L, a T o di qualsiasi forma; i muri si uniscono da soli. «Piantina» mette sotto un'immagine (/local/piantina.png).", "← ↑ ↓ → move, ⇠ ⇢ width, ⇡ ⇣ height. «＋ piece (L)» adds another rectangle to the room: put it alongside to make an L, T or any shape; walls join automatically. «Floor plan» puts an image underneath (/local/plan.png).")}</p>`
       : `<p class="small muted" style="margin-top:10px">${t("Tocca una stanza per comandarla, 💡 per spegnere o accendere le sue luci.", "Tap a room to control it, 💡 to switch its lights.")}</p>`}
   </section></div>`;
 }
 
+/** copia modificabile delle posizioni del piano della stanza a */
+function modifica(a, fn) {
+  const f = AREAS[a].floor || "_", P = piani().find(p => p.f === f), pos = posizioni(f, P.stanze);
+  return cambia(l => {
+    l.map = { ...(l.map || {}) }; l.map[f] = { ...(l.map[f] || {}) };
+    l.map[f].rooms = JSON.parse(JSON.stringify({ ...pos, ...(l.map[f].rooms || {}) }));
+    fn(l.map[f].rooms[a]);
+  });
+}
 Object.assign(ACT, {
   mpFloor: el => { sSet("mapFloor", el.dataset.v); render(true); },
   mpLights: el => { const a = el.dataset.id, on = lightsOn(a), all = inArea(a, "light");
     svc("light", on.length ? "turn_off" : "turn_on", {}, { entity_id: on.length ? on : all }); },
   mpMove: el => {
-    const a = el.dataset.id, [k, d] = el.dataset.v.split(","), f = AREAS[a].floor || "_";
-    const P = piani().find(p => p.f === f), pos = posizioni(f, P.stanze);
-    cambia(l => {
-      l.map = { ...(l.map || {}) }; l.map[f] = { ...(l.map[f] || {}), rooms: { ...pos, ...(l.map[f]?.rooms || {}) } };
-      const r = { ...l.map[f].rooms[a] };
+    const a = el.dataset.id, i = +el.dataset.i || 0, [k, d] = el.dataset.v.split(",");
+    modifica(a, room => {
+      const r = i ? room.extra[i - 1] : room;
       r[k] = Math.max(k === "w" || k === "h" ? 1 : 0, r[k] + +d);
       if (r.x + r.w > COL) { if (k === "x") r.x = COL - r.w; else r.w = COL - r.x; }
-      l.map[f].rooms[a] = r;
     });
   },
+  mpPiece: el => modifica(el.dataset.id, r => { r.extra = [...(r.extra || []), { x: r.x, y: r.y + r.h, w: Math.max(1, Math.ceil(r.w / 2)), h: 1 }]; }),
+  mpPieceDel: el => { const i = +el.dataset.i; modifica(el.dataset.id, r => { r.extra = (r.extra || []).filter((_, j) => j !== i - 1); if (!r.extra.length) delete r.extra; }); },
   mpReset: el => { const f = el.dataset.v; cambia(l => { if (l.map?.[f]) { l.map = { ...l.map }; l.map[f] = { ...l.map[f] }; delete l.map[f].rooms; } }); },
   mpImg: el => { const f = el.dataset.v, cur = LAYOUT.map?.[f]?.img || "";
     openSheet(() => `<div class="sh-head"><div><h3>🖼️ ${t("Piantina sotto la mappa", "Floor plan under the map")}</h3><div class="small muted">${t("Indirizzo di un'immagine: caricala in config/www e scrivi /local/nome.png. Lascia vuoto per toglierla.", "Image address: upload it to config/www and write /local/name.png. Leave empty to remove it.")}</div></div><button class="x" data-act="sheetClose">×</button></div>

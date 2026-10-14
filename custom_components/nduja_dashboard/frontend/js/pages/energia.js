@@ -81,7 +81,18 @@ function letture() {
 export const haEnergia = () => { const s = sensori(); return !!(s.pv || s.grid || s.battery || s.home); };
 
 /* ---------- totali di oggi dalle statistiche ---------- */
-const oggi = id => !id ? null : cached("estat:" + id, 5 * 60000, () => ws({ type: "recorder/statistic_during_period", statistic_id: id, fixed_period: { calendar: { period: "day" } }, types: ["change"] }).then(r => r?.change ?? null).catch(() => null));
+/** kWh di oggi di un contatore: se è già un contatore giornaliero (today/daily/oggi) uso il suo valore,
+    altrimenti quanto è cresciuto da mezzanotte nelle statistiche di Home Assistant */
+const GIORNO = /today|daily|oggi|giorn|_day\b|day_/i;
+const kwh = id => { const v = val(id); if (v == null) return null; const u = String(attr(id, "unit_of_measurement") || "").toLowerCase(); return u === "wh" ? v / 1000 : u === "mwh" ? v * 1000 : v; };
+const statOggi = id => cached("estat:" + id, 5 * 60000, () => ws({ type: "recorder/statistic_during_period", statistic_id: id, calendar: { period: "day" }, types: ["change"] })
+  .then(r => r?.change ?? null).catch(e => { console.warn("nduja energia", id, e); return null; }));
+const oggi = id => {
+  if (!id) return null;
+  if (S[id] && GIORNO.test(id + " " + nm(id)) && kwh(id) != null) return kwh(id);
+  const v = statOggi(id);
+  return v != null ? v : null;
+};
 function totali() {
   const P = prefs(), src = P.energy_sources || [], sum = ids => { const v = ids.map(oggi).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) : null; };
   const grid = src.filter(s => s.type === "grid"), sol = src.filter(s => s.type === "solar"), bat = src.filter(s => s.type === "battery");
@@ -149,7 +160,7 @@ function cardOggi() {
   const k = v => v == null ? "—" : fnum(v, 2) + " kWh";
   const auto = T.pv ? Math.round(Math.max(0, T.pv - (T.exp || 0)) / T.pv * 100) : null, suff = T.casa ? Math.round(Math.max(0, T.casa - (T.imp || 0)) / T.casa * 100) : null;
   return card("📅 " + t("Oggi", "Today"), `<div class="og68">
-    ${T.pv != null ? `<div><small>${t("Prodotto", "Produced")}</small><b style="color:#ffd60a">${k(T.pv)}</b></div>` : ""}<div><small>${t("Consumato", "Consumed")}</small><b style="color:#64d2ff">${k(T.casa)}</b></div>
+    <div><small>${t("Prodotto", "Produced")}</small><b style="color:#ffd60a">${k(T.pv)}</b></div><div><small>${t("Consumato", "Consumed")}</small><b style="color:#64d2ff">${k(T.casa)}</b></div>
     <div><small>${t("Prelevato", "Imported")}</small><b style="color:#ff6961">${k(T.imp)}</b></div><div><small>${t("Immesso", "Exported")}</small><b style="color:#30d158">${k(T.exp)}</b></div>
     ${auto != null ? `<div><small>${t("Autoconsumo", "Self-consumption")}</small><b>${auto}%</b></div>` : ""}${suff != null ? `<div><small>${t("Autosufficienza", "Self-sufficiency")}</small><b>${suff}%</b></div>` : ""}
     ${T.bIn != null ? `<div><small>${t("Batteria caricata", "Battery charged")}</small><b>${k(T.bIn)}</b></div><div><small>${t("Batteria scaricata", "Battery discharged")}</small><b>${k(T.bOut)}</b></div>` : ""}
