@@ -4,6 +4,7 @@
    Segni: rete + = prelievo / − = immissione; batteria + = scarica / − = carica (come Home Assistant). */
 import { S, ACT, CHG, LAYOUT, UI, STRIP, t, esc, fnum, nm, ok, val, attr, W, watts, ws, cached, card, empty, page, isAdmin,
   saveLayout, toast, openSheet, closeSheet, render, allEnts, deviceClass, REG, DEVICES } from "../core.js";
+import { scegli, cambia } from "../edit.js";
 
 /* ---------- da dove leggo ---------- */
 const prefs = () => cached("energy:prefs", 10 * 60000, () => ws({ type: "energy/get_prefs" }).catch(() => ({}))) || {};
@@ -42,33 +43,40 @@ function cerca(re, tipo, bonusDev = 3) {
   }
   return best;
 }
+/** valore scelto dall'utente per un ruolo: sempre una lista (anche se salvato come stringa) */
+const lista = v => (Array.isArray(v) ? v : v ? [v] : []).filter(id => S[id]);
+/** sensori scelti a mano per un ruolo (vuoto = automatico) */
+export const scelti = k => lista((LAYOUT.energy || {})[k]);
 /** sensore usato per ogni ruolo */
 export function sensori() {
   const E = LAYOUT.energy || {}, O = UI.opt || {};
-  const pick = (k, opt, tipo, re, bonus) => E[k] || O[opt] || (tipo && rateDaPrefs(tipo)) || (re && cerca(re, tipo, bonus)) || null;
+  const pick = (k, opt, tipo, re, bonus) => scelti(k)[0] || O[opt] || (tipo && rateDaPrefs(tipo)) || (re && cerca(re, tipo, bonus)) || null;
   return {
     pv: pick("pv", "pv_power", "solar", /solar|solare|fotovolt|photovolt|\bpv|produzione|production|generat/i, 3),
     grid: pick("grid", "grid_power", "grid", /\bgrid|\brete\b|_rete\b|scambio|contatore|meter\b/i, 1),
     battery: pick("battery", "battery_power", "battery", /batter/i, 3),
-    soc: E.soc || O.battery_soc || allEnts("sensor", id => deviceClass(id) === "battery" && /inverter|storage|accumul|batteria_casa|home_battery|battery_level|zcs|solis|huawei|growatt|sofar|fronius|victron|deye|sunsynk/i.test(id + nm(id)))[0] || null,
-    home: E.home || O.home_power || cerca(/house|home|\bcasa\b|_casa|load|consumo|consumption/i, null) || null,
+    soc: scelti("soc")[0] || O.battery_soc || allEnts("sensor", id => deviceClass(id) === "battery" && /inverter|storage|accumul|batteria_casa|home_battery|zcs|solis|huawei|growatt|sofar|fronius|victron|deye|sunsynk|soc\b|_soc/i.test(id + nm(id)) && !/iphone|ipad|phone|pixel|galaxy|watch|tablet|[._]tab[._]|remote|porta|door|window|finestra/i.test(id + nm(id)))[0] || null,
+    home: scelti("home")[0] || O.home_power || cerca(/house|home|\bcasa\b|_casa|load|consumo|consumption/i, null) || null,
     gridInv: !!E.gridInv, batInv: !!E.batInv,
   };
 }
 /* se il sensore del sole è una sola stringa (PV1), sommo le altre stringhe dello stesso inverter */
 function stringhe(id) {
-  if (!id || (LAYOUT.energy || {}).pv || !/pv\s?_?1\b|pv1|string.?1|stringa.?1|mppt.?1/i.test(id + " " + nm(id))) return [id];
+  if (scelti("pv").length) return scelti("pv");
+  if (!id || !/pv\s?_?1\b|pv1|string.?1|stringa.?1|mppt.?1/i.test(id + " " + nm(id))) return [id];
   const dev = REG[id]?.device;
   const altre = potenze().filter(x => x !== id && REG[x]?.device === dev && /pv\s?_?[2-9]\b|pv[2-9]|string.?[2-9]|stringa.?[2-9]|mppt.?[2-9]/i.test(x + " " + nm(x)));
   return [id, ...altre];
 }
 function letture() {
-  const s = sensori(), g = W(s.grid), b = W(s.battery);
+  const s = sensori(), somma = (k, primo) => { const L = scelti(k).length ? scelti(k) : primo ? [primo] : []; const v = L.map(W).filter(x => x != null); return v.length ? v.reduce((a, x) => a + x, 0) : null; };
+  const g = somma("grid", s.grid), b = somma("battery", s.battery);
   const pvL = s.pv ? stringhe(s.pv).map(W).filter(v => v != null) : [], pv = s.pv ? Math.max(0, pvL.reduce((a, v) => a + v, 0)) : null;
   const rete = g == null ? null : s.gridInv ? -g : g, bat = b == null ? null : s.batInv ? -b : b;
-  let casa = s.home ? W(s.home) : null;
+  let casa = somma("home", s.home);
   if (casa == null && (pv != null || rete != null)) casa = Math.max(0, (pv || 0) + (rete || 0) + (bat || 0));
-  return { s, pv, rete, bat, casa, soc: s.soc ? val(s.soc) : null };
+  const socL = scelti("soc").length ? scelti("soc") : s.soc ? [s.soc] : [], socV = socL.map(val).filter(x => x != null);
+  return { s, pv, pvL: s.pv ? stringhe(s.pv).map(id => ({ id, w: W(id) })) : [], rete, bat, casa, soc: socV.length ? socV.reduce((a, x) => a + x, 0) / socV.length : null };
 }
 export const haEnergia = () => { const s = sensori(); return !!(s.pv || s.grid || s.battery || s.home); };
 
@@ -77,12 +85,13 @@ const oggi = id => !id ? null : cached("estat:" + id, 5 * 60000, () => ws({ type
 function totali() {
   const P = prefs(), src = P.energy_sources || [], sum = ids => { const v = ids.map(oggi).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) : null; };
   const grid = src.filter(s => s.type === "grid"), sol = src.filter(s => s.type === "solar"), bat = src.filter(s => s.type === "battery");
-  const imp = sum(grid.flatMap(g => [...(g.flow_from || []).map(f => f.stat_energy_from), g.stat_energy_from].filter(Boolean)));
-  const exp = sum(grid.flatMap(g => [...(g.flow_to || []).map(f => f.stat_energy_to), g.stat_energy_to].filter(Boolean)));
-  const pv = sum(sol.map(s => s.stat_energy_from).filter(Boolean));
+  const own = k => scelti(k).length ? sum(scelti(k)) : undefined;
+  const imp = own("impKwh") !== undefined ? own("impKwh") : sum(grid.flatMap(g => [...(g.flow_from || []).map(f => f.stat_energy_from), g.stat_energy_from].filter(Boolean)));
+  const exp = own("expKwh") !== undefined ? own("expKwh") : sum(grid.flatMap(g => [...(g.flow_to || []).map(f => f.stat_energy_to), g.stat_energy_to].filter(Boolean)));
+  const pv = own("pvKwh") !== undefined ? own("pvKwh") : sum(sol.map(s => s.stat_energy_from).filter(Boolean));
   const bOut = sum(bat.map(s => s.stat_energy_from).filter(Boolean)), bIn = sum(bat.map(s => s.stat_energy_to).filter(Boolean));
   const casa = (pv != null || imp != null) ? Math.max(0, (pv || 0) + (imp || 0) - (exp || 0) + (bOut || 0) - (bIn || 0)) : null;
-  return { imp, exp, pv, bOut, bIn, casa, ok: src.length > 0 };
+  return { imp, exp, pv, bOut, bIn, casa, ok: src.length > 0 || ["pvKwh", "impKwh", "expKwh"].some(k => scelti(k).length) };
 }
 
 /* ---------- flusso ---------- */
@@ -162,32 +171,56 @@ function consumi() {
     ${giorno.length ? card("📊 " + t("Consumi di oggi", "Today's consumption"), `<div class="stack">${giorno.slice(0, 12).map(r => `<button class="cn1" data-act="more" data-id="${r.id}"><span>${nomeD(r.id)}</span><i><b style="width:${(r.v / maxG * 100).toFixed(1)}%;background:#64d2ff"></b></i><em>${fnum(r.v, 2)} kWh</em></button>`).join("")}</div>`) : ""}`;
 }
 
-/* ---------- scelta dei sensori ---------- */
+/* ---------- scelta dei sensori: qualsiasi sensore, anche più di uno per voce (si sommano) ---------- */
+const numerico = id => id.startsWith("sensor.") && S[id] && (ok(id) ? !isNaN(parseFloat(S[id].state)) : true);
+const potenza = id => numerico(id) && (deviceClass(id) === "power" || /^(m|k)?w$/i.test(attr(id, "unit_of_measurement") || ""));
+const energia = id => numerico(id) && (deviceClass(id) === "energy" || /wh$/i.test(attr(id, "unit_of_measurement") || ""));
+const VOCI = () => [
+  ["pv", "☀️ " + t("Fotovoltaico (una riga per stringa o inverter)", "Solar (one row per string or inverter)"), potenza, t("Aggiungi una stringa per volta: le sommo io.", "Add one string at a time: I add them up.")],
+  ["grid", "🔌 " + t("Rete", "Grid"), potenza, t("Positivo quando prelevi, negativo quando immetti.", "Positive when importing, negative when exporting."), "gridInv"],
+  ["home", "🏠 " + t("Consumo casa", "Home consumption"), potenza, t("Se non lo scegli lo calcolo: sole + rete + batteria.", "If not chosen I calculate it: solar + grid + battery.")],
+  ["battery", "🔋 " + t("Potenza batteria", "Battery power"), potenza, t("Positivo quando si scarica, negativo quando si carica. Più batterie si sommano.", "Positive when discharging, negative when charging. Several batteries are added up."), "batInv"],
+  ["soc", "🔋 " + t("Carica batteria (%)", "Battery charge (%)"), numerico, t("Con più batterie faccio la media.", "With several batteries I use the average.")],
+  ["pvKwh", "📅 " + t("Prodotto oggi (kWh)", "Produced today (kWh)"), energia, t("Contatori di energia: uso quanto sono cresciuti da mezzanotte.", "Energy meters: I use how much they grew since midnight.")],
+  ["impKwh", "📅 " + t("Prelevato oggi (kWh)", "Imported today (kWh)"), energia],
+  ["expKwh", "📅 " + t("Immesso oggi (kWh)", "Exported today (kWh)"), energia],
+];
 function scheda() {
-  const s = sensori(), E = LAYOUT.energy || {}, P = potenze().sort((a, b) => nm(a).localeCompare(nm(b)));
-  const SOC = allEnts("sensor", id => deviceClass(id) === "battery").sort((a, b) => nm(a).localeCompare(nm(b)));
-  const sel = (k, L, label, help) => `<label class="fld1"><span>${label}</span><select data-chg="enSel" data-k="${k}"><option value="">${t("Automatico", "Automatic")}${s[k] && !E[k] ? ` (${esc(nm(s[k]))})` : ""}</option>${L.map(id => `<option value="${id}" ${E[k] === id ? "selected" : ""}>${esc(nm(id))} · ${ok(id) ? esc(S[id].state) + " " + esc(attr(id, "unit_of_measurement") || "") : "—"}</option>`).join("")}</select>${help ? `<small class="muted">${help}</small>` : ""}</label>`;
-  const inv = (k, label) => `<label class="row" style="gap:8px;margin-top:6px;font-size:13px"><input type="checkbox" data-chg="enInv" data-k="${k}" ${E[k] ? "checked" : ""}> ${label}</label>`;
-  return `<div class="sh-head"><div><h3>⚙️ ${t("Sensori dell'energia", "Energy sensors")}</h3><div class="small muted">${t("«Automatico» usa la configurazione Energia di Home Assistant.", "«Automatic» uses Home Assistant's Energy configuration.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
-    ${sel("pv", P, "☀️ " + t("Produzione fotovoltaico", "Solar production"))}
-    ${sel("grid", P, "🔌 " + t("Rete", "Grid"), t("Positivo quando prelevi, negativo quando immetti.", "Positive when importing, negative when exporting."))}${inv("gridInv", t("Il mio sensore ha i segni al contrario", "My sensor has the opposite sign"))}
-    ${sel("home", P, "🏠 " + t("Consumo casa", "Home consumption"), t("Se lo lasci su Automatico e non c'è, lo calcolo: sole + rete + batteria.", "If left on Automatic and missing, I calculate it: solar + grid + battery."))}
-    ${sel("battery", P, "🔋 " + t("Potenza batteria", "Battery power"), t("Positivo quando si scarica, negativo quando si carica.", "Positive when discharging, negative when charging."))}${inv("batInv", t("Il mio sensore ha i segni al contrario", "My sensor has the opposite sign"))}
-    ${sel("soc", SOC, "🔋 " + t("Carica batteria (%)", "Battery charge (%)"))}
-    <button class="btn pri" data-act="enSave" style="margin-top:14px">💾 ${t("Salva", "Save")}</button>`;
+  const s = sensori(), E = LAYOUT.energy || {};
+  const auto = k => k === "pv" ? (s.pv ? stringhe(s.pv) : []) : ["pvKwh", "impKwh", "expKwh"].includes(k) ? [] : s[k] ? [s[k]] : [];
+  const voce = ([k, label, , help, inv]) => { const L = scelti(k), A = L.length ? [] : auto(k);
+    return `<div class="en2"><div class="row between"><b>${label}</b>${L.length ? `<button class="btn sm" data-act="enAuto" data-k="${k}">✨ ${t("Automatico", "Automatic")}</button>` : ""}</div>
+      ${help ? `<small class="muted">${help}</small>` : ""}
+      <div class="stack" style="margin-top:8px">${L.map(id => `<div class="li"><div class="tx"><b>${esc(nm(id))}</b><span>${esc(id)} · ${ok(id) ? esc(S[id].state) + " " + esc(attr(id, "unit_of_measurement") || "") : "—"}</span></div><button class="x3" data-act="enDel" data-k="${k}" data-id="${id}" aria-label="${t("Togli", "Remove")}">✕</button></div>`).join("")}
+        ${!L.length ? `<div class="small muted">✨ ${A.length ? t("Automatico: ", "Automatic: ") + A.map(id => esc(nm(id))).join(" + ") : t("Automatico: niente trovato", "Automatic: nothing found")}</div>` : ""}
+        <button class="add1" data-act="enAdd" data-k="${k}"><span>＋</span>${L.length ? t("Aggiungi un altro sensore", "Add another sensor") : t("Scegli il sensore", "Choose the sensor")}</button></div>
+      ${inv ? `<label class="row" style="gap:8px;margin-top:8px;font-size:13px"><input type="checkbox" data-chg="enInv" data-k="${inv}" ${E[inv] ? "checked" : ""}> ${t("Il mio sensore ha i segni al contrario", "My sensor has the opposite sign")}</label>` : ""}</div>`; };
+  return `<div class="sh-head"><div><h3>⚙️ ${t("Sensori dell'energia", "Energy sensors")}</h3><div class="small muted">${t("Puoi scegliere qualsiasi sensore della casa. Le modifiche si salvano subito.", "You can choose any sensor in the house. Changes save immediately.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
+    ${VOCI().map(voce).join("")}`;
 }
-let bozza = null;
-CHG.enSel = el => { bozza = bozza || { ...(LAYOUT.energy || {}) }; if (el.value) bozza[el.dataset.k] = el.value; else delete bozza[el.dataset.k]; };
-CHG.enInv = el => { bozza = bozza || { ...(LAYOUT.energy || {}) }; bozza[el.dataset.k] = el.checked; };
+const salvaE = (fn, msg) => cambia(l => { l.energy = { ...(l.energy || {}) }; fn(l.energy); }, msg).then(() => { if (!UI.sheet) openSheet(scheda); });
+CHG.enInv = el => salvaE(e => { e[el.dataset.k] = el.checked; });
 Object.assign(ACT, {
-  enSensors: () => { bozza = null; openSheet(scheda); },
-  enSave: async () => { try { await saveLayout({ ...LAYOUT, energy: bozza || LAYOUT.energy || {} }); bozza = null; closeSheet(); toast("💾 " + t("Sensori salvati", "Sensors saved")); } catch (e) { toast(t("Non salvato: ", "Not saved: ") + (e.message || e.code), true); } },
+  enSensors: () => openSheet(scheda),
+  enAdd: el => { const k = el.dataset.k, v = VOCI().find(x => x[0] === k);
+    scegli({ titolo: v[1], sotto: t("Tutti i sensori della casa: cerca per nome (es. «pv2», «stringa», «inverter»).", "Every sensor in the house: search by name (e.g. «pv2», «string», «inverter»)."), filtro: v[2], attuale: null, auto: false,
+      onPick: id => id && salvaE(e => { e[k] = [...new Set([...lista(e[k]), id])]; }, "＋ " + nm(id)) }); },
+  enDel: el => { const k = el.dataset.k, id = el.dataset.id; salvaE(e => { e[k] = lista(e[k]).filter(x => x !== id); if (!e[k].length) delete e[k]; }); },
+  enAuto: el => { const k = el.dataset.k; salvaE(e => { delete e[k]; }); },
 });
+
+/* stringhe del fotovoltaico, una per riga */
+function cardStringhe() {
+  const { pvL, pv } = letture(); if (pvL.length < 2) return "";
+  const max = Math.max(...pvL.map(x => x.w || 0), 1);
+  return card("☀️ " + t("Stringhe", "Strings"), `<div class="stack">${pvL.map(x => `<button class="cn1" data-act="more" data-id="${x.id}"><span>${esc(nm(x.id))}</span><i><b style="width:${((x.w || 0) / max * 100).toFixed(1)}%;background:#ffd60a"></b></i><em>${watts(x.w)}</em></button>`).join("")}
+    <div class="row between" style="margin-top:4px"><b>${t("Totale", "Total")}</b><b>${watts(pv)}</b></div></div>`, { right: isAdmin() ? `<button class="btn sm" data-act="enSensors">⚙️</button>` : "" });
+}
 
 function pagina() {
   return `<div class="g g3">
-    ${UI.edit ? `<section class="card span3 row between" style="flex-wrap:wrap;gap:8px"><span class="muted">${t("Scegli tu i sensori se quelli trovati non sono giusti.", "Choose the sensors yourself if the ones found are wrong.")}</span><button class="btn" data-act="enSensors">⚙️ ${t("Sensori", "Sensors")}</button></section>` : ""}
-    ${flusso()}${cardOggi()}${consumi()}
+    ${isAdmin() ? `<section class="card span3 row between" style="flex-wrap:wrap;gap:8px"><span class="muted">${t("Scegli tu i sensori: stringhe del fotovoltaico, rete, casa, batterie, contatori di oggi.", "Choose your sensors: solar strings, grid, home, batteries, today's meters.")}</span><button class="btn" data-act="enSensors">⚙️ ${t("Sensori", "Sensors")}</button></section>` : ""}
+    ${flusso()}${cardStringhe()}${cardOggi()}${consumi()}
   </div>`;
 }
 page("energia", { title: t("Energia", "Energy"), short: t("Energia", "Energy"), icon: "⚡", order: 15, editable: true, show: () => haEnergia() || isAdmin(), render: pagina });

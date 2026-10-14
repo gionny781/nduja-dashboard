@@ -3,6 +3,14 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.6.1-beta
+- 🇮🇹 **Energia, sensori a piacere**: in ⚙️ Sensori ogni voce accetta **qualsiasi sensore** della casa (con ricerca), non solo quelli proposti. Il fotovoltaico accetta **più stringhe o inverter** (PV1, PV2, PV3…) che vengono sommati; anche batterie e consumi si possono sommare. Si possono scegliere i contatori di oggi (prodotto, prelevato, immesso). Le modifiche si salvano subito.
+- 🇮🇹 Nuova scheda **Stringhe** con la produzione di ogni stringa e il totale.
+- 🇮🇹 La carica della batteria non prende più per sbaglio la batteria del telefono.
+- 🇬🇧 **Energy, any sensor**: in ⚙️ Sensors every item accepts **any sensor** in the house (searchable). Solar accepts **several strings or inverters** (PV1, PV2, PV3…) which are added up; batteries and consumption can be summed too. Today's meters (produced, imported, exported) can be chosen. Changes save immediately.
+- 🇬🇧 New **Strings** card with each string's production and the total.
+- 🇬🇧 Battery charge no longer picks a phone battery by mistake.
+
 ## 0.6.0-beta
 - 🇮🇹 **Robot aspirapolvere**: stato, batteria, metri e minuti, mappa, Pulisci / Pausa / Ferma / Alla base / Trova, **pulizia di singole stanze** (Dreame e Roborock), impostazioni rapide (potenza, modalità…) scelte con ✏️, manutenzione di spazzole e filtro con ↺ azzera.
 - 🇮🇹 **Telecamere**: anteprime aggiornate ogni 10 secondi, tocca per la diretta; doppioni (sub stream, transcodifiche, mappe dei robot, non raggiungibili) nascosti finché non li aggiungi; ordine con ◀ ▶; vista piccola o grande.

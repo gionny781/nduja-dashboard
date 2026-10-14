@@ -299,3 +299,4 @@ button.tr1{width:100%;text-align:left;padding:4px 6px;margin:0 -6px;border-radiu
 .kpv1{grid-column:1/-1;text-align:center;font-size:28px;letter-spacing:.3em;padding:10px;border-radius:14px;background:rgba(255,255,255,.06);min-height:56px}
 .kpd1 button{height:62px;border-radius:18px;background:rgba(255,255,255,.08);font-size:22px;font-weight:600;color:var(--tx)}
 .kpd1 button.ok{background:#0a84ff;color:#fff}
+.en2{padding:12px 0;border-bottom:1px solid rgba(255,255,255,.07)}.en2:last-child{border:0}.en2 .add1{margin-top:2px;min-height:0;padding:10px 14px;font-size:13px}
