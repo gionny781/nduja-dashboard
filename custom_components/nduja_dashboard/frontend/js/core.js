@@ -241,6 +241,9 @@ CHG.bright = el => svc("light", "turn_on", { brightness_pct: +el.value }, { enti
 export const PAGES = {};
 /** funzioni chiamate prima di ogni disegno (per esempio le pagine create dall'utente) */
 export const HOOKS = [];
+/** nomi delle stanze scelti nella plancia */
+export function nomiStanze() { for (const a in AREAS) AREAS[a].name = LAYOUT.areaNames?.[a] || AREAS[a].nameHA || AREAS[a].name; }
+HOOKS.push(nomiStanze);
 /** registra una pagina: { title, short, icon, render, badge, order, show } */
 export function page(id, def) { PAGES[id] = { order: 50, show: () => true, ...def }; if (conn) render(); }
 const visible = () => Object.keys(PAGES).filter(k => !PAGES[k].hiddenNav && PAGES[k].show() && LAYOUT.pages?.[k] !== false && (!PAGES[k].admin || isAdmin())).sort((a, b) => PAGES[a].order - PAGES[b].order);
@@ -360,7 +363,7 @@ function renderStrip() {
     ${L ? `<span class="pillv sun" data-act="go" data-id="luci">💡 ${L}</span>` : ""}
     ${w ? `<span class="pillv">${(WX()[S[w].state] || ["🌡️"])[0]} ${fnum(attr(w, "temperature"))}°</span>` : ""}
     <button class="pillv th1" data-act="theme" title="${t("Tema", "Theme")}">${{ auto: "◐", light: "☀︎", dark: "☾" }[tema()]}</button>
-    <span class="pillv"><span class="st ${conn?.connected ? "ok" : ""}"></span>${hhmm(Date.now())}</span>`);
+    ${UI.page === "home" ? "" : `<span class="pillv"><span class="st ${conn?.connected ? "ok" : ""}"></span>${hhmm(Date.now())}</span>`}`);
 }
 
 /* ================= eventi ================= */
@@ -386,7 +389,7 @@ async function loadRegistry() {
   const [er, dr, ar, fr] = await Promise.all([q("config/entity_registry/list_for_display"), q("config/device_registry/list"), q("config/area_registry/list"), q("config/floor_registry/list")]);
   for (const k in FLOORS) delete FLOORS[k]; for (const k in AREAS) delete AREAS[k]; for (const k in DEVICES) delete DEVICES[k]; for (const k in REG) delete REG[k];
   (fr || []).forEach(f => FLOORS[f.floor_id] = { name: f.name, level: f.level ?? 0, icon: f.icon });
-  (ar || []).forEach(a => AREAS[a.area_id] = { name: a.name, floor: a.floor_id, icon: a.icon });
+  (ar || []).forEach(a => AREAS[a.area_id] = { name: LAYOUT.areaNames?.[a.area_id] || a.name, nameHA: a.name, floor: a.floor_id, icon: a.icon });
   (dr || []).forEach(d => DEVICES[d.id] = { name: d.name_by_user || d.name, area: d.area_id, model: d.model, maker: d.manufacturer, disabled: !!d.disabled_by });
   (er?.entities || []).forEach(e => REG[e.ei] = { area: e.ai || (e.di && DEVICES[e.di]?.area) || null, device: e.di || null, hidden: !!e.hb, cat: e.ec ?? null, platform: e.pl });
 }

@@ -12,6 +12,8 @@
 - 🇮🇹 Meteo di casa scelto meglio (niente più meteo di circuiti F1 o città lontane).
 - 🇮🇹 Temperatura delle stanze senza caldaie, mandate, setpoint e temperature interne dei dispositivi.
 - 🇮🇹 Barra di navigazione **sempre visibile** o **a scomparsa**, e tema, scelti per ogni dispositivo in ⚙️ Impostazioni → Questo dispositivo.
+- 🇮🇹 **Personalizzazione**: in Home con ✏️ Modifica ogni scheda si sposta ▲▼ o si nasconde; ✏️ su ogni stanza per nome, ordine, nascondere e scegliere **qualsiasi** sensore di temperatura o umidità della casa (con ricerca). Nuova sezione 🎨 Personalizza in Impostazioni.
+- 🇮🇹 Orologio grande in Home sopra la data.
 - 🇮🇹 I file si ricaricano appena cambiano: installare «main» da HACS funziona senza svuotare la cache.
 - 🇬🇧 **People**: cards with photo, where they are and since when, distance from home, phone battery (⚡ when charging). The phone is found automatically; ✏️ changes name, battery, charging sensor and distance.
 - 🇬🇧 **Calendar**: new page with today's, this week's or this month's events, ＋ Event, calendar selection; today/tomorrow agenda on Home.
@@ -20,6 +22,8 @@
 - 🇬🇧 Editable Home: ✏️ on weather to choose the source, ＋/✕ on scenes and people.
 - 🇬🇧 Better home weather detection; room temperatures ignore boilers, setpoints and device-internal temperatures.
 - 🇬🇧 Navigation bar **always visible** or **auto-hide**, and theme, per device in ⚙️ Settings → This device.
+- 🇬🇧 **Customization**: on Home, ✏️ Edit lets you move ▲▼ or hide every card; ✏️ on each room for name, order, hiding and choosing **any** temperature or humidity sensor in the house (searchable). New 🎨 Customize section in Settings.
+- 🇬🇧 Big clock on Home above the date.
 - 🇬🇧 Files reload as soon as they change: installing "main" from HACS works without clearing the cache.
 
 ## 0.4.3-beta

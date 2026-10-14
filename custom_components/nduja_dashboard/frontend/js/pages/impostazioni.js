@@ -1,7 +1,8 @@
 /* Impostazioni: il wizard per scegliere cosa mostrare nella plancia.
    Si parte da tutto acceso e si toglie quello che non serve; le scelte si salvano in Home Assistant
    (valgono su tutti i dispositivi) e solo un amministratore può cambiarle. */
-import { S, AREAS, FLOORS, REG, ACT, CHG, LAYOUT, PAGES, t, LOC, esc, nm, ok, attr, allEnts, shortName, climateSensors,
+import { scegli, isTemp, isHum } from "../edit.js";
+import { S, UI, AREAS, FLOORS, REG, ACT, CHG, LAYOUT, PAGES, t, LOC, esc, nm, ok, attr, allEnts, shortName, climateSensors,
   saveLayout, render, toast, go, page, isAdmin, deviceClass, HVAC, manualKind, excluded, tema, navMode } from "../core.js";
 
 const DEV = ["cover", "switch", "fan", "lock", "media_player", "humidifier", "vacuum", "siren", "valve"];
@@ -64,12 +65,12 @@ function passoStanze() {
 const passoLuci = () => `<p class="wz-p">${draft().mode === "manual" ? t("Tocca le luci che vuoi nella plancia: diventano verdi.", "Tap the lights you want on the dashboard: they turn green.") : t("Spegni le luci che non vuoi vedere (per esempio i doppioni dei gruppi o le luci tecniche).", "Switch off the lights you don't want to see (for example group duplicates or technical lights).")}</p>` + perStanza(allEnts("light"), t("Nessuna luce.", "No lights."));
 function passoClima() {
   const d = draft();
-  const sel = (a, k, dc) => { const L = climateSensors(a, dc), v = d.sensors[a]?.[k] || "";
-    return `<select data-chg="wzSensor" data-id="${a}" data-k="${k}"><option value="" ${!v ? "selected" : ""}>${t("Automatico", "Automatic")}</option>${L.map(id => `<option value="${id}" ${v === id ? "selected" : ""}>${esc(shortName(id))} (${esc(S[id].state)}${esc(attr(id, "unit_of_measurement") || "")})</option>`).join("")}<option value="none" ${v === "none" ? "selected" : ""}>${t("Nessuno", "None")}</option></select>`; };
-  const stanze = stanzeOrdinate().filter(a => visibile(a) && (climateSensors(a, "temperature").length || climateSensors(a, "humidity").length));
+  const voce = (a, k) => { const v = d.sensors[a]?.[k] || "";
+    return `<button class="btn sm sns2" data-act="wzSensorPick" data-id="${a}" data-k="${k}">${k === "temp" ? "🌡️" : "💧"} ${v === "none" ? t("nessuno", "none") : v && S[v] ? esc(shortName(v)) + ` <small>${esc(S[v].state)}${esc(attr(v, "unit_of_measurement") || "")}</small>` : t("Automatico", "Automatic")} ›</button>`; };
+  const stanze = stanzeOrdinate().filter(a => visibile(a));
   return `<p class="wz-p">${t("Termostati e condizionatori da mostrare.", "Thermostats and air conditioners to show.")}</p>${perStanza(allEnts("climate"), t("Nessun termostato.", "No thermostats."))}
-    ${stanze.length ? `<h4 class="wz-s">${t("Temperatura e umidità di ogni stanza", "Temperature and humidity of each room")}</h4><p class="wz-p">${t("Se in una stanza ci sono più sensori, scegli quale usare.", "If a room has more sensors, choose which one to use.")}</p>
-      <div class="sns1">${stanze.map(a => `<div><b>${esc(AREAS[a].name)}</b><label>🌡️ ${sel(a, "temp", "temperature")}</label><label>💧 ${sel(a, "hum", "humidity")}</label></div>`).join("")}</div>` : ""}`;
+    ${stanze.length ? `<h4 class="wz-s">${t("Temperatura e umidità di ogni stanza", "Temperature and humidity of each room")}</h4><p class="wz-p">${t("Tocca per scegliere il sensore: puoi prendere qualsiasi sensore della casa, anche di un'altra stanza.", "Tap to choose the sensor: you can pick any sensor in the house, even from another room.")}</p>
+      <div class="sns1">${stanze.map(a => `<div><b>${esc(AREAS[a].name)}</b>${voce(a, "temp")}${voce(a, "hum")}</div>`).join("")}</div>` : ""}`;
 }
 const passoDispositivi = () => `<p class="wz-p">${t("Tapparelle, prese, ventilatori, TV e serrature che compaiono nelle stanze.", "Covers, plugs, fans, TVs and locks shown in the rooms.")}</p>${perStanza(DEV.flatMap(d => allEnts(d)), t("Nessun dispositivo.", "No devices."))}
   <h4 class="wz-s">${t("Porte e finestre", "Doors and windows")}</h4>${perStanza(allEnts("binary_sensor", id => OPEN.includes(deviceClass(id))), t("Nessun sensore di porte o finestre.", "No door or window sensors."))}`;
@@ -78,6 +79,7 @@ function passoCasa() {
   return `${W2.length ? `<h4 class="wz-s" style="margin-top:0">${t("Meteo", "Weather")}</h4><select data-chg="wzWeather" class="wz-sel"><option value="">${t("Automatico", "Automatic")}</option>${W2.map(id => `<option value="${id}" ${d.weather === id ? "selected" : ""}>${esc(nm(id))}</option>`).join("")}</select>` : ""}
     ${P.length ? `<h4 class="wz-s">${t("Persone", "People")}</h4><div class="cks1">${P.map(riga).join("")}</div>` : ""}
     ${SC.length ? `<h4 class="wz-s">${t("Scene nella Home", "Scenes on Home")}</h4><div class="cks1">${SC.map(riga).join("")}</div>` : ""}
+    <h4 class="wz-s">${t("Altro nella Home", "More on Home")}</h4>${personalizza()}
     ${!W2.length && !P.length && !SC.length ? `<div class="small muted">${t("Niente da scegliere qui.", "Nothing to choose here.")}</div>` : ""}`;
 }
 function passoPagine() {
@@ -93,6 +95,17 @@ function passoFine() {
   const d = draft(), tolte = d.mode === "manual" ? d.include.filter(id => S[id]).length : d.exclude.filter(id => S[id]).length;
   return `<div class="wz-h"><span>✅</span><div><h3>${t("Tutto pronto", "All set")}</h3><p>${t(`Modalità ${d.mode === "manual" ? "manuale" : "automatica"} · stanze nascoste: ${d.hiddenAreas.length} · elementi ${d.mode === "manual" ? "scelti" : "tolti"}: ${tolte}. Premi «Salva»: le scelte valgono su tutti i tablet e telefoni. Per cambiarle torna in ⚙️ Impostazioni.`, `${d.mode === "manual" ? "Manual" : "Automatic"} mode · hidden rooms: ${d.hiddenAreas.length} · items ${d.mode === "manual" ? "chosen" : "removed"}: ${tolte}. Press «Save»: your choices apply to every tablet and phone. To change them come back to ⚙️ Settings.`)}</p></div></div>
     <button class="btn sm" data-act="wzReset" style="margin-top:10px">↺ ${t("Annulla le scelte di questi passi", "Undo the choices in these steps")}</button>`;
+}
+
+/* scorciatoie per tutto quello che si può personalizzare */
+function personalizza() {
+  const b = (act, ic, n, s, id = "") => `<button class="li" data-act="${act}" ${id ? `data-id="${id}"` : ""}><span class="ic">${ic}</span><div class="tx"><b>${n}</b><span>${s}</span></div><span class="st">›</span></button>`;
+  return `<div class="stack">
+    ${b("goEdit", "🏠", t("Home: schede, ordine, stanze", "Home: cards, order, rooms"), t("Apre la Home in modifica: sposta ▲▼, nascondi, ✏️ sulle stanze e sui sensori", "Opens Home in edit mode: move ▲▼, hide, ✏️ rooms and sensors"), "home")}
+    ${b("wxEdit", "🌤️", t("Meteo", "Weather"), t("Da dove prendo il meteo", "Weather source"))}
+    ${b("rfEdit", "♻️", t("Raccolta differenziata", "Waste collection"), t("Sensori e calendari dei ritiri", "Pickup sensors and calendars"))}
+    ${b("calEdit", "📅", t("Calendari", "Calendars"), t("Quali calendari mostrare", "Which calendars to show"))}
+  </div>`;
 }
 
 /* scelte di questo tablet o telefono (non toccano gli altri dispositivi) */
@@ -111,6 +124,8 @@ function pagina() {
   return `<div class="g">${dispositivo()}<section class="card rst1"><div class="row" style="gap:12px;flex-wrap:wrap"><span style="font-size:28px">🌶️</span>
       <div style="flex:1;min-width:200px"><b>${t("Ricomincia dal benvenuto", "Restart from the welcome screen")}</b><div class="small muted">${t("Riparte la configurazione da zero: scegli di nuovo Automatica o Manuale. Le pagine create da te restano.", "Setup starts over: choose Automatic or Manual again. Pages you created are kept.")}</div></div>
       <button class="btn warm" data-act="wzRestart">🔄 ${t("Riavvia il wizard", "Restart the wizard")}</button></div></section>
+    <section class="card"><div class="ch"><h2>🎨 ${t("Personalizza", "Customize")}</h2></div>${personalizza()}
+      <p class="small muted" style="margin-top:10px">${t("In ogni pagina c'è ✏️ Modifica in alto: ＋ aggiungi, ✏️ cambia, ✕ togli.", "Every page has ✏️ Edit at the top: ＋ add, ✏️ change, ✕ remove.")}</p></section>
     <section class="card wz1">
     <div class="wz-steps">${P.map((n, i) => `<button class="${i === s ? "act" : i < s ? "done" : ""}" data-act="wzGo" data-v="${i}"><i>${i < s ? "✓" : i + 1}</i><span>${n}</span></button>`).join("")}</div>
     <div class="wz-body">${corpo}</div>
@@ -155,6 +170,10 @@ Object.assign(ACT, {
   },
   wzAuto: () => saveLayout({ ...LAYOUT, configured: true }).then(() => toast("👍 " + t("Ok, mostro tutto. Puoi cambiare idea in ⚙️ Impostazioni.", "Ok, showing everything. You can change it in ⚙️ Settings."))).catch(() => {}),
 });
+ACT.goEdit = el => { ACT.go(el); UI.edit = true; render(true); };
+ACT.wzSensorPick = el => { const a = el.dataset.id, k = el.dataset.k, d = draft();
+  scegli({ titolo: (k === "temp" ? "🌡️ " : "💧 ") + esc(AREAS[a].name), filtro: k === "temp" ? isTemp : isHum, area: a, attuale: d.sensors[a]?.[k] || "", nessuno: true,
+    onPick: id => { d.sensors[a] = { ...(d.sensors[a] || {}), [k]: id || undefined }; } }); };
 CHG.wzSensor = el => { const d = draft(), a = el.dataset.id; d.sensors[a] = { ...(d.sensors[a] || {}), [el.dataset.k]: el.value || undefined }; };
 CHG.wzWeather = el => { draft().weather = el.value || null; };
 

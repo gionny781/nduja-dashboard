@@ -253,3 +253,14 @@ body.light.navauto.navhide .navh1{background:rgba(0,0,0,.2)}
 .eh1{min-width:84px}
 .rfc1 select{background:rgba(255,255,255,.08);color:var(--tx);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:6px 8px;font:inherit;font-size:12.5px}
 button.li{width:100%;text-align:left}
+/* 0.5: orologio in Home, schede in modifica, stanze nascoste */
+.clk1{font-size:44px;font-weight:300;letter-spacing:-.02em;line-height:1;margin-bottom:6px;font-variant-numeric:tabular-nums}
+.hc1{position:relative}.hc1.off>*:not(.hct1){opacity:.35}
+.hct1{display:flex;align-items:center;gap:6px;margin:-4px 0 12px;padding:6px 8px;border-radius:12px;background:rgba(255,159,10,.12);border:1px dashed rgba(255,159,10,.45);font-size:12px}
+.hct1 b{font-size:12px;color:var(--orange)}
+.hct1 button{padding:5px 9px;border-radius:9px;background:rgba(255,255,255,.1);font-size:12px;font-weight:600;color:var(--tx)}
+.hct1 button:disabled{opacity:.3}
+.rm1.off1{opacity:.4;border-style:dashed}
+.sns2{display:flex;justify-content:space-between;width:100%;margin-top:6px;text-align:left}.sns2 small{color:var(--tx2);margin-left:4px}
+.sh-head .btn.sm{margin-left:auto;margin-right:8px}
+.rms1>.ed1{display:block}.rms1>.ed1>.rm1{width:100%;height:100%}

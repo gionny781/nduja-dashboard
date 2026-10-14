@@ -101,3 +101,37 @@ Object.assign(ACT, {
     closeSheet(); salva(l, "💾 " + (n || nmHA(id)));
   },
 });
+
+/* ---------- scelta libera di un'entità (con ricerca) ----------
+   scegli({ titolo, sotto, filtro(id), area, attuale, auto, nessuno, onPick(id | "" | "none") })
+   Mostra TUTTE le entità che passano il filtro: prima quelle della stanza, poi le altre. */
+const CH = { o: null, q: "" };
+const unitaDi = id => attr(id, "unit_of_measurement") || "";
+function chooser() {
+  const o = CH.o, q = CH.q.toLowerCase();
+  const L = Object.keys(S).filter(id => { try { return o.filtro(id); } catch { return false; } })
+    .filter(id => !q || (nm(id) + " " + id + " " + (AREAS[areaOf(id)]?.name || "")).toLowerCase().includes(q))
+    .sort((a, b) => ((areaOf(b) === o.area) - (areaOf(a) === o.area)) || nm(a).localeCompare(nm(b), LOC)).slice(0, 200);
+  const riga = (id, extra = "") => `<button class="pk1 ${o.attuale === id ? "sel1" : ""}" data-act="chPick" data-id="${id}">
+    <span class="tx"><b>${esc(nm(id))}</b><small>${esc(AREAS[areaOf(id)]?.name || t("senza stanza", "no room"))} · ${esc(id)}</small></span>
+    <span class="st">${ok(id) ? esc(S[id].state) + (unitaDi(id) ? " " + esc(unitaDi(id)) : "") : t("non raggiungibile", "unavailable")}</span>${extra}</button>`;
+  const qui = L.filter(id => o.area && areaOf(id) === o.area), altri = L.filter(id => !qui.includes(id));
+  return `<div class="sh-head"><div><h3>${o.titolo}</h3>${o.sotto ? `<div class="small muted">${o.sotto}</div>` : ""}</div><button class="x" data-act="sheetClose">×</button></div>
+    <input id="ch1q" class="pk1q" type="search" placeholder="🔍 ${t("Cerca per nome, stanza o entità…", "Search by name, room or entity…")}" value="${esc(CH.q)}" autocomplete="off">
+    <div class="pkl1">
+      ${o.auto !== false ? `<button class="pk1 ${!o.attuale ? "sel1" : ""}" data-act="chPick" data-id=""><span class="tx"><b>✨ ${t("Automatico", "Automatic")}</b><small>${o.auto ? esc(nm(o.auto)) : t("scelgo io il più adatto", "I pick the best one")}</small></span></button>` : ""}
+      ${o.nessuno ? `<button class="pk1 ${o.attuale === "none" ? "sel1" : ""}" data-act="chPick" data-id="none"><span class="tx"><b>🚫 ${t("Nessuno", "None")}</b><small>${t("non mostrare niente", "show nothing")}</small></span></button>` : ""}
+    </div>
+    ${qui.length ? `<div class="fl1">${t("In questa stanza", "In this room")}</div><div class="pkl1">${qui.map(id => riga(id)).join("")}</div>` : ""}
+    ${altri.length ? `<div class="fl1">${qui.length ? t("Tutti gli altri", "All the others") : t("Tutti", "All")}</div><div class="pkl1">${altri.map(id => riga(id)).join("")}</div>` : ""}
+    ${!L.length ? `<div class="empty">${t("Nessun risultato.", "No results.")}</div>` : ""}`;
+}
+export function scegli(o) { CH.o = o; CH.q = ""; openSheet(chooser); }
+document.addEventListener("input", e => { if (e.target.id === "ch1q") { CH.q = e.target.value; render(); } });
+ACT.chPick = el => { const o = CH.o; closeSheet(); o.onPick(el.dataset.id); };
+
+/* filtri pronti */
+export const isTemp = id => id.startsWith("sensor.") && (deviceClass(id) === "temperature" || /°\s?[CF]$/.test(unitaDi(id)));
+export const isHum = id => id.startsWith("sensor.") && (deviceClass(id) === "humidity" || (unitaDi(id) === "%" && /umid|humid/i.test(id + nm(id))));
+/** salva subito una modifica a LAYOUT: fn(copia) */
+export async function cambia(fn, msg) { const l = copia(); fn(l); await salva(l, msg); }
