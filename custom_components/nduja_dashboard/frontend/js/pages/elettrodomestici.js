@@ -23,6 +23,22 @@ const TIPI = () => [
 const SCARTA = /internet|wrinkle|bubble|child|lock|led|light|luce|rssi|uptime|voltage|current|temperature|delta|saved|returned|powerenergy|signal|firmware|update/i;
 const KEY = /(sensor|switch|binary_sensor)\./;
 
+/* icone: tante emoji divise per gruppo, oppure un'immagine/GIF tua (/local/…) */
+const ICONE = [
+  ["🧺", "🫧", "🌀", "👕", "👖", "🧦", "🧼", "🧴", "🪣", "🧽"],
+  ["🍽️", "🥣", "🍳", "♨️", "🔥", "🍕", "🍞", "🥐", "🍟", "🍗", "🥘", "🍲", "🥟", "🧇"],
+  ["☕", "🫖", "🍵", "🥤", "🧃", "🍹", "🧊", "🥶", "❄️", "🍦"],
+  ["🔌", "⚡", "💡", "🔋", "📺", "🖥️", "💻", "🎮", "🔊", "📡", "🖨️", "📠"],
+  ["🚿", "🛁", "💧", "🌡️", "🔆", "💨", "🌬️", "🧯", "🪴", "🌱", "🐟", "🐶"],
+  ["🤖", "🧹", "🪒", "💇", "🧖", "🏋️", "🚗", "🛵", "🚲", "⛽", "🔧", "🛠️"],
+];
+/** animazione quando è in funzione: scelta, altrimenti quella adatta al tipo */
+const ANIM = () => [["auto", t("Automatica", "Automatic")], ["gira", t("Gira", "Spin")], ["vibra", t("Vibra", "Shake")], ["pulsa", t("Pulsa", "Pulse")], ["salta", t("Salta", "Bounce")], ["fumo", t("Vapore", "Steam")], ["no", t("Nessuna", "None")]];
+const animDi = a => a.anim && a.anim !== "auto" ? a.anim : /lavatric|asciugat|wash|dry/i.test(a.id + a.nome) || ["🧺", "🌀", "🫧"].includes(a.icona) ? "gira"
+  : /lavastov|dish|friggit|fryer|frull/i.test(a.id + a.nome) ? "vibra" : /forno|oven|piano|caff|coffee|boiler|scald|bollit/i.test(a.id + a.nome) ? "fumo" : "pulsa";
+const immagine = v => /^(\/|https?:)/.test(v || "");
+export const icona = (a, on) => `<span class="api1 ${on && animDi(a) !== "no" ? "an-" + animDi(a) : ""}">${immagine(a.icona) ? `<img src="${esc(a.icona)}" alt="">` : esc(a.icona || "🔌")}</span>`;
+
 /** elettrodomestici trovati da soli: per ogni tipo raccolgo i sensori di tutte le entità che lo nominano */
 function automatici() {
   const out = [];
@@ -68,7 +84,7 @@ function scheda(a, i) {
   const st = stato(a), fin = st.k === "on" ? quandoFinisce(a) : null, kwh = a.energy ? oggi(a.energy) : null;
   const sw = a.switch && S[a.switch];
   return `<section class="card ap1 ${st.k}">
-    <div class="ch"><h2><span class="api1">${esc(a.icona || "🔌")}</span> ${esc(a.nome)}</h2>${isAdmin() ? `<button class="btn sm" data-act="apEdit" data-i="${i}">✏️</button>` : ""}</div>
+    <div class="ch"><h2>${icona(a, st.k === "on")} ${esc(a.nome)}</h2>${isAdmin() ? `<button class="btn sm" data-act="apEdit" data-i="${i}">✏️</button>` : ""}</div>
     <div class="aps1"><b>${esc(st.n)}</b>${fin ? `<span>⏱ ${esc(fin)}</span>` : ""}</div>
     <div class="apg1">
       ${a.power ? `<button data-act="more" data-id="${a.power}"><small>${t("Adesso", "Now")}</small><b>${st.w != null ? watts(st.w) : "—"}</b></button>` : ""}
@@ -89,19 +105,25 @@ const VOCI = () => [["power", "⚡ " + t("Potenza (W)", "Power (W)"), id => id.s
 function config() {
   const a = bz;
   const riga = ([k, label]) => `<button class="li" data-act="apPick" data-k="${k}"><div class="tx"><b>${label}</b><span>${a[k] && S[a[k]] ? esc(nm(a[k])) + " · " + esc(S[a[k]].state) + " " + esc(attr(a[k], "unit_of_measurement") || "") : t("nessuno", "none")}</span></div><span class="st">›</span></button>`;
-  return `<div class="sh-head"><div><h3>${esc(a.icona || "🔌")} ${idx < 0 ? t("Nuovo elettrodomestico", "New appliance") : esc(a.nome)}</h3><div class="small muted">${t("Puoi scegliere qualsiasi sensore della casa.", "You can choose any sensor in the house.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
-    <div class="row" style="gap:10px"><label class="fld1" style="flex:0 0 80px"><span>${t("Icona", "Icon")}</span><input type="text" maxlength="4" value="${esc(a.icona || "")}" data-chg="apF" data-k="icona"></label>
-      <label class="fld1" style="flex:1"><span>${t("Nome", "Name")}</span><input type="text" value="${esc(a.nome || "")}" data-chg="apF" data-k="nome" placeholder="${t("Lavatrice", "Washing machine")}"></label></div>
+  return `<div class="sh-head"><div><h3>${icona(a, true)} ${idx < 0 ? t("Nuovo elettrodomestico", "New appliance") : esc(a.nome)}</h3><div class="small muted">${t("Puoi scegliere qualsiasi sensore della casa.", "You can choose any sensor in the house.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
+    <label class="fld1"><span>${t("Nome", "Name")}</span><input type="text" value="${esc(a.nome || "")}" data-chg="apF" data-k="nome" placeholder="${t("Lavatrice", "Washing machine")}"></label>
+    <div class="fl1">${t("Icona", "Icon")}</div>
+    <div class="ico1">${ICONE.flat().map(ic => `<button class="${a.icona === ic ? "on" : ""}" data-act="apIco" data-v="${ic}">${ic}</button>`).join("")}</div>
+    <label class="fld1"><span>${t("Oppure un'immagine o una GIF tua (es. /local/lavatrice.gif)", "Or your own image or GIF (e.g. /local/washer.gif)")}</span><input type="text" value="${immagine(a.icona) ? esc(a.icona) : ""}" data-chg="apF" data-k="icona" placeholder="/local/…"></label>
+    <div class="fl1">${t("Animazione quando è in funzione", "Animation while running")}</div>
+    <div class="seg" style="flex-wrap:wrap">${ANIM().map(([k, n]) => `<button class="${(a.anim || "auto") === k ? "act" : ""}" data-act="apAnim" data-v="${k}">${n}</button>`).join("")}</div>
     <div class="vr1" style="margin:8px 0">${TIPI().map(([, , ic, n]) => `<button data-act="apTipo" data-ic="${ic}" data-n="${esc(n)}">${ic} ${esc(n)}</button>`).join("")}</div>
     <div class="stack">${VOCI().map(riga).join("")}</div>
     <label class="fld1"><span>${t("In funzione sopra (W)", "Running above (W)")}</span><input type="number" min="1" value="${a.threshold || 10}" data-chg="apF" data-k="threshold"></label>
     <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn pri" data-act="apSave">💾 ${t("Salva", "Save")}</button>${idx >= 0 ? `<button class="btn bad" data-act="apDel">🗑 ${t("Togli", "Remove")}</button>` : ""}</div>`;
 }
-CHG.apF = el => { bz[el.dataset.k] = el.dataset.k === "threshold" ? +el.value || 10 : el.value; };
+CHG.apF = el => { if (el.dataset.k === "icona" && !el.value.trim()) return; bz[el.dataset.k] = el.dataset.k === "threshold" ? +el.value || 10 : el.value; };
 const salva = L => cambia(l => { l.appliances = L; });
 Object.assign(ACT, {
   apEdit: el => { idx = +el.dataset.i; bz = { ...elenco()[idx] }; openSheet(config); },
   apNew: () => { idx = -1; bz = { id: "a" + Date.now().toString(36), nome: "", icona: "🔌" }; openSheet(config); },
+  apIco: el => { bz.icona = el.dataset.v; render(); },
+  apAnim: el => { bz.anim = el.dataset.v; render(); },
   apTipo: el => { bz.icona = el.dataset.ic; if (!bz.nome) bz.nome = el.dataset.n; render(); },
   apPick: el => { const k = el.dataset.k, v = VOCI().find(x => x[0] === k), keep = { ...bz }, i = idx;
     scegli({ titolo: v[1], filtro: v[2], attuale: bz[k] || "none", auto: false, nessuno: true,

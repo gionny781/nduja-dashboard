@@ -1,6 +1,6 @@
 """Costanti di 'Nduja Dashboard."""
 DOMAIN = "nduja_dashboard"
-VERSION = "0.7.2-beta"
+VERSION = "0.7.3-beta"
 PANEL_URL = "nduja"
 STATIC_URL = f"/{DOMAIN}_static"
 

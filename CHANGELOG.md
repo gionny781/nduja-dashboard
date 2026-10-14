@@ -3,6 +3,12 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.3-beta
+- 🇮🇹 **Elettrodomestici**: oltre 70 icone tra cui scegliere, oppure un'immagine o **GIF tua** (/local/…); quando l'elettrodomestico parte l'icona **si anima** (gira, vibra, pulsa, salta, vapore — automatica in base al tipo o scelta da te).
+- 🇮🇹 **Mappa con i dispositivi**: in ogni stanza le icone dei suoi dispositivi (luci, prese, tapparelle, clima, TV, serrature, robot, telecamere); tocca per accendere o spegnere. In ✏️ Modifica: **＋** aggiunge qualsiasi dispositivo della casa alla stanza (anche alle stanze solo-mappa), **✕** lo toglie; «✨ Dispositivi automatici / ✋ Solo scelti» per piano.
+- 🇬🇧 **Appliances**: over 70 icons to choose from, or your own image or **GIF** (/local/…); when the appliance starts its icon **animates** (spin, shake, pulse, bounce, steam — automatic by type or chosen).
+- 🇬🇧 **Map with devices**: each room shows its devices' icons (lights, plugs, covers, climate, TV, locks, vacuum, cameras); tap to switch. In ✏️ Edit: **＋** adds any device in the house to the room (map-only rooms too), **✕** removes it; «✨ Auto devices / ✋ Chosen only» per floor.
+
 ## 0.7.2-beta
 - 🇮🇹 **Mappa**: «＋ Stanza» aggiunge stanze che esistono solo nella mappa (ripostiglio, scale, terrazzo… anche se non le hai create in Home Assistant), con nome modificabile e 🗑 elimina; le aree di Home Assistant compaiono tutte, anche quelle senza dispositivi, e si possono togliere dalla mappa (🙈) e rimettere (👁).
 - 🇮🇹 **Elettrodomestici**: nuova pagina con lavatrice, asciugatrice, lavastoviglie, forno, friggitrice, frigo… trovati da soli (anche unendo presa smart e app del produttore): in funzione / finito / fermo, potenza adesso, consumo di oggi, ora di fine, presa da accendere o spegnere. Con ✏️ scegli nome, icona e qualsiasi sensore; con ＋ ne aggiungi.

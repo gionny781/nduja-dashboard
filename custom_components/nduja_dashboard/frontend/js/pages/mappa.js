@@ -2,8 +2,8 @@
    clima, movimento e temperatura. Si costruisce da sola dalle aree; con ✏️ Modifica sposti e ridimensioni
    le stanze (frecce e ＋/−) e puoi mettere sotto la piantina vera (un'immagine in /local/…). */
 import { S, AREAS, FLOORS, ACT, CHG, LAYOUT, UI, t, esc, fnum, ok, isOn, inArea, areaOf, areasSorted, roomTemp, roomHum, lightsOn,
-  deviceClass, svc, toast, card, empty, page, sGet, sSet, render, isAdmin, attr, openSheet, closeSheet } from "../core.js";
-import { cambia } from "../edit.js";
+  deviceClass, svc, toast, card, empty, page, sGet, sSet, render, isAdmin, attr, openSheet, closeSheet, nm, moreInfo } from "../core.js";
+import { cambia, scegli } from "../edit.js";
 
 const COL = 12;
 /* stanze della mappa: le aree di Home Assistant (anche vuote) più le stanze create solo nella mappa */
@@ -62,8 +62,24 @@ const comandi = (a, i, f) => `<div class="mpe1" data-f="${f}">
     ${AREAS[a] ? `<button class="wide" data-act="mpHide" data-id="${a}">🙈 ${t("togli dalla mappa", "remove from map")}</button>` : `<button class="wide" data-act="mpCustom" data-id="${a}">✏️ ${t("nome", "name")}</button><button class="wide bad" data-act="mpCustomDel" data-id="${a}">🗑 ${t("elimina stanza", "delete room")}</button>`}`
     : `<button class="wide bad" data-act="mpPieceDel" data-id="${a}" data-i="${i}">✕ ${t("pezzo", "piece")}</button>`}</div>`;
 
+/* ---------- dispositivi nelle stanze: automatici dall'area, più quelli aggiunti, meno quelli tolti ---------- */
+const DOM_MAPPA = ["light", "switch", "cover", "fan", "media_player", "lock", "climate", "vacuum", "humidifier", "camera"];
+const ICO_D = (id) => { const d = id.split(".")[0], on = isOn(id) || ["open", "playing", "cleaning", "unlocked", "heat", "cool"].includes(S[id]?.state);
+  return { light: "💡", switch: "🔌", cover: on ? "🪟" : "🟫", fan: "🌀", media_player: "📺", lock: on ? "🔓" : "🔒", climate: "❄️", vacuum: "🤖", humidifier: "💧", camera: "📷",
+    sensor: "📈", binary_sensor: on ? "🔴" : "⚪", scene: "🎬", script: "▶️", input_boolean: "🔘" }[d] || "•"; };
+const devsConf = (f, a) => mp(f).devs?.[a] || {};
+export function dispositivi(a, f) {
+  const c = devsConf(f, a), manuale = mp(f).devMode === "manual";
+  const auto = manuale || !AREAS[a] ? [] : DOM_MAPPA.flatMap(d => inArea(a, d));
+  return [...new Set([...auto.filter(id => !(c.hide || []).includes(id)), ...(c.add || []).filter(id => S[id])])];
+}
+const chipD = (id, a, f) => `<span class="mpd2 ${isOn(id) || ["open", "playing", "cleaning", "unlocked"].includes(S[id]?.state) ? "on" : ""}">
+  <button data-act="mpDev" data-id="${id}" title="${esc(nm(id))}">${ICO_D(id)}</button>${UI.edit ? `<button class="dx" data-act="mpDevDel" data-id="${id}" data-a="${a}" data-f="${f}">✕</button>` : ""}</span>`;
+const rigaDev = (a, f) => { const D = dispositivi(a, f);
+  return D.length || UI.edit ? `<div class="mpd1">${D.map(id => chipD(id, a, f)).join("")}${UI.edit ? `<button class="mpd2 add" data-act="mpDevAdd" data-a="${a}" data-f="${f}">＋</button>` : ""}</div>` : ""; };
+
 function stanza(a, p, f) {
-  if (!AREAS[a]) return pezzi(p).map((r, i) => `<div class="mpr1 cust ${i ? "pz" : ""}" style="grid-column:${r.x + 1} / span ${r.w};grid-row:${r.y + 1} / span ${r.h}">${i === 0 ? `<button class="mpb1" ${isAdmin() ? `data-act="mpCustom" data-id="${a}" data-f="${f}"` : ""}><b>${esc(nomeStanza(a, f))}</b></button>` : `<span class="mpb1"></span>`}${UI.edit ? comandi(a, i, f) : ""}</div>`).join("");
+  if (!AREAS[a]) return pezzi(p).map((r, i) => `<div class="mpr1 cust ${i ? "pz" : ""}" style="grid-column:${r.x + 1} / span ${r.w};grid-row:${r.y + 1} / span ${r.h}">${i === 0 ? `<button class="mpb1" ${isAdmin() ? `data-act="mpCustom" data-id="${a}" data-f="${f}"` : ""}><b>${esc(nomeStanza(a, f))}</b></button>${rigaDev(a, f)}` : `<span class="mpb1"></span>`}${UI.edit ? comandi(a, i, f) : ""}</div>`).join("");
   const T = roomTemp(a), H = roomHum(a), L = lightsOn(a).length, nL = inArea(a, "light").length;
   const O = inArea(a, "binary_sensor", id => ["door", "window", "opening", "garage_door"].includes(deviceClass(id)) && isOn(id)).length;
   const mov = inArea(a, "binary_sensor", id => ["motion", "occupancy", "presence"].includes(deviceClass(id)) && isOn(id)).length;
@@ -72,7 +88,7 @@ function stanza(a, p, f) {
   const cls = `mpr1 ${L ? "lit" : ""} ${O ? "open" : ""} ${mov ? "mov" : ""} ${pericolo ? "dang" : ""}`;
   return pezzi(p).map((r, i) => `<div class="${cls} ${i ? "pz" : ""}" style="grid-column:${r.x + 1} / span ${r.w};grid-row:${r.y + 1} / span ${r.h}">
     ${i === 0 ? `<button class="mpb1" data-act="room" data-id="${a}"><b>${esc(nomeStanza(a, f))}</b>
-      <span class="mpt1">${T != null ? fnum(T) + "°" : ""}${H != null ? `<small>${Math.round(H)}%</small>` : ""}</span></button>
+      <span class="mpt1">${T != null ? fnum(T) + "°" : ""}${H != null ? `<small>${Math.round(H)}%</small>` : ""}</span></button>${rigaDev(a, f)}
     <div class="mpi1">${nL ? `<button class="${L ? "on" : ""}" data-act="mpLights" data-id="${a}" title="${t("Luci", "Lights")}">💡${L ? " " + L : ""}</button>` : ""}${O ? `<i class="al">🪟 ${O}</i>` : ""}${C ? `<i>${freddo ? "❄️" : "🔥"}</i>` : ""}${mov ? `<i>🏃</i>` : ""}${pericolo ? `<i class="al">🚨</i>` : ""}</div>`
       : `<button class="mpb1" data-act="room" data-id="${a}" aria-label="${esc(nomeStanza(a, f))}"></button>`}
     ${UI.edit ? comandi(a, i, f) : ""}</div>`).join("");
@@ -85,7 +101,7 @@ function pagina() {
   const righe = Math.max(4, ...Object.values(pos).flatMap(p => pezzi(p).map(r => r.y + r.h))), img = LAYOUT.map?.[cur.f]?.img;
   return `<div class="g"><section class="card mp1">
     <div class="ch"><div class="seg">${P.map(p => `<button class="${p.f === cur.f ? "act" : ""}" data-act="mpFloor" data-v="${p.f}">${esc(p.nome)}</button>`).join("")}</div>
-      ${isAdmin() && UI.edit ? `<span class="row" style="gap:6px"><button class="btn sm pri" data-act="mpNew" data-v="${cur.f}">＋ ${t("Stanza", "Room")}</button><button class="btn sm" data-act="mpImg" data-v="${cur.f}">🖼️ ${t("Piantina", "Floor plan")}</button><button class="btn sm" data-act="mpReset" data-v="${cur.f}">↺ ${t("Disposizione automatica", "Auto layout")}</button></span>` : ""}</div>
+      ${isAdmin() && UI.edit ? `<span class="row" style="gap:6px"><div class="seg">${[["auto", "✨ " + t("Dispositivi automatici", "Auto devices")], ["manual", "✋ " + t("Solo scelti", "Chosen only")]].map(([k, n]) => `<button class="${(mp(cur.f).devMode || "auto") === k ? "act" : ""}" data-act="mpDevMode" data-v="${k}" data-f="${cur.f}">${n}</button>`).join("")}</div><button class="btn sm pri" data-act="mpNew" data-v="${cur.f}">＋ ${t("Stanza", "Room")}</button><button class="btn sm" data-act="mpImg" data-v="${cur.f}">🖼️ ${t("Piantina", "Floor plan")}</button><button class="btn sm" data-act="mpReset" data-v="${cur.f}">↺ ${t("Disposizione automatica", "Auto layout")}</button></span>` : ""}</div>
     <div class="mpw1"><div class="mpg1 ${UI.edit ? "edit" : ""}" style="grid-template-rows:repeat(${righe},64px)${img ? `;background-image:url('${esc(img)}')` : ""}">${cur.stanze.map(a => stanza(a, pos[a], cur.f)).join("")}</div>
       <svg class="mpm1" viewBox="0 0 ${COL} ${righe}" preserveAspectRatio="none" aria-hidden="true"><path d="${muri(pos, cur.stanze)}"/></svg></div>
     ${UI.edit && cur.nascoste.length ? `<div class="fl1">${t("Tolte dalla mappa", "Removed from the map")}</div><div class="vr1">${cur.nascoste.map(a => `<button data-act="mpShow" data-id="${a}" data-f="${cur.f}">👁 ${esc(nomeStanza(a, cur.f))}</button>`).join("")}</div>` : ""}
@@ -120,6 +136,17 @@ Object.assign(ACT, {
   mpHide: el => { const a = el.dataset.id, f = fl(el); mapSet(f, m => { m.hide = [...new Set([...(m.hide || []), a])]; }); },
   mpShow: el => { const a = el.dataset.id, f = fl(el); mapSet(f, m => { m.hide = (m.hide || []).filter(x => x !== a); }); },
   mpNew: el => nomeSheet(el.dataset.v, null),
+  mpDev: el => { const id = el.dataset.id, d = id.split(".")[0];
+    if (UI.edit) return; if (["light", "switch", "fan", "input_boolean", "humidifier"].includes(d)) svc(d, "toggle", {}, { entity_id: id });
+    else if (d === "cover") svc("cover", "toggle", {}, { entity_id: id }); else if (["scene", "script"].includes(d)) svc(d, "turn_on", {}, { entity_id: id });
+    else moreInfo(id); },
+  mpDevDel: el => { const id = el.dataset.id, a = el.dataset.a, f = fl(el);
+    mapSet(f, m => { m.devs = m.devs || {}; const c = m.devs[a] = m.devs[a] || {}; c.add = (c.add || []).filter(x => x !== id); c.hide = [...new Set([...(c.hide || []), id])]; }); },
+  mpDevAdd: el => { const a = el.dataset.a, f = fl(el);
+    scegli({ titolo: "＋ " + esc(nomeStanza(a, f)), sotto: t("Qualsiasi dispositivo della casa: compare come icona nella stanza.", "Any device in the house: it shows as an icon in the room."), area: AREAS[a] ? a : null, auto: false, attuale: null,
+      filtro: id => /^(light|switch|cover|fan|media_player|lock|climate|vacuum|humidifier|camera|sensor|binary_sensor|scene|script|input_boolean)\./.test(id) && !dispositivi(a, f).includes(id),
+      onPick: id => id && mapSet(f, m => { m.devs = m.devs || {}; const c = m.devs[a] = m.devs[a] || {}; c.hide = (c.hide || []).filter(x => x !== id); c.add = [...new Set([...(c.add || []), id])]; }, "＋ " + nm(id)) }); },
+  mpDevMode: el => { const f = fl(el), v = el.dataset.v; mapSet(f, m => { if (v === "auto") delete m.devMode; else m.devMode = v; }); },
   mpCustom: el => nomeSheet(fl(el), el.dataset.id),
   mpCustomDel: el => { const a = el.dataset.id, f = fl(el); mapSet(f, m => { m.custom = (m.custom || []).filter(c => c.id !== a); if (m.rooms) delete m.rooms[a]; }); },
   mpNameSave: el => { const f = el.dataset.f, id = el.dataset.id, n = (document.getElementById("mp1n")?.value || "").trim(); if (!n) return toast(t("Scrivi un nome", "Write a name"), true);

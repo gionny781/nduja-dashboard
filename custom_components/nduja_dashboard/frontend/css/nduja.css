@@ -334,3 +334,25 @@ button.tr1{width:100%;text-align:left;padding:4px 6px;margin:0 -6px;border-radiu
 .apg1>*{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.06);text-align:left;color:var(--tx)}
 .apg1 small{display:block;font-size:11px;color:var(--tx2)}.apg1 b{font-size:16px}
 .mpr1.cust{background:rgba(120,125,150,.22)}
+.api1{display:inline-grid;place-items:center;width:30px;height:30px;font-size:22px;vertical-align:middle}
+.api1 img{width:30px;height:30px;object-fit:contain;border-radius:6px}
+.an-gira{animation:ap-gira 1.4s linear infinite}
+.an-vibra{animation:ap-vibra .35s ease-in-out infinite}
+.an-pulsa{animation:ap-pulsa 1.4s ease-in-out infinite}
+.an-salta{animation:ap-salta .9s ease-in-out infinite}
+.an-fumo{position:relative;animation:ap-pulsa 2s ease-in-out infinite}
+.an-fumo::after{content:"〰";position:absolute;top:-14px;left:50%;font-size:12px;opacity:.7;transform:translateX(-50%);animation:ap-fumo 1.6s ease-out infinite}
+@keyframes ap-gira{to{transform:rotate(360deg)}}
+@keyframes ap-vibra{0%,100%{transform:translate(0,0) rotate(0)}25%{transform:translate(-1.5px,.5px) rotate(-3deg)}75%{transform:translate(1.5px,-.5px) rotate(3deg)}}
+@keyframes ap-pulsa{50%{transform:scale(1.18);filter:drop-shadow(0 0 6px rgba(48,209,88,.8))}}
+@keyframes ap-salta{50%{transform:translateY(-6px)}}
+@keyframes ap-fumo{0%{opacity:0;transform:translate(-50%,6px)}40%{opacity:.8}100%{opacity:0;transform:translate(-50%,-10px)}}
+.ico1{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:6px;margin-bottom:8px}
+.ico1 button{height:40px;border-radius:10px;font-size:20px;background:rgba(255,255,255,.06)}
+.ico1 button.on{background:rgba(10,132,255,.35);outline:2px solid #0a84ff}
+.mpd1{display:flex;flex-wrap:wrap;gap:3px;padding:0 8px 4px;max-height:58px;overflow:hidden}
+.mpd2{display:inline-flex;align-items:center;border-radius:9px;background:rgba(255,255,255,.1);font-size:13px}
+.mpd2 button{padding:2px 5px;line-height:1.2}
+.mpd2.on{background:rgba(255,214,10,.4);box-shadow:0 0 8px rgba(255,214,10,.4)}
+.mpd2 .dx{font-size:9px;padding:2px 4px;color:#ff6961}
+.mpd2.add{padding:2px 7px;color:var(--green);font-weight:700}
