@@ -387,6 +387,17 @@ async function getConn() {
   try { if (window.parent !== window && window.parent.hassConnection) { const r = await window.parent.hassConnection; if (r?.conn) return r.conn; } } catch { /* origine diversa */ }
   return null;
 }
+/** chiamata REST a Home Assistant con il token della sessione (serve per salvare le automazioni) */
+export async function api(method, path, body) {
+  const r = await window.parent.hassConnection, auth = r?.auth;
+  if (!auth) throw new Error("no auth");
+  if (auth.expired) await auth.refreshAccessToken();
+  const res = await fetch(path, { method, headers: { Authorization: "Bearer " + auth.accessToken, "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+  if (!res.ok) throw new Error(res.status + " " + (await res.text().catch(() => "")));
+  const tx = await res.text(); try { return JSON.parse(tx); } catch { return tx; }
+}
+/** apre una pagina di Home Assistant (fuori dalla plancia) */
+export function apriHA(path) { try { parent.history.pushState(null, "", path); parent.dispatchEvent(new CustomEvent("location-changed")); } catch { window.open(path, "_top"); } }
 async function loadRegistry() {
   const q = type => ws({ type }).catch(() => null);
   const [er, dr, ar, fr] = await Promise.all([q("config/entity_registry/list_for_display"), q("config/device_registry/list"), q("config/area_registry/list"), q("config/floor_registry/list")]);

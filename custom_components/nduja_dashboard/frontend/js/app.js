@@ -14,5 +14,6 @@ import "./pages/robot.js";
 import "./pages/sicurezza.js";
 import "./pages/telecamere.js";
 import "./pages/calendario.js";
+import "./pages/automazioni.js";
 import "./pages/aggiornamenti.js";
 import "./pages/impostazioni.js";
