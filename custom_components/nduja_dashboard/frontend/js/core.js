@@ -295,6 +295,7 @@ function haScuro() {
   return matchMedia("(prefers-color-scheme: dark)").matches;
 }
 export function applyTheme() {
+  applyKiosk();
   const m = tema(), scuro = m === "dark" || (m === "auto" && haScuro());
   document.body.classList.toggle("light", !scuro);
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", scuro ? "#05070d" : "#eef2f8");
@@ -319,6 +320,37 @@ export function applyNav() {
 }
 ACT.navMode = el => { sSet("nav", el.dataset.v); applyNav(); render(true); toast(el.dataset.v === "auto" ? t("Barra a scomparsa: avvicinati al bordo per farla comparire", "Auto-hide bar: move to the edge to show it") : t("Barra sempre visibile", "Bar always visible")); };
 ACT.navPeek = () => navShow(5000);
+
+/* ---------- schermo intero e modalità chiosco (per ogni dispositivo) ----------
+   ⛶ mette la plancia a tutto schermo (dove il browser lo permette, es. tablet, PC, Android);
+   la modalità chiosco nasconde barra laterale e intestazione di Home Assistant e resta attiva ad ogni apertura
+   (funziona anche su iPhone, dove il tutto schermo non esiste). */
+export function chiosco() { return sGet("kiosk") === "1"; }
+var KCSS = `ha-sidebar,.toolbar,app-header,app-toolbar,ha-top-app-bar-fixed>*[slot=navigationIcon]{display:none!important}
+  ha-drawer{--mdc-drawer-width:0px!important}
+  :host{--header-height:0px!important;--mdc-drawer-width:0px!important}
+  .content,#content,hass-subpage{top:0!important;height:100%!important;padding-top:0!important}`;
+function radici() { const R = []; try { let n = window.frameElement; while (n) { const r = n.getRootNode(); if (r && r !== document && r.host) { R.push(r); n = r.host; } else break; } } catch {} return R; }
+export function applyKiosk() {
+  for (const r of radici()) {
+    let st = r.querySelector("style[data-nduja-kiosk]");
+    if (chiosco() && !st) { st = document.createElement("style"); st.setAttribute("data-nduja-kiosk", ""); st.textContent = KCSS; r.appendChild(st); }
+    if (!chiosco() && st) st.remove();
+  }
+}
+const fsEl = () => { try { return parent.document.fullscreenElement || parent.document.webkitFullscreenElement; } catch { return document.fullscreenElement; } };
+export const puoFullscreen = () => { try { const f = window.frameElement || document.documentElement; return !!(f.requestFullscreen || f.webkitRequestFullscreen); } catch { return false; } };
+ACT.fullscreen = async () => {
+  try {
+    if (fsEl()) { const d = fsEl().ownerDocument; await (d.exitFullscreen || d.webkitExitFullscreen).call(d); return; }
+    const f = window.frameElement || document.documentElement;
+    if (f.requestFullscreen || f.webkitRequestFullscreen) { await (f.requestFullscreen || f.webkitRequestFullscreen).call(f); return; }
+  } catch (e) { console.warn("fullscreen", e); }
+  ACT.kiosk();   /* niente tutto schermo (iPhone): uso la modalità chiosco */
+};
+ACT.kiosk = () => { sSet("kiosk", chiosco() ? "0" : "1"); applyKiosk(); toast(chiosco() ? "🖥️ " + t("Modalità chiosco attiva", "Kiosk mode on") : t("Modalità chiosco spenta", "Kiosk mode off")); render(true); };
+document.addEventListener("fullscreenchange", () => render(true));
+try { parent.document.addEventListener("fullscreenchange", () => render(true)); } catch {}
 let lastY = 0;
 window.addEventListener("scroll", () => { if (navMode() !== "auto") return; const y = window.scrollY; if (y < lastY - 8 || y < 40) navShow(); else if (y > lastY + 8) { document.body.classList.add("navhide"); clearTimeout(navT); } lastY = y; }, { passive: true });
 document.addEventListener("mousemove", e => { if (navMode() === "auto" && (e.clientX < 36 || e.clientY > innerHeight - 50)) navShow(); }, { passive: true });
@@ -366,6 +398,7 @@ function renderStrip() {
     ${L ? `<span class="pillv sun" data-act="go" data-id="luci">💡 ${L}</span>` : ""}
     ${w ? `<span class="pillv">${(WX()[S[w].state] || ["🌡️"])[0]} ${fnum(attr(w, "temperature"))}°</span>` : ""}
     <button class="pillv th1" data-act="theme" title="${t("Tema", "Theme")}">${{ auto: "◐", light: "☀︎", dark: "☾" }[tema()]}</button>
+    <button class="pillv th1 ${fsEl() || chiosco() ? "on" : ""}" data-act="fullscreen" title="${t("Tutto schermo", "Full screen")}">${fsEl() ? "🗗" : "⛶"}</button>
     ${UI.page === "home" ? "" : `<span class="pillv"><span class="st ${conn?.connected ? "ok" : ""}"></span>${hhmm(Date.now())}</span>`}`);
 }
 

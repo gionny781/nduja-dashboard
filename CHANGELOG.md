@@ -3,6 +3,12 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.6-beta
+- 🇮🇹 **Tutto schermo**: pulsante ⛶ in alto accanto al tema; la plancia occupa tutto lo schermo (dove il browser lo permette). Di nuovo per uscire (o tasto Esc).
+- 🇮🇹 **Modalità chiosco** (⚙️ Impostazioni → Questo dispositivo): nasconde barra laterale e intestazione di Home Assistant su quel dispositivo, a ogni apertura — ideale per il tablet a muro; funziona anche su iPhone, dove il tutto schermo non c'è.
+- 🇬🇧 **Full screen**: ⛶ button at the top next to the theme; the dashboard fills the screen (where the browser allows it). Again to exit (or Esc).
+- 🇬🇧 **Kiosk mode** (⚙️ Settings → This device): hides Home Assistant's sidebar and header on that device, every time — great for a wall tablet; works on iPhone too, where full screen isn't available.
+
 ## 0.7.5-beta
 - 🇮🇹 **Automazioni**: tutte le automazioni di Home Assistant con ricerca, filtro attive/spente, interruttore, ▶ esegui adesso e quando sono partite l'ultima volta. **＋ Nuova automazione** senza uscire dalla plancia: Quando (a un'ora e in certi giorni, un dispositivo cambia, alba/tramonto, qualcuno arriva o esce) → Solo se (fascia oraria, qualcuno/nessuno in casa) → Allora (accendi, spegni, commuta, scena o script, notifica al telefono, aspetta). Si salvano in Home Assistant; quelle create qui si modificano ed eliminano anche qui, le altre si aprono nell'editor di Home Assistant.
 - 🇬🇧 **Automations**: every Home Assistant automation with search, on/off filter, switch, ▶ run now and last run. **＋ New automation** without leaving the dashboard: When (at a time on chosen days, a device changes, sunrise/sunset, someone arrives or leaves) → Only if (time range, someone/nobody home) → Then (turn on, off, toggle, scene or script, phone notification, wait). Saved in Home Assistant; the ones created here can be edited and deleted here, the others open in Home Assistant's editor.

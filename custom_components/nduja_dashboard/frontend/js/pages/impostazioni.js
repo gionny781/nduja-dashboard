@@ -3,7 +3,7 @@
    (valgono su tutti i dispositivi) e solo un amministratore può cambiarle. */
 import { scegli, isTemp, isHum } from "../edit.js";
 import { S, UI, AREAS, FLOORS, REG, ACT, CHG, LAYOUT, PAGES, t, LOC, esc, nm, ok, attr, allEnts, shortName, climateSensors,
-  saveLayout, render, toast, go, page, isAdmin, deviceClass, HVAC, manualKind, excluded, tema, navMode } from "../core.js";
+  saveLayout, render, toast, go, page, isAdmin, deviceClass, HVAC, manualKind, excluded, tema, navMode, chiosco } from "../core.js";
 
 const DEV = ["cover", "switch", "fan", "lock", "media_player", "humidifier", "vacuum", "siren", "valve"];
 const OPEN = ["door", "window", "opening", "garage_door"];
@@ -114,8 +114,11 @@ function dispositivo() {
   return `<section class="card dev1"><div class="ch"><h2>📱 ${t("Questo dispositivo", "This device")}</h2></div>
     <div class="dev1g"><div><b>${t("Tema", "Theme")}</b>${seg("themeSet", tema(), [["auto", "◐ " + t("Automatico", "Auto")], ["light", "☀︎ " + t("Chiaro", "Light")], ["dark", "☾ " + t("Scuro", "Dark")]])}</div>
     <div><b>${t("Barra di navigazione", "Navigation bar")}</b>${seg("navMode", navMode(), [["fixed", t("Sempre visibile", "Always visible")], ["auto", t("A scomparsa", "Auto-hide")]])}
-      <small class="muted">${t("A scomparsa: compare avvicinandoti al bordo, toccando la linguetta o scorrendo verso l'alto.", "Auto-hide: it appears when you move to the edge, tap the handle or scroll up.")}</small></div></div></section>`;
+      <small class="muted">${t("A scomparsa: compare avvicinandoti al bordo, toccando la linguetta o scorrendo verso l'alto.", "Auto-hide: it appears when you move to the edge, tap the handle or scroll up.")}</small></div>
+    <div><b>${t("Modalità chiosco", "Kiosk mode")}</b>${seg("kioskSet", chiosco() ? "1" : "0", [["0", t("Spenta", "Off")], ["1", "🖥️ " + t("Attiva", "On")]])}
+      <small class="muted">${t("Nasconde la barra laterale e l'intestazione di Home Assistant su questo dispositivo, a ogni apertura. Il pulsante ⛶ in alto mette a tutto schermo (dove il browser lo permette).", "Hides Home Assistant's sidebar and header on this device, every time. The ⛶ button at the top goes full screen (where the browser allows it).")}</small></div></div></section>`;
 }
+ACT.kioskSet = el => { if ((el.dataset.v === "1") !== chiosco()) ACT.kiosk(); };
 ACT.themeSet = el => { try { localStorage.setItem("nduja_theme", el.dataset.v); } catch {} ; ACT.theme && (document.body.classList.remove("light")); render(true); };
 
 function pagina() {
