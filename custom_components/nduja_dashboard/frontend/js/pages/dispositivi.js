@@ -2,7 +2,7 @@
 import { AREAS, t, esc, ents, areaOf, areasSorted, entityRow, card, empty, page, UI, isAdmin } from "../core.js";
 import { item, addBtn } from "../edit.js";
 
-const DOM = ["switch", "cover", "fan", "media_player", "lock", "humidifier", "valve", "siren", "input_boolean"];
+const DOM = ["switch", "cover", "fan", "lock", "humidifier", "valve", "siren", "input_boolean"];
 const tutti = () => DOM.flatMap(d => ents(d));
 function pagina() {
   const L = tutti(), g = {};

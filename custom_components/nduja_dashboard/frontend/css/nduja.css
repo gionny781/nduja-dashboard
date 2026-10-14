@@ -401,3 +401,17 @@ button.tr1{width:100%;text-align:left;padding:4px 6px;margin:0 -6px;border-radiu
 .mob1.on{background:rgba(10,132,255,.3);border-color:#0a84ff}
 .mob1.add{border-style:dashed;color:var(--green)}
 .mob1 i{position:absolute;top:6px;right:6px;font-style:normal;font-size:12px;background:rgba(0,0,0,.4);border-radius:8px;padding:2px 5px}
+/* musica e TV */
+.mpl1{display:flex;gap:14px;padding:12px;border-radius:20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);align-items:flex-start}
+.mpl1:not(.on){opacity:.7}.mpl1.play{background:linear-gradient(135deg,rgba(191,90,242,.18),rgba(10,132,255,.12))}
+.mpa1{flex:none;width:96px;height:96px;border-radius:14px;background:rgba(255,255,255,.08) center/cover;display:grid;place-items:center;font-size:38px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.mpl1.mini .mpa1{width:58px;height:58px;font-size:24px}
+.mpt2{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.mpt2>small{color:var(--tx2);font-size:12px}
+.mpn1{display:flex;flex-direction:column;min-width:0}.mpn1 b,.mpn1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mpn1 span{font-size:12.5px;color:var(--tx2)}
+.mpk1{display:flex;gap:6px;align-items:center;margin-top:4px}
+.mpc1{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);font-size:15px;color:var(--tx)}
+.mpc1.big{width:46px;height:46px;font-size:19px;background:var(--tx);color:var(--bg,#000)}.mpc1.on{background:rgba(10,132,255,.4)}
+.mpv1{display:flex;align-items:center;gap:8px;margin-top:4px}.mpv1 input{flex:1}.mpv1 em{font-style:normal;font-size:12px;width:26px;text-align:right;color:var(--tx2)}
+.mpg2{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+@media (max-width:520px){.mpg2{grid-template-columns:minmax(0,1fr)}.mpa1{width:72px;height:72px}}

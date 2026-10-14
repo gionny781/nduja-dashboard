@@ -12,6 +12,7 @@ import "./pages/energia.js";
 import "./pages/dispositivi.js";
 import "./pages/custom.js";
 import "./pages/elettrodomestici.js";
+import "./pages/musica.js";
 import "./pages/robot.js";
 import "./pages/sicurezza.js";
 import "./pages/telecamere.js";

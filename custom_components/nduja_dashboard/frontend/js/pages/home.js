@@ -1,13 +1,14 @@
 /* Home: saluto e riepilogo, meteo, stanze (per piano), persone, scene, cose da sistemare.
    Tutto viene dalle aree e dai dispositivi di Home Assistant: niente da configurare. */
 import { S, AREAS, FLOORS, UI, ACT, CHG, t, LOC, esc, fnum, attr, ok, val, nm, ents, inArea, areaOf, areasSorted, roomTemp, roomHum,
-  openings, lightsOn, isOn, card, empty, lightTile, climateCard, entityRow, openSheet, closeSheet, page, WX, HVAC, forecast, deviceClass, shortName, svc, toast, ago, weatherEnt, LAYOUT, isAdmin, saveLayout } from "../core.js";
+  openings, lightsOn, isOn, card, empty, lightTile, climateCard, entityRow, openSheet, closeSheet, page, WX, HVAC, forecast, deviceClass, shortName, svc, toast, ago, weatherEnt, LAYOUT, isAdmin, saveLayout, utenteCfg } from "../core.js";
 import { item, addBtn, scegli, isTemp, isHum, cambia } from "../edit.js";
 import { personeCard } from "../people.js";
 import { avvisiCard } from "../avvisi.js";
 import { raccoltaCard } from "../raccolta.js";
 import { agendaCard } from "./calendario.js";
 import { momentiCard } from "../momenti.js";
+import { musicaCard } from "./musica.js";
 
 const saluto = () => { const h = new Date().getHours(); return h < 6 ? t("Buonanotte", "Good night") : h < 13 ? t("Buongiorno", "Good morning") : h < 18 ? t("Buon pomeriggio", "Good afternoon") : t("Buonasera", "Good evening"); };
 const climaAttivi = () => ents("climate", id => ok(id) && S[id].state !== "off");
@@ -142,9 +143,12 @@ const SCHEDE = () => ({
   persone: [t("Persone", "People"), personeCard],
   raccolta: [t("Raccolta differenziata", "Waste collection"), raccoltaCard, "rfEdit"],
   agenda: [t("Agenda", "Agenda"), agendaCard, "calEdit"],
+  musica: [t("In riproduzione", "Now playing"), musicaCard],
 });
 const ordine = () => { const K = Object.keys(SCHEDE()), o = (LAYOUT.home?.order || []).filter(k => K.includes(k)); return [...o, ...K.filter(k => !o.includes(k))]; };
-const nascoste = () => LAYOUT.home?.hidden || [];
+const nascoste = () => UI.edit ? (LAYOUT.home?.hidden || []) : [...new Set([...(LAYOUT.home?.hidden || []), ...(utenteCfg().homeHidden || [])])];
+/** schede della Home (per le scelte per persona in Impostazioni) */
+export const schedeHome = () => Object.entries(SCHEDE()).map(([k, v]) => [k, v[0]]);
 function attrezzi(k, html, i, n) {
   const off = nascoste().includes(k), cfg = SCHEDE()[k][2];
   const bar = `<div class="hct1"><b>${esc(SCHEDE()[k][0])}</b><span class="grow"></span>${cfg ? `<button data-act="${cfg}" title="${t("Impostazioni", "Settings")}">⚙️</button>` : ""}

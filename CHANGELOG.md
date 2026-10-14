@@ -3,6 +3,14 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.8-beta
+- 🇮🇹 **Musica e TV**: nuova pagina con casse e TV per stanza: copertina, titolo e artista, ⏮ ⏯ ⏭, casuale e ripeti, volume e muto, sorgente e modalità audio, accendi/spegni. In Home la scheda «In riproduzione».
+- 🇮🇹 **Esporta / importa le impostazioni** (⚙️ Impostazioni → Personalizza): un file con tutte le scelte della plancia, per backup o per un altro Home Assistant.
+- 🇮🇹 **Plancia per persona** (⚙️ Impostazioni): per ogni utente di Home Assistant scegli quali pagine e quali schede della Home vede; pulsante «Plancia semplice» già pronto.
+- 🇬🇧 **Music and TV**: new page with speakers and TVs by room: artwork, title and artist, ⏮ ⏯ ⏭, shuffle and repeat, volume and mute, source and sound mode, power. «Now playing» card on Home.
+- 🇬🇧 **Export / import settings** (⚙️ Settings → Customize): one file with every dashboard choice, for backup or another Home Assistant.
+- 🇬🇧 **Per-person dashboard** (⚙️ Settings): for each Home Assistant user choose which pages and Home cards they see; ready-made «Simple dashboard» button.
+
 ## 0.7.7-beta
 - 🇮🇹 **Salvaschermo** (⚙️ Impostazioni → Questo dispositivo): dopo 1, 5, 10 o 30 minuti senza tocchi mostra un orologio grande con data, meteo, temperatura di casa e persone in casa, oppure le **tue foto** da una cartella dei Media di Home Assistant (in dissolvenza); di notte si attenua, si sveglia al tocco.
 - 🇮🇹 **Grafici**: tocca un sensore con un numero (temperatura, umidità, consumi…) e vedi l'andamento di 24 ore, 7 o 30 giorni con minimo, massimo e media, dentro la plancia.

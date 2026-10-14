@@ -249,11 +249,13 @@ export function nomiStanze() { for (const a in AREAS) AREAS[a].name = LAYOUT.are
 HOOKS.push(nomiStanze);
 /** registra una pagina: { title, short, icon, render, badge, order, show } */
 export function page(id, def) { PAGES[id] = { order: 50, show: () => true, ...def }; if (conn) render(); }
-const visible = () => Object.keys(PAGES).filter(k => !PAGES[k].hiddenNav && PAGES[k].show() && LAYOUT.pages?.[k] !== false && (!PAGES[k].admin || isAdmin())).sort((a, b) => PAGES[a].order - PAGES[b].order);
+/** scelte per la persona che sta usando la plancia (pagine e schede della Home), decise dall'amministratore */
+export const utenteCfg = () => (UI.user?.id && LAYOUT.users?.[UI.user.id]) || {};
+const visible = () => Object.keys(PAGES).filter(k => !PAGES[k].hiddenNav && PAGES[k].show() && LAYOUT.pages?.[k] !== false && utenteCfg().pages?.[k] !== false && (!PAGES[k].admin || isAdmin())).sort((a, b) => PAGES[a].order - PAGES[b].order);
 export function go(id) {
   HOOKS.forEach(f => { try { f(); } catch (e) { console.error(e); } });
   if (!LAYOUT.configured && isAdmin() && PAGES.benvenuto && id !== "impostazioni") id = "benvenuto";
-  if (!PAGES[id] || !PAGES[id].show() || (PAGES[id].admin && !isAdmin())) id = "home";
+  if (!PAGES[id] || !PAGES[id].show() || (PAGES[id].admin && !isAdmin()) || (utenteCfg().pages?.[id] === false && id !== "impostazioni")) id = "home";
   if (UI.page !== id) UI.edit = false;
   UI.page = id; sSet("page", id);
   try { if (location.hash !== "#" + id) history.replaceState(null, "", "#" + id); } catch {}
