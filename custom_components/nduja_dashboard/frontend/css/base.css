@@ -85,7 +85,7 @@ input,select,textarea{font:inherit;color:var(--tx)}
 .btn.sm{padding:7px 12px;font-size:12.5px}
 .row{display:flex;align-items:center;gap:10px}
 .wrap{flex-wrap:wrap}.between{justify-content:space-between}.grow{flex:1;min-width:0}
-.stack{display:grid;gap:8px}
+.stack{display:grid;gap:8px;grid-template-columns:minmax(0,1fr)}
 
 /* interruttore iOS */
 .sw{position:relative;width:51px;height:31px;border-radius:999px;background:rgba(120,120,128,.36);flex:none;transition:background .25s}

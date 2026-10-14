@@ -86,6 +86,16 @@ body.light .inv68 .t{fill:#1c1c1e!important}
 body.light .inv68 .s{fill:rgba(28,28,30,.6)!important}
 body.light .cn1{border-bottom:1px solid rgba(0,0,0,0.035)!important}
 body.light .cn1 i{background:rgba(0,0,0,0.035)!important}
+body.light body.navauto.navhide .navh1{background:rgba(0,0,0,0.090)!important}
+body.light .ps2{background:rgba(0,0,0,0.028)!important;border:1px solid rgba(0,0,0,0.042)!important}
+body.light .av2{border:3px solid rgba(0,0,0,0.126)!important}
+body.light .ps2 small{color:var(--tx3,rgba(28,28,30,.45))!important}
+body.light .pb2{border:1px solid rgba(0,0,0,0.245)!important}
+body.light .rfr1{background:rgba(0,0,0,0.020)!important}
+body.light .ev1{background:rgba(0,0,0,0.025)!important}
+body.light .x3{background:rgba(0,0,0,0.035)!important}
+body.light .x3:hover{background:rgba(0,0,0,0.080)!important}
+body.light .rfc1 select{background:rgba(0,0,0,0.040)!important;border:1px solid rgba(0,0,0,0.084)!important}
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
 body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
@@ -112,4 +122,7 @@ body.light [style*="#ffd60a"],body.light .pillv.sun{color:#b88600!important}
 body.light [style*="#64d2ff"]{color:#0a7fd1!important}
 body.light .sun68 circle,body.light .sun68 line{stroke:#e0a800!important}
 body.light .tt68 b[style*="#30d158"],body.light .og68 b[style*="#30d158"]{color:#1f9e45!important}
+body.light .av2{color:#fff;background-color:#8e8e93;border-color:rgba(0,0,0,.12)}body.light .ps2.home .av2{border-color:var(--green)}
+body.light .av2 b{border-color:#fff}body.light .pb2{border-color:rgba(0,0,0,.35)}
+body.light .x3{background:rgba(0,0,0,.06)}
 

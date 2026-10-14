@@ -1,6 +1,7 @@
 """'Nduja Dashboard: una plancia a pagina intera per Home Assistant, nella barra laterale."""
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +16,19 @@ from .const import (CONF_ADMIN, CONF_ICON, CONF_TITLE, DEFAULT_ICON, DEFAULT_TIT
                     DOMAIN, PANEL_URL, STATIC_URL, VERSION)
 
 FRONTEND_DIR = Path(__file__).parent / "frontend"
+
+
+def _build_id() -> str:
+    """Impronta dei file della plancia: cambia appena cambia un file, così i browser riscaricano tutto
+    anche se il numero di versione è lo stesso (per esempio installando «main» da HACS)."""
+    h = hashlib.sha1()
+    for f in sorted(FRONTEND_DIR.rglob("*")):
+        if f.is_file():
+            h.update(f.relative_to(FRONTEND_DIR).as_posix().encode())
+            h.update(f.read_bytes())
+    return h.hexdigest()[:8]
+
+
 STORE_VERSION = 1
 EVENT_LAYOUT = f"{DOMAIN}_layout_updated"
 
@@ -23,9 +37,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Pubblica i file della plancia, carica le scelte del wizard e aggiunge la voce nella barra laterale."""
     data = hass.data.setdefault(DOMAIN, {})
     if not data.get("static"):
-        # la versione nell'indirizzo fa scaricare i file nuovi a ogni aggiornamento
+        # versione + impronta dei file nell'indirizzo: i file nuovi si scaricano appena cambiano
+        data["build"] = f"{VERSION}-{await hass.async_add_executor_job(_build_id)}"
         await hass.http.async_register_static_paths(
-            [StaticPathConfig(f"{STATIC_URL}/{VERSION}", str(FRONTEND_DIR), True)]
+            [StaticPathConfig(f"{STATIC_URL}/{data['build']}", str(FRONTEND_DIR), True)]
         )
         websocket_api.async_register_command(hass, ws_config)
         websocket_api.async_register_command(hass, ws_save_layout)
@@ -48,7 +63,7 @@ def _register_panel(hass: HomeAssistant, entry: ConfigEntry) -> None:
         sidebar_title=opt.get(CONF_TITLE, DEFAULT_TITLE),
         sidebar_icon=opt.get(CONF_ICON, DEFAULT_ICON),
         frontend_url_path=PANEL_URL,
-        config={"url": f"{STATIC_URL}/{VERSION}/index.html"},
+        config={"url": f"{STATIC_URL}/{hass.data[DOMAIN]['build']}/index.html"},
         require_admin=opt.get(CONF_ADMIN, False),
         update=True,
     )
@@ -67,7 +82,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Integrazione rimossa: cancello anche le scelte del wizard."""
     await Store(hass, STORE_VERSION, f"{DOMAIN}.layout").async_remove()
-    hass.data.pop(DOMAIN, None)
+    data = hass.data.get(DOMAIN, {})
+    data.pop("store", None)
+    data.pop("layout", None)   # i file statici restano registrati fino al riavvio
 
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/config"})

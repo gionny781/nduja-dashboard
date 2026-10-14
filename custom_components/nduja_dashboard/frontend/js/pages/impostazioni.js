@@ -2,7 +2,7 @@
    Si parte da tutto acceso e si toglie quello che non serve; le scelte si salvano in Home Assistant
    (valgono su tutti i dispositivi) e solo un amministratore può cambiarle. */
 import { S, AREAS, FLOORS, REG, ACT, CHG, LAYOUT, PAGES, t, LOC, esc, nm, ok, attr, allEnts, shortName, climateSensors,
-  saveLayout, render, toast, go, page, isAdmin, deviceClass, HVAC, manualKind, excluded } from "../core.js";
+  saveLayout, render, toast, go, page, isAdmin, deviceClass, HVAC, manualKind, excluded, tema, navMode } from "../core.js";
 
 const DEV = ["cover", "switch", "fan", "lock", "media_player", "humidifier", "vacuum", "siren", "valve"];
 const OPEN = ["door", "window", "opening", "garage_door"];
@@ -95,10 +95,20 @@ function passoFine() {
     <button class="btn sm" data-act="wzReset" style="margin-top:10px">↺ ${t("Annulla le scelte di questi passi", "Undo the choices in these steps")}</button>`;
 }
 
+/* scelte di questo tablet o telefono (non toccano gli altri dispositivi) */
+function dispositivo() {
+  const seg = (act, cur, opts) => `<div class="seg">${opts.map(([k, n]) => `<button class="${cur === k ? "act" : ""}" data-act="${act}" data-v="${k}">${n}</button>`).join("")}</div>`;
+  return `<section class="card dev1"><div class="ch"><h2>📱 ${t("Questo dispositivo", "This device")}</h2></div>
+    <div class="dev1g"><div><b>${t("Tema", "Theme")}</b>${seg("themeSet", tema(), [["auto", "◐ " + t("Automatico", "Auto")], ["light", "☀︎ " + t("Chiaro", "Light")], ["dark", "☾ " + t("Scuro", "Dark")]])}</div>
+    <div><b>${t("Barra di navigazione", "Navigation bar")}</b>${seg("navMode", navMode(), [["fixed", t("Sempre visibile", "Always visible")], ["auto", t("A scomparsa", "Auto-hide")]])}
+      <small class="muted">${t("A scomparsa: compare avvicinandoti al bordo, toccando la linguetta o scorrendo verso l'alto.", "Auto-hide: it appears when you move to the edge, tap the handle or scroll up.")}</small></div></div></section>`;
+}
+ACT.themeSet = el => { try { localStorage.setItem("nduja_theme", el.dataset.v); } catch {} ; ACT.theme && (document.body.classList.remove("light")); render(true); };
+
 function pagina() {
-  if (!isAdmin()) return `<div class="g">${`<section class="card">${t("Solo un amministratore può cambiare le impostazioni.", "Only an administrator can change the settings.")}</section>`}</div>`;
+  if (!isAdmin()) return `<div class="g">${dispositivo()}<section class="card small muted">${t("Le altre impostazioni le può cambiare solo un amministratore.", "Other settings can only be changed by an administrator.")}</section></div>`;
   const P = PASSI(), s = W.step, corpo = [passoInizio, passoStanze, passoLuci, passoClima, passoDispositivi, passoCasa, passoPagine, passoFine][s]();
-  return `<div class="g"><section class="card rst1"><div class="row" style="gap:12px;flex-wrap:wrap"><span style="font-size:28px">🌶️</span>
+  return `<div class="g">${dispositivo()}<section class="card rst1"><div class="row" style="gap:12px;flex-wrap:wrap"><span style="font-size:28px">🌶️</span>
       <div style="flex:1;min-width:200px"><b>${t("Ricomincia dal benvenuto", "Restart from the welcome screen")}</b><div class="small muted">${t("Riparte la configurazione da zero: scegli di nuovo Automatica o Manuale. Le pagine create da te restano.", "Setup starts over: choose Automatic or Manual again. Pages you created are kept.")}</div></div>
       <button class="btn warm" data-act="wzRestart">🔄 ${t("Riavvia il wizard", "Restart the wizard")}</button></div></section>
     <section class="card wz1">
@@ -148,7 +158,7 @@ Object.assign(ACT, {
 CHG.wzSensor = el => { const d = draft(), a = el.dataset.id; d.sensors[a] = { ...(d.sensors[a] || {}), [el.dataset.k]: el.value || undefined }; };
 CHG.wzWeather = el => { draft().weather = el.value || null; };
 
-page("impostazioni", { title: t("Impostazioni", "Settings"), short: t("Impost.", "Settings"), icon: "⚙️", order: 99, admin: true, bare: true, render: pagina });
+page("impostazioni", { title: t("Impostazioni", "Settings"), short: t("Impost.", "Settings"), icon: "⚙️", order: 99, bare: true, render: pagina });
 
 /** dal benvenuto: modalità manuale, si parte da zero e si va ai passi */
 export function startManual() {

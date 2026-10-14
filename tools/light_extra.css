@@ -24,3 +24,6 @@ body.light [style*="#ffd60a"],body.light .pillv.sun{color:#b88600!important}
 body.light [style*="#64d2ff"]{color:#0a7fd1!important}
 body.light .sun68 circle,body.light .sun68 line{stroke:#e0a800!important}
 body.light .tt68 b[style*="#30d158"],body.light .og68 b[style*="#30d158"]{color:#1f9e45!important}
+body.light .av2{color:#fff;background-color:#8e8e93;border-color:rgba(0,0,0,.12)}body.light .ps2.home .av2{border-color:var(--green)}
+body.light .av2 b{border-color:#fff}body.light .pb2{border-color:rgba(0,0,0,.35)}
+body.light .x3{background:rgba(0,0,0,.06)}

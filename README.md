@@ -15,7 +15,7 @@
 
 > 🧪 **BETA** — 🇮🇹 la plancia è giovane: funziona, ma può cambiare e avere difetti; segnalali nelle [Issues](https://github.com/gionny781/nduja-dashboard/issues). · 🇬🇧 young project: it works, but may change and have bugs; please report them in [Issues](https://github.com/gionny781/nduja-dashboard/issues).
 >
-> ⚠️ **Work in progress.** Version 1.0 is being built in stages. Home, Lights, Climate and Updates are ready; Energy is here; the 3D floor plan, robot vacuum and cameras are coming next.
+> ⚠️ **Work in progress.** Version 1.0 is being built in stages. Home, People, Calendar, Waste collection, Lights, Climate, Energy and Updates are ready; the 3D floor plan, robot vacuum and cameras are coming next.
 
 ---
 
@@ -25,8 +25,9 @@
 it builds itself from your **areas, floors and devices**.
 
 **What you get**
-- **Home** – greeting and a one-line summary of the house, weather with 5-day forecast, every room by floor (temperature, humidity, lights on, open windows, climate), people, scenes, and a *Needs attention* list (open windows, low batteries, pending updates). Tap a room to control everything in it.
+- **Home** – greeting and a one-line summary of the house, weather with 5-day forecast, every room by floor (temperature, humidity, lights on, open windows, climate), people (photo, where they are, distance, phone battery), scenes, waste collection, today's agenda and smart *Alerts* (window open with climate on, rain coming, washing machine done, low batteries, updates). Tap a room to control everything in it.
 - **Energy** – live flow (solar, grid, home, battery), today's totals and device consumption, from Home Assistant's Energy configuration.
+- **Calendar** – events from your Home Assistant calendars (today, week, month) and ＋ Event.
 - **Lights** – all lights by floor and room, brightness sliders, "turn off" per room and for the whole house.
 - **Climate** – thermostats and air conditioners by room, plus a temperature/humidity overview of every room.
 - **Updates** – install Home Assistant, add-on, HACS and firmware updates right from the dashboard: release notes, backup before installing, progress bar, *Install all* (Home Assistant last), skip/restore versions.
@@ -58,8 +59,9 @@ it builds itself from your **areas, floors and devices**.
 si costruisce da sola dalle tue **aree, piani e dispositivi**.
 
 **Cosa trovi**
-- **Home** – saluto e riepilogo della casa in una riga, meteo con le previsioni a 5 giorni, tutte le stanze divise per piano (temperatura, umidità, luci accese, finestre aperte, clima), persone, scene e la lista *Da sistemare* (finestre aperte, pile scariche, aggiornamenti). Tocca una stanza per comandare tutto quello che c'è dentro.
+- **Home** – saluto e riepilogo della casa in una riga, meteo con le previsioni a 5 giorni, tutte le stanze divise per piano (temperatura, umidità, luci accese, finestre aperte, clima), persone (foto, dove sono, distanza, batteria del telefono), scene, raccolta differenziata, agenda di oggi e *Avvisi* intelligenti (finestra aperta col clima acceso, pioggia in arrivo, lavatrice finita, pile scariche, aggiornamenti). Tocca una stanza per comandare tutto quello che c'è dentro.
 - **Energia** – flusso in tempo reale (sole, rete, casa, batteria), totali di oggi e consumi dei dispositivi, dalla configurazione Energia di Home Assistant.
+- **Calendario** – gli eventi dei calendari di Home Assistant (oggi, settimana, mese) e ＋ Evento.
 - **Luci** – tutte le luci per piano e stanza, con regolazione della luminosità, «spegni» per stanza e per tutta la casa.
 - **Clima** – termostati e condizionatori per stanza, più la temperatura e l'umidità di ogni stanza.
 - **Aggiornamenti** – installa dalla plancia gli aggiornamenti di Home Assistant, dei componenti aggiuntivi, di HACS e dei firmware: novità, backup prima di installare, avanzamento, *Installa tutti* (Home Assistant per ultimo), versioni saltate.

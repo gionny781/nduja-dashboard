@@ -8,5 +8,6 @@ import "./pages/clima.js";
 import "./pages/energia.js";
 import "./pages/dispositivi.js";
 import "./pages/custom.js";
+import "./pages/calendario.js";
 import "./pages/aggiornamenti.js";
 import "./pages/impostazioni.js";

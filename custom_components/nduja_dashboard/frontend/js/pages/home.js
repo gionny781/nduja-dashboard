@@ -1,12 +1,15 @@
 /* Home: saluto e riepilogo, meteo, stanze (per piano), persone, scene, cose da sistemare.
    Tutto viene dalle aree e dai dispositivi di Home Assistant: niente da configurare. */
 import { S, AREAS, FLOORS, UI, ACT, t, LOC, esc, fnum, attr, ok, val, nm, ents, inArea, areaOf, areasSorted, roomTemp, roomHum,
-  openings, lightsOn, isOn, card, empty, lightTile, climateCard, entityRow, openSheet, page, WX, HVAC, forecast, deviceClass, shortName, svc, toast, ago, weatherEnt, LAYOUT, isAdmin } from "../core.js";
+  openings, lightsOn, isOn, card, empty, lightTile, climateCard, entityRow, openSheet, closeSheet, page, WX, HVAC, forecast, deviceClass, shortName, svc, toast, ago, weatherEnt, LAYOUT, isAdmin, saveLayout } from "../core.js";
+import { item, addBtn } from "../edit.js";
+import { personeCard } from "../people.js";
+import { avvisiCard } from "../avvisi.js";
+import { raccoltaCard } from "../raccolta.js";
+import { agendaCard } from "./calendario.js";
 
 const saluto = () => { const h = new Date().getHours(); return h < 6 ? t("Buonanotte", "Good night") : h < 13 ? t("Buongiorno", "Good morning") : h < 18 ? t("Buon pomeriggio", "Good afternoon") : t("Buonasera", "Good evening"); };
 const climaAttivi = () => ents("climate", id => ok(id) && S[id].state !== "off");
-const batterieBasse = () => ents("sensor", id => deviceClass(id) === "battery" && ok(id) && val(id) != null && val(id) < 20).sort((a, b) => val(a) - val(b));
-const aggiornamenti = () => Object.keys(S).filter(id => id.startsWith("update.") && S[id].state === "on");
 
 function riepilogo() {
   const nome = (UI.user?.name || "").split(" ")[0];
@@ -22,18 +25,18 @@ function riepilogo() {
     <p class="hs1">${frasi.join(" · ")}</p>
     <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:12px">
       ${L ? `<button class="btn sm" data-act="lightsOff">💡 ${t("Spegni tutte le luci", "Turn off all lights")}</button>` : ""}
-      ${scene().slice(0, 6).map(id => `<button class="btn sm" data-act="toggle" data-id="${id}">${attr(id, "icon") ? "" : "🎬 "}${esc(nm(id))}</button>`).join("")}
+      ${scene().slice(0, UI.edit ? 99 : 6).map(id => item(id, `<button class="btn sm" data-act="toggle" data-id="${id}">🎬 ${esc(nm(id))}</button>`)).join("")}${addBtn(["scene"])}
     </div></section>`;
 }
 const scene = () => ents("scene").sort((a, b) => nm(a).localeCompare(nm(b), LOC));
 
 function meteo() {
-  const w = weatherEnt(); if (!w) return "";
+  const w = weatherEnt(); if (!w) return UI.edit ? card(`🌤️ ${t("Meteo", "Weather")}`, `<div class="small muted">${t("Nessun meteo in Home Assistant.", "No weather in Home Assistant.")}</div>`) : "";
   const a = S[w].attributes, [ic, txt] = WX()[S[w].state] || ["🌡️", S[w].state];
   const fc = forecast(w).slice(0, 5);
-  return card(`${ic} ${t("Meteo", "Weather")}`, `<div class="row" style="gap:14px"><div class="wxbig1">${fnum(a.temperature, 0)}°</div>
+  return card(`${ic} ${t("Meteo", "Weather")}`, `${UI.edit ? `<div class="small muted" style="margin:-4px 0 8px">${esc(nm(w))}</div>` : ""}<div class="row" style="gap:14px"><div class="wxbig1">${fnum(a.temperature, 0)}°</div>
       <div><b>${esc(txt)}</b><div class="small muted">${a.humidity != null ? t("Umidità ", "Humidity ") + Math.round(a.humidity) + "%" : ""}${a.wind_speed != null ? ` · ${t("vento", "wind")} ${fnum(a.wind_speed, 0)} ${esc(a.wind_speed_unit || "")}` : ""}</div></div></div>
-    ${fc.length ? `<div class="fc1">${fc.map(d => `<div><small>${new Date(d.datetime).toLocaleDateString(LOC, { weekday: "short" })}</small><span>${(WX()[d.condition] || ["·"])[0]}</span><b>${fnum(d.temperature, 0)}°</b><i>${d.templow != null ? fnum(d.templow, 0) + "°" : ""}</i></div>`).join("")}</div>` : ""}`);
+    ${fc.length ? `<div class="fc1">${fc.map(d => `<div><small>${new Date(d.datetime).toLocaleDateString(LOC, { weekday: "short" })}</small><span>${(WX()[d.condition] || ["·"])[0]}</span><b>${fnum(d.temperature, 0)}°</b><i>${d.templow != null ? fnum(d.templow, 0) + "°" : ""}</i></div>`).join("")}</div>` : ""}`, { right: UI.edit ? `<button class="btn sm" data-act="wxEdit">✏️</button>` : "" });
 }
 
 function stanza(a) {
@@ -54,23 +57,18 @@ function stanze() {
   return card(t("🏠 Stanze", "🏠 Rooms"), piani.map(f => `${piani.length > 1 ? `<div class="fl1">${esc(FLOORS[f]?.name || t("Altre", "Other"))}</div>` : ""}<div class="rms1">${perPiano[f].map(stanza).join("")}</div>`).join(""), { cls: "span3" });
 }
 
-function persone() {
-  const P = ents("person"); if (!P.length) return "";
-  const zona = s => s === "home" ? t("A casa", "Home") : s === "not_home" ? t("Fuori", "Away") : (S["zone." + s]?.attributes.friendly_name || s);
-  return card(t("👥 Persone", "👥 People"), `<div class="stack">${P.map(p => { const pic = attr(p, "entity_picture"), h = S[p].state === "home";
-    return `<div class="li" data-act="more" data-id="${p}" role="button"><span class="av1 ${h ? "home" : ""}" style="${pic ? `background-image:url('${esc(pic)}')` : ""}">${pic ? "" : esc(nm(p)[0])}</span>
-      <div class="tx"><b>${esc(nm(p))}</b><span>${esc(zona(S[p].state))} · ${ago(S[p].last_changed)}</span></div></div>`; }).join("")}</div>`);
+/* ✏️ meteo: quale previsione usare */
+function sceltaMeteo() {
+  const W = ents("weather").sort((a, b) => nm(a).localeCompare(nm(b), LOC)), cur = LAYOUT.weather || "";
+  return `<div class="sh-head"><div><h3>🌤️ ${t("Meteo di casa", "Home weather")}</h3><div class="small muted">${t("Scegli da dove prendo il meteo.", "Choose the weather source.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
+    <div class="stack"><button class="li ${!cur ? "sel1" : ""}" data-act="wxSet" data-id=""><span class="ic">✨</span><div class="tx"><b>${t("Automatico", "Automatic")}</b><span>${esc(nm(weatherEnt() || ""))}</span></div></button>
+    ${W.map(id => { const [ic, tx] = WX()[S[id].state] || ["🌡️", S[id].state]; return `<button class="li ${cur === id ? "sel1" : ""}" data-act="wxSet" data-id="${id}"><span class="ic">${ic}</span><div class="tx"><b>${esc(nm(id))}</b><span>${esc(tx)} · ${fnum(attr(id, "temperature"), 0)}° · ${esc(id)}</span></div></button>`; }).join("")}</div>`;
 }
-
-function sistemare() {
-  const O = openings().filter(isOn), B = batterieBasse(), U = aggiornamenti();
-  const n = O.length + B.length + U.length;
-  return card(`🔧 ${t("Da sistemare", "Needs attention")} <span class="tag ${n ? "warn" : "ok"}">${n || t("tutto ok", "all good")}</span>`, n ? `<div class="stack">
-    ${O.map(id => `<div class="li alert" data-act="more" data-id="${id}" role="button"><span class="ic">🪟</span><div class="tx"><b>${esc(nm(id))}</b><span>${t("aperta", "open")} · ${ago(S[id].last_changed)}</span></div></div>`).join("")}
-    ${B.map(id => `<div class="li" data-act="more" data-id="${id}" role="button"><span class="ic">🪫</span><div class="tx"><b>${esc(nm(id).replace(/\s*(batteria|battery)\s*/ig, " ").trim())}</b><span>${t("pila al", "battery at")} ${Math.round(val(id))}%</span></div></div>`).join("")}
-    ${U.length ? `<div class="li" data-act="go" data-id="aggiornamenti" role="button"><span class="ic">⬆️</span><div class="tx"><b>${U.length} ${t(U.length === 1 ? "aggiornamento" : "aggiornamenti", U.length === 1 ? "update" : "updates")}</b><span>${U.slice(0, 3).map(id => esc(String(attr(id, "title") || nm(id)).replace(/\s*(update|aggiornamento)$/i, ""))).join(", ")}</span></div></div>` : ""}
-  </div>` : `<div class="small muted">${t("Nessuna finestra aperta, nessuna pila scarica, nessun aggiornamento.", "No open windows, no low batteries, no updates.")}</div>`);
-}
+ACT.wxEdit = () => openSheet(sceltaMeteo);
+ACT.wxSet = async el => {
+  const l = JSON.parse(JSON.stringify(LAYOUT)); if (el.dataset.id) l.weather = el.dataset.id; else delete l.weather;
+  try { await saveLayout(l); closeSheet(); toast("🌤️ " + nm(weatherEnt())); } catch (e) { toast(t("Non salvato: ", "Not saved: ") + (e.message || e.code), true); }
+};
 
 /* primo avvio: invito a scegliere cosa mostrare (solo per gli amministratori) */
 function benvenuto() {
@@ -99,5 +97,5 @@ function schedaStanza(a) {
 }
 ACT.room = el => { const a = el.dataset.id; openSheet(() => schedaStanza(a)); };
 
-page("home", { title: "Home", short: "Home", icon: "🏠", order: 0,
-  render: () => `<div class="g g3">${benvenuto()}${riepilogo()}${meteo()}${stanze()}${sistemare()}${persone()}</div>` });
+page("home", { title: "Home", short: "Home", icon: "🏠", order: 0, editable: true,
+  render: () => `<div class="g g3">${benvenuto()}${riepilogo()}${meteo()}${stanze()}${avvisiCard()}${personeCard()}${raccoltaCard()}${agendaCard()}</div>` });

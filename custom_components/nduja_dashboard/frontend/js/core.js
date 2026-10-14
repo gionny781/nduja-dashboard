@@ -80,11 +80,34 @@ export function areasSorted(all) {
     .sort((a, b) => fl(AREAS[a].floor) - fl(AREAS[b].floor) || pos(a) - pos(b) || AREAS[a].name.localeCompare(AREAS[b].name, LOC));
 }
 /** temperatura e umidità di una stanza: il primo sensore adatto nell'area */
-export const climateSensors = (area, dc) => allEnts("sensor", id => REG[id]?.area === area && deviceClass(id) === dc && ok(id));
-const climateSensor = (area, dc) => { const k = dc === "temperature" ? "temp" : "hum", sc = LAYOUT.sensors?.[area]?.[k]; if (sc === "none") return null; if (sc && S[sc]) return sc; return inArea(area, "sensor", id => deviceClass(id) === dc && ok(id) && !/batter|cpu|chip|processor|disk|nas|router|modem|esterna|outdoor|outside/i.test(id + nm(id)))[0]; };
+export const climateSensors = (area, dc) => allEnts("sensor", id => areaOf(id) === area && deviceClass(id) === dc && ok(id));
+/* sensori che NON sono la temperatura della stanza: caldaie, interni dei dispositivi, CPU, batterie, esterni */
+const NON_STANZA = /device_temp|temperatura_?dispositivo|cpu|chip|processor|\bsoc\b|disk|nas\b|router|modem|fritz|flow|mandata|ritorno|return|setpoint|target|\bch_|_ch_|dhw|boiler|caldaia|acqua|water|module|modulo|inner|interna|internal|esterna|outdoor|outside|batter|switch_\d|channel_\d|relay|inverter|plug|presa|dew|rugiada|feels|percepita|min\b|max\b/i;
+function climateSensor(area, dc) {
+  const k = dc === "temperature" ? "temp" : "hum", sc = LAYOUT.sensors?.[area]?.[k];
+  if (sc === "none") return null; if (sc && S[sc]) return sc;
+  let best = null, top = -1;
+  for (const id of inArea(area, "sensor", id => deviceClass(id) === dc && ok(id))) {
+    if (NON_STANZA.test(id + " " + nmHA(id))) continue;
+    let p = 0, dev = REG[id]?.device;
+    const altro = dc === "temperature" ? "humidity" : "temperature";
+    if (dev && Object.keys(S).some(x => x !== id && REG[x]?.device === dev && deviceClass(x) === altro)) p += 2;   // termoigrometro vero
+    if (dc === "temperature" && /temp|temperatura/i.test(nmHA(id))) p += 1;
+    if (dc === "temperature") { const v = val(id); if (v != null && (v < 5 || v > 40)) p -= 3; }
+    if (p > top) { top = p; best = id; }
+  }
+  return best;
+}
 export const roomTemp = area => { const c = inArea(area, "climate").find(id => attr(id, "current_temperature") != null); const s = climateSensor(area, "temperature"); return s ? val(s) : c ? attr(c, "current_temperature") : null; };
 export const roomHum = area => { const s = climateSensor(area, "humidity"); return s ? val(s) : null; };
 export const openings = () => ents("binary_sensor", id => OPENING.includes(deviceClass(id)));
+/** distanza in km tra due punti (lat/lon) */
+export function km(a1, o1, a2, o2) {
+  if ([a1, o1, a2, o2].some(v => v == null)) return null;
+  const R = 6371, r = x => x * Math.PI / 180, d1 = r(a2 - a1), d2 = r(o2 - o1);
+  const q = Math.sin(d1 / 2) ** 2 + Math.cos(r(a1)) * Math.cos(r(a2)) * Math.sin(d2 / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(q));
+}
 export const lightsOn = (area) => ents("light", id => S[id].state === "on" && (!area || areaOf(id) === area));
 
 /* ================= servizi ================= */
@@ -110,7 +133,24 @@ export function cached(key, ttl, loader) {
   loader().then(v => { cache[key] = { t: Date.now(), v }; render(); }).catch(e => { console.warn(key, e); cache[key] = { t: Date.now(), v: c?.v }; });
   return c?.v;
 }
-export const weatherEnt = () => (LAYOUT.weather && S[LAYOUT.weather]) ? LAYOUT.weather : ents("weather")[0];
+/** dimentica i valori in cache che iniziano con prefix (per ricaricarli subito) */
+export function uncache(prefix) { for (const k of Object.keys(cache)) if (k.startsWith(prefix)) delete cache[k]; }
+/** meteo di casa: quello scelto, altrimenti il più adatto (scarta meteo di circuiti, città lontane…) */
+export function weatherEnt() {
+  if (LAYOUT.weather && S[LAYOUT.weather]) return LAYOUT.weather;
+  const casa = String(attr("zone.home", "friendly_name") || "").toLowerCase();
+  let best = null, top = -99;
+  for (const id of ents("weather")) {
+    const n = (id + " " + nmHA(id)).toLowerCase(); let p = 0;
+    if (/^weather\.(home|forecast_home|casa)$/.test(id)) p += 3;
+    if (casa && casa.split(/\s+/).some(w => w.length > 2 && n.includes(w))) p += 2;
+    if (/home|casa|forecast/.test(n)) p += 1;
+    if (/f1|formula|circuit|grand prix|\bgp\b|race|gara|airport|aeroporto|meteoalarm/.test(n)) p -= 6;
+    if (!ok(id)) p -= 2;
+    if (p > top) { top = p; best = id; }
+  }
+  return best;
+}
 export const forecast = (eid, type = "daily") => cached("fc:" + eid + type, 30 * 60000, async () => (await svcResp("weather", "get_forecasts", { type }, eid))?.[eid]?.forecast || []) || [];
 
 /* ================= componenti ================= */
@@ -256,6 +296,27 @@ export function applyTheme() {
 ACT.theme = () => { const o = ["auto", "light", "dark"], m = o[(o.indexOf(tema()) + 1) % 3]; sSet("theme", m); applyTheme(); render(true);
   toast({ auto: t("Tema automatico (come Home Assistant)", "Automatic theme (follows Home Assistant)"), light: t("Tema chiaro", "Light theme"), dark: t("Tema scuro", "Dark theme") }[m]); };
 try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { applyTheme(); }); } catch {}
+
+/* ---------- barra di navigazione: sempre visibile o a scomparsa (scelta per dispositivo) ---------- */
+export const navMode = () => sGet("nav") || "fixed";
+let navT = null;
+export function navShow(ms = 3500) {
+  if (navMode() !== "auto") return;
+  document.body.classList.remove("navhide"); clearTimeout(navT);
+  navT = setTimeout(() => { if (!document.querySelector(".rail:hover,.tabbar:hover,.more.open")) document.body.classList.add("navhide"); }, ms);
+}
+let navPrev = null;
+export function applyNav() {
+  const m = navMode(); if (m === navPrev) return; navPrev = m;
+  document.body.classList.toggle("navauto", m === "auto");
+  if (m === "auto") navShow(); else { document.body.classList.remove("navhide"); clearTimeout(navT); }
+}
+ACT.navMode = el => { sSet("nav", el.dataset.v); applyNav(); render(true); toast(el.dataset.v === "auto" ? t("Barra a scomparsa: avvicinati al bordo per farla comparire", "Auto-hide bar: move to the edge to show it") : t("Barra sempre visibile", "Bar always visible")); };
+ACT.navPeek = () => navShow(5000);
+let lastY = 0;
+window.addEventListener("scroll", () => { if (navMode() !== "auto") return; const y = window.scrollY; if (y < lastY - 8 || y < 40) navShow(); else if (y > lastY + 8) { document.body.classList.add("navhide"); clearTimeout(navT); } lastY = y; }, { passive: true });
+document.addEventListener("mousemove", e => { if (navMode() === "auto" && (e.clientX < 36 || e.clientY > innerHeight - 50)) navShow(); }, { passive: true });
+document.addEventListener("touchstart", e => { const p = e.touches[0]; if (navMode() === "auto" && p && (p.clientX < 24 || p.clientY > innerHeight - 40)) navShow(5000); }, { passive: true });
 applyTheme();
 
 let pending = false;
@@ -266,7 +327,7 @@ export function render(now) {
     if (!conn || !UI.page) return;
     HOOKS.forEach(f => { try { f(); } catch (e) { console.error(e); } });
     const P = PAGES[UI.page]; if (!P) return go("home");
-    document.body.classList.toggle("editing", UI.edit); document.body.classList.toggle("nonav", !!P.noNav); applyTheme();
+    document.body.classList.toggle("editing", UI.edit); document.body.classList.toggle("nonav", !!P.noNav); applyTheme(); applyNav();
     try {
       $("#pageTitle").textContent = P.title;
       document.title = P.title + " · 'Nduja";
@@ -285,6 +346,7 @@ function renderNav() {
   const main = v.slice(0, 4);
   patch($("#tabbar"), main.map(nav).join("") + (v.length > 4 ? `<button class="nav ${main.includes(UI.page) ? "" : "act"}" data-act="more"><span class="i">☰</span>${t("Altro", "More")}</button>` : ""));
   patch($("#more"), v.slice(4).map(nav).join("") + nuova);
+  if (!$("#navh")) document.body.insertAdjacentHTML("beforeend", `<button id="navh" class="navh1" data-act="navPeek" aria-label="${t("Mostra il menu", "Show menu")}"></button>`);
 }
 /* pillole in alto: meteo, persone, luci accese, energia (se configurata) */
 export const STRIP = [];
