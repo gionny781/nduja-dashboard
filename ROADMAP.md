@@ -15,7 +15,9 @@
 - [x] Telecamere
 - [x] Sicurezza (allarme, serrature, porte, fumo/gas/acqua, movimento)
 
+## 0.7.0-beta ✅ pubblicata
+- [x] Mappa della casa dalle aree, modificabile, con piantina sotto
+
 ## Dopo
-- 0.7 — Mappa della casa generata dalle aree
 - 0.8 — Guida COME_INSTALLARE con foto, traduzioni, ritocchi
 - 1.0 — via «beta», segnalazione all'elenco ufficiale HACS

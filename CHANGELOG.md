@@ -3,6 +3,12 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.0-beta
+- 🇮🇹 **Mappa della casa**: le stanze di ogni piano disegnate da sole dalle aree, con luci accese (si illuminano), finestre aperte, clima, movimento, allarmi fumo/gas/acqua e temperatura. Tocca una stanza per comandarla, 💡 per accendere o spegnere le sue luci.
+- 🇮🇹 In ✏️ Modifica: sposta ← ↑ ↓ →, allarga ⇠ ⇢, cambia altezza ⇡ ⇣, «Disposizione automatica» per ricominciare, «Piantina» per mettere sotto un'immagine della tua casa (/local/…).
+- 🇬🇧 **House map**: each floor's rooms drawn automatically from your areas, with lights on (they glow), open windows, climate, motion, smoke/gas/water alarms and temperature. Tap a room to control it, 💡 to switch its lights.
+- 🇬🇧 In ✏️ Edit: move ← ↑ ↓ →, widen ⇠ ⇢, change height ⇡ ⇣, «Auto layout» to start over, «Floor plan» to put an image of your home underneath (/local/…).
+
 ## 0.6.1-beta
 - 🇮🇹 **Energia, sensori a piacere**: in ⚙️ Sensori ogni voce accetta **qualsiasi sensore** della casa (con ricerca), non solo quelli proposti. Il fotovoltaico accetta **più stringhe o inverter** (PV1, PV2, PV3…) che vengono sommati; anche batterie e consumi si possono sommare. Si possono scegliere i contatori di oggi (prodotto, prelevato, immesso). Le modifiche si salvano subito.
 - 🇮🇹 Nuova scheda **Stringhe** con la produzione di ogni stringa e il totale.

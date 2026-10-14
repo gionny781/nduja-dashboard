@@ -3,6 +3,7 @@ import "./core.js";
 import "./edit.js";
 import "./pages/benvenuto.js";
 import "./pages/home.js";
+import "./pages/mappa.js";
 import "./pages/luci.js";
 import "./pages/clima.js";
 import "./pages/energia.js";
