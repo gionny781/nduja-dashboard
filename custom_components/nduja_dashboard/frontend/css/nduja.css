@@ -373,3 +373,18 @@ button.tr1{width:100%;text-align:left;padding:4px 6px;margin:0 -6px;border-radiu
 .au2{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07)}
 .au2 .dx,.dx{color:#ff6961;font-size:12px;padding:4px 8px}
 .pillv.th1.on{background:rgba(10,132,255,.3)}
+/* ---------- salvaschermo ---------- */
+.ss1{position:fixed;inset:0;z-index:9999;background:#000;opacity:0;transition:opacity .4s;cursor:none}
+.ss1.on{opacity:1}
+.ssb1,.ssf1{position:absolute;inset:0}
+.ssf1{background:center/cover no-repeat;opacity:0;transition:opacity 2s;animation:ss-kb 30s ease-in-out infinite alternate}
+.ssf1.on{opacity:1}
+@keyframes ss-kb{from{transform:scale(1)}to{transform:scale(1.08) translate(-1%,-1%)}}
+.ssv1{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05) 40%,rgba(0,0,0,.65))}
+.ssw1{position:absolute;inset:0;display:grid;place-items:end start;padding:6vh 6vw}
+.ssc1{color:#fff;transform:translate(var(--dx),var(--dy));transition:transform 3s;text-shadow:0 2px 20px rgba(0,0,0,.5)}
+.ssc1.notte{opacity:.45}
+.ssh1{font-size:clamp(72px,16vw,200px);font-weight:200;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.ssd1{font-size:clamp(18px,3vw,32px);font-weight:300;margin-top:6px;text-transform:capitalize;opacity:.9}
+.ssi1{display:flex;gap:22px;flex-wrap:wrap;margin-top:18px;font-size:clamp(16px,2.4vw,26px);font-weight:400}
+.ssi1 small{font-size:.7em;opacity:.8}

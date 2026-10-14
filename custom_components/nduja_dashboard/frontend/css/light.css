@@ -116,6 +116,7 @@ body.light .m3c{background:radial-gradient(ellipse at 50% 30%,rgba(0,0,0,0.030),
 body.light .m3p{background:rgba(0,0,0,0.015)!important}
 body.light .m3l{color:#1c1c1e!important}
 body.light .au2{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.049)!important}
+body.light .ssc1{color:#1c1c1e!important}
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
 body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
@@ -150,4 +151,5 @@ body.light .kpd1 button.ok{background:#0a84ff;color:#fff}
 body.light .mpr1{background:rgba(255,255,255,.75)}body.light .mpr1.lit{background:rgba(255,214,10,.35)}body.light .mpw1{background:rgba(0,0,0,.05)}body.light .mpm1 path{stroke:rgba(28,28,30,.8)}body.light .mpi1>*{background:rgba(0,0,0,.06)}
 body.light .apg1>*{background:rgba(0,0,0,.05)}
 body.light .mpd2{background:rgba(0,0,0,.07)}
+body.light .ss1{background:#000}body.light .ssc1{color:#fff}body.light .ssv1{background:linear-gradient(180deg,rgba(0,0,0,.05) 40%,rgba(0,0,0,.65))}
 

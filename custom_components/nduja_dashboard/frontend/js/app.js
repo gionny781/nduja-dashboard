@@ -1,6 +1,7 @@
 /* 'Nduja Dashboard — avvio: carica il nucleo, la modifica nelle pagine e le pagine. */
 import "./core.js";
 import "./edit.js";
+import "./salvaschermo.js";
 import "./pages/benvenuto.js";
 import "./pages/home.js";
 import "./pages/mappa.js";
