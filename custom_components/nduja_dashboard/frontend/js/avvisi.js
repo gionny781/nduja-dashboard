@@ -5,7 +5,9 @@
    - elettrodomestico finito (lavatrice, asciugatrice, lavastoviglie: dal consumo)
    - pile scariche, telefoni scarichi, aggiornamenti, raccolta da esporre stasera
    Ogni avviso si può nascondere con ✕ (torna se la situazione cambia). */
-import { S, ACT, t, esc, nm, ok, val, attr, ents, allEnts, isOn, ago, deviceClass, areaOf, openings, shortName, card, render, sGet, sSet, weatherEnt, forecast } from "./core.js";
+import { S, ACT, CHG, LAYOUT, t, esc, nm, ok, val, attr, ents, allEnts, isOn, ago, deviceClass, areaOf, openings, shortName, card, render, sGet, sSet, weatherEnt, forecast,
+  ws, cached, api, toast, openSheet, closeSheet, isAdmin } from "./core.js";
+import { cambia } from "./edit.js";
 import { ritiri, chip } from "./raccolta.js";
 import { pericoli } from "./pages/sicurezza.js";
 
@@ -75,8 +77,52 @@ export function avvisiCard() {
   const A = avvisi(), n = A.length;
   return card(`🔔 ${t("Avvisi", "Alerts")} <span class="tag ${n ? "warn" : "ok"}">${n || t("tutto ok", "all good")}</span>`, n ? `<div class="stack">${A.map(a => `<div class="li av3 ${a.cls || ""}" ${a.go ? `data-act="go" data-id="${a.go}"` : a.id ? `data-act="more" data-id="${a.id}"` : ""} role="button">
       <span class="ic">${a.ic}</span><div class="tx"><b>${a.b}</b><span>${a.s}</span></div><button class="x3" data-act="avHide" data-k="${esc(a.k)}" aria-label="${t("Nascondi", "Dismiss")}">✕</button></div>`).join("")}</div>`
-    : `<div class="small muted">${t("Nessuna finestra aperta, nessuna pila scarica, nessun aggiornamento.", "No open windows, no low batteries, no updates.")}</div>`);
+    : `<div class="small muted">${t("Nessuna finestra aperta, nessuna pila scarica, nessun aggiornamento.", "No open windows, no low batteries, no updates.")}</div>`,
+    { right: isAdmin() ? `<button class="btn sm" data-act="avNotif" title="${t("Avvisi sul telefono", "Alerts on the phone")}">📱${LAYOUT.notifiche?.servizi?.length ? " ✓" : ""}</button>` : "" });
 }
+
+/* ---------- avvisi anche sul telefono: creo (o aggiorno) l'automazione «'Nduja · avvisi» in Home Assistant ---------- */
+const TIPI_N = () => [
+  ["pericolo", "🚨 " + t("Fumo, gas, acqua, manomissione", "Smoke, gas, water, tamper")],
+  ["allarme", "🛡️ " + t("Allarme scattato", "Alarm triggered")],
+  ["porta", "🚪 " + t("Porta o finestra aperta da più di 10 minuti", "Door or window open for over 10 minutes")],
+  ["elettro", "🧺 " + t("Elettrodomestico finito", "Appliance done")],
+  ["batteria", "🪫 " + t("Pila sotto il 15%", "Battery below 15%")],
+];
+const servizi = () => { const s = cached("services", 3600e3, () => ws({ type: "get_services" })) || {}; return Object.keys(s.notify || {}).filter(k => !["send_message", "persistent_notification", "notify"].includes(k)).sort(); };
+let NB = null;
+function schedaNotifiche() {
+  const c = NB, sv = servizi();
+  const ck = (on, act, k, n) => `<button class="ck1 ${on ? "on" : ""}" data-act="${act}" data-k="${k}"><span class="bx"></span><span class="tx"><b>${n}</b></span></button>`;
+  return `<div class="sh-head"><div><h3>📱 ${t("Avvisi sul telefono", "Alerts on the phone")}</h3><div class="small muted">${t("Creo in Home Assistant l'automazione «'Nduja · avvisi»: funziona anche a plancia chiusa.", "I create the «'Nduja · alerts» automation in Home Assistant: it works even with the dashboard closed.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
+    <div class="fl1">${t("A chi", "To")}</div><div class="cks1">${sv.map(k => ck(c.servizi.includes(k), "avnS", k, esc(k.replace(/^mobile_app_/, "📱 ").replace(/_/g, " ")))).join("") || `<div class="small muted">${t("Nessun telefono: installa l'app Home Assistant sul telefono.", "No phone: install the Home Assistant app on the phone.")}</div>`}</div>
+    <div class="fl1">${t("Cosa", "What")}</div><div class="cks1">${TIPI_N().map(([k, n]) => ck(c.tipi[k] !== false, "avnT", k, n)).join("")}</div>
+    <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn pri" data-act="avnSave">💾 ${t("Salva in Home Assistant", "Save to Home Assistant")}</button>${LAYOUT.notifiche?.servizi?.length ? `<button class="btn bad" data-act="avnOff">${t("Spegni gli avvisi sul telefono", "Turn off phone alerts")}</button>` : ""}</div>`;
+}
+function automazione(c) {
+  const T = [], tipo = k => c.tipi[k] !== false;
+  const danger = allEnts("binary_sensor", id => ["smoke", "gas", "carbon_monoxide", "moisture", "tamper", "safety"].includes(deviceClass(id)));
+  if (tipo("pericolo") && danger.length) T.push({ trigger: "state", entity_id: danger, to: "on", id: "pericolo" });
+  const al = allEnts("alarm_control_panel"); if (tipo("allarme") && al.length) T.push({ trigger: "state", entity_id: al, to: "triggered", id: "allarme" });
+  const op = ents("binary_sensor", id => ["door", "window", "garage_door", "opening"].includes(deviceClass(id))); if (tipo("porta") && op.length) T.push({ trigger: "state", entity_id: op, to: "on", for: { minutes: 10 }, id: "porta" });
+  const el = elettro(); if (tipo("elettro") && el.length) T.push({ trigger: "numeric_state", entity_id: el, below: 5, for: { minutes: 3 }, id: "elettro" });
+  const bt = ents("sensor", id => deviceClass(id) === "battery"); if (tipo("batteria") && bt.length) T.push({ trigger: "numeric_state", entity_id: bt, below: 15, id: "batteria" });
+  const msg = "{% set n = trigger.to_state.name %}{% if trigger.id == 'pericolo' %}🚨 {{ n }}: " + t("rilevato!", "detected!") + "{% elif trigger.id == 'allarme' %}🚨 " + t("Allarme scattato", "Alarm triggered") + ": {{ n }}{% elif trigger.id == 'porta' %}🚪 {{ n }} " + t("aperta da 10 minuti", "open for 10 minutes") + "{% elif trigger.id == 'elettro' %}🧺 {{ n | regex_replace('(?i)\\s*(power|potenza|consumo)$', '') }} " + t("ha finito", "is done") + "{% else %}🪫 {{ n }} " + t("al", "at") + " {{ trigger.to_state.state }}%{% endif %}";
+  return { id: "nduja_avvisi", alias: "'Nduja · " + t("avvisi sul telefono", "phone alerts"), description: t("Creata da 'Nduja Dashboard (Home → Avvisi → 📱)", "Created by 'Nduja Dashboard (Home → Alerts → 📱)"),
+    triggers: T, conditions: [], actions: c.servizi.map(s => ({ action: "notify." + s, data: { title: "🌶️ 'Nduja", message: msg } })), mode: "queued", max: 20 };
+}
+Object.assign(ACT, {
+  avNotif: () => { NB = JSON.parse(JSON.stringify(LAYOUT.notifiche || { servizi: [], tipi: {} })); NB.tipi = NB.tipi || {}; openSheet(schedaNotifiche); },
+  avnS: el => { const k = el.dataset.k, i = NB.servizi.indexOf(k); i < 0 ? NB.servizi.push(k) : NB.servizi.splice(i, 1); render(); },
+  avnT: el => { const k = el.dataset.k; NB.tipi[k] = NB.tipi[k] === false; render(); },
+  avnSave: async () => {
+    if (!NB.servizi.length) return toast(t("Scegli almeno un telefono", "Choose at least one phone"), true);
+    const cfg = automazione(NB); if (!cfg.triggers.length) return toast(t("Niente da controllare in casa tua per questi avvisi", "Nothing to watch in your home for these alerts"), true);
+    try { await api("POST", "/api/config/automation/config/nduja_avvisi", cfg); const c = NB; await cambia(l => { l.notifiche = c; }); closeSheet(); toast("📱 " + t("Avvisi sul telefono attivi", "Phone alerts on")); }
+    catch (e) { toast(t("Non salvato: ", "Not saved: ") + (e.message || e), true); }
+  },
+  avnOff: async () => { try { await api("DELETE", "/api/config/automation/config/nduja_avvisi"); } catch {} await cambia(l => { delete l.notifiche; }); closeSheet(); toast(t("Avvisi sul telefono spenti", "Phone alerts off")); },
+});
 ACT.avHide = (el, e) => {
   e?.stopPropagation?.();
   const N = nascosti(); N[el.dataset.k] = Date.now();

@@ -252,8 +252,12 @@ export function page(id, def) { PAGES[id] = { order: 50, show: () => true, ...de
 /** scelte per la persona che sta usando la plancia (pagine e schede della Home), decise dall'amministratore */
 export const utenteCfg = () => (UI.user?.id && LAYOUT.users?.[UI.user.id]) || {};
 const visible = () => Object.keys(PAGES).filter(k => !PAGES[k].hiddenNav && PAGES[k].show() && LAYOUT.pages?.[k] !== false && utenteCfg().pages?.[k] !== false && (!PAGES[k].admin || isAdmin())).sort((a, b) => PAGES[a].order - PAGES[b].order);
+/* le pagine «secondarie» arrivano dopo la Home: se si apre direttamente una di queste, la mostro appena c'è */
+let pronte = false, attesa = null;
+export function tuttePronte() { pronte = true; if (attesa) { const a = attesa; attesa = null; go(a); } else render(true); }
 export function go(id) {
   HOOKS.forEach(f => { try { f(); } catch (e) { console.error(e); } });
+  if (id && !PAGES[id] && !pronte) { attesa = id; id = "home"; }
   if (!LAYOUT.configured && isAdmin() && PAGES.benvenuto && id !== "impostazioni") id = "benvenuto";
   if (!PAGES[id] || !PAGES[id].show() || (PAGES[id].admin && !isAdmin()) || (utenteCfg().pages?.[id] === false && id !== "impostazioni")) id = "home";
   if (UI.page !== id) UI.edit = false;

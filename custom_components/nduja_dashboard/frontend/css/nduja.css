@@ -415,3 +415,7 @@ button.tr1{width:100%;text-align:left;padding:4px 6px;margin:0 -6px;border-radiu
 .mpv1{display:flex;align-items:center;gap:8px;margin-top:4px}.mpv1 input{flex:1}.mpv1 em{font-style:normal;font-size:12px;width:26px;text-align:right;color:var(--tx2)}
 .mpg2{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
 @media (max-width:520px){.mpg2{grid-template-columns:minmax(0,1fr)}.mpa1{width:72px;height:72px}}
+/* schede libere della Home */
+.hlg1{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.hlv1{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.06);text-align:left;color:var(--tx);width:100%}
+.hlv1 small{font-size:11.5px;color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hlv1 b{font-size:18px}

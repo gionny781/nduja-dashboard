@@ -3,6 +3,14 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.9-beta
+- 🇮🇹 **Home con schede libere**: in ✏️ Modifica «＋ Nuova scheda» con titolo e icona tua, e dentro qualsiasi dispositivo o sensore (valori, luci, prese, clima…); si sposta e si nasconde come le altre.
+- 🇮🇹 **Avvisi sul telefono**: 📱 sulla scheda Avvisi; scegli i telefoni e cosa (fumo/gas/acqua, allarme scattato, porta aperta da 10 minuti, elettrodomestico finito, pila scarica). Creo in Home Assistant l'automazione «'Nduja · avvisi sul telefono», che funziona anche a plancia chiusa.
+- 🇮🇹 **Più veloce**: all'apertura carico subito Home e Impostazioni, le altre pagine subito dopo.
+- 🇬🇧 **Home free cards**: in ✏️ Edit «＋ New card» with your own title and icon, holding any device or sensor (values, lights, plugs, climate…); moves and hides like the others.
+- 🇬🇧 **Phone alerts**: 📱 on the Alerts card; pick phones and what (smoke/gas/water, alarm triggered, door open 10 minutes, appliance done, low battery). I create the «'Nduja · phone alerts» automation in Home Assistant, which works with the dashboard closed.
+- 🇬🇧 **Faster**: Home and Settings load first, the other pages right after.
+
 ## 0.7.8-beta
 - 🇮🇹 **Musica e TV**: nuova pagina con casse e TV per stanza: copertina, titolo e artista, ⏮ ⏯ ⏭, casuale e ripeti, volume e muto, sorgente e modalità audio, accendi/spegni. In Home la scheda «In riproduzione».
 - 🇮🇹 **Esporta / importa le impostazioni** (⚙️ Impostazioni → Personalizza): un file con tutte le scelte della plancia, per backup o per un altro Home Assistant.

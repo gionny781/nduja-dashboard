@@ -144,7 +144,50 @@ const SCHEDE = () => ({
   raccolta: [t("Raccolta differenziata", "Waste collection"), raccoltaCard, "rfEdit"],
   agenda: [t("Agenda", "Agenda"), agendaCard, "calEdit"],
   musica: [t("In riproduzione", "Now playing"), musicaCard],
+  ...Object.fromEntries((LAYOUT.homeCards || []).map(c => ["c_" + c.id, [c.titolo || t("Scheda", "Card"), () => schedaLibera(c), "hlEdit\" data-id=\"" + c.id]])),
 });
+
+/* ---------- schede libere: qualsiasi dispositivo o sensore, scelto da te ---------- */
+function elemento(id) {
+  const d = id.split(".")[0];
+  if (d === "light") return lightTile(id);
+  if (/^(sensor|input_number|number)$/.test(d) || (d === "binary_sensor")) {
+    const v = S[id]?.state, u = attr(id, "unit_of_measurement") || "";
+    return `<button class="hlv1" data-act="more" data-id="${id}"><small>${esc(shortName(id))}</small><b>${ok(id) ? esc(isNaN(parseFloat(v)) ? v : fnum(parseFloat(v), Math.abs(parseFloat(v)) < 10 ? 1 : 0)) + (u ? " " + esc(u) : "") : "—"}</b></button>`;
+  }
+  if (d === "climate") return climateCard(id);
+  return entityRow(id);
+}
+function schedaLibera(c) {
+  const L = (c.items || []).filter(id => S[id]);
+  const luci = L.filter(id => id.startsWith("light.")), valori = L.filter(id => /^(sensor|binary_sensor|input_number|number)\./.test(id)), altri = L.filter(id => !luci.includes(id) && !valori.includes(id));
+  return card(`${esc(c.icona || "⭐")} ${esc(c.titolo || "")}`, `${valori.length ? `<div class="hlg1">${valori.map(id => item(id, elemento(id), "hc:" + c.id)).join("")}</div>` : ""}
+    ${luci.length ? `<div class="tiles" style="margin-top:8px">${luci.map(id => item(id, elemento(id), "hc:" + c.id)).join("")}</div>` : ""}
+    ${altri.length ? `<div class="stack" style="margin-top:8px">${altri.map(id => item(id, elemento(id), "hc:" + c.id)).join("")}</div>` : ""}
+    ${UI.edit ? `<button class="add1" data-act="hlAdd" data-id="${c.id}" style="margin-top:8px"><span>＋</span>${t("Aggiungi dispositivo o sensore", "Add device or sensor")}</button>` : !L.length ? `<div class="small muted">${t("Vuota: premi ✏️ Modifica e ＋.", "Empty: press ✏️ Edit and ＋.")}</div>` : ""}`, { cls: c.larga ? "span2" : "" });
+}
+function nuovaScheda(id) {
+  const c = (LAYOUT.homeCards || []).find(x => x.id === id) || { id: Date.now().toString(36), titolo: "", icona: "⭐", items: [] };
+  openSheet(() => `<div class="sh-head"><div><h3>${id ? "✏️" : "＋"} ${t("Scheda della Home", "Home card")}</h3><div class="small muted">${t("Una scheda tua con i dispositivi e i sensori che vuoi.", "Your own card with any devices and sensors.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
+    <div class="row" style="gap:10px"><label class="fld1" style="flex:0 0 90px"><span>${t("Icona", "Icon")}</span><input id="hl1i" type="text" maxlength="4" value="${esc(c.icona || "")}"></label>
+      <label class="fld1" style="flex:1"><span>${t("Titolo", "Title")}</span><input id="hl1t" type="text" value="${esc(c.titolo || "")}" placeholder="${t("Giardino, Ufficio, Bambini…", "Garden, Office, Kids…")}"></label></div>
+    <label class="row" style="gap:8px;margin-top:10px"><input id="hl1w" type="checkbox" ${c.larga ? "checked" : ""}> ${t("Scheda larga", "Wide card")}</label>
+    <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn pri" data-act="hlSave" data-id="${c.id}">💾 ${t("Salva", "Save")}</button>${id ? `<button class="btn bad" data-act="hlDel" data-id="${c.id}">🗑 ${t("Elimina scheda", "Delete card")}</button>` : ""}</div>`);
+}
+const cardsSet = fn => cambia(l => { l.homeCards = JSON.parse(JSON.stringify(l.homeCards || [])); fn(l.homeCards, l); });
+Object.assign(ACT, {
+  hlNew: () => nuovaScheda(null),
+  hlEdit: el => nuovaScheda(el.dataset.id),
+  hlSave: el => { const id = el.dataset.id, ti = document.getElementById("hl1t").value.trim() || t("Scheda", "Card"), ic = document.getElementById("hl1i").value.trim() || "⭐", w = document.getElementById("hl1w").checked;
+    closeSheet(); cardsSet((L, l) => { const c = L.find(x => x.id === id); if (c) Object.assign(c, { titolo: ti, icona: ic, larga: w }); else { L.push({ id, titolo: ti, icona: ic, larga: w, items: [] }); l.home = { ...(l.home || {}), order: [...ordine(), "c_" + id] }; } }); },
+  hlDel: el => { const id = el.dataset.id; closeSheet(); cardsSet(L => { const i = L.findIndex(x => x.id === id); if (i >= 0) L.splice(i, 1); }); },
+  hlAdd: el => { const id = el.dataset.id;
+    scegli({ titolo: "＋ " + t("Dispositivo o sensore", "Device or sensor"), auto: false, attuale: null, filtro: x => /^(light|switch|cover|fan|climate|media_player|lock|sensor|binary_sensor|scene|script|input_boolean|input_number|vacuum|humidifier|button)\./.test(x),
+      onPick: x => x && cardsSet(L => { const c = L.find(q => q.id === id); if (c) c.items = [...new Set([...(c.items || []), x])]; }) }); },
+});
+/* ✕ su un elemento di una scheda libera: lo toglie solo da quella scheda */
+const edDel0 = ACT.edDel;
+ACT.edDel = el => el.dataset.page?.startsWith("hc:") ? cardsSet(L => { const c = L.find(q => q.id === el.dataset.page.slice(3)); if (c) c.items = c.items.filter(x => x !== el.dataset.id); }) : edDel0(el);
 const ordine = () => { const K = Object.keys(SCHEDE()), o = (LAYOUT.home?.order || []).filter(k => K.includes(k)); return [...o, ...K.filter(k => !o.includes(k))]; };
 const nascoste = () => UI.edit ? (LAYOUT.home?.hidden || []) : [...new Set([...(LAYOUT.home?.hidden || []), ...(utenteCfg().homeHidden || [])])];
 /** schede della Home (per le scelte per persona in Impostazioni) */
@@ -164,7 +207,7 @@ Object.assign(ACT, {
 function pagina() {
   const S1 = SCHEDE(), o = ordine();
   const corpo = UI.edit ? o.map((k, i) => attrezzi(k, S1[k][1](), i, o.length)).join("") : o.filter(k => !nascoste().includes(k)).map(k => S1[k][1]()).join("");
-  return `<div class="g g3">${benvenuto()}${corpo}</div>`;
+  return `<div class="g g3">${benvenuto()}${corpo}${UI.edit && isAdmin() ? `<section class="card span3">${`<button class="add1 wide1" data-act="hlNew"><span>＋</span>${t("Nuova scheda con i dispositivi che vuoi", "New card with any devices")}</button>`}</section>` : ""}</div>`;
 }
 
 page("home", { title: "Home", short: "Home", icon: "🏠", order: 0, editable: true, render: pagina });

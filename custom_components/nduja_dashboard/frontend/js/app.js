@@ -1,22 +1,14 @@
-/* 'Nduja Dashboard — avvio: carica il nucleo, la modifica nelle pagine e le pagine. */
-import "./core.js";
+/* 'Nduja Dashboard — avvio veloce: subito il nucleo, la Home e le Impostazioni;
+   le altre pagine si caricano un attimo dopo, mentre la Home è già sullo schermo. */
+import { tuttePronte } from "./core.js";
 import "./edit.js";
 import "./salvaschermo.js";
 import "./grafici.js";
 import "./pages/benvenuto.js";
 import "./pages/home.js";
-import "./pages/mappa.js";
-import "./pages/luci.js";
-import "./pages/clima.js";
-import "./pages/energia.js";
-import "./pages/dispositivi.js";
 import "./pages/custom.js";
-import "./pages/elettrodomestici.js";
-import "./pages/musica.js";
-import "./pages/robot.js";
-import "./pages/sicurezza.js";
-import "./pages/telecamere.js";
-import "./pages/calendario.js";
-import "./pages/automazioni.js";
-import "./pages/aggiornamenti.js";
 import "./pages/impostazioni.js";
+
+const DOPO = ["mappa", "luci", "clima", "energia", "dispositivi", "elettrodomestici", "musica", "robot", "sicurezza", "telecamere", "calendario", "automazioni", "aggiornamenti"];
+const carica = () => Promise.all(DOPO.map(p => import(`./pages/${p}.js`).catch(e => console.error("nduja", p, e)))).then(tuttePronte);
+(window.requestIdleCallback || (f => setTimeout(f, 200)))(carica, { timeout: 1200 });
