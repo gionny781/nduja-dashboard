@@ -3,6 +3,12 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.2-beta
+- 🇮🇹 **Mappa**: «＋ Stanza» aggiunge stanze che esistono solo nella mappa (ripostiglio, scale, terrazzo… anche se non le hai create in Home Assistant), con nome modificabile e 🗑 elimina; le aree di Home Assistant compaiono tutte, anche quelle senza dispositivi, e si possono togliere dalla mappa (🙈) e rimettere (👁).
+- 🇮🇹 **Elettrodomestici**: nuova pagina con lavatrice, asciugatrice, lavastoviglie, forno, friggitrice, frigo… trovati da soli (anche unendo presa smart e app del produttore): in funzione / finito / fermo, potenza adesso, consumo di oggi, ora di fine, presa da accendere o spegnere. Con ✏️ scegli nome, icona e qualsiasi sensore; con ＋ ne aggiungi.
+- 🇬🇧 **Map**: «＋ Room» adds rooms that exist only in the map (closet, stairs, terrace… even if you didn't create them in Home Assistant), with editable name and 🗑 delete; all Home Assistant areas show up, even without devices, and can be removed from the map (🙈) and put back (👁).
+- 🇬🇧 **Appliances**: new page with washing machine, dryer, dishwasher, oven, air fryer, fridge… auto-detected (even merging smart plug and manufacturer app): running / done / idle, power now, today's consumption, end time, plug on/off. ✏️ chooses name, icon and any sensor; ＋ adds more.
+
 ## 0.7.1-beta
 - 🇮🇹 **Energia → Oggi**: ora mostra davvero prodotto, consumato, prelevato e immesso (la richiesta delle statistiche era sbagliata); i contatori giornalieri (today/daily) si leggono direttamente.
 - 🇮🇹 **Mappa: stanze a L** (e di qualsiasi forma): «＋ pezzo (L)» aggiunge un rettangolo alla stanza, ognuno si sposta e si ridimensiona da solo; i **muri** vengono disegnati sul contorno e si uniscono da soli.

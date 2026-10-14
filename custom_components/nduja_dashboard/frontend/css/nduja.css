@@ -324,3 +324,13 @@ button.tr1{width:100%;text-align:left;padding:4px 6px;margin:0 -6px;border-radiu
 .mpe1 button{height:20px;border-radius:5px;background:rgba(255,255,255,.15);color:#fff;font-size:11px}
 .mpe1 .wide{grid-column:1/-1;font-size:10.5px;font-weight:700}.mpe1 .bad{background:rgba(255,69,58,.5)}
 @media (max-width:700px){.mpw1{padding:6px}.mpm1{inset:6px;width:calc(100% - 12px);height:calc(100% - 12px)}.mpb1{padding:6px 6px 2px}.mpt1{font-size:15px}.mpb1 b{font-size:11px}.mpi1{padding:0 4px 4px}}
+/* ---------- elettrodomestici ---------- */
+.api1{font-size:20px}
+.aps1{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px}.aps1 b{font-size:20px}.aps1 span{font-size:13px;color:var(--tx2)}
+.ap1.on{border-color:rgba(48,209,88,.5)}.ap1.on .aps1 b{color:var(--green)}
+.ap1.done{border-color:rgba(10,132,255,.55)}.ap1.done .aps1 b{color:#5eb0ff}
+.ap1.off .aps1 b{color:var(--tx2)}
+.apg1{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px}
+.apg1>*{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.06);text-align:left;color:var(--tx)}
+.apg1 small{display:block;font-size:11px;color:var(--tx2)}.apg1 b{font-size:16px}
+.mpr1.cust{background:rgba(120,125,150,.22)}

@@ -29,6 +29,7 @@ it builds itself from your **areas, floors and devices**.
 - **Energy** – live flow (solar, grid, home, battery), today's totals and device consumption, from Home Assistant's Energy configuration.
 - **Calendar** – events from your Home Assistant calendars (today, week, month) and ＋ Event.
 - **Map** – every floor drawn from your areas: lights, windows, climate, motion, temperature; move and resize rooms, put your floor plan underneath.
+- **Appliances** – washing machine, dryer, dishwasher, oven…: running/done, power, today's kWh, end time, plug.
 - **Vacuum** – status, map, room cleaning, quick settings and maintenance. **Cameras** – live snapshots and live view. **Security** – alarm keypad, locks, doors, smoke/gas/water, motion.
 - **Lights** – all lights by floor and room, brightness sliders, "turn off" per room and for the whole house.
 - **Climate** – thermostats and air conditioners by room, plus a temperature/humidity overview of every room.
@@ -65,6 +66,7 @@ si costruisce da sola dalle tue **aree, piani e dispositivi**.
 - **Energia** – flusso in tempo reale (sole, rete, casa, batteria), totali di oggi e consumi dei dispositivi, dalla configurazione Energia di Home Assistant.
 - **Calendario** – gli eventi dei calendari di Home Assistant (oggi, settimana, mese) e ＋ Evento.
 - **Mappa** – ogni piano disegnato dalle aree: luci, finestre, clima, movimento, temperatura; sposta e ridimensiona le stanze, metti sotto la tua piantina.
+- **Elettrodomestici** – lavatrice, asciugatrice, lavastoviglie, forno…: in funzione/finito, potenza, kWh di oggi, ora di fine, presa.
 - **Robot** – stato, mappa, pulizia per stanza, impostazioni rapide e manutenzione. **Telecamere** – anteprime e diretta. **Sicurezza** – allarme col tastierino, serrature, porte, fumo/gas/acqua, movimento.
 - **Luci** – tutte le luci per piano e stanza, con regolazione della luminosità, «spegni» per stanza e per tutta la casa.
 - **Clima** – termostati e condizionatori per stanza, più la temperatura e l'umidità di ogni stanza.
@@ -100,8 +102,8 @@ si costruisce da sola dalle tue **aree, piani e dispositivi**.
 | ![Energy](docs/energy.png) | ![Wizard](docs/wizard.png) |
 | **Edit / Modifica** | **Security / Sicurezza** |
 | ![Edit](docs/edit.png) | ![Security](docs/security.png) |
-| **Map / Mappa** | |
-| ![Map](docs/map.png) | |
+| **Map / Mappa** | **Appliances / Elettrodomestici** |
+| ![Map](docs/map.png) | ![Appliances](docs/appliances.png) |
 
 ## License
 MIT © gionny781

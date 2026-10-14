@@ -87,7 +87,7 @@ const GIORNO = /today|daily|oggi|giorn|_day\b|day_/i;
 const kwh = id => { const v = val(id); if (v == null) return null; const u = String(attr(id, "unit_of_measurement") || "").toLowerCase(); return u === "wh" ? v / 1000 : u === "mwh" ? v * 1000 : v; };
 const statOggi = id => cached("estat:" + id, 5 * 60000, () => ws({ type: "recorder/statistic_during_period", statistic_id: id, calendar: { period: "day" }, types: ["change"] })
   .then(r => r?.change ?? null).catch(e => { console.warn("nduja energia", id, e); return null; }));
-const oggi = id => {
+export const oggi = id => {
   if (!id) return null;
   if (S[id] && GIORNO.test(id + " " + nm(id)) && kwh(id) != null) return kwh(id);
   const v = statOggi(id);

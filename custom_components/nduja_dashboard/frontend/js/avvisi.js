@@ -15,7 +15,11 @@ const nascosti = () => { try { return JSON.parse(sGet("dismiss") || "{}"); } cat
 
 /* --- elettrodomestici: seguo il consumo nel browser --- */
 const ELETTRO = /lavatric|asciugatric|lavastovigl|washer|washing|dryer|dishwasher|forno|oven/i;
-const elettro = () => allEnts("sensor", id => deviceClass(id) === "power" && ELETTRO.test(id + " " + nm(id)) && ok(id));
+/** sensori di potenza da seguire in più (quelli scelti nella pagina Elettrodomestici) */
+export const POTENZE_EXTRA = [];
+const elettro = () => [...new Set([...allEnts("sensor", id => deviceClass(id) === "power" && ELETTRO.test(id + " " + nm(id)) && ok(id)), ...POTENZE_EXTRA.flatMap(f => { try { return f(); } catch { return []; } }).filter(id => S[id] && ok(id))])];
+/** stato del ciclo di un sensore di potenza: { on: inizio (ms) o 0, fine: fine dell'ultimo ciclo (ms) } */
+export const ciclo = id => EL[id] || { on: 0, fine: 0 };
 let EL = {}; try { EL = JSON.parse(sGet("appl") || "{}"); } catch {}
 function seguiElettro() {
   let cambiato = false;
