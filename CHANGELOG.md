@@ -3,6 +3,10 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.10.2
+- 🇮🇹 Preparazione per l'app 'Nduja per iPhone e iPad: la plancia può collegarsi a Home Assistant da sola quando è aperta dall'app. Dentro Home Assistant non cambia nulla.
+- 🇬🇧 Groundwork for the 'Nduja iPhone/iPad app: the dashboard can connect to Home Assistant on its own when opened from the app. Nothing changes inside Home Assistant.
+
 ## 0.7.10.1
 - 🇮🇹 **Auto** (nuova pagina, compare solo se in Home Assistant c'è un'auto collegata con la sua integrazione: Tesla, BMW, Volkswagen, Škoda, Kia/Hyundai, Renault, Polestar, Mercedes e altre): foto dell'auto, batteria con autonomia e limite di ricarica, stato della ricarica (potenza, tempo alla carica completa, cavo), dove si trova e quanto è lontana da casa, e i comandi: apri/chiudi (con doppio tocco per aprire), clima con temperatura, avvia/ferma ricarica, baule, frunk e sportello di ricarica, limite e corrente di ricarica, chilometri, temperature e pressione delle gomme; in «Altri comandi» tutto il resto (clacson, luci, modalità sentinella, sedili riscaldati…). Nella Home la scheda «Auto» e in alto la batteria. I comandi dell'auto non compaiono più nelle pagine Clima, Prese e Sicurezza.
 - 🇮🇹 **Foto dell'auto**: uso quella dell'integrazione; se non c'è la cerco su Wikipedia con marca e modello (si può spegnere, o mettere un indirizzo tuo, con ✏️).

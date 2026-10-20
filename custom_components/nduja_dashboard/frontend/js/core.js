@@ -426,14 +426,21 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet()
 /* ================= connessione ================= */
 async function getConn() {
   try { if (window.parent !== window && window.parent.hassConnection) { const r = await window.parent.hassConnection; if (r?.conn) return r.conn; } } catch { /* origine diversa */ }
+  /* dentro l'app 'Nduja per iPhone/iPad: collegamento diretto, senza l'interfaccia di Home Assistant */
+  if (window.NDUJA_APP) { try { return await (await import("./appconn.js")).connetti(); } catch (e) { console.error(e); } }
   return null;
 }
 /** chiamata REST a Home Assistant con il token della sessione (serve per salvare le automazioni) */
 export async function api(method, path, body) {
-  const r = await window.parent.hassConnection, auth = r?.auth;
-  if (!auth) throw new Error("no auth");
-  if (auth.expired) await auth.refreshAccessToken();
-  const res = await fetch(path, { method, headers: { Authorization: "Bearer " + auth.accessToken, "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+  let token;
+  if (window.NDUJA_APP && !(window.parent !== window && window.parent.hassConnection)) token = await (await import("./appconn.js")).accessToken();
+  else {
+    const r = await window.parent.hassConnection, auth = r?.auth;
+    if (!auth) throw new Error("no auth");
+    if (auth.expired) await auth.refreshAccessToken();
+    token = auth.accessToken;
+  }
+  const res = await fetch(path, { method, headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
   if (!res.ok) throw new Error(res.status + " " + (await res.text().catch(() => "")));
   const tx = await res.text(); try { return JSON.parse(tx); } catch { return tx; }
 }

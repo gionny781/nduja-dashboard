@@ -21,6 +21,9 @@
 ## 0.7.10-beta ✅ pubblicata
 - [x] Procedura guidata che riprende da dove eri, «Salta per ora» e «Annulla», riepilogo della modalità automatica
 
+## 0.7.10.2 ✅ pubblicata
+- Collegamento diretto della plancia per l'app 'Nduja (iPhone/iPad).
+
 ## 0.7.10.1 ✅ pubblicata
 - [x] Pagina Auto (solo per chi ha un'auto in Home Assistant), foto automatica, scheda nella Home
 - [x] hls.js incluso con le sue licenze

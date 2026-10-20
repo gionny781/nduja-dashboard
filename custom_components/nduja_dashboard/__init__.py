@@ -7,7 +7,7 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant.components import frontend, websocket_api
-from homeassistant.components.http import StaticPathConfig
+from homeassistant.components.http import HomeAssistantView, StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.storage import Store
@@ -29,6 +29,21 @@ def _build_id() -> str:
     return h.hexdigest()[:8]
 
 
+class NdujaAppView(HomeAssistantView):
+    """Per l'app 'Nduja (iPhone/iPad): dice dove si trova la plancia e la versione installata.
+    Non contiene dati della casa, quindi non serve l'accesso."""
+
+    url = f"/api/{DOMAIN}/app"
+    name = f"api:{DOMAIN}:app"
+    requires_auth = False
+
+    def __init__(self, build: str) -> None:
+        self._build = build
+
+    async def get(self, request):
+        return self.json({"version": VERSION, "url": f"{STATIC_URL}/{self._build}/index.html"})
+
+
 STORE_VERSION = 1
 EVENT_LAYOUT = f"{DOMAIN}_layout_updated"
 
@@ -42,6 +57,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await hass.http.async_register_static_paths(
             [StaticPathConfig(f"{STATIC_URL}/{data['build']}", str(FRONTEND_DIR), True)]
         )
+        hass.http.register_view(NdujaAppView(data["build"]))
         websocket_api.async_register_command(hass, ws_config)
         websocket_api.async_register_command(hass, ws_save_layout)
         data["static"] = True
