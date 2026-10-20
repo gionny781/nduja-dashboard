@@ -118,5 +118,8 @@ si costruisce da sola dalle tue **aree, piani e dispositivi**.
 
 [![PayPal](https://img.shields.io/badge/PayPal-Dona%20%2F%20Donate-00457C?logo=paypal&logoColor=white&style=for-the-badge)](https://www.paypal.me/gionny781)
 
-## License
+## Licenza / License
 MIT © gionny781
+
+'Nduja Dashboard è sotto licenza **MIT** (`LICENSE`). Include [hls.js](https://github.com/video-dev/hls.js) (Apache License 2.0): vedi [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+'Nduja Dashboard is **MIT** licensed (`LICENSE`). It bundles [hls.js](https://github.com/video-dev/hls.js) (Apache License 2.0): see [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
