@@ -45,6 +45,14 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.22-dev | ven 13 nov | Musica: ascolta su questo dispositivo, Alexa, Google, Sonos |
 | 0.7.23-dev | dom 15 nov | Musica: Music Assistant e «Sposta su…» |
 | 0.7.24-dev | mar 17 nov | Media: TV, telecomando virtuale, app di streaming |
+| 0.7.25-dev | gio 19 nov | Irrigazione animata |
+| 0.7.26-dev | sab 21 nov | La mia squadra (calcio) |
+| 0.7.27-dev | lun 23 nov | Formula 1 |
+| 0.7.28-dev | mer 25 nov | Salvaschermo nuovo (della plancia, tuo o automatico) |
+| 0.7.29-dev | ven 27 nov | Batterie |
+| 0.7.30-dev | dom 29 nov | Rete e server (modem, mini PC, NAS, UPS) |
+| 0.7.31-dev | mar 1 dic | Caldaia |
+| 0.7.32-dev | gio 3 dic | Chat di famiglia |
 
 ## Dopo
 - 0.8.0 — versione ufficiale con tutte le anteprime, guida COME_INSTALLARE con foto, ritocchi
