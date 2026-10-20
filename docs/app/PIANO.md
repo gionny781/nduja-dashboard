@@ -37,3 +37,21 @@ Il lavoro comincia **dopo la 0.8.0 ufficiale**. La 0.8.0 esce solo quando Giovan
 - Codice in un repository separato `nduja-app`.
 - Claude scrive il codice e Giovanni compila con Xcode sul suo Mac. Se il Mac è collegato a Claude, la compilazione e i test si possono lanciare da lì con `xcodebuild`.
 - Password e account Apple li inserisce sempre Giovanni.
+
+## Gratis per tutti, con un extra a pagamento una tantum
+- **Gratis per sempre:** l'app completa con la plancia, i widget base, l'accesso in casa e fuori, Face ID. La plancia su HACS resta gratuita e MIT.
+- **'Nduja Plus**, acquisto unico nell'app (In‑App Purchase «non consumabile», obbligatorio per Apple). Idee:
+  - CarPlay;
+  - widget avanzati e schermata di blocco;
+  - Live Activities (cancello che si apre, Tesla in carica);
+  - Apple Watch;
+  - più case;
+  - icone e temi alternativi.
+- **Codice «open core»:**
+  - Il repository `nduja-app` è pubblico e contiene la parte gratuita.
+  - Le funzioni Plus stanno in un pacchetto Swift **privato** (`nduja-app-plus`).
+  - I Mac di GitHub del repository pubblico lo includono nella compilazione ufficiale con un token segreto, quindi restano gratis.
+- **Commissione Apple:** 15% con lo Small Business Program, per chi incassa meno di 1 milione l'anno.
+- **Da sistemare prima di vendere** (non sono consulenze legali o fiscali):
+  - per le regole UE (DSA) l'App Store chiede di dichiararsi «trader» e mostra pubblicamente indirizzo, telefono ed email del venditore;
+  - gli incassi vanno dichiarati; con un commercialista va valutato se serve la partita IVA.
