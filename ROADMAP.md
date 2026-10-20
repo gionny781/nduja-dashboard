@@ -62,6 +62,7 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.39-dev | gio 17 dic | Assistente vocale (Assist) |
 | 0.7.40-dev | sab 19 dic | Piante e giardino |
 | 0.7.41-dev | lun 21 dic | Guida all'installazione illustrata e controllo finale |
+| 0.7.42-dev | mer 23 dic | In auto: comandi per CarPlay e Android Auto |
 
 ## Dopo
 - 0.8.0 — versione ufficiale con tutte le anteprime, guida COME_INSTALLARE con foto, ritocchi
