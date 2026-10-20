@@ -21,7 +21,7 @@ Il lavoro comincia **dopo la 0.8.0 ufficiale**. La 0.8.0 esce solo quando Giovan
 | Cosa | Stato | Serve per |
 |---|---|---|
 | Mac con Xcode recente | ⚠️ il MacBook Air 2018 (Intel) si ferma a Sonoma 14: niente Xcode 26 | compilare per iOS 26 |
-| Mac di GitHub Actions (cloud, gratis per repo pubblici) | ✅ scelta | compilano l'app con l'Xcode più recente; installazione sull'iPhone con Sideloadly (account gratuito) o TestFlight (account a pagamento) |
+| Mac di GitHub Actions (cloud; con repo privato ~200 minuti macOS gratis al mese) | ✅ scelta | compilano l'app con l'Xcode più recente; installazione sull'iPhone con Sideloadly (account gratuito) o TestFlight (account a pagamento) |
 | Mac mini con chip M (facoltativo, più avanti) | da valutare | sviluppo più comodo e veloce, prove dirette da Xcode |
 | Account Apple gratuito / beta sviluppatore | ✅ c'è | installare l'app sul proprio iPhone/iPad via cavo (il profilo scade ogni 7 giorni) |
 | Apple Developer Program (99 €/anno) | ❌ da fare | permesso CarPlay, TestFlight, App Store |
@@ -34,7 +34,8 @@ Il lavoro comincia **dopo la 0.8.0 ufficiale**. La 0.8.0 esce solo quando Giovan
 4. **TestFlight** per la famiglia, poi **App Store**. Il nome dell'app non può contenere «Home Assistant» come marchio: da verificare con le regole del marchio della Open Home Foundation.
 
 ## Come lavoriamo
-- Codice in un repository separato `nduja-app`.
+- Codice in un repository **privato** separato `nduja-app`: l'app è gratuita, ma il codice non è pubblico.
+- Compilazione con i Mac di GitHub solo su richiesta (pulsante «Run workflow»), non a ogni modifica, per stare nei minuti gratuiti dei repository privati (i minuti macOS contano 10 volte).
 - Claude scrive il codice e Giovanni compila con Xcode sul suo Mac. Se il Mac è collegato a Claude, la compilazione e i test si possono lanciare da lì con `xcodebuild`.
 - Password e account Apple li inserisce sempre Giovanni.
 
