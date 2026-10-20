@@ -26,5 +26,9 @@ jobs:
           if gh release view "v$V" >/dev/null 2>&1; then echo "v$V esiste già"; exit 0; fi
           NOTES=$(awk -v v="## $V" '$0==v{f=1;next} /^## /{f=0} f' CHANGELOG.md)
           [ -z "$NOTES" ] && NOTES="'Nduja Dashboard $V"
-          T="$V"; case "$V" in *beta*) T="${V%-beta} beta";; esac
-          gh release create "v$V" --title "$T" --notes "$NOTES" --target "$GITHUB_SHA"
+          T="$V"; PRE=""
+          case "$V" in
+            *-dev*) T="${V%-dev} anteprima"; PRE="--prerelease --latest=false";;   # anteprima: HACS la mostra solo a chi attiva le versioni beta
+            *beta*) T="${V%-beta} beta";;
+          esac
+          gh release create "v$V" --title "$T" --notes "$NOTES" --target "$GITHUB_SHA" $PRE

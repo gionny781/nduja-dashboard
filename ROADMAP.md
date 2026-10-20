@@ -25,40 +25,26 @@
 - [x] Pagina Auto (solo per chi ha un'auto in Home Assistant), foto automatica, scheda nella Home
 - [x] hls.js incluso con le sue licenze
 
-## 0.7.11-beta — Novità in casa
-- [ ] La plancia ricorda i dispositivi già visti e avvisa quando ne arrivano di nuovi (con aggiunta rapida in manuale)
-- [ ] ＋ Aggiungi mostra in cima i dispositivi suggeriti per la pagina e non ancora aggiunti
+## Anteprime verso la 0.8.0
+Le novità escono una alla volta come **anteprime** (`0.7.x-dev`, pre-release: HACS le mostra solo a chi attiva «Mostra versioni beta»).
+Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro sono in `docs/sviluppo/`.
 
-## 0.7.12-beta — Controlla Home Assistant e accessi
-- [ ] Diagnosi in parole semplici in ⚙️ Impostazioni (dispositivi senza area, aree senza piano, Energia, meteo, persone senza telefono, entità non raggiungibili) con il pulsante che porta dove si sistema
-- [ ] Messaggio chiaro con «Riprova» se la plancia non si carica, al posto della schermata bianca
-- [ ] Etichetta «'Nduja» sulle automazioni e gli script creati dalla plancia
-- [ ] Sicurezza: scheda «Accessi» con cancello, cancelletto, garage, portone (cover, switch, pulsanti, script) aggiungibili
-
-## 0.7.13-beta — Faccende e Bacheca
-- [ ] Faccende: lavori di casa a turni tra le persone, con promemoria
-- [ ] Bacheca: messaggi di famiglia visibili su tutti i dispositivi
-
-## 0.7.14-beta — Telecamere in diretta
-- [ ] WebRTC → HLS → MJPEG → foto, con il metodo migliore per ogni telecamera
-- [ ] Scelta dei flussi (principale/sub-stream), aggiungi e togli telecamere
-
-## 0.7.15-beta — Elettrodomestici e clima animati
-- [ ] Immagini/GIF tue da /local/ oppure animazioni della plancia per fermo, in funzione e finito
-- [ ] Stessa scelta per condizionatori e termostati
-
-## 0.7.16-beta — Energia più bella
-- [ ] Scena animata: sole che si muove, meteo, casa con pannelli, batteria, rete, auto ed elettrodomestici accesi
-
-## 0.7.17-beta — Luci rifatte
-- [ ] Tessere che si illuminano del colore della lampada, luminosità trascinando, colori e bianchi
-
-## 0.7.18-beta — Musica ovunque
-- [ ] Ascolta su questo dispositivo, Alexa, Google, Sonos; Music Assistant; sposta la musica da una cassa all'altra
-
-## 0.7.19-beta — Media
-- [ ] TV, telecomando virtuale, app di streaming
+| Anteprima | Contenuto |
+|---|---|
+| 0.7.11-dev | Novità in casa: avviso dei dispositivi nuovi, suggeriti in ＋ Aggiungi |
+| 0.7.12-dev | Controlla Home Assistant, schermata d'errore chiara, etichetta «'Nduja» |
+| 0.7.13-dev | Sicurezza: scheda Accessi (cancello, cancelletto, garage, portone) |
+| 0.7.14-dev | Faccende e Bacheca |
+| 0.7.15-dev | Telecamere in diretta (WebRTC → HLS → MJPEG → foto) |
+| 0.7.16-dev | Telecamere: scelta dei flussi, aggiungi/togli, gruppi |
+| 0.7.17-dev | Elettrodomestici animati o con le tue immagini |
+| 0.7.18-dev | Clima animato o con le tue immagini |
+| 0.7.19-dev | Energia: scena animata con sole, meteo, casa ed elettrodomestici |
+| 0.7.20-dev | Luci rifatte |
+| 0.7.21-dev | Musica: ascolta su questo dispositivo, Alexa, Google, Sonos |
+| 0.7.22-dev | Musica: Music Assistant e «Sposta su…» |
+| 0.7.23-dev | Media: TV, telecomando virtuale, app di streaming |
 
 ## Dopo
-- 0.8 — Guida COME_INSTALLARE con foto, traduzioni, ritocchi
+- 0.8.0 — versione ufficiale con tutte le anteprime, guida COME_INSTALLARE con foto, ritocchi
 - 1.0 — via «beta», segnalazione all'elenco ufficiale HACS
