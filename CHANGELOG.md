@@ -3,6 +3,10 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.10.3
+- 🇮🇹 Più fluida sui telefoni: quando in casa tanti sensori cambiano di continuo, la plancia si ridisegna al massimo ogni 400 ms e aspetta che tu tolga il dito dallo schermo. I tuoi tocchi restano immediati.
+- 🇬🇧 Smoother on phones: when many sensors change all the time, the dashboard redraws at most every 400 ms and waits until your finger leaves the screen. Your taps stay instant.
+
 ## 0.7.10.2
 - 🇮🇹 Preparazione per l'app 'Nduja per iPhone e iPad: la plancia può collegarsi a Home Assistant da sola quando è aperta dall'app. Dentro Home Assistant non cambia nulla.
 - 🇬🇧 Groundwork for the 'Nduja iPhone/iPad app: the dashboard can connect to Home Assistant on its own when opened from the app. Nothing changes inside Home Assistant.

@@ -482,8 +482,22 @@ function onEntities(m) {
     if (r?.a) for (const k of r.a) delete n.attributes[k];
     S[id] = n;
   }
-  if (!UI.page) go(location.hash.slice(1) || sGet("page") || "home"); else render();
+  if (!UI.page) go(location.hash.slice(1) || sGet("page") || "home"); else renderDaStati();
 }
+/* Gli stati cambiano anche più volte al secondo (sensori di potenza, lettori…): ridisegnare tutta la pagina
+   a ogni cambio fa scattare i telefoni. Qui ridisegno al massimo ogni 400 ms e mai mentre il dito è sullo schermo;
+   i tocchi dell'utente continuano a ridisegnare subito. */
+let ultimoRender = 0, attesaRender = null, tocco = false;
+function renderDaStati() {
+  if (attesaRender) return;
+  attesaRender = setTimeout(() => {
+    attesaRender = null;
+    if (tocco) return renderDaStati();
+    ultimoRender = performance.now(); render();
+  }, Math.max(0, 400 - (performance.now() - ultimoRender)));
+}
+document.addEventListener("pointerdown", () => { tocco = true; }, { passive: true });
+for (const ev of ["pointerup", "pointercancel"]) document.addEventListener(ev, () => { setTimeout(() => { tocco = false; }, 120); }, { passive: true });
 async function start() {
   conn = await getConn();
   if (!conn) { $("#connect").classList.add("show"); return; }

@@ -21,6 +21,9 @@
 ## 0.7.10-beta ✅ pubblicata
 - [x] Procedura guidata che riprende da dove eri, «Salta per ora» e «Annulla», riepilogo della modalità automatica
 
+## 0.7.10.3 ✅ pubblicata
+- Plancia più fluida sui telefoni (meno ridisegni quando i sensori cambiano spesso).
+
 ## 0.7.10.2 ✅ pubblicata
 - Collegamento diretto della plancia per l'app 'Nduja (iPhone/iPad).
 
