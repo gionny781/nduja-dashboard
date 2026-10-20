@@ -53,6 +53,15 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.30-dev | dom 29 nov | Rete e server (modem, mini PC, NAS, UPS) |
 | 0.7.31-dev | mar 1 dic | Caldaia |
 | 0.7.32-dev | gio 3 dic | Chat di famiglia |
+| 0.7.33-dev | sab 5 dic | Liste: spesa e cose da fare |
+| 0.7.34-dev | lun 7 dic | Scadenze e promemoria |
+| 0.7.35-dev | mer 9 dic | Meteo completo |
+| 0.7.36-dev | ven 11 dic | Tapparelle e tende |
+| 0.7.37-dev | dom 13 dic | Qualità dell'aria |
+| 0.7.38-dev | mar 15 dic | Acqua e gas |
+| 0.7.39-dev | gio 17 dic | Assistente vocale (Assist) |
+| 0.7.40-dev | sab 19 dic | Piante e giardino |
+| 0.7.41-dev | lun 21 dic | Guida all'installazione illustrata e controllo finale |
 
 ## Dopo
 - 0.8.0 — versione ufficiale con tutte le anteprime, guida COME_INSTALLARE con foto, ritocchi
