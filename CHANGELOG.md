@@ -3,6 +3,16 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.10.1
+- 🇮🇹 **Auto** (nuova pagina, compare solo se in Home Assistant c'è un'auto collegata con la sua integrazione: Tesla, BMW, Volkswagen, Škoda, Kia/Hyundai, Renault, Polestar, Mercedes e altre): foto dell'auto, batteria con autonomia e limite di ricarica, stato della ricarica (potenza, tempo alla carica completa, cavo), dove si trova e quanto è lontana da casa, e i comandi: apri/chiudi (con doppio tocco per aprire), clima con temperatura, avvia/ferma ricarica, baule, frunk e sportello di ricarica, limite e corrente di ricarica, chilometri, temperature e pressione delle gomme; in «Altri comandi» tutto il resto (clacson, luci, modalità sentinella, sedili riscaldati…). Nella Home la scheda «Auto» e in alto la batteria. I comandi dell'auto non compaiono più nelle pagine Clima, Prese e Sicurezza.
+- 🇮🇹 **Foto dell'auto**: uso quella dell'integrazione; se non c'è la cerco su Wikipedia con marca e modello (si può spegnere, o mettere un indirizzo tuo, con ✏️).
+- 🇮🇹 Le schede nuove della Home compaiono al loro posto e non più in fondo.
+- 🇮🇹 La plancia include ora la libreria **hls.js** 1.6.13 (licenza Apache 2.0, avvisi in `THIRD_PARTY_LICENSES.md`) che servirà per le dirette delle telecamere.
+- 🇬🇧 **Car** (new page, shown only if Home Assistant has a car connected through its integration: Tesla, BMW, Volkswagen, Škoda, Kia/Hyundai, Renault, Polestar, Mercedes and more): car photo, battery with range and charge limit, charging status (power, time to full, cable), where it is and how far from home, and controls: lock/unlock (double tap to unlock), climate with temperature, start/stop charging, trunk, frunk and charge port, charge limit and current, odometer, temperatures and tyre pressure; «More controls» holds the rest (horn, lights, sentry mode, heated seats…). «Car» card on Home and battery at the top. Car controls no longer show up in Climate, Plugs and Security.
+- 🇬🇧 **Car photo**: the integration's picture; if missing I look it up on Wikipedia by make and model (can be turned off, or use your own link, with ✏️).
+- 🇬🇧 New Home cards appear in their natural place instead of at the bottom.
+- 🇬🇧 The dashboard now bundles **hls.js** 1.6.13 (Apache 2.0 license, notices in `THIRD_PARTY_LICENSES.md`) for upcoming live camera streams.
+
 ## 0.7.10-beta
 - 🇮🇹 **Procedura guidata che riprende da dove eri**: se chiudi la plancia a metà configurazione, alla riapertura riparti dallo stesso passo con le scelte fatte (restano su quel dispositivo finché non salvi o annulli). Nel benvenuto compare «Riprendi da dove eri».
 - 🇮🇹 **«Salta per ora» e «Annulla»** in ogni passo: salti un passo lasciandolo com'era, oppure esci senza cambiare niente.

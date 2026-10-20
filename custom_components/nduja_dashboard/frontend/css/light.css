@@ -126,6 +126,13 @@ body.light .mpl1{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,
 body.light .mpa1{background:rgba(0,0,0,0.040) center/cover!important}
 body.light .mpc1{background:rgba(0,0,0,0.050)!important}
 body.light .hlv1{background:rgba(0,0,0,0.030)!important}
+body.light .car-ph{background:radial-gradient(ellipse at 50% 70%,rgba(0,0,0,0.040),rgba(0,0,0,0.010))!important}
+body.light .car-bar{background:rgba(0,0,0,0.040)!important}
+body.light .car-bar i.anim{background-image:linear-gradient(90deg,rgba(0,0,0,0.000) 0,rgba(0,0,0,0.120) 50%,rgba(0,0,0,0.000) 100%)!important}
+body.light .car-c{background:rgba(0,0,0,0.030)!important;border:1px solid rgba(0,0,0,0.070)!important}
+body.light .car-i>div{background:rgba(0,0,0,0.025)!important}
+body.light .car-h{background:rgba(0,0,0,0.020)!important;border:1px solid rgba(0,0,0,0.056)!important}
+body.light .car-hi.none{background:rgba(0,0,0,0.030)!important}
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
 body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
@@ -165,4 +172,8 @@ body.light .gg1{stroke:rgba(0,0,0,.08)}body.light .gl1{fill:rgba(0,0,0,.5)}
 body.light .mob1{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08)}
 body.light .mpl1{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08)}body.light .mpc1{background:rgba(0,0,0,.07)}body.light .mpc1.big{background:#1c1c1e;color:#fff}
 body.light .hlv1{background:rgba(0,0,0,.05)}
+
+body.light .car-c.on{background:rgba(10,132,255,.16)!important;border-color:#0a84ff!important}
+body.light .car-c.warn{background:rgba(255,159,10,.14)!important;border-color:rgba(255,159,10,.5)!important}
+body.light .car-bar u{background:#1c1c1e}
 

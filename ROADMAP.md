@@ -21,6 +21,10 @@
 ## 0.7.10-beta ✅ pubblicata
 - [x] Procedura guidata che riprende da dove eri, «Salta per ora» e «Annulla», riepilogo della modalità automatica
 
+## 0.7.10.1 ✅ pubblicata
+- [x] Pagina Auto (solo per chi ha un'auto in Home Assistant), foto automatica, scheda nella Home
+- [x] hls.js incluso con le sue licenze
+
 ## 0.7.11-beta — Novità in casa
 - [ ] La plancia ricorda i dispositivi già visti e avvisa quando ne arrivano di nuovi (con aggiunta rapida in manuale)
 - [ ] ＋ Aggiungi mostra in cima i dispositivi suggeriti per la pagina e non ancora aggiunti

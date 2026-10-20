@@ -31,6 +31,7 @@ it builds itself from your **areas, floors and devices**.
 - **Calendar** – events from your Home Assistant calendars (today, week, month) and ＋ Event.
 - **Map** – 2D or 3D, every floor drawn from your areas: lights, windows, climate, motion, temperature; move and resize rooms, put your floor plan underneath.
 - **Appliances** – washing machine, dryer, dishwasher, oven…: running/done, power, today's kWh, end time, plug.
+- **Car** – shown only if Home Assistant has a car (Tesla, BMW, VW, Kia/Hyundai, Renault, Polestar, Mercedes…): photo, battery and range, charging, location and controls (lock, climate, charging, trunk, charge limit…).
 - **Vacuum** – status, map, room cleaning, quick settings and maintenance. **Cameras** – live snapshots and live view. **Security** – alarm keypad, locks, doors, smoke/gas/water, motion.
 - **Lights** – all lights by floor and room, brightness sliders, "turn off" per room and for the whole house.
 - **Climate** – thermostats and air conditioners by room, plus a temperature/humidity overview of every room.
@@ -69,6 +70,7 @@ si costruisce da sola dalle tue **aree, piani e dispositivi**.
 - **Calendario** – gli eventi dei calendari di Home Assistant (oggi, settimana, mese) e ＋ Evento.
 - **Mappa** – in 2D o 3D, ogni piano disegnato dalle aree: luci, finestre, clima, movimento, temperatura; sposta e ridimensiona le stanze, metti sotto la tua piantina.
 - **Elettrodomestici** – lavatrice, asciugatrice, lavastoviglie, forno…: in funzione/finito, potenza, kWh di oggi, ora di fine, presa.
+- **Auto** – compare solo se in Home Assistant c'è un'auto (Tesla, BMW, VW, Kia/Hyundai, Renault, Polestar, Mercedes…): foto, batteria e autonomia, ricarica, posizione e comandi (apri/chiudi, clima, ricarica, baule, limite di ricarica…).
 - **Robot** – stato, mappa, pulizia per stanza, impostazioni rapide e manutenzione. **Telecamere** – anteprime e diretta. **Sicurezza** – allarme col tastierino, serrature, porte, fumo/gas/acqua, movimento.
 - **Luci** – tutte le luci per piano e stanza, con regolazione della luminosità, «spegni» per stanza e per tutta la casa.
 - **Clima** – termostati e condizionatori per stanza, più la temperatura e l'umidità di ogni stanza.

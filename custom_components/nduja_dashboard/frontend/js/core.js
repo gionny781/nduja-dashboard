@@ -394,6 +394,8 @@ function renderNav() {
 }
 /* pillole in alto: meteo, persone, luci accese, energia (se configurata) */
 export const STRIP = [];
+/** schede della Home aggiunte dalle altre pagine: { chiave: { title(), render(), show() } } (compaiono solo se show() è vero) */
+export const HOME_EXTRA = {};
 function renderStrip() {
   const w = weatherEnt(), home = ents("person").filter(p => S[p].state === "home").length, L = lightsOn().length;
   const extra = STRIP.map(f => { try { return f(); } catch { return ""; } }).join("");

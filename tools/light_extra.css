@@ -37,3 +37,7 @@ body.light .gg1{stroke:rgba(0,0,0,.08)}body.light .gl1{fill:rgba(0,0,0,.5)}
 body.light .mob1{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08)}
 body.light .mpl1{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08)}body.light .mpc1{background:rgba(0,0,0,.07)}body.light .mpc1.big{background:#1c1c1e;color:#fff}
 body.light .hlv1{background:rgba(0,0,0,.05)}
+
+body.light .car-c.on{background:rgba(10,132,255,.16)!important;border-color:#0a84ff!important}
+body.light .car-c.warn{background:rgba(255,159,10,.14)!important;border-color:rgba(255,159,10,.5)!important}
+body.light .car-bar u{background:#1c1c1e}

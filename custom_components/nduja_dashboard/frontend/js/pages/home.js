@@ -1,6 +1,6 @@
 /* Home: saluto e riepilogo, meteo, stanze (per piano), persone, scene, cose da sistemare.
    Tutto viene dalle aree e dai dispositivi di Home Assistant: niente da configurare. */
-import { S, AREAS, FLOORS, UI, ACT, CHG, t, LOC, esc, fnum, attr, ok, val, nm, ents, inArea, areaOf, areasSorted, roomTemp, roomHum,
+import { S, HOME_EXTRA, AREAS, FLOORS, UI, ACT, CHG, t, LOC, esc, fnum, attr, ok, val, nm, ents, inArea, areaOf, areasSorted, roomTemp, roomHum,
   openings, lightsOn, isOn, card, empty, lightTile, climateCard, entityRow, openSheet, closeSheet, page, WX, HVAC, forecast, deviceClass, shortName, svc, toast, ago, weatherEnt, LAYOUT, isAdmin, saveLayout, utenteCfg } from "../core.js";
 import { item, addBtn, scegli, isTemp, isHum, cambia } from "../edit.js";
 import { personeCard } from "../people.js";
@@ -141,6 +141,7 @@ const SCHEDE = () => ({
   stanze: [t("Stanze", "Rooms"), stanze],
   avvisi: [t("Avvisi", "Alerts"), avvisiCard],
   persone: [t("Persone", "People"), personeCard],
+  ...Object.fromEntries(Object.entries(HOME_EXTRA).filter(([, x]) => { try { return x.show(); } catch { return false; } }).map(([k, x]) => [k, [x.title(), x.render]])),
   raccolta: [t("Raccolta differenziata", "Waste collection"), raccoltaCard, "rfEdit"],
   agenda: [t("Agenda", "Agenda"), agendaCard, "calEdit"],
   musica: [t("In riproduzione", "Now playing"), musicaCard],
@@ -188,7 +189,10 @@ Object.assign(ACT, {
 /* ✕ su un elemento di una scheda libera: lo toglie solo da quella scheda */
 const edDel0 = ACT.edDel;
 ACT.edDel = el => el.dataset.page?.startsWith("hc:") ? cardsSet(L => { const c = L.find(q => q.id === el.dataset.page.slice(3)); if (c) c.items = c.items.filter(x => x !== el.dataset.id); }) : edDel0(el);
-const ordine = () => { const K = Object.keys(SCHEDE()), o = (LAYOUT.home?.order || []).filter(k => K.includes(k)); return [...o, ...K.filter(k => !o.includes(k))]; };
+const ordine = () => { const K = Object.keys(SCHEDE()), o = (LAYOUT.home?.order || []).filter(k => K.includes(k));
+  /* schede nuove (per esempio Auto): le metto al loro posto naturale, dopo la scheda che le precede */
+  K.forEach((k, i) => { if (o.includes(k)) return; const prima = K.slice(0, i).reverse().find(x => o.includes(x)); o.splice(prima ? o.indexOf(prima) + 1 : 0, 0, k); });
+  return o; };
 const nascoste = () => UI.edit ? (LAYOUT.home?.hidden || []) : [...new Set([...(LAYOUT.home?.hidden || []), ...(utenteCfg().homeHidden || [])])];
 /** schede della Home (per le scelte per persona in Impostazioni) */
 export const schedeHome = () => Object.entries(SCHEDE()).map(([k, v]) => [k, v[0]]);

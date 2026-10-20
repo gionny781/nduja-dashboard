@@ -75,6 +75,33 @@ const ENT = {
   "automation.vecchia": st("off", { friendly_name: "Vecchia automazione", id: "789" }),
   "media_player.echo_cucina": st("playing", { friendly_name: "Echo cucina", supported_features: 152463, media_title: "Bohemian Rhapsody", media_artist: "Queen", volume_level: .35, entity_picture: "/custom_components/nduja_dashboard/frontend/img/chili.svg", source_list: ["Spotify","Radio"], source: "Spotify", shuffle: false, repeat: "off" }),
   "media_player.tv_soggiorno": st("off", { friendly_name: "TV soggiorno", device_class: "tv", supported_features: 23997, volume_level: .2, source_list: ["HDMI 1","Netflix","YouTube"] }),
+  "sensor.model_3_battery_level": st("64", { device_class: "battery", unit_of_measurement: "%", friendly_name: "Model 3 Battery level" }),
+  "sensor.model_3_battery_range": st("312", { device_class: "distance", unit_of_measurement: "km", friendly_name: "Model 3 Battery range" }),
+  "sensor.model_3_odometer": st("48211", { device_class: "distance", unit_of_measurement: "km", friendly_name: "Model 3 Odometer" }),
+  "sensor.model_3_charging": st("charging", { device_class: "enum", friendly_name: "Model 3 Charging" }),
+  "sensor.model_3_charger_power": st("7.2", { device_class: "power", unit_of_measurement: "kW", friendly_name: "Model 3 Charger power" }),
+  "sensor.model_3_time_to_full_charge": st(new Date(Date.now()+95*60000).toISOString(), { device_class: "timestamp", friendly_name: "Model 3 Time to full charge" }),
+  "sensor.model_3_inside_temperature": st("21.5", { device_class: "temperature", unit_of_measurement: "°C", friendly_name: "Model 3 Inside temperature" }),
+  "sensor.model_3_outside_temperature": st("17", { device_class: "temperature", unit_of_measurement: "°C", friendly_name: "Model 3 Outside temperature" }),
+  "sensor.model_3_tire_pressure_front_left": st("2.9", { device_class: "pressure", unit_of_measurement: "bar", friendly_name: "Model 3 Tire pressure front left" }),
+  "sensor.model_3_tire_pressure_front_right": st("2.9", { device_class: "pressure", unit_of_measurement: "bar", friendly_name: "Model 3 Tire pressure front right" }),
+  "sensor.model_3_tire_pressure_rear_left": st("2.8", { device_class: "pressure", unit_of_measurement: "bar", friendly_name: "Model 3 Tire pressure rear left" }),
+  "sensor.model_3_tire_pressure_rear_right": st("2.8", { device_class: "pressure", unit_of_measurement: "bar", friendly_name: "Model 3 Tire pressure rear right" }),
+  "binary_sensor.model_3_charge_cable": st("on", { device_class: "plug", friendly_name: "Model 3 Charge cable" }),
+  "device_tracker.model_3_location": st("home", { source_type: "gps", latitude: 41.89, longitude: 12.49, friendly_name: "Model 3 Location" }),
+  "lock.model_3_lock": st("locked", { friendly_name: "Model 3 Lock" }),
+  "climate.model_3_climate": st("off", { friendly_name: "Model 3 Climate", temperature: 21, current_temperature: 21.5, hvac_modes: ["off", "heat_cool"] }),
+  "switch.model_3_charge": st("on", { friendly_name: "Model 3 Charge" }),
+  "switch.model_3_sentry_mode": st("off", { friendly_name: "Model 3 Sentry mode" }),
+  "number.model_3_charge_limit": st("80", { unit_of_measurement: "%", min: 50, max: 100, step: 1, friendly_name: "Model 3 Charge limit" }),
+  "number.model_3_charge_current": st("16", { unit_of_measurement: "A", min: 5, max: 32, step: 1, friendly_name: "Model 3 Charge current" }),
+  "cover.model_3_trunk": st("closed", { friendly_name: "Model 3 Trunk" }),
+  "cover.model_3_frunk": st("closed", { friendly_name: "Model 3 Frunk" }),
+  "cover.model_3_charge_port_door": st("open", { friendly_name: "Model 3 Charge port door" }),
+  "button.model_3_honk_horn": st("unknown", { friendly_name: "Model 3 Honk horn" }),
+  "button.model_3_flash_lights": st("unknown", { friendly_name: "Model 3 Flash lights" }),
+  "button.model_3_wake": st("unknown", { friendly_name: "Model 3 Wake" }),
+  "select.model_3_seat_heater_front_left": st("off", { options: ["off", "low", "medium", "high"], friendly_name: "Model 3 Seat heater front left" }),
   "update.home_assistant_core_update": st("on", { title: "Home Assistant Core", friendly_name: "Core update" }),
 };
 const day = (o, h, m=0) => { const d = new Date(); d.setDate(d.getDate()+o); d.setHours(h, m, 0, 0); return d.toISOString(); };
@@ -86,7 +113,7 @@ const EV = {
 };
 let LAYOUT = JSON.parse(localStorage.getItem("mockLayout") || '{"configured":true,"mode":"auto","energy":{"pv":["sensor.inverter_pv1_power","sensor.inverter_pv2_power","sensor.inverter_pv3_power"]}}');
 const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_sogg/.test(id) ? "soggiorno" : /echo_cucina/.test(id) ? "cucina" : /soggiorno/.test(id) ? "soggiorno" : /corridoio|porta|ariston/.test(id) ? "corridoio" : /cucina/.test(id) ? "cucina" : null,
-  di: id.includes("ambrogio") ? "dev_v" : id.includes("mario") ? "dev_g" : id.includes("anna") ? "dev_c" : id.includes("ariston") ? "dev_a" : null })) };
+  pl: id.includes("model_3") ? "tesla_fleet" : undefined, di: id.includes("model_3") ? "dev_car" : id.includes("ambrogio") ? "dev_v" : id.includes("mario") ? "dev_g" : id.includes("anna") ? "dev_c" : id.includes("ariston") ? "dev_a" : null })) };
 const conn = {
   addEventListener() {}, subscribeEvents() { return Promise.resolve(() => {}); },
   subscribeMessage(cb) { setTimeout(() => cb({ a: ENT }), 50); return Promise.resolve(() => {}); },
@@ -96,7 +123,7 @@ const conn = {
       case "nduja_dashboard/config": return { version: "0.5.0-beta", options: {}, layout: LAYOUT };
       case "nduja_dashboard/save_layout": LAYOUT = m.layout; localStorage.setItem("mockLayout", JSON.stringify(LAYOUT)); return { ok: true };
       case "config/entity_registry/list_for_display": return REG;
-      case "config/device_registry/list": return [{ id: "dev_g", name: "iPhone di Mario" }, { id: "dev_c", name: "iPhone di Anna" }, { id: "dev_a", name: "Ariston" }];
+      case "config/device_registry/list": return [{ id: "dev_g", name: "iPhone di Mario" }, { id: "dev_c", name: "iPhone di Anna" }, { id: "dev_a", name: "Ariston" }, ...(localStorage.getItem("mockNoCar") ? [] : [{ id: "dev_car", name: "Model 3", manufacturer: "Tesla", model: "Model 3" }])];
       case "config/area_registry/list": return [{ area_id: "soggiorno", name: "Soggiorno" }, { area_id: "corridoio", name: "Corridoio" }, { area_id: "cucina", name: "Cucina" }];
       case "config/floor_registry/list": return [];
       case "recorder/statistic_during_period": return { change: 1.23 };
