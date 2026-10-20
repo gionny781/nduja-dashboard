@@ -29,14 +29,35 @@
 - [ ] La plancia ricorda i dispositivi già visti e avvisa quando ne arrivano di nuovi (con aggiunta rapida in manuale)
 - [ ] ＋ Aggiungi mostra in cima i dispositivi suggeriti per la pagina e non ancora aggiunti
 
-## 0.7.12-beta — Controlla Home Assistant
+## 0.7.12-beta — Controlla Home Assistant e accessi
 - [ ] Diagnosi in parole semplici in ⚙️ Impostazioni (dispositivi senza area, aree senza piano, Energia, meteo, persone senza telefono, entità non raggiungibili) con il pulsante che porta dove si sistema
 - [ ] Messaggio chiaro con «Riprova» se la plancia non si carica, al posto della schermata bianca
 - [ ] Etichetta «'Nduja» sulle automazioni e gli script creati dalla plancia
+- [ ] Sicurezza: scheda «Accessi» con cancello, cancelletto, garage, portone (cover, switch, pulsanti, script) aggiungibili
 
 ## 0.7.13-beta — Faccende e Bacheca
 - [ ] Faccende: lavori di casa a turni tra le persone, con promemoria
 - [ ] Bacheca: messaggi di famiglia visibili su tutti i dispositivi
+
+## 0.7.14-beta — Telecamere in diretta
+- [ ] WebRTC → HLS → MJPEG → foto, con il metodo migliore per ogni telecamera
+- [ ] Scelta dei flussi (principale/sub-stream), aggiungi e togli telecamere
+
+## 0.7.15-beta — Elettrodomestici e clima animati
+- [ ] Immagini/GIF tue da /local/ oppure animazioni della plancia per fermo, in funzione e finito
+- [ ] Stessa scelta per condizionatori e termostati
+
+## 0.7.16-beta — Energia più bella
+- [ ] Scena animata: sole che si muove, meteo, casa con pannelli, batteria, rete, auto ed elettrodomestici accesi
+
+## 0.7.17-beta — Luci rifatte
+- [ ] Tessere che si illuminano del colore della lampada, luminosità trascinando, colori e bianchi
+
+## 0.7.18-beta — Musica ovunque
+- [ ] Ascolta su questo dispositivo, Alexa, Google, Sonos; Music Assistant; sposta la musica da una cassa all'altra
+
+## 0.7.19-beta — Media
+- [ ] TV, telecomando virtuale, app di streaming
 
 ## Dopo
 - 0.8 — Guida COME_INSTALLARE con foto, traduzioni, ritocchi
