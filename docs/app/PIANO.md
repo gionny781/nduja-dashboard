@@ -20,7 +20,9 @@ Il lavoro comincia **dopo la 0.8.0 ufficiale**. La 0.8.0 esce solo quando Giovan
 ## Cosa serve
 | Cosa | Stato | Serve per |
 |---|---|---|
-| Mac con Xcode | ✅ c'è | scrivere, compilare e provare l'app |
+| Mac con Xcode recente | ⚠️ il MacBook Air 2018 (Intel) si ferma a Sonoma 14: niente Xcode 26 | compilare per iOS 26 |
+| Mac di GitHub Actions (cloud, gratis per repo pubblici) | ✅ scelta | compilano l'app con l'Xcode più recente; installazione sull'iPhone con Sideloadly (account gratuito) o TestFlight (account a pagamento) |
+| Mac mini con chip M (facoltativo, più avanti) | da valutare | sviluppo più comodo e veloce, prove dirette da Xcode |
 | Account Apple gratuito / beta sviluppatore | ✅ c'è | installare l'app sul proprio iPhone/iPad via cavo (il profilo scade ogni 7 giorni) |
 | Apple Developer Program (99 €/anno) | ❌ da fare | permesso CarPlay, TestFlight, App Store |
 | Permesso CarPlay da Apple (categoria «driving task») | ❌ da chiedere | far comparire l'app in auto; Apple può metterci settimane |
