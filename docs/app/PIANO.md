@@ -39,6 +39,8 @@ Il lavoro comincia **dopo la 0.8.0 ufficiale**. La 0.8.0 esce solo quando Giovan
 - Password e account Apple li inserisce sempre Giovanni.
 
 ## Gratis per tutti, con un extra a pagamento una tantum
+> **In sospeso:** si parte con l'app **completamente gratuita**. Il Plus a pagamento resta solo un'idea: prima di attivarlo vanno verificati i vincoli per i dipendenti pubblici (incompatibilità e autorizzazioni) con l'ufficio del personale o con un consulente.
+
 - **Gratis per sempre:** l'app completa con la plancia, i widget base, l'accesso in casa e fuori, Face ID. La plancia su HACS resta gratuita e MIT.
 - **'Nduja Plus**, acquisto unico nell'app (In‑App Purchase «non consumabile», obbligatorio per Apple). Idee:
   - CarPlay;
