@@ -5,15 +5,23 @@ import { scegli, isTemp, isHum, cambia } from "../edit.js";
 import { ssMin, ssStile, ssDir } from "../salvaschermo.js";
 import { schedeHome } from "./home.js";
 import { S, UI, AREAS, FLOORS, REG, ACT, CHG, LAYOUT, PAGES, t, LOC, esc, nm, ok, attr, allEnts, shortName, climateSensors,
-  saveLayout, render, toast, go, page, ws, openSheet, isAdmin, deviceClass, HVAC, manualKind, excluded, tema, navMode, chiosco } from "../core.js";
+  saveLayout, render, toast, go, page, ws, openSheet, isAdmin, deviceClass, HVAC, manualKind, excluded, tema, navMode, chiosco, sGet, sSet } from "../core.js";
 
 const DEV = ["cover", "switch", "fan", "lock", "media_player", "humidifier", "vacuum", "siren", "valve"];
 const OPEN = ["door", "window", "opening", "garage_door"];
-const W = { step: 0, d: null };
+const W = { step: 0, d: null, ripreso: false, inCima: false };
+const BASE = () => ({ mode: "auto", hiddenAreas: [], areaOrder: [], exclude: [], include: [], sensors: {}, pages: {}, weather: null });
 const draft = () => {
-  if (!W.d) W.d = JSON.parse(JSON.stringify({ mode: "auto", hiddenAreas: [], areaOrder: [], exclude: [], include: [], sensors: {}, pages: {}, weather: null, ...LAYOUT }));
+  if (!W.d) W.d = JSON.parse(JSON.stringify({ ...BASE(), ...LAYOUT }));
   return W.d;
 };
+/* bozza della procedura guidata: resta su questo dispositivo finché non salvi o annulli,
+   così se chiudi la plancia a metà riparti dal passo in cui eri */
+const BOZZA = "wizard";
+function salvaBozza() { if (W.d) sSet(BOZZA, JSON.stringify({ step: W.step, d: W.d, ts: Date.now() })); }
+export function cancellaBozza() { try { localStorage.removeItem("nduja_" + BOZZA); } catch {} W.ripreso = false; W.inCima = false; }
+export function bozza() { try { const b = JSON.parse(sGet(BOZZA) || "null"); return b && b.d && Date.now() - (b.ts || 0) < 30 * 864e5 ? b : null; } catch { return null; } }
+(() => { const b = bozza(); if (b) { W.d = b.d; W.step = Math.max(0, Math.min(7, +b.step || 0)); W.ripreso = true; W.inCima = true; } })();
 const PASSI = () => [t("Inizio", "Start"), t("Stanze", "Rooms"), t("Luci", "Lights"), t("Clima", "Climate"), t("Dispositivi", "Devices"), t("Casa", "Home"), t("Pagine", "Pages"), t("Fine", "Done")];
 
 /* ---------- aiuti ---------- */
@@ -40,6 +48,24 @@ function perStanza(ids, vuoto) {
       <span class="row" style="gap:6px"><button class="btn sm" data-act="wzAll" data-v="1" data-ids="${g[a].join(",")}">${t("Tutti", "All")}</button><button class="btn sm" data-act="wzAll" data-v="0" data-ids="${g[a].join(",")}">${t("Nessuno", "None")}</button></span></div>
       <div class="cks1">${g[a].sort((x, y) => shortName(x).localeCompare(shortName(y), LOC)).map(riga).join("")}</div></div>`).join("")
     + (nascoste ? `<div class="small muted" style="margin-top:8px">${t(`${nascoste} stanze nascoste non sono elencate.`, `${nascoste} hidden rooms are not listed.`)}</div>` : "");
+}
+
+/* «Salta per ora»: rimetto questo passo com'era prima e vado avanti */
+const OPEN_ID = id => id.startsWith("binary_sensor.") && OPEN.includes(deviceClass(id));
+const DEL_PASSO = [null,
+  null,
+  id => id.startsWith("light."),
+  id => id.startsWith("climate."),
+  id => DEV.some(d => id.startsWith(d + ".")) || OPEN_ID(id),
+  id => id.startsWith("person.") || id.startsWith("scene."),
+  null, null];
+function salta(step) {
+  const d = draft(), L = { ...BASE(), ...JSON.parse(JSON.stringify(LAYOUT)) }, f = DEL_PASSO[step];
+  if (step === 1) { d.hiddenAreas = L.hiddenAreas; d.areaOrder = L.areaOrder; }
+  if (f) for (const k of ["include", "exclude"]) d[k] = [...d[k].filter(id => !f(id)), ...(L[k] || []).filter(f)];
+  if (step === 3) d.sensors = L.sensors;
+  if (step === 5) d.weather = L.weather;
+  if (step === 6) d.pages = L.pages;
 }
 
 /* ---------- passi ---------- */
@@ -129,10 +155,11 @@ function dispositivo() {
 ACT.kioskSet = el => { if ((el.dataset.v === "1") !== chiosco()) ACT.kiosk(); };
 ACT.themeSet = el => { try { localStorage.setItem("nduja_theme", el.dataset.v); } catch {} ; ACT.theme && (document.body.classList.remove("light")); render(true); };
 
+const inCorso = () => W.inCima && !!W.d;
 function pagina() {
   if (!isAdmin()) return `<div class="g">${dispositivo()}<section class="card small muted">${t("Le altre impostazioni le può cambiare solo un amministratore.", "Other settings can only be changed by an administrator.")}</section></div>`;
   const P = PASSI(), s = W.step, corpo = [passoInizio, passoStanze, passoLuci, passoClima, passoDispositivi, passoCasa, passoPagine, passoFine][s]();
-  return `<div class="g">${dispositivo()}<section class="card rst1"><div class="row" style="gap:12px;flex-wrap:wrap"><span style="font-size:28px">🌶️</span>
+  const altre = `${dispositivo()}<section class="card rst1"><div class="row" style="gap:12px;flex-wrap:wrap"><span style="font-size:28px">🌶️</span>
       <div style="flex:1;min-width:200px"><b>${t("Ricomincia dal benvenuto", "Restart from the welcome screen")}</b><div class="small muted">${t("Riparte la configurazione da zero: scegli di nuovo Automatica o Manuale. Le pagine create da te restano.", "Setup starts over: choose Automatic or Manual again. Pages you created are kept.")}</div></div>
       <button class="btn warm" data-act="wzRestart">🔄 ${t("Riavvia il wizard", "Restart the wizard")}</button></div></section>
     <section class="card"><div class="ch"><h2>👥 ${t("Plancia per persona", "Per-person dashboard")}</h2></div>
@@ -140,18 +167,35 @@ function pagina() {
       <div class="vr1">${utenti().map(u => `<button data-act="usEdit" data-id="${esc(u.id)}">${u.is_owner ? "👑" : u.group_ids?.includes("system-admin") ? "🛠️" : "👤"} ${esc(u.name)}${LAYOUT.users?.[u.id] ? " ✏️" : ""}</button>`).join("") || `<span class="small muted">${t("Carico gli utenti…", "Loading users…")}</span>`}</div></section>
     <section class="card"><div class="ch"><h2>🎨 ${t("Personalizza", "Customize")}</h2></div>${personalizza()}
       <p class="small muted" style="margin-top:10px">${t("In ogni pagina c'è ✏️ Modifica in alto: ＋ aggiungi, ✏️ cambia, ✕ togli.", "Every page has ✏️ Edit at the top: ＋ add, ✏️ change, ✕ remove.")}</p></section>
-    <section class="card wz1">
+`;
+  const guida = `<section class="card wz1">
     <div class="wz-steps">${P.map((n, i) => `<button class="${i === s ? "act" : i < s ? "done" : ""}" data-act="wzGo" data-v="${i}"><i>${i < s ? "✓" : i + 1}</i><span>${n}</span></button>`).join("")}</div>
+    ${W.ripreso ? `<div class="note1 wz-rip">↩️ ${t(`Ho ripreso da dove eri rimasto (passo ${s + 1}, ${P[s]}). Le scelte non sono ancora salvate.`, `Picked up where you left off (step ${s + 1}, ${P[s]}). Your choices are not saved yet.`)}
+      <button class="btn sm" data-act="wzDaCapo">${t("Ricomincia da capo", "Start over")}</button></div>` : ""}
     <div class="wz-body">${corpo}</div>
-    <div class="wz-nav"><button class="btn" data-act="wzGo" data-v="${s - 1}" ${s === 0 ? "disabled" : ""}>← ${t("Indietro", "Back")}</button><span class="grow"></span>
-      ${s < P.length - 1 ? `<button class="btn" data-act="wzSave">${t("Salva", "Save")}</button><button class="btn pri" data-act="wzGo" data-v="${s + 1}">${t("Avanti", "Next")} →</button>` : `<button class="btn pri" data-act="wzSave">💾 ${t("Salva", "Save")}</button>`}</div>
-  </section></div>`;
+    <div class="wz-nav"><button class="btn" data-act="wzGo" data-v="${s - 1}" ${s === 0 ? "disabled" : ""}>← ${t("Indietro", "Back")}</button>
+      <button class="btn ghost" data-act="wzAnnulla" title="${t("Esci senza salvare", "Leave without saving")}">${t("Annulla", "Cancel")}</button><span class="grow"></span>
+      ${s < P.length - 1 ? `${s > 0 && s < P.length - 1 ? `<button class="btn ghost" data-act="wzSalta">${t("Salta per ora", "Skip for now")}</button>` : ""}<button class="btn" data-act="wzSave">${t("Salva", "Save")}</button><button class="btn pri" data-act="wzGo" data-v="${s + 1}">${t("Avanti", "Next")} →</button>` : `<button class="btn pri" data-act="wzSave">💾 ${t("Salva", "Save")}</button>`}</div>
+  </section>`;
+  /* procedura guidata in corso: la metto in cima, così si vede subito */
+  return `<div class="g">${inCorso() ? guida + altre : altre + guida}</div>`;
 }
 
 /* ---------- azioni ---------- */
 const toggle = (arr, v) => { const i = arr.indexOf(v); i < 0 ? arr.push(v) : arr.splice(i, 1); };
-Object.assign(ACT, {
-  wzGo: el => { W.step = Math.max(0, Math.min(PASSI().length - 1, +el.dataset.v)); draft(); render(); document.querySelector(".wz1")?.scrollIntoView({ block: "start" }); },
+/* ogni azione del wizard aggiorna anche la bozza di questo dispositivo */
+const conBozza = o => { for (const k in o) { const f = o[k]; o[k] = async (...a) => { const r = await f(...a); if (W.d && k !== "wzAnnulla" && k !== "wzRestart") salvaBozza(); return r; }; } return o; };
+Object.assign(ACT, conBozza({
+  wzSalta: () => { salta(W.step); W.ripreso = false; ACT.wzGo({ dataset: { v: W.step + 1 } }); toast("⏭️ " + t("Saltato: potrai farlo quando vuoi da ⚙️ Impostazioni.", "Skipped: you can do it any time from ⚙️ Settings.")); },
+  wzDaCapo: () => { const m = draft().mode; cancellaBozza(); W.d = null; draft().mode = m; W.step = 0; W.inCima = true; render(true); },
+  wzAnnulla: () => {
+    W.d = null; W.step = 0; cancellaBozza();
+    toast(t("Nessuna modifica salvata.", "Nothing was changed."));
+    go(LAYOUT.configured ? "home" : "benvenuto");
+  },
+}));
+Object.assign(ACT, conBozza({
+  wzGo: el => { W.ripreso = false; W.step = Math.max(0, Math.min(PASSI().length - 1, +el.dataset.v)); draft(); render(); document.querySelector(".wz1")?.scrollIntoView({ block: "start" }); },
   wzX: el => { const id = el.dataset.id; toggle(manuale(id) ? draft().include : draft().exclude, id); render(); },
   wzMode: el => {
     const d = draft(), m = el.dataset.v; if (d.mode === m) return;
@@ -174,16 +218,16 @@ Object.assign(ACT, {
   },
   wzRestart: async el => {
     if (el.dataset.sure !== "1") { el.dataset.sure = "1"; el.textContent = t("Sicuro? Tocca ancora", "Sure? Tap again"); setTimeout(() => { if (el.isConnected) { el.dataset.sure = ""; el.textContent = "🔄 " + t("Riavvia il wizard", "Restart the wizard"); } }, 3500); return; }
-    try { await saveLayout({ configured: false, customPages: LAYOUT.customPages || [] }); W.d = null; W.step = 0; go("benvenuto"); }
+    try { await saveLayout({ configured: false, customPages: LAYOUT.customPages || [] }); W.d = null; W.step = 0; cancellaBozza(); go("benvenuto"); }
     catch (e) { toast(t("Non riuscito: ", "Failed: ") + (e.message || e.code), true); }
   },
   wzReset: () => { W.d = { mode: draft().mode, hiddenAreas: [], areaOrder: [], exclude: [], include: [], sensors: {}, pages: {}, weather: null, customPages: draft().customPages || [] }; render(); },
   wzSave: async () => {
-    try { await saveLayout({ ...draft(), customPages: LAYOUT.customPages || [], configured: true }); toast("💾 " + t("Impostazioni salvate", "Settings saved")); if (W.step === PASSI().length - 1) { W.step = 0; W.d = null; go("home"); } }
+    try { await saveLayout({ ...draft(), customPages: LAYOUT.customPages || [], configured: true }); toast("💾 " + t("Impostazioni salvate", "Settings saved")); if (W.step === PASSI().length - 1) { W.step = 0; W.d = null; cancellaBozza(); go("home"); } else W.ripreso = false; }
     catch (e) { toast(t("Non salvato: ", "Not saved: ") + (e.message || e.code), true); }
   },
   wzAuto: () => saveLayout({ ...LAYOUT, configured: true }).then(() => toast("👍 " + t("Ok, mostro tutto. Puoi cambiare idea in ⚙️ Impostazioni.", "Ok, showing everything. You can change it in ⚙️ Settings."))).catch(() => {}),
-});
+}));
 /* ---------- plancia per persona ---------- */
 let UT = null;
 function utenti() { if (!UT) { UT = []; ws({ type: "config/auth/list" }).then(L => { UT = L.filter(u => !u.system_generated && u.is_active); render(); }).catch(() => {}); } return UT; }
@@ -231,14 +275,21 @@ ACT.cfgImport = () => {
 ACT.goEdit = el => { ACT.go(el); UI.edit = true; render(true); };
 ACT.wzSensorPick = el => { const a = el.dataset.id, k = el.dataset.k, d = draft();
   scegli({ titolo: (k === "temp" ? "🌡️ " : "💧 ") + esc(AREAS[a].name), filtro: k === "temp" ? isTemp : isHum, area: a, attuale: d.sensors[a]?.[k] || "", nessuno: true,
-    onPick: id => { d.sensors[a] = { ...(d.sensors[a] || {}), [k]: id || undefined }; } }); };
-CHG.wzSensor = el => { const d = draft(), a = el.dataset.id; d.sensors[a] = { ...(d.sensors[a] || {}), [el.dataset.k]: el.value || undefined }; };
-CHG.wzWeather = el => { draft().weather = el.value || null; };
+    onPick: id => { d.sensors[a] = { ...(d.sensors[a] || {}), [k]: id || undefined }; salvaBozza(); } }); };
+CHG.wzSensor = el => { const d = draft(), a = el.dataset.id; d.sensors[a] = { ...(d.sensors[a] || {}), [el.dataset.k]: el.value || undefined }; salvaBozza(); };
+CHG.wzWeather = el => { draft().weather = el.value || null; salvaBozza(); };
 
 page("impostazioni", { title: t("Impostazioni", "Settings"), short: t("Impost.", "Settings"), icon: "⚙️", order: 99, bare: true, render: pagina });
 
 /** dal benvenuto: modalità manuale, si parte da zero e si va ai passi */
 export function startManual() {
   W.d = JSON.parse(JSON.stringify({ hiddenAreas: [], areaOrder: [], sensors: {}, pages: {}, weather: null, ...LAYOUT, mode: "manual", include: [], exclude: [] }));
-  W.step = 1; go("impostazioni");
+  W.step = 1; W.ripreso = false; W.inCima = true; salvaBozza(); go("impostazioni");
 }
+/** dal riepilogo dell'automatica: «voglio scegliere io», si parte con tutto acceso */
+export function startAuto() {
+  W.d = JSON.parse(JSON.stringify({ ...BASE(), ...LAYOUT, mode: "auto" }));
+  W.step = 1; W.ripreso = false; W.inCima = true; salvaBozza(); go("impostazioni");
+}
+/** riprende la procedura guidata lasciata a metà */
+export function riprendi() { const b = bozza(); if (b) { W.d = b.d; W.step = b.step; W.ripreso = true; W.inCima = true; } go("impostazioni"); }

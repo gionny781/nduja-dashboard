@@ -83,6 +83,7 @@ input,select,textarea{font:inherit;color:var(--tx)}
 .btn.warm{background:rgba(255,159,10,.18);border-color:rgba(255,159,10,.35);color:var(--orange)}
 .btn.bad{background:rgba(255,69,58,.15);border-color:rgba(255,69,58,.35);color:var(--red)}
 .btn.sm{padding:7px 12px;font-size:12.5px}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--tx2)}.btn.ghost:hover{color:var(--tx);border-color:var(--line)}
 .row{display:flex;align-items:center;gap:10px}
 .wrap{flex-wrap:wrap}.between{justify-content:space-between}.grow{flex:1;min-width:0}
 .stack{display:grid;gap:8px;grid-template-columns:minmax(0,1fr)}

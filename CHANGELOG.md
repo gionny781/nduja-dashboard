@@ -3,6 +3,14 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.10-beta
+- 🇮🇹 **Procedura guidata che riprende da dove eri**: se chiudi la plancia a metà configurazione, alla riapertura riparti dallo stesso passo con le scelte fatte (restano su quel dispositivo finché non salvi o annulli). Nel benvenuto compare «Riprendi da dove eri».
+- 🇮🇹 **«Salta per ora» e «Annulla»** in ogni passo: salti un passo lasciandolo com'era, oppure esci senza cambiare niente.
+- 🇮🇹 **Riepilogo della modalità automatica**: prima di entrare vedi quante stanze, luci, clima, dispositivi e persone ho trovato, le stanze divise per piano e le pagine che compariranno; poi «Va bene, entra» o «Voglio scegliere io».
+- 🇬🇧 **Setup that resumes**: close the dashboard halfway through setup and it reopens at the same step with your choices (kept on that device until you save or cancel). The welcome screen offers «Pick up where you left off».
+- 🇬🇧 **«Skip for now» and «Cancel»** on every step: skip a step leaving it as it was, or leave without changing anything.
+- 🇬🇧 **Automatic mode summary**: before entering you see how many rooms, lights, climate devices, devices and people I found, rooms by floor and the pages you'll get; then «Looks good» or «Let me choose».
+
 ## 0.7.9-beta
 - 🇮🇹 **Home con schede libere**: in ✏️ Modifica «＋ Nuova scheda» con titolo e icona tua, e dentro qualsiasi dispositivo o sensore (valori, luci, prese, clima…); si sposta e si nasconde come le altre.
 - 🇮🇹 **Avvisi sul telefono**: 📱 sulla scheda Avvisi; scegli i telefoni e cosa (fumo/gas/acqua, allarme scattato, porta aperta da 10 minuti, elettrodomestico finito, pila scarica). Creo in Home Assistant l'automazione «'Nduja · avvisi sul telefono», che funziona anche a plancia chiusa.
