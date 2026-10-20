@@ -67,3 +67,6 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 ## Dopo
 - 0.8.0 — versione ufficiale con tutte le anteprime, guida COME_INSTALLARE con foto, ritocchi
 - 1.0 — via «beta», segnalazione all'elenco ufficiale HACS
+
+## Dopo la 0.8.0
+- 📱 **App 'Nduja per iPhone, iPad e CarPlay**: piano in [docs/app/PIANO.md](docs/app/PIANO.md).
