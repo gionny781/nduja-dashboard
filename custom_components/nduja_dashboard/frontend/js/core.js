@@ -427,7 +427,17 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet()
 async function getConn() {
   try { if (window.parent !== window && window.parent.hassConnection) { const r = await window.parent.hassConnection; if (r?.conn) return r.conn; } } catch { /* origine diversa */ }
   /* dentro l'app 'Nduja per iPhone/iPad: collegamento diretto, senza l'interfaccia di Home Assistant */
-  if (window.NDUJA_APP) { try { return await (await import("./appconn.js")).connetti(); } catch (e) { console.error(e); } }
+  if (window.NDUJA_APP) {
+    /* nell'app non mi arrendo: dopo un cambio di rete (Wi‑Fi ↔ 5G) il primo tentativo può fallire */
+    const { connetti } = await import("./appconn.js");
+    for (let i = 0; ; i++) {
+      try { const c = await connetti(); $("#connect").classList.remove("show"); return c; } catch (e) { console.error(e); }
+      const box = $("#connect p");
+      if (box) box.textContent = LANG === "it" ? "Mi collego a Home Assistant… (tentativo " + (i + 2) + ")" : "Connecting to Home Assistant… (attempt " + (i + 2) + ")";
+      $("#connect").classList.add("show");
+      await new Promise(r => setTimeout(r, Math.min(15000, 2000 * (i + 1))));
+    }
+  }
   return null;
 }
 /** chiamata REST a Home Assistant con il token della sessione (serve per salvare le automazioni) */
