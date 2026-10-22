@@ -181,6 +181,9 @@ function pagina() {
   return `<div class="g">${inCorso() ? guida + altre : altre + guida}</div>`;
 }
 
+/* dispositivi già visti (novita.js): valgono quelli di adesso, non quelli copiati quando è partita la procedura */
+const visti = () => Object.fromEntries(["seen", "seenCars"].filter(k => Array.isArray(LAYOUT[k])).map(k => [k, LAYOUT[k]]));
+
 /* ---------- azioni ---------- */
 const toggle = (arr, v) => { const i = arr.indexOf(v); i < 0 ? arr.push(v) : arr.splice(i, 1); };
 /* ogni azione del wizard aggiorna anche la bozza di questo dispositivo */
@@ -223,7 +226,7 @@ Object.assign(ACT, conBozza({
   },
   wzReset: () => { W.d = { mode: draft().mode, hiddenAreas: [], areaOrder: [], exclude: [], include: [], sensors: {}, pages: {}, weather: null, customPages: draft().customPages || [] }; render(); },
   wzSave: async () => {
-    try { await saveLayout({ ...draft(), customPages: LAYOUT.customPages || [], configured: true }); toast("💾 " + t("Impostazioni salvate", "Settings saved")); if (W.step === PASSI().length - 1) { W.step = 0; W.d = null; cancellaBozza(); go("home"); } else W.ripreso = false; }
+    try { await saveLayout({ ...draft(), customPages: LAYOUT.customPages || [], ...visti(), configured: true }); toast("💾 " + t("Impostazioni salvate", "Settings saved")); if (W.step === PASSI().length - 1) { W.step = 0; W.d = null; cancellaBozza(); go("home"); } else W.ripreso = false; }
     catch (e) { toast(t("Non salvato: ", "Not saved: ") + (e.message || e.code), true); }
   },
   wzAuto: () => saveLayout({ ...LAYOUT, configured: true }).then(() => toast("👍 " + t("Ok, mostro tutto. Puoi cambiare idea in ⚙️ Impostazioni.", "Ok, showing everything. You can change it in ⚙️ Settings."))).catch(() => {}),

@@ -40,6 +40,7 @@ it builds itself from your **areas, floors and devices**.
 - Glass design for tablets and phones, **light, dark or automatic theme** (◐ at the top), Italian and English (follows your Home Assistant language).
 - **First start**: choose **Automatic** (everything is found for you) or **Manual** (start empty and add what you want).
 - **✏️ Edit on every page** (admins): ＋ Add with search, rename, move to another room, ✕ remove. **＋ New page** to create your own pages.
+- **New devices** (admins): when something new shows up in Home Assistant, Home tells you «N new devices found»; add it or remove it in one tap. ＋ Add shows **Suggested** devices at the top.
 - **Plugs and devices** page: plugs, switches, covers, fans, TVs, locks, vacuums by room.
 - **Setup wizard** (⚙️ Settings, admins only): choose rooms and their order, lights, thermostats, the temperature sensor of each room, devices, people, weather, scenes and pages. Choices are saved in Home Assistant and apply to every device.
 - Pages show up only when you have the matching devices.
@@ -79,6 +80,7 @@ si costruisce da sola dalle tue **aree, piani e dispositivi**.
 - Grafica in vetro per tablet e telefono, **tema chiaro, scuro o automatico** (◐ in alto), in italiano e in inglese (segue la lingua di Home Assistant).
 - **Primo avvio**: scegli **Automatica** (trovo tutto io) o **Manuale** (parti da zero e aggiungi quello che vuoi).
 - **✏️ Modifica in ogni pagina** (amministratori): ＋ Aggiungi con ricerca, cambia nome, sposta in un'altra stanza, ✕ togli. **＋ Nuova pagina** per creare pagine tue.
+- **Dispositivi nuovi** (amministratori): quando in Home Assistant compare qualcosa di nuovo, la Home ti dice «N dispositivi nuovi trovati»; lo aggiungi o lo togli con un tocco. In ＋ Aggiungi trovi in cima i **Suggeriti**.
 - Pagina **Prese e dispositivi**: prese, interruttori, tapparelle, ventilatori, TV, serrature, robot per stanza.
 - **Wizard di configurazione** (⚙️ Impostazioni, solo amministratori): scegli stanze e ordine, luci, termostati, il sensore di temperatura di ogni stanza, dispositivi, persone, meteo, scene e pagine. Le scelte si salvano in Home Assistant e valgono su tutti i dispositivi.
 - Le pagine compaiono solo se hai i dispositivi giusti.

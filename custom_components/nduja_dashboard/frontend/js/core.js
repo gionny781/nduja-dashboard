@@ -13,7 +13,8 @@ export const CHG = {};        // azioni su change (slider, select)
 export const UI = { page: null, sheet: null, user: null, opt: {}, version: "", edit: false };
 /* scelte dell'utente, salvate in Home Assistant e uguali su tutti i dispositivi:
    { configured, mode:"auto"|"manual", include:[] (manuale), exclude:[] (automatica), hiddenAreas:[], areaOrder:[],
-     names:{id:nome}, rooms:{id:area}, sensors:{area:{temp,hum}}, weather, pages:{id:false}, customPages:[{id,title,icon,items}] } */
+     names:{id:nome}, rooms:{id:area}, sensors:{area:{temp,hum}}, weather, pages:{id:false}, customPages:[{id,title,icon,items}],
+     seen:[entity_id già visti], seenCars:[dispositivi delle auto già viste] (novita.js) } */
 export const LAYOUT = {};
 export const isAdmin = () => !!UI.user?.is_admin;
 export let conn = null;
@@ -255,6 +256,8 @@ const visible = () => Object.keys(PAGES).filter(k => !PAGES[k].hiddenNav && PAGE
 /* le pagine «secondarie» arrivano dopo la Home: se si apre direttamente una di queste, la mostro appena c'è */
 let pronte = false, attesa = null;
 export function tuttePronte() { pronte = true; if (attesa) { const a = attesa; attesa = null; go(a); } else render(true); }
+/** vero quando tutte le pagine sono caricate (e hanno registrato i loro filtri, per esempio le auto) */
+export const pronto = () => pronte;
 export function go(id) {
   HOOKS.forEach(f => { try { f(); } catch (e) { console.error(e); } });
   if (id && !PAGES[id] && !pronte) { attesa = id; id = "home"; }

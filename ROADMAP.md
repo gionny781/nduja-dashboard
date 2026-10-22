@@ -40,7 +40,7 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 
 | Anteprima | Quando | Contenuto |
 |---|---|---|
-| 0.7.11-dev | gio 22 ott | Novità in casa: avviso dei dispositivi nuovi, suggeriti in ＋ Aggiungi |
+| 0.7.11-dev ✅ | gio 22 ott | Novità in casa: avviso dei dispositivi nuovi, suggeriti in ＋ Aggiungi |
 | 0.7.12-dev | sab 24 ott | Controlla Home Assistant, schermata d'errore chiara, etichetta «'Nduja» |
 | 0.7.13-dev | lun 26 ott | Sicurezza: scheda Accessi (cancello, cancelletto, garage, portone) |
 | 0.7.14-dev | mer 28 ott | Faccende (e dati condivisi tra tutti gli utenti) |

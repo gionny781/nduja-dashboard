@@ -3,6 +3,7 @@
    «✕» lo toglie dalla plancia. Ogni modifica si salva subito in Home Assistant. */
 import { S, AREAS, FLOORS, REG, ACT, LAYOUT, UI, t, LOC, esc, nm, nmHA, ok, attr, allEnts, areaOf, areasSorted, excluded,
   isManual, defaultOff, saveLayout, render, toast, openSheet, closeSheet, domain, deviceClass, OPENING } from "./core.js";
+import { suggeriti, segnaVisti } from "./novita.js";
 
 const copia = () => JSON.parse(JSON.stringify(LAYOUT));
 async function salva(l, msg) {
@@ -44,17 +45,23 @@ function candidati() {
     .filter(id => !PK.q || (nm(id) + " " + id + " " + (AREAS[areaOf(id)]?.name || "")).toLowerCase().includes(PK.q.toLowerCase()));
 }
 function picker() {
-  const T = TIPI(), L = candidati(), g = {};
+  const T = TIPI(), C = candidati();
+  /* «Suggeriti» in cima (solo senza ricerca): li tolgo dall'elenco sotto per non averli due volte */
+  const SG = PK.q ? [] : suggeriti(C, { area: PK.area, titolo: PK.page ? custom(PK.page)?.title || "" : "" }), inSG = new Set(SG.map(x => x.id));
+  const L = C.filter(id => !inSG.has(id)), g = {};
   L.forEach(id => (g[areaOf(id) && AREAS[areaOf(id)] ? areaOf(id) : "_"] = g[areaOf(id) && AREAS[areaOf(id)] ? areaOf(id) : "_"] || []).push(id));
   const ord = [...areasSorted(true).filter(a => g[a]), ...(g._ ? ["_"] : [])];
   if (PK.area && g[PK.area]) ord.splice(ord.indexOf(PK.area), 1), ord.unshift(PK.area);
   const titolo = PK.doms.length === 1 ? (T[PK.doms[0]]?.[1] || PK.doms[0]) : t("Dispositivi", "Devices");
+  const perche = { nuovo: "✨ " + t("nuovo", "new"), stanza: "📍 " + t("in questa stanza", "in this room"), pagina: "⭐ " + t("adatto a questa pagina", "fits this page") };
+  const riga = (id, why) => `<button class="pk1 ${why ? "sug1" : ""}" data-act="edPick" data-id="${id}">
+        <span class="ic">${T[domain(id)]?.[0] || "•"}</span><span class="tx"><b>${esc(nm(id))}</b>${why ? `<small><em>${perche[why]}</em>${AREAS[areaOf(id)] ? " · " + esc(AREAS[areaOf(id)].name) : ""}</small>` : `<small>${esc(id)}</small>`}</span><span class="st">${ok(id) ? esc(S[id].state) + (attr(id, "unit_of_measurement") ? " " + esc(attr(id, "unit_of_measurement")) : "") : t("non raggiungibile", "unavailable")}</span><span class="plus">＋</span></button>`;
   return `<div class="sh-head"><div><h3>＋ ${esc(titolo)}</h3><div class="small muted">${t("Tocca per aggiungere. Puoi aggiungerne più di uno.", "Tap to add. You can add more than one.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
     <input id="pk1q" class="pk1q" type="search" placeholder="🔍 ${t("Cerca per nome o stanza…", "Search by name or room…")}" value="${esc(PK.q)}" autocomplete="off">
     ${PK.doms.length > 1 ? `<div class="pkt1"><button class="${!PK.dom ? "act" : ""}" data-act="pkDom" data-v="">${t("Tutti", "All")}</button>${PK.doms.filter(d => allEnts(d).length).map(d => `<button class="${PK.dom === d ? "act" : ""}" data-act="pkDom" data-v="${d}">${T[d]?.[0] || ""} ${esc(T[d]?.[1] || d)}</button>`).join("")}</div>` : ""}
-    ${L.length ? ord.map(a => `<div class="fl1">${esc(a === "_" ? t("Senza stanza", "No room") : AREAS[a].name)}</div><div class="pkl1">${g[a].sort((x, y) => nm(x).localeCompare(nm(y), LOC)).map(id => `<button class="pk1" data-act="edPick" data-id="${id}">
-        <span class="ic">${T[domain(id)]?.[0] || "•"}</span><span class="tx"><b>${esc(nm(id))}</b><small>${esc(id)}</small></span><span class="st">${ok(id) ? esc(S[id].state) + (attr(id, "unit_of_measurement") ? " " + esc(attr(id, "unit_of_measurement")) : "") : t("non raggiungibile", "unavailable")}</span><span class="plus">＋</span></button>`).join("")}</div>`).join("")
-      : `<div class="empty">${PK.q ? t("Nessun risultato.", "No results.") : t("Hai già aggiunto tutto quello che c'è di questo tipo.", "You've already added everything of this kind.")}</div>`}`;
+    ${SG.length ? `<div class="fl1 sug1h">✨ ${t("Suggeriti", "Suggested")}</div><div class="pkl1">${SG.map(x => riga(x.id, x.why)).join("")}</div>` : ""}
+    ${L.length ? ord.map(a => `<div class="fl1">${esc(a === "_" ? t("Senza stanza", "No room") : AREAS[a].name)}</div><div class="pkl1">${g[a].sort((x, y) => nm(x).localeCompare(nm(y), LOC)).map(id => riga(id)).join("")}</div>`).join("")
+      : SG.length ? "" : `<div class="empty">${PK.q ? t("Nessun risultato.", "No results.") : t("Hai già aggiunto tutto quello che c'è di questo tipo.", "You've already added everything of this kind.")}</div>`}`;
 }
 document.addEventListener("input", e => { if (e.target.id === "pk1q") { PK.q = e.target.value; render(); } });
 
@@ -82,6 +89,7 @@ Object.assign(ACT, {
       if (isManual()) l.include = [...new Set([...(l.include || []), id])]; else { l.exclude = (l.exclude || []).filter(x => x !== id); if (defaultOff(id)) l.show = [...new Set([...(l.show || []), id])]; }
       if (PK.area && !areaOf(id)) l.rooms = { ...(l.rooms || {}), [id]: PK.area };
       if (areaOf(id) && (l.hiddenAreas || []).includes(areaOf(id))) l.hiddenAreas = l.hiddenAreas.filter(a => a !== areaOf(id));
+      segnaVisti(l, [id]);   // aggiunto: non è più una novità
     }
     salva(l, "＋ " + nm(id));
   },

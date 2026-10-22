@@ -9,6 +9,7 @@ import { raccoltaCard } from "../raccolta.js";
 import { agendaCard } from "./calendario.js";
 import { momentiCard } from "../momenti.js";
 import { musicaCard } from "./musica.js";
+import { novitaHome } from "../novita.js";
 
 const saluto = () => { const h = new Date().getHours(); return h < 6 ? t("Buonanotte", "Good night") : h < 13 ? t("Buongiorno", "Good morning") : h < 18 ? t("Buon pomeriggio", "Good afternoon") : t("Buonasera", "Good evening"); };
 const climaAttivi = () => ents("climate", id => ok(id) && S[id].state !== "off");
@@ -211,7 +212,7 @@ Object.assign(ACT, {
 function pagina() {
   const S1 = SCHEDE(), o = ordine();
   const corpo = UI.edit ? o.map((k, i) => attrezzi(k, S1[k][1](), i, o.length)).join("") : o.filter(k => !nascoste().includes(k)).map(k => S1[k][1]()).join("");
-  return `<div class="g g3">${benvenuto()}${corpo}${UI.edit && isAdmin() ? `<section class="card span3">${`<button class="add1 wide1" data-act="hlNew"><span>＋</span>${t("Nuova scheda con i dispositivi che vuoi", "New card with any devices")}</button>`}</section>` : ""}</div>`;
+  return `<div class="g g3">${benvenuto()}${novitaHome()}${corpo}${UI.edit && isAdmin() ? `<section class="card span3">${`<button class="add1 wide1" data-act="hlNew"><span>＋</span>${t("Nuova scheda con i dispositivi che vuoi", "New card with any devices")}</button>`}</section>` : ""}</div>`;
 }
 
 page("home", { title: "Home", short: "Home", icon: "🏠", order: 0, editable: true, render: pagina });

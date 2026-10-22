@@ -41,3 +41,5 @@ body.light .hlv1{background:rgba(0,0,0,.05)}
 body.light .car-c.on{background:rgba(10,132,255,.16)!important;border-color:#0a84ff!important}
 body.light .car-c.warn{background:rgba(255,159,10,.14)!important;border-color:rgba(255,159,10,.5)!important}
 body.light .car-bar u{background:#1c1c1e}
+/* novità in casa: azzurro più scuro, leggibile sul chiaro */
+body.light .pk1.sug1 .tx small em,body.light .fl1.sug1h{color:#0a7ea8!important}

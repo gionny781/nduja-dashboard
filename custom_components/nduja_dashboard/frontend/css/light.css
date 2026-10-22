@@ -133,6 +133,7 @@ body.light .car-c{background:rgba(0,0,0,0.030)!important;border:1px solid rgba(0
 body.light .car-i>div{background:rgba(0,0,0,0.025)!important}
 body.light .car-h{background:rgba(0,0,0,0.020)!important;border:1px solid rgba(0,0,0,0.056)!important}
 body.light .car-hi.none{background:rgba(0,0,0,0.030)!important}
+body.light .nv1{background:linear-gradient(135deg,rgba(100,210,255,.15),rgba(0,0,0,0.022) 70%)!important}
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
 body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
@@ -176,4 +177,6 @@ body.light .hlv1{background:rgba(0,0,0,.05)}
 body.light .car-c.on{background:rgba(10,132,255,.16)!important;border-color:#0a84ff!important}
 body.light .car-c.warn{background:rgba(255,159,10,.14)!important;border-color:rgba(255,159,10,.5)!important}
 body.light .car-bar u{background:#1c1c1e}
+/* novità in casa: azzurro più scuro, leggibile sul chiaro */
+body.light .pk1.sug1 .tx small em,body.light .fl1.sug1h{color:#0a7ea8!important}
 

@@ -102,6 +102,10 @@ const ENT = {
   "button.model_3_flash_lights": st("unknown", { friendly_name: "Model 3 Flash lights" }),
   "button.model_3_wake": st("unknown", { friendly_name: "Model 3 Wake" }),
   "select.model_3_seat_heater_front_left": st("off", { options: ["off", "low", "medium", "high"], friendly_name: "Model 3 Seat heater front left" }),
+  "light.lampada_soggiorno": st("off", { friendly_name: "Lampada soggiorno" }),
+  "light.faretti_cucina": st("on", { friendly_name: "Faretti cucina", brightness: 120 }),
+  "switch.presa_cucina": st("off", { friendly_name: "Presa cucina" }),
+  "cover.tapparella_soggiorno": st("open", { friendly_name: "Tapparella soggiorno", current_position: 100 }),
   "update.home_assistant_core_update": st("on", { title: "Home Assistant Core", friendly_name: "Core update" }),
 };
 const day = (o, h, m=0) => { const d = new Date(); d.setDate(d.getDate()+o); d.setHours(h, m, 0, 0); return d.toISOString(); };
@@ -116,7 +120,7 @@ const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_
   pl: id.includes("model_3") ? "tesla_fleet" : undefined, di: id.includes("model_3") ? "dev_car" : id.includes("ambrogio") ? "dev_v" : id.includes("mario") ? "dev_g" : id.includes("anna") ? "dev_c" : id.includes("ariston") ? "dev_a" : null })) };
 const conn = {
   addEventListener() {}, subscribeEvents() { return Promise.resolve(() => {}); },
-  subscribeMessage(cb) { setTimeout(() => cb({ a: ENT }), 50); return Promise.resolve(() => {}); },
+  subscribeMessage(cb) { window.mockStati = cb; setTimeout(() => cb({ a: ENT }), 50); return Promise.resolve(() => {}); },   // mockStati({ a: { id: { s, a } } }) fa comparire entità nuove
   async sendMessagePromise(m) {
     switch (m.type) {
       case "auth/current_user": return { name: "Mario Demo", is_admin: true };

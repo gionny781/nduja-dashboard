@@ -3,6 +3,17 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.11-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+- 🇮🇹 **Novità in casa**: la plancia ricorda i dispositivi che ha già visto (luci, clima, prese, tapparelle, ventilatori, TV e lettori, serrature, robot, telecamere, porte e finestre, persone e scene). Al primo avvio dopo l'aggiornamento considera già visto tutto quello che c'è, quindi nessun avviso enorme.
+- 🇮🇹 Quando in Home Assistant compaiono dispositivi nuovi, un amministratore vede in Home (e negli Avvisi) «N dispositivi nuovi trovati». Toccandolo si apre l'elenco diviso per stanza: in manuale li aggiungi con la spunta o con «Aggiungi tutti», in automatica vedi in quale pagina sono comparsi e puoi toglierli. «Ho visto» li segna come visti.
+- 🇮🇹 Se arriva un'auto nuova l'avviso dice «Nuova auto trovata: la trovi nella pagina Auto».
+- 🇮🇹 **Suggeriti** in ＋ Aggiungi: in cima all'elenco i dispositivi più adatti a quella pagina e non ancora nella plancia (i nuovi, quelli della stanza, nelle pagine tue quelli che c'entrano col nome), da aggiungere con un tocco.
+- 🇬🇧 **New in your home**: the dashboard remembers the devices it has already seen (lights, climate, plugs, covers, fans, TVs and players, locks, vacuums, cameras, doors and windows, people and scenes). On the first start after the update everything already there counts as seen, so no huge alert.
+- 🇬🇧 When new devices show up in Home Assistant, admins see «N new devices found» on Home (and in Alerts). Tap it for the list by room: in manual mode tick them or «Add all», in automatic mode see which page they landed on and remove them. «Got it» marks them as seen.
+- 🇬🇧 A new car gets its own alert: «New car found: you'll find it on the Car page».
+- 🇬🇧 **Suggested** in ＋ Add: the devices that best fit that page and aren't on the dashboard yet (new ones, the room's ones, on your own pages the ones matching its name) at the top, one tap to add.
+
 ## 0.7.10.4
 - 🇮🇹 App 'Nduja: se il collegamento a Home Assistant non riesce (per esempio passando dal Wi‑Fi al 5G), la plancia riprova da sola invece di fermarsi.
 - 🇬🇧 'Nduja app: if connecting to Home Assistant fails (e.g. switching from Wi‑Fi to 5G), the dashboard keeps retrying instead of giving up.

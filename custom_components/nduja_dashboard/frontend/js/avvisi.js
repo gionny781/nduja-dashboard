@@ -10,6 +10,7 @@ import { S, ACT, CHG, LAYOUT, t, esc, nm, ok, val, attr, ents, allEnts, isOn, ag
 import { cambia } from "./edit.js";
 import { ritiri, chip } from "./raccolta.js";
 import { pericoli } from "./pages/sicurezza.js";
+import { novitaAvvisi } from "./novita.js";
 
 const MIN = 6e4;
 const vecchio = id => Date.now() - new Date(S[id].last_changed).getTime();
@@ -45,7 +46,7 @@ const pioggia = () => {
   return f.some(x => /rain|pour|lightning|hail/.test(x.condition || "") || (x.precipitation_probability || 0) >= 60);
 };
 
-/** elenco degli avvisi: { k (chiave per nasconderlo), ic, b, s, id?, go?, cls } */
+/** elenco degli avvisi: { k (chiave per nasconderlo), ic, b, s, id?, go?, act?, cls } */
 export function avvisi() {
   seguiElettro();
   const A = [], aperte = openings().filter(isOn);
@@ -67,6 +68,7 @@ export function avvisi() {
   if (R.length) A.push({ k: "rf:" + new Date().toDateString(), ic: "♻️", b: t("Stasera esponi", "Put out tonight"), s: R.map(chip).join(" "), raw: true });
   ents("sensor", id => deviceClass(id) === "battery" && ok(id) && val(id) != null && val(id) < 20).sort((a, b) => val(a) - val(b))
     .forEach(id => A.push({ k: "bt:" + id, ic: "🪫", b: esc(nm(id).replace(/\s*(livello\s*)?(batteria|battery)(\s*level)?\s*/ig, " ").trim()), s: `${t("pila al", "battery at")} ${Math.round(val(id))}%`, id }));
+  A.push(...novitaAvvisi());   // dispositivi nuovi e auto nuove (solo amministratori)
   const U = Object.keys(S).filter(id => id.startsWith("update.") && S[id].state === "on");
   if (U.length) A.push({ k: "up:" + U.join(","), ic: "⬆️", b: `${U.length} ${t(U.length === 1 ? "aggiornamento" : "aggiornamenti", U.length === 1 ? "update" : "updates")}`, s: U.slice(0, 3).map(id => esc(String(attr(id, "title") || nm(id)).replace(/\s*(update|aggiornamento)$/i, ""))).join(", "), go: "aggiornamenti" });
   const N = nascosti();
@@ -75,7 +77,7 @@ export function avvisi() {
 
 export function avvisiCard() {
   const A = avvisi(), n = A.length;
-  return card(`🔔 ${t("Avvisi", "Alerts")} <span class="tag ${n ? "warn" : "ok"}">${n || t("tutto ok", "all good")}</span>`, n ? `<div class="stack">${A.map(a => `<div class="li av3 ${a.cls || ""}" ${a.go ? `data-act="go" data-id="${a.go}"` : a.id ? `data-act="more" data-id="${a.id}"` : ""} role="button">
+  return card(`🔔 ${t("Avvisi", "Alerts")} <span class="tag ${n ? "warn" : "ok"}">${n || t("tutto ok", "all good")}</span>`, n ? `<div class="stack">${A.map(a => `<div class="li av3 ${a.cls || ""}" ${a.act ? `data-act="${a.act}"` : a.go ? `data-act="go" data-id="${a.go}"` : a.id ? `data-act="more" data-id="${a.id}"` : ""} role="button">
       <span class="ic">${a.ic}</span><div class="tx"><b>${a.b}</b><span>${a.s}</span></div><button class="x3" data-act="avHide" data-k="${esc(a.k)}" aria-label="${t("Nascondi", "Dismiss")}">✕</button></div>`).join("")}</div>`
     : `<div class="small muted">${t("Nessuna finestra aperta, nessuna pila scarica, nessun aggiornamento.", "No open windows, no low batteries, no updates.")}</div>`,
     { right: isAdmin() ? `<button class="btn sm" data-act="avNotif" title="${t("Avvisi sul telefono", "Alerts on the phone")}">📱${LAYOUT.notifiche?.servizi?.length ? " ✓" : ""}</button>` : "" });
