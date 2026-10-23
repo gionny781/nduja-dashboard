@@ -13,7 +13,7 @@ Il lavoro comincia **dopo la 0.8.0 ufficiale**. La 0.8.0 esce solo quando Giovan
 - **Widget** per la schermata Home, la schermata di blocco e, se Apple li accetta, CarPlay: stati e tasti rapidi.
 - **Siri e Comandi rapidi** (App Intents): «Ehi Siri, apri il cancello con 'Nduja».
 - **CarPlay**: schermate native Apple, a griglia e a elenco.
-  - Mostra i comandi «In auto» preparati dalla plancia (0.7.42) e gli stati principali: cancello, garage, allarme, clima, auto elettrica.
+  - Mostra i comandi «In auto» preparati dalla plancia (0.7.48) e gli stati principali: cancello, garage, allarme, clima, auto elettrica.
   - Non è possibile mostrare la plancia web: lo vieta Apple.
 - Le notifiche push restano all'app ufficiale Home Assistant, perché richiederebbero un server nostro.
 
