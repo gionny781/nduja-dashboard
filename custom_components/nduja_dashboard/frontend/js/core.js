@@ -208,6 +208,16 @@ export function entityRow(id) {
     : `<button class="sw ${on ? "on" : ""}" data-act="toggle" data-id="${id}" aria-label="${esc(nm(id))}"><i></i></button>`;
   return `<div class="li ${un ? "dis" : ""}"><span class="ic">${ic}</span><div class="tx"><b>${esc(shortName(id))}</b><span>${un ? t("non raggiungibile", "unavailable") : esc(st)}</span></div>${un ? "" : ctl}</div>`;
 }
+/** doppio tocco di conferma (aprire un'auto, un cancello…): il primo tocco trasforma il pulsante in «⚠️ msg» per 3,5 s,
+    il secondo restituisce true. Intanto il pulsante non viene ridisegnato (data-sure, vedi morph). */
+export function sicuro(el, msg) {
+  if (el.dataset.sure === "1") { clearTimeout(el._sureT); el._sureFine?.(); return true; }
+  const html = el.innerHTML, cls = el.className;
+  el.dataset.sure = "1"; el.innerHTML = `⚠️<span>${esc(msg)}</span>`; el.classList.add("warn");
+  el._sureFine = () => { el._sureFine = null; el.dataset.sure = ""; el.innerHTML = html; el.className = cls; render(); };
+  el._sureT = setTimeout(() => { if (el.isConnected) el._sureFine?.(); }, 3500);
+  return false;
+}
 /** apre la finestra «dettagli» di Home Assistant per un'entità */
 export function moreInfo(id) {
   const e = new Event("hass-more-info", { bubbles: true, composed: true }); e.detail = { entityId: id };

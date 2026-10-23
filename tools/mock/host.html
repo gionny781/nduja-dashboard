@@ -50,7 +50,13 @@ const ENT = {
   "camera.garage_sub_stream": st("idle", { friendly_name: "Garage sub", entity_picture: "/custom_components/nduja_dashboard/frontend/img/chili.svg" }),
   "camera.porta_ptz": st("unavailable", { friendly_name: "PTZ" }),
   "alarm_control_panel.alarmo": st("disarmed", { friendly_name: "Alarmo", supported_features: 11, code_format: "number", code_arm_required: true }),
-  "lock.porta_ingresso": st("locked", { friendly_name: "Serratura ingresso" }),
+  "lock.porta_ingresso": st("locked", { friendly_name: "Serratura ingresso", supported_features: 1 }),
+  "cover.cancello": st("closed", { friendly_name: "Cancello", device_class: "gate", supported_features: 11 }, 2*H),
+  "cover.garage": st("open", { friendly_name: "Porta garage", device_class: "garage", supported_features: 11 }, 420),
+  "cover.basculante_cantina": st("opening", { friendly_name: "Basculante cantina", device_class: "garage", supported_features: 3 }, 5),
+  "switch.cancelletto": st("off", { friendly_name: "Relè cancelletto" }),
+  "binary_sensor.cancelletto_contatto": st("off", { friendly_name: "Contatto cancelletto" }, 3*H),
+  "button.portone_condominio": st("unknown", { friendly_name: "Apriportone condominio" }),
   "binary_sensor.fumo_cucina": st("off", { device_class: "smoke", friendly_name: "Fumo cucina" }),
   "binary_sensor.perdita_lavatrice": st("on", { device_class: "moisture", friendly_name: "Perdita lavatrice" }, 120),
   "binary_sensor.movimento_ingresso": st("on", { device_class: "motion", friendly_name: "Movimento ingresso" }, 60),
@@ -122,7 +128,7 @@ const EV = {
   "calendar.raccolta_differenziata": [{ start: dstr(2), end: dstr(3), summary: "Plastica e Metalli" }, { start: dstr(3), end: dstr(4), summary: "Indifferenziato" }],
 };
 let LAYOUT = JSON.parse(localStorage.getItem("mockLayout") || '{"configured":true,"mode":"auto","energy":{"pv":["sensor.inverter_pv1_power","sensor.inverter_pv2_power","sensor.inverter_pv3_power"]}}');
-const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_sogg/.test(id) ? "soggiorno" : /echo_cucina/.test(id) ? "cucina" : /soggiorno/.test(id) ? "soggiorno" : /corridoio|porta|ariston/.test(id) ? "corridoio" : /cucina/.test(id) ? "cucina" : /lavatric|asciugatric/.test(id) ? "lavanderia" : /forno|frigo|lavastov/.test(id) ? "cucina" : null,
+const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_sogg/.test(id) ? "soggiorno" : /echo_cucina/.test(id) ? "cucina" : /soggiorno/.test(id) ? "soggiorno" : /^(cover\.(cancello|garage|basculante)|switch\.cancellett|binary_sensor\.cancellett|button\.portone)/.test(id) ? "esterno" : /corridoio|porta|ariston/.test(id) ? "corridoio" : /cucina/.test(id) ? "cucina" : /lavatric|asciugatric/.test(id) ? "lavanderia" : /forno|frigo|lavastov/.test(id) ? "cucina" : null,
   pl: id.includes("model_3") ? "tesla_fleet" : undefined, di: id.includes("model_3") ? "dev_car" : id.includes("ambrogio") ? "dev_v" : id.includes("mario") ? "dev_g" : id.includes("anna") ? "dev_c" : id.includes("ariston") ? "dev_a" : null })) };
 const conn = {
   addEventListener() {}, subscribeEvents() { return Promise.resolve(() => {}); },
@@ -135,7 +141,7 @@ const conn = {
       case "nduja_dashboard/save_layout": LAYOUT = m.layout; localStorage.setItem("mockLayout", JSON.stringify(LAYOUT)); return { ok: true };
       case "config/entity_registry/list_for_display": return REG;
       case "config/device_registry/list": return [{ id: "dev_g", name: "iPhone di Mario" }, { id: "dev_c", name: "iPhone di Anna" }, { id: "dev_a", name: "Ariston" }, ...(localStorage.getItem("mockNoCar") ? [] : [{ id: "dev_car", name: "Model 3", manufacturer: "Tesla", model: "Model 3" }])];
-      case "config/area_registry/list": return [{ area_id: "soggiorno", name: "Soggiorno" }, { area_id: "corridoio", name: "Corridoio" }, { area_id: "cucina", name: "Cucina" }, { area_id: "lavanderia", name: "Lavanderia" }];
+      case "config/area_registry/list": return [{ area_id: "soggiorno", name: "Soggiorno" }, { area_id: "corridoio", name: "Corridoio" }, { area_id: "cucina", name: "Cucina" }, { area_id: "lavanderia", name: "Lavanderia" }, { area_id: "esterno", name: "Esterno" }];
       case "config/floor_registry/list": return [];
       case "recorder/statistic_during_period": return { change: 1.23 };
       case "config/auth/list": return [{ id: "u1", name: "Mario", is_owner: true, is_active: true, group_ids: ["system-admin"] }, { id: "u2", name: "Anna", is_active: true, group_ids: ["system-users"] }];

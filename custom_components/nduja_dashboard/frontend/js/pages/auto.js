@@ -3,7 +3,7 @@
    Tutto viene dal dispositivo dell'auto: batteria, autonomia, ricarica, clima, serrature, posizione e comandi.
    La foto è quella dell'integrazione; se non c'è, la cerco su Wikipedia con marca e modello. */
 import { S, REG, DEVICES, ACT, CHG, LAYOUT, UI, STRIP, HOME_EXTRA, DEFAULT_OFF, t, LOC, esc, fnum, nm, ok, val, attr, unit, card, empty, page,
-  svc, toast, go, isAdmin, shortName, deviceClass, km, ago, sGet, sSet, render, openSheet, closeSheet } from "../core.js";
+  svc, toast, go, isAdmin, shortName, deviceClass, km, ago, sGet, sSet, render, openSheet, closeSheet, sicuro } from "../core.js";
 import { cambia } from "../edit.js";
 
 /* integrazioni delle auto più diffuse (dominio della piattaforma) */
@@ -123,8 +123,6 @@ function comandi(r) {
     btn: dom("button").filter(x => !usati.has(x) && !re(x, /wake|sveglia|refresh|aggiorna|update|reload|force/)),
     sw: dom("switch").filter(x => !usati.has(x)), sel: dom("select"), num: dom("number").filter(x => !usati.has(x)), wake: dom("button").find(x => re(x, /wake|sveglia/)) || null };
 }
-const sicuro = (el, msg) => { if (el.dataset.sure === "1") return true; el.dataset.sure = "1"; const o = el.innerHTML; el.innerHTML = `⚠️<span>${esc(msg)}</span>`; el.classList.add("warn");
-  setTimeout(() => { if (el.isConnected) { el.dataset.sure = ""; el.innerHTML = o; } }, 3500); return false; };
 const nomeBreve = (id, d) => shortName(id).replace(new RegExp("^" + nomeAuto(d).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*", "i"), "") || shortName(id);
 
 /* ---------- scheda dell'auto ---------- */

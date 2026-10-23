@@ -43,7 +43,7 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.11-dev ✅ | gio 22 ott | Novità in casa: avviso dei dispositivi nuovi, suggeriti in ＋ Aggiungi |
 | 0.7.18-dev ✅ | ven 23 ott | Elettrodomestici animati o con le tue immagini |
 | 0.7.19-dev ✅ | ven 23 ott | Controlla Home Assistant, schermata d'errore chiara, etichetta «'Nduja» |
-| 0.7.20-dev | sab 24 ott | Sicurezza: scheda Accessi (cancello, cancelletto, garage, portone) |
+| 0.7.20-dev ✅ | sab 24 ott | Sicurezza: scheda Accessi (cancello, cancelletto, garage, portone) |
 | 0.7.21-dev | lun 26 ott | Faccende (e dati condivisi tra tutti gli utenti) |
 | 0.7.22-dev | mer 28 ott | Bacheca |
 | 0.7.23-dev | ven 30 ott | Telecamere in diretta (WebRTC → HLS → MJPEG → foto) |

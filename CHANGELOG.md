@@ -3,6 +3,17 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.20-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+- 🇮🇹 **Accessi** in 🛡️ Sicurezza: una scheda nuova per cancello, cancelletto, porta del garage, portone e porte. Ci finiscono da sole le cover di tipo cancello, garage e porta e le serrature (che prima avevano la scheda «Serrature»).
+- 🇮🇹 Con ✏️ Modifica → **＋ Aggiungi accesso** inserisci qualsiasi serratura, cover, interruttore, pulsante (`button`, `input_button`) o script. Per ognuno scegli nome, icona (cancello, cancelletto, garage, portone, porta: disegni animati della plancia), comando (**apri/chiudi**, **impulso** come il telecomando, oppure **apri · stop · chiudi** per le cover che si fermano) e un **sensore facoltativo** che dice se è aperto. Con ✏️ gli accessi si tolgono, si rinominano e si riordinano con ◀ ▶.
+- 🇮🇹 Pulsanti grandi; per **aprire serve il doppio tocco** di conferma, come nella pagina Auto. Lo stato si vede quando è noto: aperto, chiuso, si apre, si chiude (con l'animazione, ferma con «Riduci movimento»).
+- 🇮🇹 In **Home** una scheda compatta «Accessi» con il pulsante principale di ognuno; compare solo se ci sono accessi.
+- 🇬🇧 **Access** in 🛡️ Security: a new card for gates, pedestrian gates, garage doors, main doors and doors. Covers of class gate, garage and door and locks (which used to have the «Locks» card) show up by themselves.
+- 🇬🇧 With ✏️ Edit → **＋ Add access** add any lock, cover, switch, button (`button`, `input_button`) or script. For each one choose name, icon (gate, pedestrian gate, garage, main door, door: animated dashboard drawings), command (**open/close**, **pulse** like a remote, or **open · stop · close** for covers that can stop) and an **optional sensor** telling whether it's open. With ✏️ you remove, rename and reorder them with ◀ ▶.
+- 🇬🇧 Big buttons; **opening needs a double tap** to confirm, as on the Car page. The state shows when known: open, closed, opening, closing (animated, still with «Reduce motion»).
+- 🇬🇧 On **Home**, a compact «Access» card with each one's main button; it shows up only when there are access points.
+
 ## 0.7.19-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 - 🇮🇹 **Controlla Home Assistant** (⚙️ Impostazioni, solo amministratori): premi «Controlla» e ricevi un elenco in parole semplici, con ✅ o ⚠️ e il numero di casi: stanze, stanze senza piano, dispositivi mostrati senza stanza, Energia, meteo, persone senza telefono o tracker, dispositivi mostrati che non rispondono (con l'elenco da aprire) e versione di Home Assistant. Ogni ⚠️ ha un pulsante che apre la schermata giusta di Home Assistant. Il controllo legge soltanto: non cambia niente.

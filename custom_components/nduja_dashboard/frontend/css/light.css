@@ -145,6 +145,13 @@ body.light .apk1 button{background:rgba(0,0,0,0.030)!important}
 body.light .apf1 .apv1{background:rgba(0,0,0,0.025)!important}
 body.light .hc2{background:rgba(0,0,0,0.028)!important;border:1px solid rgba(0,0,0,0.042)!important}
 body.light .err1d pre{background:rgba(0,0,0,0.030)!important;border:1px solid rgba(0,0,0,0.056)!important}
+body.light .editing .ed1>.ac1{outline:1.5px dashed rgba(0,0,0,0.175)!important}
+body.light .ac1{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.070)!important}
+body.light .aci1{background:rgba(0,0,0,0.035)!important}
+body.light .acx1{background:rgba(0,0,0,0.040)!important;border:1px solid rgba(0,0,0,0.084)!important}
+body.light .ach1>div{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.049)!important}
+body.light .ack1 button{background:rgba(0,0,0,0.030)!important}
+body.light .acpv1{background:rgba(0,0,0,0.025)!important}
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
 body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
@@ -199,4 +206,15 @@ body.light .aph1 .done .tx span{color:#0a6fd6}
 /* controlla Home Assistant e schermata d'errore */
 body.light .hc2.warn{background:rgba(255,159,10,.1)!important;border-color:rgba(230,130,0,.45)!important}
 body.light .err1{background:rgba(220,228,240,.55)}
+/* accessi: pulsanti e colori dello stato più pieni sul chiaro */
+body.light .acx1.pri{background:rgba(10,132,255,.14)!important;border-color:rgba(10,132,255,.5)!important;color:#0a5fc2}
+body.light .acx1.warn{background:rgba(255,159,10,.16)!important;border-color:#e08600!important;color:#b86e00}
+body.light .st-closed em,body.light .st-closed .aci1,body.light .acpv1.st-closed b{color:#1f9e45}
+body.light .st-open em,body.light .st-open .aci1,body.light .acpv1.st-open b{color:#d27400}
+body.light :is(.st-opening,.st-closing) em,body.light :is(.st-opening,.st-closing) .aci1,body.light .acpv1:is(.st-opening,.st-closing) b{color:#0a6fd6}
+body.light .ac1.st-open{background:rgba(255,159,10,.08)!important;border-color:rgba(230,130,0,.4)!important}
+body.light .ac1:is(.st-opening,.st-closing){background:rgba(10,132,255,.06)!important;border-color:rgba(10,132,255,.4)!important}
+body.light .ack1 button.on{background:rgba(10,132,255,.14)!important}
+body.light .ac1.st-jammed{background:rgba(255,69,58,.07)!important;border-color:rgba(255,69,58,.45)!important}
+body.light .ach1>div.st-open{border-color:rgba(230,130,0,.4)!important}body.light .ach1>div:is(.st-opening,.st-closing){border-color:rgba(10,132,255,.4)!important}
 

@@ -615,3 +615,74 @@ a.btn{color:var(--tx);text-decoration:none}.car-c.on{background:rgba(10,132,255,
 .err1a{margin:18px 0 6px}
 .err1d summary{cursor:pointer;width:max-content;padding:8px 0;font-weight:700;font-size:13px;color:var(--tx2)}
 .err1d pre{margin-top:6px;max-height:40vh;overflow:auto;padding:12px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);font-family:var(--mono);font-size:11.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;user-select:text;-webkit-user-select:text}
+
+/* ===== accessi (Sicurezza e Home): cancello, cancelletto, garage, portone, porta ===== */
+.acg1{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:12px}
+.acg1>.ed1{display:flex}.acg1>.ed1>.ac1{flex:1}.editing .ed1>.ac1{outline:1.5px dashed rgba(255,255,255,.25);outline-offset:2px}
+.acg1 .add1{min-height:150px;flex-direction:column}
+.edb button:disabled{opacity:.35}
+.ac1{display:flex;flex-direction:column;gap:14px;min-width:0;padding:14px;border-radius:22px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);transition:border-color .3s,background .3s}
+.ac1.st-open{background:rgba(255,159,10,.08);border-color:rgba(255,159,10,.42)}
+.ac1.st-opening,.ac1.st-closing{background:rgba(10,132,255,.08);border-color:rgba(10,132,255,.5)}
+.ac1.st-jammed{background:rgba(255,69,58,.1);border-color:rgba(255,69,58,.5)}
+.ac1.dis{opacity:.6}
+.ac1h{display:flex;align-items:center;gap:12px;min-width:0}
+.ac1h .tx,.ach1 .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.ac1h b,.ach1 b{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ac1h .tx>span,.ach1 .tx>span{font-size:12.5px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ac1h em,.ach1 em{font-style:normal;font-weight:700}
+.st-closed em{color:var(--green)}.st-open em{color:var(--orange)}.st-opening em,.st-closing em{color:#5eb0ff}.st-jammed em,em.na{color:var(--red)}
+.aci1{flex:none;display:grid;place-items:center;width:54px;height:54px;border-radius:17px;background:rgba(255,255,255,.07);color:var(--tx2);transition:color .3s}
+.aci1 svg{width:42px;height:42px}
+.st-closed .aci1{color:var(--green)}.st-open .aci1{color:var(--orange)}.st-opening .aci1,.st-closing .aci1{color:#5eb0ff}.st-jammed .aci1{color:var(--red)}
+.acb1{display:flex;gap:8px;margin-top:auto}
+.acx1{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;min-width:0;min-height:54px;padding:8px 10px;border-radius:17px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);font-size:15px;font-weight:700;color:var(--tx);line-height:1.15;transition:transform .12s,background .2s,flex-grow .2s}
+.acx1 i{font-style:normal;font-size:13px;opacity:.85}
+.acx1.pri{background:rgba(10,132,255,.22);border-color:rgba(10,132,255,.55)}
+.acx1:active{transform:scale(.97)}
+.acx1:disabled{opacity:.4;cursor:default}
+.acx1.warn{flex-grow:2.6;background:rgba(255,159,10,.2);border-color:var(--orange);color:var(--orange);font-size:13px}
+.acx1.warn span{text-align:left}
+.acb1.tre .acx1{flex-direction:column;gap:3px;font-size:12.5px;padding:7px 4px}
+.acb1.tre .acx1 i{font-size:12px}
+.acb1.tre .acx1.warn{flex-direction:row;font-size:12px}
+/* disegni (SVG della plancia): .mv è la parte che si muove */
+.acd1{overflow:visible;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.acd1 .gr{stroke-width:2;opacity:.4}
+.acd1 .po{fill:currentColor;fill-opacity:.2}
+.acd1 .lf{fill:currentColor;fill-opacity:.13;stroke:none}
+.acd1 .in{fill:currentColor;fill-opacity:.06;stroke:none;transition:fill-opacity .6s}
+.acd1 .pm{fill:currentColor;stroke:none}
+.acd1 .mv{transform-box:fill-box;transform-origin:0 50%;transition:transform .9s cubic-bezier(.5,0,.3,1)}
+.acd1 .mv.r{transform-origin:100% 50%}
+.acd1.s-open .in{fill-opacity:.16}
+.k-cancello.s-open .mv{transform:translateX(-25px)}
+.k-garage.s-open .mv{transform:translateY(-15.5px)}
+.k-cancelletto.s-open .mv,.k-porta.s-open .mv,.k-portone.s-open .mv{transform:scaleX(.26)}
+/* in movimento: mezzo aperto da fermo; con l'animazione si vede andare nella direzione giusta */
+.k-cancello.s-opening .mv,.k-cancello.s-closing .mv{transform:translateX(-12px)}
+.k-garage.s-opening .mv,.k-garage.s-closing .mv{transform:translateY(-8px)}
+.k-cancelletto.s-opening .mv,.k-cancelletto.s-closing .mv,.k-porta.s-opening .mv,.k-porta.s-closing .mv,.k-portone.s-opening .mv,.k-portone.s-closing .mv{transform:scaleX(.6)}
+@media (prefers-reduced-motion:no-preference){
+  .k-cancello.s-opening .mv{animation:acSl 2.6s ease-in-out infinite}.k-cancello.s-closing .mv{animation:acSl 2.6s ease-in-out infinite reverse}
+  .k-garage.s-opening .mv{animation:acSu 2.6s ease-in-out infinite}.k-garage.s-closing .mv{animation:acSu 2.6s ease-in-out infinite reverse}
+  .s-opening:is(.k-cancelletto,.k-porta,.k-portone) .mv{animation:acSw 2.6s ease-in-out infinite}.s-closing:is(.k-cancelletto,.k-porta,.k-portone) .mv{animation:acSw 2.6s ease-in-out infinite reverse}
+}
+@keyframes acSl{0%{transform:none;opacity:.4}12%{opacity:1}78%{transform:translateX(-25px);opacity:1}100%{transform:translateX(-25px);opacity:.4}}
+@keyframes acSu{0%{transform:none;opacity:.4}12%{opacity:1}78%{transform:translateY(-15.5px);opacity:1}100%{transform:translateY(-15.5px);opacity:.4}}
+@keyframes acSw{0%{transform:none;opacity:.4}12%{opacity:1}78%{transform:scaleX(.26);opacity:1}100%{transform:scaleX(.26);opacity:.4}}
+/* scheda nella Home */
+.ach1{display:flex;flex-direction:column;gap:8px}
+.ach1>div{display:flex;align-items:center;gap:11px;min-width:0;padding:8px 8px 8px 9px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07)}
+.ach1>div.st-open{border-color:rgba(255,159,10,.35)}.ach1>div.st-opening,.ach1>div.st-closing{border-color:rgba(10,132,255,.45)}.ach1>.dis{opacity:.6}
+.ach1 .aci1{width:44px;height:44px;border-radius:14px}.ach1 .aci1 svg{width:34px;height:34px}
+.ach1 b{font-size:14px}
+.ach1 .acx1{flex:0 0 auto;min-width:92px;min-height:46px;border-radius:15px;font-size:14px}
+.ach1 .acx1.warn{flex:0 0 auto;min-width:132px;max-width:150px}
+/* foglio ✏️ */
+.ack1{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:8px}
+.ack1 button{display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 4px;border-radius:15px;background:rgba(255,255,255,.06);font-size:11.5px;font-weight:600;color:var(--tx)}
+.ack1 button.on{background:rgba(10,132,255,.25);outline:2px solid #0a84ff}
+.ack1 .aci1{width:48px;height:48px;background:none;color:var(--tx)}.ack1 .aci1 svg{width:42px;height:42px}
+.acpv1{display:flex;align-items:center;gap:12px;margin-top:14px;padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.05);font-size:13px;color:var(--tx2)}
+.acpv1 b{color:var(--tx)}.acpv1.st-closed b{color:var(--green)}.acpv1.st-open b{color:var(--orange)}.acpv1:is(.st-opening,.st-closing) b{color:#5eb0ff}
