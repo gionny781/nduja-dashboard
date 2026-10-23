@@ -30,7 +30,7 @@ it builds itself from your **areas, floors and devices**.
 - **Energy** – live flow (solar, grid, home, battery), today's totals and device consumption, from Home Assistant's Energy configuration.
 - **Calendar** – events from your Home Assistant calendars (today, week, month) and ＋ Event.
 - **Map** – 2D or 3D, every floor drawn from your areas: lights, windows, climate, motion, temperature; move and resize rooms, put your floor plan underneath.
-- **Appliances** – washing machine, dryer, dishwasher, oven…: running/done, power, today's kWh, end time, plug.
+- **Appliances** – washing machine, dryer, dishwasher, oven…: running/done, power, today's kWh, end time, plug. Each one is **animated** (idle, running, done) with the dashboard's own drawings or with your images/GIFs, also on Home and on the map.
 - **Car** – shown only if Home Assistant has a car (Tesla, BMW, VW, Kia/Hyundai, Renault, Polestar, Mercedes…): photo, battery and range, charging, location and controls (lock, climate, charging, trunk, charge limit…).
 - **Vacuum** – status, map, room cleaning, quick settings and maintenance. **Cameras** – live snapshots and live view. **Security** – alarm keypad, locks, doors, smoke/gas/water, motion.
 - **Lights** – all lights by floor and room, brightness sliders, "turn off" per room and for the whole house.
@@ -70,7 +70,7 @@ si costruisce da sola dalle tue **aree, piani e dispositivi**.
 - **Energia** – flusso in tempo reale (sole, rete, casa, batteria), totali di oggi e consumi dei dispositivi, dalla configurazione Energia di Home Assistant.
 - **Calendario** – gli eventi dei calendari di Home Assistant (oggi, settimana, mese) e ＋ Evento.
 - **Mappa** – in 2D o 3D, ogni piano disegnato dalle aree: luci, finestre, clima, movimento, temperatura; sposta e ridimensiona le stanze, metti sotto la tua piantina.
-- **Elettrodomestici** – lavatrice, asciugatrice, lavastoviglie, forno…: in funzione/finito, potenza, kWh di oggi, ora di fine, presa.
+- **Elettrodomestici** – lavatrice, asciugatrice, lavastoviglie, forno…: in funzione/finito, potenza, kWh di oggi, ora di fine, presa. Ognuno è **animato** (fermo, in funzione, finito) con i disegni della plancia o con le tue immagini/GIF, anche nella Home e nella mappa.
 - **Auto** – compare solo se in Home Assistant c'è un'auto (Tesla, BMW, VW, Kia/Hyundai, Renault, Polestar, Mercedes…): foto, batteria e autonomia, ricarica, posizione e comandi (apri/chiudi, clima, ricarica, baule, limite di ricarica…).
 - **Robot** – stato, mappa, pulizia per stanza, impostazioni rapide e manutenzione. **Telecamere** – anteprime e diretta. **Sicurezza** – allarme col tastierino, serrature, porte, fumo/gas/acqua, movimento.
 - **Luci** – tutte le luci per piano e stanza, con regolazione della luminosità, «spegni» per stanza e per tutta la casa.

@@ -43,3 +43,9 @@ body.light .car-c.warn{background:rgba(255,159,10,.14)!important;border-color:rg
 body.light .car-bar u{background:#1c1c1e}
 /* novità in casa: azzurro più scuro, leggibile sul chiaro */
 body.light .pk1.sug1 .tx small em,body.light .fl1.sug1h{color:#0a7ea8!important}
+/* animazioni degli elettrodomestici: vetro chiaro, tratti scuri, colori più pieni */
+body.light .apv1{--apb:rgba(255,255,255,.82);--aps:rgba(28,28,30,.38);--apk:rgba(28,28,30,.5);--apg:rgba(28,28,30,.04);--aph:rgba(255,255,255,.95);--apin:rgba(28,28,30,.1)}
+body.light .d-frigo{--apc:#25a5d6}body.light .d-lavastoviglie{--apc:#1d9fd0}body.light .d-lavatrice{--apc:#2f8fe8}body.light .d-asciugatrice{--apc:#f09a1a}
+body.light .apv1>.apok1{color:#fff!important}body.light .apd1 .ok1 circle{stroke:#fff!important}body.light .apd1.st-on .dsx{fill:#fff!important}
+body.light .apd1 .bolle circle{fill:rgba(255,255,255,.75)!important}body.light .apd1 .nebbia rect{fill:#7fa6c4!important}body.light .apd1 .vap path{stroke:rgba(28,28,30,.35)!important}
+body.light .aph1 .done .tx span{color:#0a6fd6}

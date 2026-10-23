@@ -142,7 +142,8 @@ const SCHEDE = () => ({
   stanze: [t("Stanze", "Rooms"), stanze],
   avvisi: [t("Avvisi", "Alerts"), avvisiCard],
   persone: [t("Persone", "People"), personeCard],
-  ...Object.fromEntries(Object.entries(HOME_EXTRA).filter(([, x]) => { try { return x.show(); } catch { return false; } }).map(([k, x]) => [k, [x.title(), x.render]])),
+  /* in ordine di nome: le pagine si caricano insieme e l'ordine d'arrivo cambierebbe da un'apertura all'altra */
+  ...Object.fromEntries(Object.entries(HOME_EXTRA).sort(([x], [y]) => x.localeCompare(y)).filter(([, x]) => { try { return x.show(); } catch { return false; } }).map(([k, x]) => [k, [x.title(), x.render]])),
   raccolta: [t("Raccolta differenziata", "Waste collection"), raccoltaCard, "rfEdit"],
   agenda: [t("Agenda", "Agenda"), agendaCard, "calEdit"],
   musica: [t("In riproduzione", "Now playing"), musicaCard],

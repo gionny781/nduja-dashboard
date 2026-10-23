@@ -142,5 +142,23 @@ ACT.chPick = el => { const o = CH.o; closeSheet(); o.onPick(el.dataset.id); };
 /* filtri pronti */
 export const isTemp = id => id.startsWith("sensor.") && (deviceClass(id) === "temperature" || /°\s?[CF]$/.test(unitaDi(id)));
 export const isHum = id => id.startsWith("sensor.") && (deviceClass(id) === "humidity" || (unitaDi(id) === "%" && /umid|humid/i.test(id + nm(id))));
+/* ---------- immagini dell'utente (di solito in /config/www, cioè /local/…) ---------- */
+/** sistema gli indirizzi scritti come percorso del disco: «/config/www/x.gif» o «www/x.gif» → «/local/x.gif» */
+export const indirizzoLocale = v => String(v || "").trim().replace(/^\/?(config\/)?www\//i, "/local/");
+const FILE = {};
+/** controlla che un'immagine esista: "ok", "no" (manca o non si apre), "?" (sto controllando), null (campo vuoto).
+   Prima una richiesta HEAD; se il server non la accetta, o l'immagine è su un altro sito, provo a caricarla. */
+export function fileEsiste(url, ricontrolla) {
+  url = String(url || "").trim(); if (!url) return null;
+  if (FILE[url] && !ricontrolla) return FILE[url];
+  let altroSito;
+  try { altroSito = new URL(url, location.href).origin !== location.origin; } catch { return FILE[url] = "no"; }
+  FILE[url] = "?";
+  const fine = v => { FILE[url] = v; render(); };
+  const prova = () => { const im = new Image(); im.onload = () => fine("ok"); im.onerror = () => fine("no"); im.src = url; };
+  if (altroSito) prova();
+  else fetch(url, { method: "HEAD", cache: "no-store" }).then(r => r.ok ? fine("ok") : r.status === 404 ? fine("no") : prova()).catch(prova);
+  return "?";
+}
 /** salva subito una modifica a LAYOUT: fn(copia) */
 export async function cambia(fn, msg) { const l = copia(); fn(l); await salva(l, msg); }

@@ -47,7 +47,7 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.15-dev | ven 30 ott | Bacheca |
 | 0.7.16-dev | dom 1 nov | Telecamere in diretta (WebRTC → HLS → MJPEG → foto) |
 | 0.7.17-dev | mar 3 nov | Telecamere: scelta dei flussi, aggiungi/togli, gruppi |
-| 0.7.18-dev | gio 5 nov | Elettrodomestici animati o con le tue immagini |
+| 0.7.18-dev ✅ | gio 5 nov | Elettrodomestici animati o con le tue immagini |
 | 0.7.19-dev | sab 7 nov | Clima animato o con le tue immagini |
 | 0.7.20-dev | lun 9 nov | Energia: scena animata con sole, meteo, casa ed elettrodomestici |
 | 0.7.21-dev | mer 11 nov | Luci rifatte |

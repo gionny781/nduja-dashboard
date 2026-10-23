@@ -3,6 +3,15 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.18-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+- 🇮🇹 **Elettrodomestici animati**: con ✏️ scegli l'aspetto di ogni elettrodomestico per **fermo**, **in funzione** e **finito**. Le **animazioni della plancia** sono disegnate apposta: lavatrice (oblò che gira con i panni, acqua e bolle), asciugatrice (cestello e aria calda), lavastoviglie (spruzzi e vapore), forno (resistenze che si accendono e luce), frigorifero (fiocchi di neve e alone freddo) e una generica per le prese (spia ed energia nel cavo); quando ha finito compaiono una spunta e dei brillantini. Sono la scelta di partenza per i tipi che riconosco.
+- 🇮🇹 **Le mie immagini**: un'immagine o una GIF tua per ciascun momento (in `/config/www`, quindi `/local/…`), con anteprima e controllo che il file esista; se ne manca una uso quella di «Fermo». Oppure l'**icona** di sempre. Nel foglio ✏️ vedi l'anteprima dal vivo dei tre momenti.
+- 🇮🇹 Lo stesso aspetto compare nella nuova scheda **Elettrodomestici** della Home e nella **mappa**, nella stanza della presa o del sensore (si può togliere con ✏️). Le scelte si salvano in Home Assistant; chi aveva già un'immagine o un'animazione nell'icona la ritrova com'era. Con «Riduci movimento» attivo le animazioni restano ferme.
+- 🇬🇧 **Animated appliances**: with ✏️ choose each appliance's look when **idle**, **running** and **done**. The **dashboard animations** are drawn from scratch: washing machine (spinning drum with clothes, water and bubbles), dryer (drum and warm air), dishwasher (sprays and steam), oven (glowing elements and light), fridge (snowflakes and a cold glow) and a generic plug (status light and energy flowing in the cable); when done, a tick and sparkles appear. They're the default for the types I recognise.
+- 🇬🇧 **My images**: your own image or GIF for each moment (in `/config/www`, so `/local/…`), with preview and a check that the file exists; a missing one falls back to «Idle». Or the usual **icon**. The ✏️ sheet shows a live preview of the three moments.
+- 🇬🇧 The same look shows up in the new **Appliances** card on Home and on the **map**, in the plug's or sensor's room (can be turned off with ✏️). Choices are saved in Home Assistant; anyone who already had an image or animation as the icon keeps it as it was. With «Reduce motion» on, the animations stay still.
+
 ## 0.7.11-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 - 🇮🇹 **Novità in casa**: la plancia ricorda i dispositivi che ha già visto (luci, clima, prese, tapparelle, ventilatori, TV e lettori, serrature, robot, telecamere, porte e finestre, persone e scene). Al primo avvio dopo l'aggiornamento considera già visto tutto quello che c'è, quindi nessun avviso enorme.

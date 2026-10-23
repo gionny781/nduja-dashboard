@@ -4,6 +4,7 @@
 import { S, AREAS, FLOORS, ACT, CHG, LAYOUT, UI, t, esc, fnum, ok, isOn, inArea, areaOf, areasSorted, roomTemp, roomHum, lightsOn,
   deviceClass, svc, toast, card, empty, page, sGet, sSet, render, isAdmin, attr, openSheet, closeSheet, nm, moreInfo } from "../core.js";
 import { cambia, scegli } from "../edit.js";
+import { elettroMappa } from "./elettrodomestici.js";
 
 const COL = 12;
 /* stanze della mappa: le aree di Home Assistant (anche vuote) più le stanze create solo nella mappa */
@@ -75,8 +76,9 @@ export function dispositivi(a, f) {
 }
 const chipD = (id, a, f) => `<span class="mpd2 ${isOn(id) || ["open", "playing", "cleaning", "unlocked"].includes(S[id]?.state) ? "on" : ""}">
   <button data-act="mpDev" data-id="${id}" title="${esc(nm(id))}">${ICO_D(id)}</button>${UI.edit ? `<button class="dx" data-act="mpDevDel" data-id="${id}" data-a="${a}" data-f="${f}">✕</button>` : ""}</span>`;
-const rigaDev = (a, f) => { const D = dispositivi(a, f);
-  return D.length || UI.edit ? `<div class="mpd1">${D.map(id => chipD(id, a, f)).join("")}${UI.edit ? `<button class="mpd2 add" data-act="mpDevAdd" data-a="${a}" data-f="${f}">＋</button>` : ""}</div>` : ""; };
+/* elettrodomestici della stanza: con il loro aspetto (animazione, immagine o icona), si scelgono nella pagina Elettrodomestici */
+const rigaDev = (a, f) => { const D = dispositivi(a, f), E = AREAS[a] ? elettroMappa(a) : "";
+  return D.length || E || UI.edit ? `<div class="mpd1">${E}${D.map(id => chipD(id, a, f)).join("")}${UI.edit ? `<button class="mpd2 add" data-act="mpDevAdd" data-a="${a}" data-f="${f}">＋</button>` : ""}</div>` : ""; };
 
 function stanza(a, p, f) {
   if (!AREAS[a]) return pezzi(p).map((r, i) => `<div class="mpr1 cust ${i ? "pz" : ""}" style="grid-column:${r.x + 1} / span ${r.w};grid-row:${r.y + 1} / span ${r.h}">${i === 0 ? `<button class="mpb1" ${isAdmin() ? `data-act="mpCustom" data-id="${a}" data-f="${f}"` : ""}><b>${esc(nomeStanza(a, f))}</b></button>${rigaDev(a, f)}` : `<span class="mpb1"></span>`}${UI.edit ? comandi(a, i, f) : ""}</div>`).join("");
