@@ -1,7 +1,7 @@
 /* Momenti: pulsanti che fanno più cose insieme («Esco», «Notte», «Buongiorno»…).
    Si costruiscono come le azioni delle automazioni e si salvano in Home Assistant come script
    (così funzionano anche da Alexa, Google, automazioni). In Home c'è la scheda «Momenti». */
-import { S, ACT, CHG, LAYOUT, UI, t, esc, nm, card, svc, toast, openSheet, closeSheet, render, isAdmin, api } from "./core.js";
+import { S, ACT, CHG, LAYOUT, UI, t, esc, nm, card, svc, toast, openSheet, closeSheet, render, isAdmin, api, etichettaNduja } from "./core.js";
 import { cambia } from "./edit.js";
 import { editorAzioni, azioniHA, usaModello } from "./pages/automazioni.js";
 
@@ -48,6 +48,7 @@ Object.assign(ACT, {
     const seq = azioniHA(M); if (!seq.length) return toast(t("Scegli almeno un'azione con i dispositivi", "Choose at least one action with devices"), true);
     try {
       await api("POST", "/api/config/script/config/" + encodeURIComponent(M.id), { alias: (M.icona ? M.icona + " " : "") + M.nome, description: t("Momento creato con 'Nduja Dashboard", "Moment created with 'Nduja Dashboard"), sequence: seq, mode: "restart" });
+      if (nuovo) { const sid = scriptId(M); etichettaNduja(() => S[sid] ? sid : null); }   // nuovo: etichetta «'Nduja»
       const m = M; await cambia(l => { const L = (l.momenti || []).filter(x => x.id !== m.id); const i = (l.momenti || []).findIndex(x => x.id === m.id); if (i < 0) L.push(m); else L.splice(i, 0, m); l.momenti = L; });
       closeSheet(); toast("💾 " + M.nome);
     } catch (e) { toast(t("Non salvato: ", "Not saved: ") + (e.message || e), true); }

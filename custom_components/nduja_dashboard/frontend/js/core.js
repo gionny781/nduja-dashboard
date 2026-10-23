@@ -459,6 +459,20 @@ export async function api(method, path, body) {
 }
 /** apre una pagina di Home Assistant (fuori dalla plancia) */
 export function apriHA(path) { try { parent.history.pushState(null, "", path); parent.dispatchEvent(new CustomEvent("location-changed")); } catch { window.open(path, "_top"); } }
+/** etichetta «'Nduja» sulle automazioni e sugli script creati dalla plancia: la crea se manca e la aggiunge
+   senza togliere le altre. trova() restituisce l'entity_id appena Home Assistant lo crea. Se qualcosa non va, niente. */
+export async function etichettaNduja(trova) {
+  try {
+    let id = null;
+    for (let i = 0; i < 40 && !(id = trova()); i++) await new Promise(r => setTimeout(r, 500));   // Home Assistant ricarica le automazioni: aspetto l'entità
+    if (!id) return;
+    const norm = s => String(s || "").toLowerCase().replace(/[’`´]/g, "'").trim();
+    let lab = ((await ws({ type: "config/label_registry/list" })) || []).find(l => norm(l.name) === "'nduja");
+    if (!lab) lab = await ws({ type: "config/label_registry/create", name: "'Nduja", icon: "mdi:chili-hot" });
+    const e = await ws({ type: "config/entity_registry/get", entity_id: id }), L = e?.labels || [];
+    if (lab?.label_id && !L.includes(lab.label_id)) await ws({ type: "config/entity_registry/update", entity_id: id, labels: [...L, lab.label_id] });
+  } catch (e) { /* in silenzio */ }
+}
 async function loadRegistry() {
   const q = type => ws({ type }).catch(() => null);
   const [er, dr, ar, fr] = await Promise.all([q("config/entity_registry/list_for_display"), q("config/device_registry/list"), q("config/area_registry/list"), q("config/floor_registry/list")]);
@@ -495,7 +509,7 @@ function onEntities(m) {
     if (r?.a) for (const k of r.a) delete n.attributes[k];
     S[id] = n;
   }
-  if (!UI.page) go(location.hash.slice(1) || sGet("page") || "home"); else renderDaStati();
+  if (!UI.page) { go(location.hash.slice(1) || sGet("page") || "home"); window.ndujaPronta?.(); } else renderDaStati();   // dati arrivati: niente schermata d'errore (errore.js)
 }
 /* Gli stati cambiano anche più volte al secondo (sensori di potenza, lettori…): ridisegnare tutta la pagina
    a ogni cambio fa scattare i telefoni. Qui ridisegno al massimo ogni 400 ms e mai mentre il dito è sullo schermo;
@@ -513,7 +527,7 @@ document.addEventListener("pointerdown", () => { tocco = true; }, { passive: tru
 for (const ev of ["pointerup", "pointercancel"]) document.addEventListener(ev, () => { setTimeout(() => { tocco = false; }, 120); }, { passive: true });
 async function start() {
   conn = await getConn();
-  if (!conn) { $("#connect").classList.add("show"); return; }
+  if (!conn) { if (window.ndujaErrore) window.ndujaErrore("fuori"); else $("#connect").classList.add("show"); return; }
   try { UI.user = await ws({ type: "auth/current_user" }); } catch {}
   await loadConfig();
   await loadRegistry();

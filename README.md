@@ -35,7 +35,7 @@ it builds itself from your **areas, floors and devices**.
 - **Vacuum** – status, map, room cleaning, quick settings and maintenance. **Cameras** – live snapshots and live view. **Security** – alarm keypad, locks, doors, smoke/gas/water, motion.
 - **Lights** – all lights by floor and room, brightness sliders, "turn off" per room and for the whole house.
 - **Climate** – thermostats and air conditioners by room, plus a temperature/humidity overview of every room.
-- **Automations** – all your automations (switch, run, last run) and a simple builder to create new ones without leaving the dashboard.
+- **Automations** – all your automations (switch, run, last run) and a simple builder to create new ones without leaving the dashboard. Automations and scripts created by the dashboard get the **'Nduja** label in Home Assistant.
 - **Updates** – install Home Assistant, add-on, HACS and firmware updates right from the dashboard: release notes, backup before installing, progress bar, *Install all* (Home Assistant last), skip/restore versions.
 - Glass design for tablets and phones, **light, dark or automatic theme** (◐ at the top), Italian and English (follows your Home Assistant language).
 - **First start**: choose **Automatic** (everything is found for you) or **Manual** (start empty and add what you want).
@@ -43,6 +43,8 @@ it builds itself from your **areas, floors and devices**.
 - **New devices** (admins): when something new shows up in Home Assistant, Home tells you «N new devices found»; add it or remove it in one tap. ＋ Add shows **Suggested** devices at the top.
 - **Plugs and devices** page: plugs, switches, covers, fans, TVs, locks, vacuums by room.
 - **Setup wizard** (⚙️ Settings, admins only): choose rooms and their order, lights, thermostats, the temperature sensor of each room, devices, people, weather, scenes and pages. Choices are saved in Home Assistant and apply to every device.
+- **🩺 Check Home Assistant** (⚙️ Settings, admins only): a plain-language check of rooms, floors, Energy, weather, people, devices that don't respond and the Home Assistant version, with a button to the right Home Assistant screen for each ⚠️. It only reads, it never changes anything.
+- If the dashboard can't connect or start, it shows **what to check**, «Try again» and the details for support instead of a blank page.
 - Pages show up only when you have the matching devices.
 
 ### Installation
@@ -75,7 +77,7 @@ si costruisce da sola dalle tue **aree, piani e dispositivi**.
 - **Robot** – stato, mappa, pulizia per stanza, impostazioni rapide e manutenzione. **Telecamere** – anteprime e diretta. **Sicurezza** – allarme col tastierino, serrature, porte, fumo/gas/acqua, movimento.
 - **Luci** – tutte le luci per piano e stanza, con regolazione della luminosità, «spegni» per stanza e per tutta la casa.
 - **Clima** – termostati e condizionatori per stanza, più la temperatura e l'umidità di ogni stanza.
-- **Automazioni** – tutte le tue automazioni (interruttore, esegui, ultima volta) e un costruttore semplice per crearne di nuove senza uscire dalla plancia.
+- **Automazioni** – tutte le tue automazioni (interruttore, esegui, ultima volta) e un costruttore semplice per crearne di nuove senza uscire dalla plancia. Le automazioni e gli script creati dalla plancia hanno l'etichetta **'Nduja** in Home Assistant.
 - **Aggiornamenti** – installa dalla plancia gli aggiornamenti di Home Assistant, dei componenti aggiuntivi, di HACS e dei firmware: novità, backup prima di installare, avanzamento, *Installa tutti* (Home Assistant per ultimo), versioni saltate.
 - Grafica in vetro per tablet e telefono, **tema chiaro, scuro o automatico** (◐ in alto), in italiano e in inglese (segue la lingua di Home Assistant).
 - **Primo avvio**: scegli **Automatica** (trovo tutto io) o **Manuale** (parti da zero e aggiungi quello che vuoi).
@@ -83,6 +85,8 @@ si costruisce da sola dalle tue **aree, piani e dispositivi**.
 - **Dispositivi nuovi** (amministratori): quando in Home Assistant compare qualcosa di nuovo, la Home ti dice «N dispositivi nuovi trovati»; lo aggiungi o lo togli con un tocco. In ＋ Aggiungi trovi in cima i **Suggeriti**.
 - Pagina **Prese e dispositivi**: prese, interruttori, tapparelle, ventilatori, TV, serrature, robot per stanza.
 - **Wizard di configurazione** (⚙️ Impostazioni, solo amministratori): scegli stanze e ordine, luci, termostati, il sensore di temperatura di ogni stanza, dispositivi, persone, meteo, scene e pagine. Le scelte si salvano in Home Assistant e valgono su tutti i dispositivi.
+- **🩺 Controlla Home Assistant** (⚙️ Impostazioni, solo amministratori): un controllo in parole semplici di stanze, piani, Energia, meteo, persone, dispositivi che non rispondono e versione di Home Assistant, con un pulsante che per ogni ⚠️ apre la schermata giusta di Home Assistant. Legge soltanto, non cambia niente.
+- Se la plancia non si collega o non parte, al posto della pagina bianca mostra **cosa controllare**, «Riprova» e i dettagli per l'assistenza.
 - Le pagine compaiono solo se hai i dispositivi giusti.
 
 ### Installazione

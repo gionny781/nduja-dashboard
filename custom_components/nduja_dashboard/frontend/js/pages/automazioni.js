@@ -3,7 +3,7 @@
    QUANDO (ora, un dispositivo cambia, alba/tramonto, qualcuno arriva o esce) → SOLO SE (facoltativo) → ALLORA (azioni).
    Le automazioni create qui si salvano in Home Assistant (automations.yaml) e si possono modificare anche qui. */
 import { S, ACT, CHG, LAYOUT, UI, t, esc, nm, ok, attr, ents, allEnts, ago, card, empty, page, svc, toast, openSheet, closeSheet,
-  render, isAdmin, api, apriHA, ws, cached, LOC } from "../core.js";
+  render, isAdmin, api, apriHA, ws, cached, LOC, etichettaNduja } from "../core.js";
 import { scegli, cambia } from "../edit.js";
 
 const V = { q: "", filtro: "tutte" };
@@ -136,6 +136,7 @@ Object.assign(ACT, {
     if (!cfg.actions.length) return toast(t("Aggiungi almeno un'azione", "Add at least one action"), true);
     try {
       await api("POST", "/api/config/automation/config/" + encodeURIComponent(id), cfg);
+      if (!mId) etichettaNduja(() => Object.keys(S).find(e => e.startsWith("automation.") && attr(e, "id") === id));   // nuova: etichetta «'Nduja»
       const mod = M; await cambia(l => { l.autoModels = { ...(l.autoModels || {}), [id]: mod }; });
       closeSheet(); toast("💾 " + M.nome);
     } catch (e) { toast(t("Non salvata: ", "Not saved: ") + (e.message || e), true); }

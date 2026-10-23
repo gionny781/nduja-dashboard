@@ -3,6 +3,15 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.19-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+- 🇮🇹 **Controlla Home Assistant** (⚙️ Impostazioni, solo amministratori): premi «Controlla» e ricevi un elenco in parole semplici, con ✅ o ⚠️ e il numero di casi: stanze, stanze senza piano, dispositivi mostrati senza stanza, Energia, meteo, persone senza telefono o tracker, dispositivi mostrati che non rispondono (con l'elenco da aprire) e versione di Home Assistant. Ogni ⚠️ ha un pulsante che apre la schermata giusta di Home Assistant. Il controllo legge soltanto: non cambia niente.
+- 🇮🇹 **Schermata d'errore chiara**: se la plancia non si collega a Home Assistant o i suoi file non partono, al posto della pagina bianca compare un riquadro con cosa controllare, «Riprova» e «Dettagli per l'assistenza» (versione, errori e browser), da incollare in una segnalazione. Quando tutto funziona non compare mai.
+- 🇮🇹 **Etichetta «'Nduja»**: le automazioni e gli script (Momenti, avvisi sul telefono) creati dalla plancia ricevono l'etichetta «'Nduja» in Home Assistant, creata se manca. Le altre etichette restano.
+- 🇬🇧 **Check Home Assistant** (⚙️ Settings, admins only): press «Check» to get a plain-language list, with ✅ or ⚠️ and how many cases: rooms, rooms without a floor, devices shown without a room, Energy, weather, people without a phone or tracker, devices shown that don't respond (with a list to open) and the Home Assistant version. Each ⚠️ has a button that opens the right Home Assistant screen. The check only reads: it never changes anything.
+- 🇬🇧 **Clear error screen**: if the dashboard can't connect to Home Assistant or its files don't start, instead of a blank page you get a box with what to check, «Try again» and «Details for support» (version, errors and browser) to paste into a report. When everything works it never shows up.
+- 🇬🇧 **'Nduja label**: automations and scripts (Moments, phone alerts) created by the dashboard get the «'Nduja» label in Home Assistant, created if missing. Other labels are kept.
+
 ## 0.7.18-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 - 🇮🇹 **Elettrodomestici animati**: con ✏️ scegli l'aspetto di ogni elettrodomestico per **fermo**, **in funzione** e **finito**. Le **animazioni della plancia** sono disegnate apposta: lavatrice (oblò che gira con i panni, acqua e bolle), asciugatrice (cestello e aria calda), lavastoviglie (spruzzi e vapore), forno (resistenze che si accendono e luce), frigorifero (fiocchi di neve e alone freddo) e una generica per le prese (spia ed energia nel cavo); quando ha finito compaiono una spunta e dei brillantini. Sono la scelta di partenza per i tipi che riconosco.

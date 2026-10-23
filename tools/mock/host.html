@@ -111,6 +111,8 @@ const ENT = {
   "switch.presa_cucina": st("off", { friendly_name: "Presa cucina" }),
   "cover.tapparella_soggiorno": st("open", { friendly_name: "Tapparella soggiorno", current_position: 100 }),
   "update.home_assistant_core_update": st("on", { title: "Home Assistant Core", friendly_name: "Core update" }),
+  "switch.presa_studio": st("unavailable", { friendly_name: "Presa studio" }),
+  "light.striscia_corridoio": st("unavailable", { friendly_name: "Striscia LED corridoio" }),
 };
 const day = (o, h, m=0) => { const d = new Date(); d.setDate(d.getDate()+o); d.setHours(h, m, 0, 0); return d.toISOString(); };
 const dstr = o => { const d = new Date(); d.setDate(d.getDate()+o); return d.toISOString().slice(0,10); };
@@ -124,7 +126,8 @@ const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_
   pl: id.includes("model_3") ? "tesla_fleet" : undefined, di: id.includes("model_3") ? "dev_car" : id.includes("ambrogio") ? "dev_v" : id.includes("mario") ? "dev_g" : id.includes("anna") ? "dev_c" : id.includes("ariston") ? "dev_a" : null })) };
 const conn = {
   addEventListener() {}, subscribeEvents() { return Promise.resolve(() => {}); },
-  subscribeMessage(cb) { window.mockStati = cb; setTimeout(() => cb({ a: ENT }), 50); return Promise.resolve(() => {}); },   // mockStati({ a: { id: { s, a } } }) fa comparire entità nuove
+  subscribeMessage(cb) { window.mockStati = cb; window.mockDati = () => cb({ a: ENT });   // mockStati({ a: { id: { s, a } } }) fa comparire entità nuove
+    if (!localStorage.getItem("mockNoData")) setTimeout(window.mockDati, 50); return Promise.resolve(() => {}); },   // mockNoData: niente dati (prova della schermata d'errore)
   async sendMessagePromise(m) {
     switch (m.type) {
       case "auth/current_user": return { name: "Mario Demo", is_admin: true };
@@ -142,6 +145,11 @@ const conn = {
         for (const id of m.statistic_ids) { out[id] = []; for (let x = st, i = 0; x < Date.now(); x += step, i++) out[id].push({ start: x, change: id.includes("prod") ? 8 + 6*Math.sin(i) : id.includes("imp") ? 2 + Math.random()*3 : 3 + Math.random()*4, mean: 21 + 2*Math.sin(i/4), min: 19 + Math.sin(i/4), max: 23 + 2*Math.sin(i/4) }); }
         return out; }
       case "history/history_during_period": return {};
+      case "get_config": return { version: "2026.10.1", location_name: "Casa" };
+      case "config/label_registry/list": return JSON.parse(localStorage.getItem("mockLabels") || "[]");
+      case "config/label_registry/create": { const L = JSON.parse(localStorage.getItem("mockLabels") || "[]"), l = { label_id: "nduja", name: m.name, icon: m.icon }; L.push(l); localStorage.setItem("mockLabels", JSON.stringify(L)); console.log("WS", JSON.stringify(m)); return l; }
+      case "config/entity_registry/get": return { entity_id: m.entity_id, labels: ["casa"] };
+      case "config/entity_registry/update": console.log("WS", JSON.stringify(m)); return { entity_entry: { entity_id: m.entity_id, labels: m.labels } };
       case "call_service":
         if (m.domain === "calendar" && m.service === "get_events") { const ids = [].concat(m.target.entity_id); return { response: Object.fromEntries(ids.map(id => [id, { events: EV[id] || [] }])) }; }
         if (m.type === "recorder/statistic_during_period") return { change: 1.23 };

@@ -49,3 +49,6 @@ body.light .d-frigo{--apc:#25a5d6}body.light .d-lavastoviglie{--apc:#1d9fd0}body
 body.light .apv1>.apok1{color:#fff!important}body.light .apd1 .ok1 circle{stroke:#fff!important}body.light .apd1.st-on .dsx{fill:#fff!important}
 body.light .apd1 .bolle circle{fill:rgba(255,255,255,.75)!important}body.light .apd1 .nebbia rect{fill:#7fa6c4!important}body.light .apd1 .vap path{stroke:rgba(28,28,30,.35)!important}
 body.light .aph1 .done .tx span{color:#0a6fd6}
+/* controlla Home Assistant e schermata d'errore */
+body.light .hc2.warn{background:rgba(255,159,10,.1)!important;border-color:rgba(230,130,0,.45)!important}
+body.light .err1{background:rgba(220,228,240,.55)}

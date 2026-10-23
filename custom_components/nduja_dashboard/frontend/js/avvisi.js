@@ -6,7 +6,7 @@
    - pile scariche, telefoni scarichi, aggiornamenti, raccolta da esporre stasera
    Ogni avviso si può nascondere con ✕ (torna se la situazione cambia). */
 import { S, ACT, CHG, LAYOUT, t, esc, nm, ok, val, attr, ents, allEnts, isOn, ago, deviceClass, areaOf, openings, shortName, card, render, sGet, sSet, weatherEnt, forecast,
-  ws, cached, api, toast, openSheet, closeSheet, isAdmin } from "./core.js";
+  ws, cached, api, toast, openSheet, closeSheet, isAdmin, etichettaNduja } from "./core.js";
 import { cambia } from "./edit.js";
 import { ritiri, chip } from "./raccolta.js";
 import { pericoli } from "./pages/sicurezza.js";
@@ -120,7 +120,10 @@ Object.assign(ACT, {
   avnSave: async () => {
     if (!NB.servizi.length) return toast(t("Scegli almeno un telefono", "Choose at least one phone"), true);
     const cfg = automazione(NB); if (!cfg.triggers.length) return toast(t("Niente da controllare in casa tua per questi avvisi", "Nothing to watch in your home for these alerts"), true);
-    try { await api("POST", "/api/config/automation/config/nduja_avvisi", cfg); const c = NB; await cambia(l => { l.notifiche = c; }); closeSheet(); toast("📱 " + t("Avvisi sul telefono attivi", "Phone alerts on")); }
+    const nuova = !LAYOUT.notifiche?.servizi?.length;
+    try { await api("POST", "/api/config/automation/config/nduja_avvisi", cfg);
+      if (nuova) etichettaNduja(() => Object.keys(S).find(e => e.startsWith("automation.") && attr(e, "id") === "nduja_avvisi"));   // nuova: etichetta «'Nduja»
+      const c = NB; await cambia(l => { l.notifiche = c; }); closeSheet(); toast("📱 " + t("Avvisi sul telefono attivi", "Phone alerts on")); }
     catch (e) { toast(t("Non salvato: ", "Not saved: ") + (e.message || e), true); }
   },
   avnOff: async () => { try { await api("DELETE", "/api/config/automation/config/nduja_avvisi"); } catch {} await cambia(l => { delete l.notifiche; }); closeSheet(); toast(t("Avvisi sul telefono spenti", "Phone alerts off")); },
