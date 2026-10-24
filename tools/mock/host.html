@@ -5,8 +5,8 @@ const now = Date.now()/1000, H = 3600;
 const st = (s, a = {}, ago = 600) => ({ s, a, lc: now - ago });
 const ENT = {
   "zone.home": st("2", { friendly_name: "Casa", latitude: 41.89, longitude: 12.49 }),
-  "person.mario": st("Lavoro", { friendly_name: "Mario", latitude: 41.95, longitude: 12.52, device_trackers: ["device_tracker.apple_watch", "device_tracker.iphone_di_mario"] }, 3.2*H),
-  "person.anna": st("home", { friendly_name: "Anna", latitude: 41.89, longitude: 12.49, device_trackers: ["device_tracker.iphone_di_anna"] }, 5*H),
+  "person.mario": st("Lavoro", { friendly_name: "Mario", user_id: "u1", latitude: 41.95, longitude: 12.52, device_trackers: ["device_tracker.apple_watch", "device_tracker.iphone_di_mario"] }, 3.2*H),
+  "person.anna": st("home", { friendly_name: "Anna", user_id: "u2", latitude: 41.89, longitude: 12.49, device_trackers: ["device_tracker.iphone_di_anna"] }, 5*H),
   "person.marco": st("not_home", { friendly_name: "Marco", latitude: 41.9, longitude: 12.5, device_trackers: [] }, 26*H),
   "zone.lavoro": st("1", { friendly_name: "Lavoro" }),
   "device_tracker.iphone_di_mario": st("Lavoro", { source_type: "gps", friendly_name: "iPhone di Mario" }),
@@ -132,11 +132,22 @@ const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_
   pl: id.includes("model_3") ? "tesla_fleet" : undefined, di: id.includes("model_3") ? "dev_car" : id.includes("ambrogio") ? "dev_v" : id.includes("mario") ? "dev_g" : id.includes("anna") ? "dev_c" : id.includes("ariston") ? "dev_a" : null })) };
 const conn = {
   addEventListener() {}, subscribeEvents() { return Promise.resolve(() => {}); },
-  subscribeMessage(cb) { window.mockStati = cb; window.mockDati = () => cb({ a: ENT });   // mockStati({ a: { id: { s, a } } }) fa comparire entità nuove
+  subscribeMessage(cb, m) {
+    if (m?.type === "nduja_dashboard/casa_subscribe") { if (localStorage.getItem("mockNoCasa")) return Promise.reject({ code: "unknown_command" }); window.mockCasaEv = cb; return Promise.resolve(() => {}); }
+    window.mockStati = cb; window.mockDati = () => cb({ a: ENT });   // mockStati({ a: { id: { s, a } } }) fa comparire entità nuove
     if (!localStorage.getItem("mockNoData")) setTimeout(window.mockDati, 50); return Promise.resolve(() => {}); },   // mockNoData: niente dati (prova della schermata d'errore)
   async sendMessagePromise(m) {
     switch (m.type) {
-      case "auth/current_user": return { name: "Mario Demo", is_admin: true };
+      case "auth/current_user": return localStorage.getItem("mockNoAdmin") ? { id: "u2", name: "Anna Demo", is_admin: false } : { id: localStorage.getItem("mockNoPerson") ? "u9" : "u1", name: "Mario Demo", is_admin: true };
+      /* dati della casa (Faccende…): mockCasa = { sezione: { rev, dati } }; mockNoCasa = Home Assistant non ancora riavviato */
+      case "nduja_dashboard/casa_get": case "nduja_dashboard/casa_save": {
+        if (localStorage.getItem("mockNoCasa")) throw { code: "unknown_command", message: "Unknown command." };
+        const C = JSON.parse(localStorage.getItem("mockCasa") || "{}"), x = C[m.sezione] || { rev: 0, dati: {} };
+        if (m.type.endsWith("get")) return { sezione: m.sezione, rev: x.rev, dati: x.dati };
+        if (m.rev != null && m.rev !== x.rev) throw { code: "conflict", message: "rev " + x.rev };
+        C[m.sezione] = { rev: x.rev + 1, dati: m.dati }; localStorage.setItem("mockCasa", JSON.stringify(C)); console.log("CASA", JSON.stringify(m));
+        setTimeout(() => window.mockCasaEv?.({ sezione: m.sezione, rev: x.rev + 1 }), 30);
+        return { sezione: m.sezione, rev: x.rev + 1 }; }
       case "nduja_dashboard/config": return { version: "0.5.0-beta", options: {}, layout: LAYOUT };
       case "nduja_dashboard/save_layout": LAYOUT = m.layout; localStorage.setItem("mockLayout", JSON.stringify(LAYOUT)); return { ok: true };
       case "config/entity_registry/list_for_display": return REG;

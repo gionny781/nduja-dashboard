@@ -152,6 +152,20 @@ body.light .acx1{background:rgba(0,0,0,0.040)!important;border:1px solid rgba(0,
 body.light .ach1>div{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.049)!important}
 body.light .ack1 button{background:rgba(0,0,0,0.030)!important}
 body.light .acpv1{background:rgba(0,0,0,0.025)!important}
+body.light .fk1{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.063)!important}
+body.light .fki1{background:rgba(0,0,0,0.040)!important}
+body.light .fke1{background:rgba(0,0,0,0.035)!important}
+body.light .fke1:hover{background:rgba(0,0,0,0.070)!important}
+body.light .fkb1{background:rgba(0,0,0,0.040)!important}
+body.light .fka1{border:2px solid rgba(0,0,0,0.112)!important;color:#1c1c1e!important}
+body.light .fka1.nn{background:rgba(0,0,0,0.040)!important}
+body.light .fk1.fatto .fki1::after{color:#1c1c1e!important}
+body.light .fkw1 button{background:rgba(0,0,0,0.030)!important;border:1px solid rgba(0,0,0,0.056)!important}
+body.light .fkw1 button:hover{background:rgba(0,0,0,0.050)!important}
+body.light .fkn1{background:rgba(0,0,0,0.040)!important}
+body.light .fkl1>div{background:rgba(0,0,0,0.020)!important}
+body.light .fkz1i{background:rgba(0,0,0,0.030)!important}
+body.light .fkh1{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.049)!important}
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
 body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
@@ -217,4 +231,14 @@ body.light .ac1:is(.st-opening,.st-closing){background:rgba(10,132,255,.06)!impo
 body.light .ack1 button.on{background:rgba(10,132,255,.14)!important}
 body.light .ac1.st-jammed{background:rgba(255,69,58,.07)!important;border-color:rgba(255,69,58,.45)!important}
 body.light .ach1>div.st-open{border-color:rgba(230,130,0,.4)!important}body.light .ach1>div:is(.st-opening,.st-closing){border-color:rgba(10,132,255,.4)!important}
+/* faccende: colori dello stato più pieni sul chiaro, iniziali bianche sugli avatar */
+body.light .fk1.s-ritardo{background:rgba(255,69,58,.07)!important;border-color:rgba(255,69,58,.42)!important}
+body.light .fk1.s-oggi{background:rgba(255,159,10,.08)!important;border-color:rgba(230,130,0,.4)!important}
+body.light .fkh1.s-ritardo{border-color:rgba(255,69,58,.4)!important}
+body.light .fka1{color:#fff!important;background-color:#8e8e93;border-color:rgba(0,0,0,.1)!important}body.light .fka1.nn{color:#1c1c1e!important}
+body.light .fk1.fatto .fki1::after{color:#fff!important;border-color:#fff}
+body.light .fkp1.me>span:last-child,body.light .fkw1.sel button.on small{color:#0a6fd6}
+body.light .fkx1{background:rgba(48,209,88,.14)!important;border-color:rgba(31,158,69,.5)!important;color:#1f9e45}
+body.light .s-oggi em{color:#d27400}body.light .fk1.fatto em,body.light .fkok1>span{color:#1f9e45}
+body.light .fkw1.sel button.on{background:rgba(10,132,255,.12)!important}
 

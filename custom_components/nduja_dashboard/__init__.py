@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 from typing import Any
 
@@ -47,6 +48,16 @@ class NdujaAppView(HomeAssistantView):
 STORE_VERSION = 1
 EVENT_LAYOUT = f"{DOMAIN}_layout_updated"
 
+# Dati della casa (Faccende, Bacheca…): uguali su tutti i dispositivi e modificabili da QUALSIASI utente.
+# Sono separati dalle scelte della plancia (layout, solo amministratori). Una sezione per pagina:
+# { "faccende": {"rev": 3, "dati": {...}}, "bacheca": {...} }. «rev» cresce a ogni salvataggio, così due
+# persone che salvano insieme non si cancellano a vicenda: chi arriva secondo riceve «conflict» e riprova.
+STORE_CASA = f"{DOMAIN}.casa"
+EVENT_CASA = f"{DOMAIN}_casa_updated"
+CASA_MAX_BYTES = 256 * 1024     # per sezione
+CASA_MAX_SEZIONI = 16
+SEZIONE = vol.All(str, vol.Match(r"^[a-z][a-z0-9_]{0,31}$"))
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Pubblica i file della plancia, carica le scelte del wizard e aggiunge la voce nella barra laterale."""
@@ -60,10 +71,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.http.register_view(NdujaAppView(data["build"]))
         websocket_api.async_register_command(hass, ws_config)
         websocket_api.async_register_command(hass, ws_save_layout)
+        websocket_api.async_register_command(hass, ws_casa_get)
+        websocket_api.async_register_command(hass, ws_casa_save)
+        websocket_api.async_register_command(hass, ws_casa_subscribe)
         data["static"] = True
     if "store" not in data:
         data["store"] = Store(hass, STORE_VERSION, f"{DOMAIN}.layout")
         data["layout"] = await data["store"].async_load() or {}
+    if "casa_store" not in data:
+        data["casa_store"] = Store(hass, STORE_VERSION, STORE_CASA)
+        data["casa"] = await data["casa_store"].async_load() or {}
     data["entry"] = entry
     _register_panel(hass, entry)
     entry.async_on_unload(entry.add_update_listener(_reload))
@@ -96,11 +113,14 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Integrazione rimossa: cancello anche le scelte del wizard."""
+    """Integrazione rimossa: cancello anche le scelte del wizard e i dati della casa."""
     await Store(hass, STORE_VERSION, f"{DOMAIN}.layout").async_remove()
     data = hass.data.get(DOMAIN, {})
+    await Store(hass, STORE_VERSION, STORE_CASA).async_remove()
     data.pop("store", None)
-    data.pop("layout", None)   # i file statici restano registrati fino al riavvio
+    data.pop("layout", None)
+    data.pop("casa_store", None)
+    data.pop("casa", None)   # i file statici restano registrati fino al riavvio
 
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/config"})
@@ -125,3 +145,70 @@ async def ws_save_layout(hass: HomeAssistant, connection, msg) -> None:
         await data["store"].async_save(layout)
     hass.bus.async_fire(EVENT_LAYOUT, {})
     connection.send_result(msg["id"], {"ok": True})
+
+
+def _sezione(casa: dict[str, Any], nome: str) -> dict[str, Any]:
+    s = casa.get(nome) or {}
+    return {"rev": s.get("rev", 0), "dati": s.get("dati", {})}
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/casa_get", vol.Optional("sezione"): SEZIONE})
+@callback
+def ws_casa_get(hass: HomeAssistant, connection, msg) -> None:
+    """Dati della casa per qualsiasi utente: una sezione sola oppure tutte."""
+    casa = hass.data.get(DOMAIN, {}).get("casa", {})
+    if "sezione" in msg:
+        connection.send_result(msg["id"], {"sezione": msg["sezione"], **_sezione(casa, msg["sezione"])})
+    else:
+        connection.send_result(msg["id"], {"sezioni": {k: _sezione(casa, k) for k in casa}})
+
+
+@websocket_api.websocket_command({
+    vol.Required("type"): f"{DOMAIN}/casa_save",
+    vol.Required("sezione"): SEZIONE,
+    vol.Required("dati"): dict,
+    vol.Optional("rev"): vol.All(int, vol.Range(min=0)),
+})
+@websocket_api.async_response
+async def ws_casa_save(hass: HomeAssistant, connection, msg) -> None:
+    """Qualsiasi utente salva una sezione intera. Con «rev» il salvataggio riesce solo se nessuno
+    l'ha cambiata nel frattempo; altrimenti «conflict» e la plancia rilegge e riprova."""
+    data = hass.data.get(DOMAIN, {})
+    store, casa = data.get("casa_store"), data.get("casa")
+    if store is None or casa is None:
+        connection.send_error(msg["id"], "not_ready", "'Nduja Dashboard non è configurata")
+        return
+    nome, prima = msg["sezione"], _sezione(casa, msg["sezione"])
+    if "rev" in msg and msg["rev"] != prima["rev"]:
+        connection.send_error(msg["id"], "conflict", f"rev {prima['rev']}")
+        return
+    if nome not in casa and len(casa) >= CASA_MAX_SEZIONI:
+        connection.send_error(msg["id"], "too_many", f"max {CASA_MAX_SEZIONI}")
+        return
+    try:
+        peso = len(json.dumps(msg["dati"], ensure_ascii=False, separators=(",", ":")).encode())
+    except (TypeError, ValueError):
+        connection.send_error(msg["id"], "invalid_format", "dati non validi")
+        return
+    if peso > CASA_MAX_BYTES:
+        connection.send_error(msg["id"], "too_big", f"{peso} > {CASA_MAX_BYTES} byte")
+        return
+    rev = prima["rev"] + 1
+    casa[nome] = {"rev": rev, "dati": msg["dati"]}   # cambio in memoria subito: il controllo di rev resta valido
+    await store.async_save(casa)
+    hass.bus.async_fire(EVENT_CASA, {"sezione": nome, "rev": rev, "user_id": connection.user.id})
+    connection.send_result(msg["id"], {"sezione": nome, "rev": rev})
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/casa_subscribe"})
+@callback
+def ws_casa_subscribe(hass: HomeAssistant, connection, msg) -> None:
+    """Avvisa la plancia quando qualcuno cambia i dati della casa. Serve un comando apposta perché
+    Home Assistant non lascia ascoltare gli eventi qualsiasi agli utenti che non sono amministratori."""
+
+    @callback
+    def inoltra(event) -> None:
+        connection.send_message(websocket_api.event_message(msg["id"], dict(event.data)))
+
+    connection.subscriptions[msg["id"]] = hass.bus.async_listen(EVENT_CASA, inoltra)
+    connection.send_result(msg["id"])

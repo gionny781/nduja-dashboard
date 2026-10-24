@@ -3,6 +3,20 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.21-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+> ⚠️ 🇮🇹 Dopo l'aggiornamento **riavvia Home Assistant**: cambia anche la parte in Python. · 🇬🇧 After updating **restart Home Assistant**: the Python part changes too.
+- 🇮🇹 **🧹 Faccende** (pagina nuova): i lavori di casa, ognuno con nome, icona, **ogni quanti giorni** va fatto, **a chi tocca** tra le persone di Home Assistant (**a turno**, nell'ordine scelto, oppure **sempre la stessa persona**, oppure chiunque) e l'**ultima volta** che è stato fatto. Divisi in «In ritardo», «Oggi» e «Prossimi giorni», con una barra che si riempie fino alla scadenza.
+- 🇮🇹 **«Fatto»** registra chi e quando e passa il turno a chi viene dopo. Se il tuo utente è collegato a una persona lo segno a nome tuo; dal tablet di casa (o da un utente senza persona) ti chiedo chi l'ha fatto. Con ✏️ trovi «Fatto da…» per un'altra persona, **«Annulla l'ultimo Fatto»** e le ultime volte. «Le mie» mostra solo quelle che toccano a te.
+- 🇮🇹 In **Home** la scheda **«Faccende di oggi»** (prima le tue, poi quelle in ritardo) con «Fatto» a portata di dito; si nasconde con ✏️ Modifica o per persona, come le altre.
+- 🇮🇹 Con l'elenco vuoto la pagina propone **qualche esempio** (bagno, aspirapolvere, spazzatura, lenzuola…): li aggiungi solo se li scegli tu.
+- 🇮🇹 **Dati condivisi**: le faccende valgono su tutti i dispositivi e le può aggiungere, cambiare e segnare **qualsiasi utente**, non solo gli amministratori. Sono salvate in Home Assistant a parte rispetto alle scelte della plancia; se due persone salvano insieme nessuna cancella il lavoro dell'altra, e gli altri dispositivi si aggiornano subito. Serviranno anche alla Bacheca.
+- 🇬🇧 **🧹 Chores** (new page): household chores, each with name, icon, **how often** (days), **whose turn** among Home Assistant people (**taking turns** in the chosen order, **always the same person**, or anyone) and the **last time** it was done. Grouped as «Overdue», «Today» and «Coming up», with a bar filling up until it's due.
+- 🇬🇧 **«Done»** records who and when and passes the turn to the next person. If your user is linked to a person it's recorded as you; from the shared tablet (or a user without a person) I ask who did it. ✏️ has «Done by…» for someone else, **«Undo the last Done»** and the recent history. «Mine» shows only the ones that are your turn.
+- 🇬🇧 On **Home**, the **«Today's chores»** card (yours first, then overdue ones) with «Done» right there; hide it with ✏️ Edit or per person, like the others.
+- 🇬🇧 With an empty list the page offers **a few examples** (bathroom, vacuuming, rubbish, sheets…): they're added only if you pick them.
+- 🇬🇧 **Shared data**: chores are the same on every device and **any user** can add, change and mark them, not just admins. They're stored in Home Assistant separately from the dashboard choices; if two people save at the same time neither loses the other's change, and other devices update right away. The Notice board will use them too.
+
 ## 0.7.20-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 - 🇮🇹 **Accessi** in 🛡️ Sicurezza: una scheda nuova per cancello, cancelletto, porta del garage, portone e porte. Ci finiscono da sole le cover di tipo cancello, garage e porta e le serrature (che prima avevano la scheda «Serrature»).

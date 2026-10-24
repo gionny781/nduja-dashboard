@@ -63,3 +63,13 @@ body.light .ac1:is(.st-opening,.st-closing){background:rgba(10,132,255,.06)!impo
 body.light .ack1 button.on{background:rgba(10,132,255,.14)!important}
 body.light .ac1.st-jammed{background:rgba(255,69,58,.07)!important;border-color:rgba(255,69,58,.45)!important}
 body.light .ach1>div.st-open{border-color:rgba(230,130,0,.4)!important}body.light .ach1>div:is(.st-opening,.st-closing){border-color:rgba(10,132,255,.4)!important}
+/* faccende: colori dello stato più pieni sul chiaro, iniziali bianche sugli avatar */
+body.light .fk1.s-ritardo{background:rgba(255,69,58,.07)!important;border-color:rgba(255,69,58,.42)!important}
+body.light .fk1.s-oggi{background:rgba(255,159,10,.08)!important;border-color:rgba(230,130,0,.4)!important}
+body.light .fkh1.s-ritardo{border-color:rgba(255,69,58,.4)!important}
+body.light .fka1{color:#fff!important;background-color:#8e8e93;border-color:rgba(0,0,0,.1)!important}body.light .fka1.nn{color:#1c1c1e!important}
+body.light .fk1.fatto .fki1::after{color:#fff!important;border-color:#fff}
+body.light .fkp1.me>span:last-child,body.light .fkw1.sel button.on small{color:#0a6fd6}
+body.light .fkx1{background:rgba(48,209,88,.14)!important;border-color:rgba(31,158,69,.5)!important;color:#1f9e45}
+body.light .s-oggi em{color:#d27400}body.light .fk1.fatto em,body.light .fkok1>span{color:#1f9e45}
+body.light .fkw1.sel button.on{background:rgba(10,132,255,.12)!important}
