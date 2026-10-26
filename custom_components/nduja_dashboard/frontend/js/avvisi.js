@@ -90,6 +90,8 @@ const TIPI_N = () => [
   ["porta", "🚪 " + t("Porta o finestra aperta da più di 10 minuti", "Door or window open for over 10 minutes")],
   ["elettro", "🧺 " + t("Elettrodomestico finito", "Appliance done")],
   ["batteria", "🪫 " + t("Pila sotto il 15%", "Battery below 15%")],
+  ["pioggia", "🌧️ " + t("Inizia a piovere con finestre aperte", "Rain starts with windows open")],
+  ["aggiornamento", "⬆️ " + t("Nuovo aggiornamento disponibile", "New update available")],
 ];
 const servizi = () => { const s = cached("services", 3600e3, () => ws({ type: "get_services" })) || {}; return Object.keys(s.notify || {}).filter(k => !["send_message", "persistent_notification", "notify"].includes(k)).sort(); };
 let NB = null;
@@ -109,9 +111,12 @@ function automazione(c) {
   const op = ents("binary_sensor", id => ["door", "window", "garage_door", "opening"].includes(deviceClass(id))); if (tipo("porta") && op.length) T.push({ trigger: "state", entity_id: op, to: "on", for: { minutes: 10 }, id: "porta" });
   const el = elettro(); if (tipo("elettro") && el.length) T.push({ trigger: "numeric_state", entity_id: el, below: 5, for: { minutes: 3 }, id: "elettro" });
   const bt = ents("sensor", id => deviceClass(id) === "battery"); if (tipo("batteria") && bt.length) T.push({ trigger: "numeric_state", entity_id: bt, below: 15, id: "batteria" });
-  const msg = "{% set n = trigger.to_state.name %}{% if trigger.id == 'pericolo' %}🚨 {{ n }}: " + t("rilevato!", "detected!") + "{% elif trigger.id == 'allarme' %}🚨 " + t("Allarme scattato", "Alarm triggered") + ": {{ n }}{% elif trigger.id == 'porta' %}🚪 {{ n }} " + t("aperta da 10 minuti", "open for 10 minutes") + "{% elif trigger.id == 'elettro' %}🧺 {{ n | regex_replace('(?i)\\s*(power|potenza|consumo)$', '') }} " + t("ha finito", "is done") + "{% else %}🪫 {{ n }} " + t("al", "at") + " {{ trigger.to_state.state }}%{% endif %}";
+  const fin = ents("binary_sensor", id => deviceClass(id) === "window"), w = weatherEnt();
+  if (tipo("pioggia") && fin.length && w) T.push({ trigger: "state", entity_id: w, to: ["rainy", "pouring", "lightning-rainy", "hail", "snowy-rainy"], not_from: ["rainy", "pouring", "lightning-rainy", "hail", "snowy-rainy"], id: "pioggia" });
+  const up = allEnts("update"); if (tipo("aggiornamento") && up.length) T.push({ trigger: "state", entity_id: up, from: "off", to: "on", id: "aggiornamento" });
+  const msg = "{% set n = trigger.to_state.name %}{% if trigger.id == 'pericolo' %}🚨 {{ n }}: " + t("rilevato!", "detected!") + "{% elif trigger.id == 'allarme' %}🚨 " + t("Allarme scattato", "Alarm triggered") + ": {{ n }}{% elif trigger.id == 'porta' %}🚪 {{ n }} " + t("aperta da 10 minuti", "open for 10 minutes") + "{% elif trigger.id == 'elettro' %}🧺 {{ n | regex_replace('(?i)\\s*(power|potenza|consumo)$', '') }} " + t("ha finito", "is done") + "{% elif trigger.id == 'pioggia' %}🌧️ " + t("Inizia a piovere e ci sono finestre aperte", "It's starting to rain and windows are open") + "{% elif trigger.id == 'aggiornamento' %}⬆️ " + t("Aggiornamento disponibile", "Update available") + ": {{ state_attr(trigger.entity_id, 'title') or n }} {{ state_attr(trigger.entity_id, 'latest_version') or '' }}{% else %}🪫 {{ n }} " + t("al", "at") + " {{ trigger.to_state.state }}%{% endif %}";
   return { id: "nduja_avvisi", alias: "'Nduja · " + t("avvisi sul telefono", "phone alerts"), description: t("Creata da 'Nduja Dashboard (Home → Avvisi → 📱)", "Created by 'Nduja Dashboard (Home → Alerts → 📱)"),
-    triggers: T, conditions: [], actions: c.servizi.map(s => ({ action: "notify." + s, data: { title: "🌶️ 'Nduja", message: msg } })), mode: "queued", max: 20 };
+    triggers: T, conditions: fin.length && tipo("pioggia") ? [{ condition: "template", value_template: "{{ trigger.id != 'pioggia' or " + JSON.stringify(fin) + " | select('is_state', 'on') | list | count > 0 }}" }] : [], actions: c.servizi.map(s => ({ action: "notify." + s, data: { title: "🌶️ 'Nduja", message: msg } })), mode: "queued", max: 20 };
 }
 Object.assign(ACT, {
   avNotif: () => { NB = JSON.parse(JSON.stringify(LAYOUT.notifiche || { servizi: [], tipi: {} })); NB.tipi = NB.tipi || {}; openSheet(schedaNotifiche); },

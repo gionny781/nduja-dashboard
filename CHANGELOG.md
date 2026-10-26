@@ -3,6 +3,10 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.29-dev1
+- 🇮🇹 **Avvisi sul telefono** (Home → Avvisi → 📱): due avvisi nuovi, **pioggia che inizia con finestre aperte** e **nuovo aggiornamento disponibile**. Come gli altri si accendono e spengono uno per uno; per chi li ha già attivi basta riaprire 📱 e premere «Salva».
+- 🇬🇧 **Phone alerts** (Home → Alerts → 📱): two new alerts, **rain starting with windows open** and **new update available**. Like the others, each can be turned on or off; if you already use them, reopen 📱 and press «Save».
+
 ## 0.7.29-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 - 🇮🇹 **🔎 Music Assistant**: se è installata, nella pagina Musica cerchi **brani, artisti, album, playlist e radio** (tutto insieme o un tipo alla volta) e li fai partire con un tocco sulla sua cassa. Con **⋯** scegli «Dopo questo», «Aggiungi alla coda» o **📻 Radio da qui** (musica simile senza fine, dove il servizio lo permette). Se «Dove ascolti» non è una cassa di Music Assistant, scegli su quale suonare.
