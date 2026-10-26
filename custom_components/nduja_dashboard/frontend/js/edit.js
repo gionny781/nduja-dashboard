@@ -2,7 +2,7 @@
    «＋ Aggiungi» apre l'elenco dei dispositivi di quel tipo con la ricerca, «✏️» su un elemento cambia nome e stanza,
    «✕» lo toglie dalla plancia. Ogni modifica si salva subito in Home Assistant. */
 import { S, AREAS, FLOORS, REG, ACT, LAYOUT, UI, t, LOC, esc, nm, nmHA, ok, attr, allEnts, areaOf, areasSorted, excluded,
-  isManual, defaultOff, saveLayout, render, toast, openSheet, closeSheet, domain, deviceClass, OPENING } from "./core.js";
+  isManual, defaultOff, saveLayout, render, toast, openSheet, closeSheet, domain, deviceClass, OPENING, VISTE } from "./core.js";
 import { suggeriti, segnaVisti } from "./novita.js";
 
 const copia = () => JSON.parse(JSON.stringify(LAYOUT));
@@ -72,6 +72,7 @@ function scheda(id, pid) {
     <label class="fld1"><span>${t("Nome nella plancia", "Name in the dashboard")}</span><input id="ed1n" type="text" value="${esc(LAYOUT.names?.[id] || "")}" placeholder="${esc(nmHA(id))}"></label>
     <label class="fld1"><span>${t("Stanza", "Room")}</span><select id="ed1r"><option value="">${haArea && AREAS[haArea] ? t("Come in Home Assistant", "As in Home Assistant") + ` (${esc(AREAS[haArea].name)})` : t("Nessuna stanza", "No room")}</option>
       ${areasSorted(true).map(a => `<option value="${a}" ${r === a ? "selected" : ""}>${esc(AREAS[a].name)}${FLOORS[AREAS[a].floor] ? " · " + esc(FLOORS[AREAS[a].floor].name) : ""}</option>`).join("")}</select></label>
+    ${domain(id) === "climate" && VISTE.climaRiga ? `<div class="stack" style="margin-top:12px">${VISTE.climaRiga(id)}</div>` : ""}
     <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn pri" data-act="edSave" data-id="${id}">💾 ${t("Salva", "Save")}</button>
       <button class="btn bad" data-act="edDel" data-id="${id}" data-page="${pid}">✕ ${t("Togli dalla plancia", "Remove from dashboard")}</button></div>
     <p class="small muted" style="margin-top:12px">${t("Il nome e la stanza cambiano solo nella plancia, non in Home Assistant.", "Name and room change only in the dashboard, not in Home Assistant.")}</p>`;

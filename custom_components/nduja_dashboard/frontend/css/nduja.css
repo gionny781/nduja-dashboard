@@ -651,6 +651,103 @@ a.btn{color:var(--tx);text-decoration:none}.car-c.on{background:rgba(10,132,255,
   .apd1.st-on .bolle circle,.apd1.st-on .gocce circle,.apd1.st-on .fz,.apd1.st-on .pel circle{opacity:.8}
   .apd1.st-on .vap path,.apd1.st-on .trem path{opacity:.6}.apd1.st-on .alfr{opacity:.2}.apd1.st-on .nebbia rect{opacity:.1}.apd1.st-on .ledr{opacity:.5}
   .apd1.st-done .spk path{opacity:.9}}
+/* ---------- clima animato (js/climadisegni.js): spento, raffresca, scalda, deumidifica, ventila; --cv = velocità della ventola ---------- */
+.clh1{gap:12px;min-width:0;flex-wrap:nowrap}.clt1{min-width:0}
+.apv1.cl{--s:64px}
+.cld1{width:100%;height:100%;overflow:visible;--cc:var(--aps)}
+.cld1.m-cool{--cc:#64d2ff}.cld1.m-heat{--cc:#ff8a3d}.cld1.m-dry{--cc:#3fdcc4}.cld1.m-fan{--cc:#b8c6d6}
+.cld1 .b{fill:var(--apb);stroke:var(--aps);stroke-width:2;transition:stroke .4s}
+.cld1:not(.m-off) .b{stroke:var(--cc)}
+.cld1 .hl{fill:none;stroke:var(--aph);stroke-width:2;stroke-linecap:round}
+.cld1 .gl{fill:var(--apin);stroke:var(--aps);stroke-width:1.2}
+.cld1 .k2{fill:var(--apk);opacity:.55}
+.cld1 .hub{fill:var(--aps)}
+.cld1 .rot{transform-origin:23px 31px}.cld1 .rot path{fill:var(--apk);opacity:.55}
+.cld1 .dsp{fill:var(--apk);opacity:.16;transition:opacity .4s}.cld1 .dsx{fill:var(--apk);opacity:.3}
+.cld1:not(.m-off) .dsp{fill:var(--cc);opacity:.85}.cld1:not(.m-off) .dsx{fill:#ffffff;opacity:.9}
+.cld1 .out{fill:var(--apin)}
+.cld1 .van{transform-origin:50px 43.5px}.cld1 .van path{fill:none;stroke:var(--apk);stroke-width:1.4;stroke-linecap:round}
+.cld1 .flap{fill:var(--apk);opacity:.55;transform-origin:50px 47px;transform:scaleY(.45);transition:transform .6s}
+.cld1:not(.m-off) .flap{fill:var(--cc);opacity:.85;transform:scaleY(1)}
+.cld1 .aria path,.cld1 .ond path{fill:none;stroke:var(--cc);stroke-width:2.4;stroke-linecap:round;opacity:0}
+.cld1 .aria path{stroke-dasharray:5 7}.c-split .ond path{stroke-dasharray:4 6}
+.cld1 .alo,.cld1 .alo2{opacity:0}.cld1 .alo *,.cld1 .alo2 *{fill:var(--cc);opacity:.34}
+.cld1 .fz{fill:none;stroke:var(--cc);stroke-width:1.5;stroke-linecap:round;opacity:0;transform-box:fill-box;transform-origin:center}
+.cld1 .gc{fill:var(--cc);opacity:0}
+/* termostato */
+.cld1 .trk,.cld1 .arc{fill:none;stroke-width:3.6;stroke-linecap:round;transform:rotate(135deg);transform-origin:50px 52px}
+.cld1 .trk{stroke:var(--apin);stroke-dasharray:75 100}
+.cld1 .arc{stroke:var(--cc);stroke-dasharray:0 100;opacity:0;transition:stroke-dasharray .8s,opacity .4s}
+.cld1:not(.m-off) .arc{stroke-dasharray:75 100;opacity:1}
+.cld1 .tip{fill:var(--apk);opacity:.4}.cld1:not(.m-off) .tip{fill:var(--cc);opacity:1}
+.cld1 .pw,.cld1 .fia,.cld1 .fzc,.cld1 .gcc1,.cld1 .rc{display:none}
+.cld1 .pw path{fill:none;stroke:var(--apk);stroke-width:2.6;stroke-linecap:round}
+.cld1 .fia{transform-origin:50px 66px}.cld1 .fia .fl1{fill:var(--cc)}.cld1 .fia .fl2{fill:#ffd36b;transform-origin:50px 64px}
+.cld1 .fzc{transform-origin:50px 52px}.cld1 .fzc path{fill:none;stroke:var(--cc);stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
+.cld1 .gcc1{fill:var(--cc)}
+.cld1 .rot.rc{transform-origin:50px 52px}.cld1 .rc path{fill:var(--cc);opacity:.9}
+.c-termostato.m-off .pw,.c-termostato.m-heat .fia,.c-termostato.m-cool .fzc,.c-termostato.m-dry .gcc1,.c-termostato.m-fan .rc{display:inline}
+/* radiatore */
+.cld1 .cal{fill:var(--cc);opacity:0;transition:opacity .6s}
+.cld1 .vlv{fill:var(--apg);stroke:var(--aps);stroke-width:1.6}
+/* acceso: le animazioni */
+.cld1:not(.m-off) .rot{animation:clGira calc(1.5s * var(--cv,1)) linear infinite}
+.cld1.m-fan .rot path{fill:var(--cc);opacity:.95}.c-split.m-fan .rot{animation-duration:calc(.8s * var(--cv,1))}
+.c-split:not(.m-off) .van{animation:clAlette calc(3.4s * var(--cv,1)) ease-in-out infinite}
+.c-split:not(.m-off) .flap{animation:clFlap calc(4.2s * var(--cv,1)) ease-in-out infinite}
+.cld1:not(.m-off) .alo{animation:clAlo calc(3.2s * var(--cv,1)) ease-in-out infinite}
+.c-split:is(.m-cool,.m-dry,.m-fan) .aria path{opacity:.9;animation:clFlusso calc(1.1s * var(--cv,1)) linear infinite}
+.c-split.m-dry .aria path{opacity:.5}.c-split.m-fan .aria path{opacity:.75}
+.c-split.m-heat .ond path{opacity:.9;animation:clOndaGiu calc(1.2s * var(--cv,1)) linear infinite}
+.c-split.m-cool .fz{animation:clFiocco calc(3.6s * var(--cv,1)) linear infinite}
+.c-split.m-dry .gc{animation:clGoccia calc(1.8s * var(--cv,1)) ease-in infinite}
+.cld1 .f1{animation-delay:calc(-.7s * var(--cv,1))!important}.cld1 .f2{animation-delay:calc(-1.5s * var(--cv,1))!important}
+.cld1 .f3{animation-delay:calc(-2.2s * var(--cv,1))!important}.cld1 .f4{animation-delay:calc(-2.9s * var(--cv,1))!important}
+.cld1 .g1{animation-delay:calc(-.45s * var(--cv,1))!important}.cld1 .g2{animation-delay:calc(-.9s * var(--cv,1))!important}.cld1 .g3{animation-delay:calc(-1.35s * var(--cv,1))!important}
+.c-termostato:not(.m-off) .alo2{animation:clAlo calc(3.2s * var(--cv,1)) ease-in-out infinite}
+.c-termostato:not(.m-off) .arc{animation:clRespira calc(3.2s * var(--cv,1)) ease-in-out infinite}
+.c-termostato.m-heat .fia{animation:clFiamma calc(1.6s * var(--cv,1)) ease-in-out infinite}.c-termostato.m-heat .fia .fl2{animation:clFiamma calc(1.1s * var(--cv,1)) ease-in-out infinite reverse}
+.c-termostato.m-cool .fzc{animation:clGira calc(14s * var(--cv,1)) linear infinite}
+.c-termostato.m-dry .gcc1{animation:clBob calc(2s * var(--cv,1)) ease-in-out infinite}
+.c-radiatore:not(.m-off) .b{stroke:var(--cc)}
+.c-radiatore:not(.m-off) .cal{animation:clCalore calc(2.8s * var(--cv,1)) ease-in-out infinite}
+.cld1 .cal.c1{animation-delay:calc(-.3s * var(--cv,1))}.cld1 .cal.c2{animation-delay:calc(-.6s * var(--cv,1))}.cld1 .cal.c3{animation-delay:calc(-.9s * var(--cv,1))}.cld1 .cal.c4{animation-delay:calc(-1.2s * var(--cv,1))}.cld1 .cal.c5{animation-delay:calc(-1.5s * var(--cv,1))}
+.c-radiatore:not(.m-off) .ond path{animation:clSale calc(2.6s * var(--cv,1)) ease-out infinite}
+.c-radiatore .ond .o1{animation-delay:calc(-.9s * var(--cv,1))!important}.c-radiatore .ond .o2{animation-delay:calc(-1.7s * var(--cv,1))!important}
+/* acceso ma a riposo (temperatura raggiunta): colorato ma fermo */
+.cld1.rest *{animation:none!important}
+.c-split.rest:is(.m-cool,.m-dry,.m-fan) .aria path,.c-split.rest.m-heat .ond path,.c-radiatore.rest:not(.m-off) .ond path{opacity:.28}.cld1.rest .fz,.cld1.rest .gc{opacity:0!important}
+.cld1.rest .alo,.cld1.rest .alo2{opacity:.1}.cld1.rest .cal{opacity:.18}
+@keyframes clGira{to{transform:rotate(360deg)}}
+@keyframes clAlette{0%,100%{transform:skewX(-22deg)}50%{transform:skewX(22deg)}}
+@keyframes clFlap{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.62)}}
+@keyframes clAlo{0%,100%{opacity:.12}50%{opacity:.38}}
+@keyframes clFlusso{to{stroke-dashoffset:-24}}
+@keyframes clOndaGiu{to{stroke-dashoffset:20}}
+@keyframes clFiocco{0%{opacity:0;transform:translateY(-6px) rotate(0)}20%{opacity:1}100%{opacity:0;transform:translateY(13px) rotate(90deg)}}
+@keyframes clGoccia{0%{opacity:0;transform:translateY(-4px)}20%{opacity:.95}100%{opacity:0;transform:translateY(16px)}}
+@keyframes clRespira{0%,100%{opacity:1}50%{opacity:.55}}
+@keyframes clFiamma{0%,100%{transform:scale(1,1) skewX(0)}30%{transform:scale(.95,1.07) skewX(-3deg)}65%{transform:scale(1.04,.95) skewX(2.5deg)}}
+@keyframes clBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes clCalore{0%,100%{opacity:.16}50%{opacity:.5}}
+@keyframes clSale{0%{opacity:0;transform:translateY(6px)}40%{opacity:.85}100%{opacity:0;transform:translateY(-9px)}}
+/* piccolo (stanze della Home e mappa): tratti più spessi, solo l'essenziale */
+.apv1.xs .cld1 .b{stroke-width:5}.apv1.xs .cld1 .hl,.apv1.xs .cld1 .van path{stroke-width:3.4}.apv1.xs .cld1 .aria path,.apv1.xs .cld1 .ond path{stroke-width:4.4}
+.apv1.xs .cld1 .trk,.apv1.xs .cld1 .arc{stroke-width:6}.apv1.xs .cld1 .fz{stroke-width:3}.apv1.xs .cld1 .fzc path,.apv1.xs .cld1 .pw path{stroke-width:4}
+.apv1.sm .cld1 .b{stroke-width:2.8}
+.cli1{display:inline-grid;place-items:center;width:100%;height:100%;font-size:inherit}.cli1.m-off{opacity:.42;filter:grayscale(1)}
+/* pagina Clima, foglio ✏️, stanze della Home e mappa */
+.clim .apv1.cl{border-radius:18px}
+.cla1 .apv1{margin-right:2px}
+.clv5{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}.clv5>div{padding:8px 2px;font-size:11.5px}.clv5 .apv1{--s:58px}
+.clv5 em{display:block;font-style:normal;font-size:10.5px;color:#5eb0ff;margin-top:1px}
+.rm1 .ri i.clr1{display:inline-flex;align-items:center;padding:1px 6px;line-height:0}.rm1 .ri i.clr1 .apv1{--s:18px}
+.mpd2.cl2 button{padding:1px 3px;line-height:0}.mpd2.cl2.m-cool{background:rgba(100,210,255,.3)}.mpd2.cl2.m-heat{background:rgba(255,138,61,.3)}.mpd2.cl2.m-dry{background:rgba(63,220,196,.28)}.mpd2.cl2.m-fan{background:rgba(184,198,214,.28)}
+@media (max-width:560px){.apv1.cl{--s:56px}.clv5 .apv1{--s:46px}.clv5{gap:4px}.clv5>div{font-size:10.5px}}
+@media (prefers-reduced-motion:reduce){
+  .cld1 *{animation:none!important;transition:none!important}
+  .c-split:is(.m-cool,.m-dry,.m-fan):not(.rest) .aria path,.c-split.m-heat:not(.rest) .ond path{opacity:.8}.c-split.m-cool:not(.rest) .fz,.c-split.m-dry:not(.rest) .gc{opacity:.85}
+  .cld1:not(.m-off):not(.rest) :is(.alo,.alo2){opacity:.24}.c-radiatore:not(.m-off):not(.rest) .cal{opacity:.35}.c-radiatore:not(.m-off):not(.rest) .ond path{opacity:.7}}
 /* 🩺 Controlla Home Assistant (Impostazioni) */
 .hc1 .ch{flex-wrap:wrap}
 .hc2{display:flex;align-items:flex-start;gap:11px;padding:11px 13px;border-radius:18px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.06)}

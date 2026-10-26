@@ -1,4 +1,4 @@
-/* Clima: termostati e condizionatori per stanza, più temperatura e umidità di ogni stanza. */
+/* Clima: termostati e condizionatori per stanza (animati o con le tue immagini, vedi climadisegni.js), più temperatura e umidità di ogni stanza. */
 import { S, AREAS, UI, t, esc, fnum, ok, ents, areaOf, areasSorted, roomTemp, roomHum, climateCard, entityRow, card, empty, page, isAdmin } from "../core.js";
 import { item, addBtn } from "../edit.js";
 
@@ -10,7 +10,7 @@ function pagina() {
   const adm = isAdmin();
   return `<div class="g g3">
     ${zone.map(a => card(esc(a === "_" ? t("Senza stanza", "No room") : AREAS[a]?.name || a), `<div class="stack">${C.filter(id => (areaOf(id) || "_") === a).map(id => item(id, climateCard(id))).join("")}${addBtn(["climate"], { area: a === "_" ? "" : a })}</div>`, { right: UI.edit && a !== "_" ? `<button class="btn sm" data-act="rmEdit" data-id="${a}">✏️ ${t("Stanza", "Room")}</button>` : "" })).join("")}
-    ${!C.length ? card("🌡️ " + t("Clima", "Climate"), (UI.edit ? "" : empty(t("Nessun climatizzatore: premi ✏️ Modifica in alto per aggiungerne uno.", "No climate devices: press ✏️ Edit at the top to add one."))) + addBtn(["climate"], { big: true })) : UI.edit ? `<section class="card">${addBtn(["climate"], { big: true, label: t("Aggiungi climatizzatore", "Add climate device") })}</section>` : ""}
+    ${!C.length ? card("🌡️ " + t("Clima", "Climate"), (UI.edit ? "" : empty(t("Nessun climatizzatore: premi ✏️ Modifica in alto per aggiungerne uno.", "No climate devices: press ✏️ Edit at the top to add one."))) + addBtn(["climate"], { big: true })) : UI.edit ? `<section class="card">${addBtn(["climate"], { big: true, label: t("Aggiungi climatizzatore", "Add climate device") })}<p class="small muted" style="margin-top:10px;line-height:1.45">${t("✏️ su un climatizzatore: nome, stanza e 🎞️ aspetto (animazioni della plancia, le tue immagini o GIF, oppure l'icona).", "✏️ on a climate device: name, room and 🎞️ look (dashboard animations, your images or GIFs, or the icon).")}</p></section>` : ""}
     ${stanze.length ? card("🌡️ " + t("Temperature in casa", "Indoor temperatures"), `<div class="stack">${stanze.map(r => {
       const w = r.T == null || tmax === tmin ? 0 : (r.T - tmin) / (tmax - tmin);
       return `<${adm ? `button data-act="rmEdit" data-id="${r.a}"` : "div"} class="row between tr1 ${adm ? "tap1" : ""}"><span>${esc(AREAS[r.a].name)}${UI.edit ? " ✏️" : ""}</span><span class="bar1"><i style="width:${(15 + w * 85).toFixed(0)}%;background:${w > .66 ? "var(--orange)" : w < .33 ? "var(--teal)" : "var(--green)"}"></i></span>

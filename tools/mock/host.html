@@ -20,7 +20,13 @@ const ENT = {
   "weather.forecast_casa": st("rainy", { friendly_name: "Forecast Casa", temperature: 19, humidity: 80, wind_speed: 12, wind_speed_unit: "km/h" }),
   "light.soggiorno": st("on", { friendly_name: "Luce soggiorno", brightness: 200 }),
   "light.cucina": st("off", { friendly_name: "Luce cucina" }),
-  "climate.soggiorno": st("cool", { friendly_name: "Clima soggiorno", current_temperature: 25, temperature: 23, hvac_modes: ["off","cool","heat"] }),
+  "climate.soggiorno": st("cool", { friendly_name: "Clima soggiorno", current_temperature: 25, temperature: 23, hvac_modes: ["off","cool","heat","dry","fan_only","auto"], hvac_action: "cooling", fan_mode: "high", fan_modes: ["auto","low","medium","high"] }),
+  /* clima animato (0.7.25): split che scalda piano, termostato, radiatore a riposo, deumidificatore, split spento */
+  "climate.cucina": st("heat", { friendly_name: "Split cucina", current_temperature: 19.5, temperature: 21, hvac_modes: ["off","cool","heat","dry","fan_only"], fan_mode: "low", fan_modes: ["low","medium","high"] }),
+  "climate.termostato_corridoio": st("heat", { friendly_name: "Termostato corridoio", current_temperature: 19.8, temperature: 20.5, hvac_modes: ["off","heat"], hvac_action: "heating" }),
+  "climate.radiatore_lavanderia": st("heat", { friendly_name: "Radiatore lavanderia", current_temperature: 21.2, temperature: 21, hvac_modes: ["off","heat"], hvac_action: "idle" }),
+  "climate.deumidificatore_lavanderia": st("dry", { friendly_name: "Deumidificatore lavanderia", current_temperature: 21, hvac_modes: ["off","dry","fan_only"], fan_mode: "2", fan_modes: ["1","2","3"] }),
+  "climate.camera_ospiti": st("off", { friendly_name: "Clima esterno veranda", current_temperature: 17, temperature: 22, hvac_modes: ["off","cool","heat","fan_only"] }),
   "binary_sensor.finestra_soggiorno": st("on", { device_class: "window", friendly_name: "Finestra soggiorno" }, 1500),
   "binary_sensor.porta_ingresso": st("on", { device_class: "door", friendly_name: "Porta ingresso" }, 1500),
   "sensor.temp_soggiorno": st("22.4", { device_class: "temperature", unit_of_measurement: "°C", friendly_name: "Temperatura soggiorno", state_class: "measurement" }),
@@ -137,7 +143,7 @@ const EV = {
   "calendar.raccolta_differenziata": [{ start: dstr(2), end: dstr(3), summary: "Plastica e Metalli" }, { start: dstr(3), end: dstr(4), summary: "Indifferenziato" }],
 };
 let LAYOUT = JSON.parse(localStorage.getItem("mockLayout") || '{"configured":true,"mode":"auto","energy":{"pv":["sensor.inverter_pv1_power","sensor.inverter_pv2_power","sensor.inverter_pv3_power"]}}');
-const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_sogg/.test(id) ? "soggiorno" : /echo_cucina/.test(id) ? "cucina" : /soggiorno/.test(id) ? "soggiorno" : /^(cover\.(cancello|garage|basculante)|switch\.cancellett|binary_sensor\.cancellett|button\.portone|camera\.(cortile|giardino|campanello))/.test(id) ? "esterno" : /corridoio|porta|ariston/.test(id) ? "corridoio" : /cucina/.test(id) ? "cucina" : /lavatric|asciugatric/.test(id) ? "lavanderia" : /forno|frigo|lavastov/.test(id) ? "cucina" : null,
+const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_sogg/.test(id) ? "soggiorno" : /echo_cucina/.test(id) ? "cucina" : /soggiorno/.test(id) ? "soggiorno" : /^(cover\.(cancello|garage|basculante)|switch\.cancellett|binary_sensor\.cancellett|button\.portone|camera\.(cortile|giardino|campanello))/.test(id) ? "esterno" : /corridoio|porta|ariston/.test(id) ? "corridoio" : /cucina/.test(id) ? "cucina" : /lavatric|asciugatric|lavanderia/.test(id) ? "lavanderia" : /forno|frigo|lavastov/.test(id) ? "cucina" : null,
   hb: id === "camera.cantina" || undefined,
   pl: id.includes("model_3") ? "tesla_fleet" : undefined, di: id.includes("model_3") ? "dev_car" : id.startsWith("camera.campanello") ? "dev_bell" : id.startsWith("camera.giardino") ? "dev_reo" : id.startsWith("camera.cortile") ? "dev_cort" : id.includes("ambrogio") ? "dev_v" : id.includes("mario") ? "dev_g" : id.includes("anna") ? "dev_c" : id.includes("ariston") ? "dev_a" : null })) };
 /* telecamere: mockCam = "webrtc" (predefinito: diretta vera via WebRTC dentro il browser) | "webrtc_ko" (WebRTC fallisce, poi HLS)

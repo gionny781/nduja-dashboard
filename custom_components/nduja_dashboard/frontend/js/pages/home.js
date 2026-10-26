@@ -10,6 +10,7 @@ import { agendaCard } from "./calendario.js";
 import { momentiCard } from "../momenti.js";
 import { musicaCard } from "./musica.js";
 import { novitaHome } from "../novita.js";
+import { vistaClima, momentoClima } from "../climadisegni.js";
 
 const saluto = () => { const h = new Date().getHours(); return h < 6 ? t("Buonanotte", "Good night") : h < 13 ? t("Buongiorno", "Good morning") : h < 18 ? t("Buon pomeriggio", "Good afternoon") : t("Buonasera", "Good evening"); };
 const climaAttivi = () => ents("climate", id => ok(id) && S[id].state !== "off");
@@ -45,12 +46,12 @@ function meteo() {
 
 function stanza(a) {
   const T = roomTemp(a), H = roomHum(a), L = lightsOn(a).length, O = inArea(a, "binary_sensor", id => ["door", "window", "opening", "garage_door"].includes(deviceClass(id)) && isOn(id)).length;
-  const C = inArea(a, "climate").find(id => ok(id) && S[id].state !== "off"), cool = C && ["cool", "dry"].includes(S[C].state);
+  const C = inArea(a, "climate").find(id => ok(id) && S[id].state !== "off"), mc = C ? momentoClima(C).k : null;
   const nLuci = inArea(a, "light").length;
   return `<button class="rm1 ${L ? "lit" : ""} ${O ? "open" : ""} ${(LAYOUT.hiddenAreas || []).includes(a) ? "off1" : ""}" data-act="room" data-id="${a}">
     <span class="rn">${esc(AREAS[a].name)}</span>
     <span class="rt">${T != null ? fnum(T) + "°" : "—"}${H != null ? `<small>${Math.round(H)}%</small>` : ""}</span>
-    <span class="ri">${nLuci ? `<i class="${L ? "on" : ""}">💡${L ? " " + L : ""}</i>` : ""}${O ? `<i class="al">🪟 ${O}</i>` : ""}${C ? `<i class="${cool ? "cool" : "heat"}">${cool ? "❄️" : "🔥"}</i>` : ""}</span>
+    <span class="ri">${nLuci ? `<i class="${L ? "on" : ""}">💡${L ? " " + L : ""}</i>` : ""}${O ? `<i class="al">🪟 ${O}</i>` : ""}${C ? `<i class="clr1 ${mc === "heat" ? "heat" : mc === "fan" ? "" : "cool"}">${vistaClima(C, "xs")}</i>` : ""}</span>
   </button>`;
 }
 function stanze() {

@@ -5,6 +5,7 @@ import { S, AREAS, FLOORS, ACT, CHG, LAYOUT, UI, t, esc, fnum, ok, isOn, inArea,
   deviceClass, svc, toast, card, empty, page, sGet, sSet, render, isAdmin, attr, openSheet, closeSheet, nm, moreInfo } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 import { elettroMappa } from "./elettrodomestici.js";
+import { vistaClima, momentoClima } from "../climadisegni.js";
 
 const COL = 12;
 /* stanze della mappa: le aree di Home Assistant (anche vuote) più le stanze create solo nella mappa */
@@ -74,8 +75,9 @@ export function dispositivi(a, f) {
   const auto = manuale || !AREAS[a] ? [] : DOM_MAPPA.flatMap(d => inArea(a, d));
   return [...new Set([...auto.filter(id => !(c.hide || []).includes(id)), ...(c.add || []).filter(id => S[id])])];
 }
-const chipD = (id, a, f) => `<span class="mpd2 ${isOn(id) || ["open", "playing", "cleaning", "unlocked"].includes(S[id]?.state) ? "on" : ""}">
-  <button data-act="mpDev" data-id="${id}" title="${esc(nm(id))}">${ICO_D(id)}</button>${UI.edit ? `<button class="dx" data-act="mpDevDel" data-id="${id}" data-a="${a}" data-f="${f}">✕</button>` : ""}</span>`;
+/* il clima con il suo aspetto (animazione, immagini o icona), come nella pagina Clima */
+const chipD = (id, a, f) => `<span class="mpd2 ${id.startsWith("climate.") ? "cl2 m-" + momentoClima(id).k : isOn(id) || ["open", "playing", "cleaning", "unlocked"].includes(S[id]?.state) ? "on" : ""}">
+  <button data-act="mpDev" data-id="${id}" title="${esc(nm(id))}">${id.startsWith("climate.") ? vistaClima(id, "xs") : ICO_D(id)}</button>${UI.edit ? `<button class="dx" data-act="mpDevDel" data-id="${id}" data-a="${a}" data-f="${f}">✕</button>` : ""}</span>`;
 /* elettrodomestici della stanza: con il loro aspetto (animazione, immagine o icona), si scelgono nella pagina Elettrodomestici */
 const rigaDev = (a, f) => { const D = dispositivi(a, f), E = AREAS[a] ? elettroMappa(a) : "";
   return D.length || E || UI.edit ? `<div class="mpd1">${E}${D.map(id => chipD(id, a, f)).join("")}${UI.edit ? `<button class="mpd2 add" data-act="mpDevAdd" data-a="${a}" data-f="${f}">＋</button>` : ""}</div>` : ""; };

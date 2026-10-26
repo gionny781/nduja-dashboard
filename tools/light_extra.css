@@ -87,3 +87,7 @@ body.light .aut.on{background:linear-gradient(135deg,rgba(48,209,88,.18),rgba(25
 body.light .aut.pz{background:linear-gradient(135deg,rgba(255,159,10,.16),rgba(255,255,255,.8));border-color:rgba(200,120,0,.5)}
 body.light .aut.pz .aut-t small{color:#9a5a00}
 body.light .aut-x:hover,body.light .aut-x:focus-visible{background:rgba(0,0,0,.05)}
+/* clima animato (0.7.25): colori più pieni sul chiaro */
+body.light .cld1.m-cool{--cc:#18a2e6}body.light .cld1.m-heat{--cc:#f97316}body.light .cld1.m-dry{--cc:#12b39b}body.light .cld1.m-fan{--cc:#7d92aa}
+body.light .clv5 em{color:#0a6fd6}
+body.light .mpd2.cl2.m-cool{background:rgba(24,162,230,.2)}body.light .mpd2.cl2.m-heat{background:rgba(249,115,22,.2)}body.light .mpd2.cl2.m-dry{background:rgba(18,179,155,.2)}body.light .mpd2.cl2.m-fan{background:rgba(125,146,170,.2)}

@@ -180,13 +180,15 @@ export function lightTile(id, label) {
     <b>${esc(label || shortName(id))}</b><span>${un ? t("non raggiungibile", "unavailable") : on ? t("accesa", "on") : t("spenta", "off")}</span>
     ${dim ? `<input type="range" min="1" max="100" value="${pct}" data-chg="bright" data-id="${id}">` : ""}</div>`;
 }
+/** disegni registrati da altri moduli (climadisegni.js: VISTE.clima(id) = l'aspetto del clima, animato o con le tue immagini) */
+export const VISTE = {};
 export function climateCard(id, label) {
   const c = S[id]; if (!c) return "";
   const a = c.attributes, m = c.state, active = m !== "off" && ok(id), H = HVAC(), A = ACTION();
   const modes = (a.hvac_modes || []).filter(x => x !== "heat_cool" || !a.hvac_modes.includes("auto"));
   const step = a.target_temp_step || (unit(id) === "°F" ? 1 : 0.5);
   return `<div class="clim ${active ? (m === "cool" || m === "dry" ? "cool" : "heat") : ""}">
-    <div class="row between"><div><b style="font-size:15px">${esc(label || shortName(id))}</b><div class="small muted">${H[m] || m}${a.current_temperature != null ? t(" · in stanza ", " · room ") + fnum(a.current_temperature) + "°" : ""}${a.hvac_action ? " · " + (A[a.hvac_action] || a.hvac_action) : ""}</div></div>
+    <div class="row between"><div class="row clh1">${VISTE.clima ? VISTE.clima(id) : ""}<div class="clt1"><b style="font-size:15px">${esc(label || shortName(id))}</b><div class="small muted">${H[m] || m}${a.current_temperature != null ? t(" · in stanza ", " · room ") + fnum(a.current_temperature) + "°" : ""}${a.hvac_action ? " · " + (A[a.hvac_action] || a.hvac_action) : ""}</div></div></div>
     ${modes.includes("off") ? `<button class="btn sm ${active ? "bad" : "warm"}" data-act="cpower" data-id="${id}">${active ? t("⏻ Spegni", "⏻ Off") : t("⏻ Accendi", "⏻ On")}</button>` : ""}</div>
     ${a.temperature != null ? `<div class="row" style="justify-content:center;gap:18px;margin:12px 0">
       <button class="step" data-act="cstep" data-id="${id}" data-d="-1" aria-label="−">−</button><span class="tgt">${fnum(a.temperature, step >= 1 ? 0 : 1)}°</span>
