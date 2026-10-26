@@ -34,6 +34,13 @@ scalda, `climate.radiatore_lavanderia` è a riposo (`hvac_action: idle`), `clima
 LS='{"mockEnt":"{\"sun.sun\":[\"below_horizon\",{\"elevation\":-30,\"rising\":false,\"next_rising\":\"@+8h\",\"next_setting\":\"@+19h\"}],\"weather.forecast_casa\":[\"clear-night\",{}],\"sensor.battery_power\":[\"380\"]}"}' node tools/mock/shot.mjs energia 1280 900 notte.png
 ```
 
+**Musica** (0.7.28): `media_source/browse_media` ha «My media» (album Demo A e Demo B con le copertine `cover-a.svg` e `cover-b.svg`, una cartella di foto
+da nascondere, un brano sciolto) e Radio Browser; i brani sono note semplici generate nel browser (WAV). `media_player.sonos_soggiorno` ha il suo elenco (Preferiti,
+Libreria), `media_player.echo_cucina` è di `alexa_media` («Chiedi ad Alexa»), `media_player.casa_tutta` è un gruppo Google Cast. `play_media` e play/pausa cambiano lo stato finto.
+```bash
+node tools/mock/shot.mjs musica 1280 900 musica.png '.mu1tb >> nth=0|.mu1tb >> nth=0|.mu1lr >> nth=1'
+```
+
 **Luci** (0.7.27): i comandi `light.*` e `switch.*` (accendi, spegni, luminosità, bianco, colore, effetto) cambiano davvero lo stato finto, anche dei membri dei gruppi.
 `light.soggiorno` è bianca regolabile, `light.led_tv_soggiorno` è a colori con gli effetti, `light.giardino` è un gruppo (vialetto e portico, in Esterno),
 `switch.luce_cantina` e `switch.relay_1` si possono aggiungere come luci. Con `mockPiani` in `LS` le stanze sono divise in due piani.

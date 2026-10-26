@@ -105,7 +105,11 @@ const ENT = {
   "automation.luci_giardino": st("on", { friendly_name: "Luci giardino al tramonto", id: "123", last_triggered: new Date(Date.now()-3600e3*20).toISOString() }),
   "automation.raccolta": st("on", { friendly_name: "Raccolta differenziata", id: "456", last_triggered: new Date(Date.now()-3600e3*3).toISOString() }),
   "automation.vecchia": st("off", { friendly_name: "Vecchia automazione", id: "789" }),
-  "media_player.echo_cucina": st("playing", { friendly_name: "Echo cucina", supported_features: 152463, media_title: "Bohemian Rhapsody", media_artist: "Queen", volume_level: .35, entity_picture: "/custom_components/nduja_dashboard/frontend/img/chili.svg", source_list: ["Spotify","Radio"], source: "Spotify", shuffle: false, repeat: "off" }),
+  "media_player.echo_cucina": st("playing", { friendly_name: "Echo cucina", supported_features: 318397, media_title: "Bohemian Rhapsody", media_artist: "Queen", volume_level: .35, entity_picture: "/custom_components/nduja_dashboard/frontend/img/chili.svg", source_list: ["Spotify","Radio"], source: "Spotify", shuffle: false, repeat: "off" }),
+  /* musica 0.7.28: Sonos (sfoglia della cassa), Google Nest (cast), gruppo Google; Echo è di alexa_media (vedi REG) */
+  "media_player.sonos_soggiorno": st("paused", { friendly_name: "Sonos soggiorno", supported_features: 973375, media_title: "Notturno", media_artist: "Demo Trio", volume_level: .3, shuffle: false, repeat: "off", source_list: ["TV", "Linea"] }),
+  "media_player.nest_studio": st("idle", { friendly_name: "Nest Mini studio", supported_features: 152511, volume_level: .5 }),
+  "media_player.casa_tutta": st("off", { friendly_name: "Tutta la casa", supported_features: 152511, volume_level: .4 }),
   "media_player.tv_soggiorno": st("off", { friendly_name: "TV soggiorno", device_class: "tv", supported_features: 23997, volume_level: .2, source_list: ["HDMI 1","Netflix","YouTube"] }),
   "sensor.model_3_battery_level": st("64", { device_class: "battery", unit_of_measurement: "%", friendly_name: "Model 3 Battery level" }),
   "sensor.model_3_battery_range": st("312", { device_class: "distance", unit_of_measurement: "km", friendly_name: "Model 3 Battery range" }),
@@ -163,7 +167,8 @@ const EV = {
 let LAYOUT = JSON.parse(localStorage.getItem("mockLayout") || '{"configured":true,"mode":"auto","energy":{"pv":["sensor.inverter_pv1_power","sensor.inverter_pv2_power","sensor.inverter_pv3_power"]}}');
 const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_sogg/.test(id) ? "soggiorno" : /echo_cucina/.test(id) ? "cucina" : /soggiorno/.test(id) ? "soggiorno" : /^(cover\.(cancello|garage|basculante)|switch\.cancellett|binary_sensor\.cancellett|button\.portone|camera\.(cortile|giardino|campanello)|light\.giardino)/.test(id) ? "esterno" : /corridoio|porta|ariston/.test(id) ? "corridoio" : /cucina/.test(id) ? "cucina" : /lavatric|asciugatric|lavanderia/.test(id) ? "lavanderia" : /forno|frigo|lavastov/.test(id) ? "cucina" : null,
   hb: id === "camera.cantina" || undefined,
-  pl: id.includes("model_3") ? "tesla_fleet" : undefined, di: id.includes("model_3") ? "dev_car" : id.startsWith("camera.campanello") ? "dev_bell" : id.startsWith("camera.giardino") ? "dev_reo" : id.startsWith("camera.cortile") ? "dev_cort" : id.includes("ambrogio") ? "dev_v" : id.includes("mario") ? "dev_g" : id.includes("anna") ? "dev_c" : id.includes("ariston") ? "dev_a" : null })) };
+  pl: id.includes("model_3") ? "tesla_fleet" : id === "media_player.echo_cucina" ? "alexa_media" : id.startsWith("media_player.sonos") ? "sonos" : /^media_player\.(nest|casa_tutta)/.test(id) ? "cast" : undefined,
+  di: id === "media_player.casa_tutta" ? "dev_cgrp" : id.includes("model_3") ? "dev_car" : id.startsWith("camera.campanello") ? "dev_bell" : id.startsWith("camera.giardino") ? "dev_reo" : id.startsWith("camera.cortile") ? "dev_cort" : id.includes("ambrogio") ? "dev_v" : id.includes("mario") ? "dev_g" : id.includes("anna") ? "dev_c" : id.includes("ariston") ? "dev_a" : null })) };
 /* telecamere: mockCam = "webrtc" (predefinito: diretta vera via WebRTC dentro il browser) | "webrtc_ko" (WebRTC fallisce, poi HLS)
    | "hls" (serve /mockhls/, vedi README) | "mjpeg" | "foto". mockCamLog conta gli stream aperti e chiusi. */
 const CAMM = () => localStorage.getItem("mockCam") || "webrtc";
@@ -207,6 +212,35 @@ function mockLuci(m) {
   ids.forEach(id => fai(id, m.service === "toggle" ? ENT[id]?.s !== "on" : m.service === "turn_on"));
   setTimeout(() => window.mockStati?.({ c: ch }), 120);
 }
+/* musica (0.7.28): media di Home Assistant finti, brani generati qui (note semplici, in WAV) e copertine in tools/mock */
+function wav(note, sec) {
+  const sr = 8000, n = sr * sec, b = new Uint8Array(44 + n), v = new DataView(b.buffer), w = (o, x) => [...x].forEach((c, i) => b[o + i] = c.charCodeAt(0));
+  w(0, "RIFF"); v.setUint32(4, 36 + n, true); w(8, "WAVEfmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sr, true); v.setUint32(28, sr, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true); w(36, "data"); v.setUint32(40, n, true);
+  for (let i = 0; i < n; i++) { const k = Math.floor(i / (sr / 2)) % note.length, f = 220 * Math.pow(2, note[k] / 12), e = 1 - (i % (sr / 2)) / (sr / 2); b[44 + i] = 128 + Math.round(40 * e * Math.sin(2 * Math.PI * f * i / sr)); }
+  return URL.createObjectURL(new Blob([b], { type: "audio/wav" }));
+}
+const BRANI = {}; const brano = id => BRANI[id] ||= wav(id.includes("radio") ? [0, 4, 7, 12, 7, 4] : id.includes("02") ? [5, 9, 12, 9] : [0, 3, 7, 10, 7, 3], id.includes("radio") ? 600 : 24);
+const dir = (id, title, ch, x = {}) => ({ title, media_class: "directory", media_content_type: "", media_content_id: id, can_play: false, can_expand: true, thumbnail: null, children_media_class: "directory", ...x, children: ch });
+const brn = (id, title, x = {}) => ({ title, media_class: "music", media_content_type: "audio/wav", media_content_id: id, can_play: true, can_expand: false, thumbnail: null, ...x });
+const MS = {
+  "": dir("media-source://", "Media Sources", [
+    dir("media-source://media_source/local/.", "My media", [], { media_class: "app" }), dir("media-source://radio_browser", "Radio Browser", [], { media_class: "app", children_media_class: "directory" }),
+    dir("media-source://camera", "Telecamere", [], { media_class: "app", children_media_class: "video" }), dir("media-source://tts", "Text-to-speech", [], { media_class: "app", children_media_class: "app" }) ]),
+  "media-source://media_source/local/.": dir("media-source://media_source/local/.", "My media", [
+    dir("media-source://media_source/local/Demo A", "Demo A", [], { media_class: "album", thumbnail: "/tools/mock/cover-a.svg" }),
+    dir("media-source://media_source/local/Demo B", "Demo B - Onde", [], { media_class: "album", thumbnail: "/tools/mock/cover-b.svg" }),
+    dir("media-source://media_source/local/Foto", "Foto", [], { children_media_class: "image" }),
+    brn("media-source://media_source/local/sigla_01.wav", "sigla_01.wav") ]),
+  "media-source://media_source/local/Demo A": dir("media-source://media_source/local/Demo A", "Demo A", ["01 - Alba.wav", "02 - Mezzogiorno.wav", "03 - Sera.wav", "04 - Notte.wav"].map((n, i) => brn("media-source://media_source/local/Demo A/0" + (i + 1), n)), { media_class: "album", thumbnail: "/tools/mock/cover-a.svg" }),
+  "media-source://media_source/local/Demo B": dir("media-source://media_source/local/Demo B", "Demo B - Onde", ["Onda lunga.wav", "Onda corta.wav", "Risacca.wav"].map((n, i) => brn("media-source://media_source/local/Demo B/0" + (i + 1), n)), { media_class: "album", thumbnail: "/tools/mock/cover-b.svg" }),
+  "media-source://radio_browser": dir("media-source://radio_browser", "Radio Browser", [
+    brn("media-source://radio_browser/radio1", "Radio Demo Uno", { media_class: "channel", media_content_type: "audio/mpeg", thumbnail: "/tools/mock/cover-b.svg" }),
+    brn("media-source://radio_browser/radio2", "Radio Demo Due", { media_class: "channel", media_content_type: "audio/mpeg" }) ], { media_class: "app" }),
+};
+const SONOS = { "": dir("", "Sonos", [dir("favorites", "Preferiti", [], { media_content_type: "favorites" }), dir("library", "Libreria musicale", [], { media_content_type: "library" })]),
+  "favorites": dir("favorites", "Preferiti", [brn("FV:2/1", "Radio del mattino", { media_class: "channel", media_content_type: "favorite_item_id", thumbnail: "/tools/mock/cover-b.svg" }), brn("FV:2/2", "Playlist cena", { media_class: "playlist", media_content_type: "favorite_item_id", thumbnail: "/tools/mock/cover-a.svg" })], { media_content_type: "favorites" }),
+  "library": dir("library", "Libreria musicale", [dir("A:ALBUM/Demo", "Album demo", [], { media_class: "album", media_content_type: "album", can_play: true, thumbnail: "/tools/mock/cover-a.svg" })], { media_content_type: "library" }),
+  "A:ALBUM/Demo": dir("A:ALBUM/Demo", "Album demo", [brn("T:1", "Primo brano", { media_content_type: "track" }), brn("T:2", "Secondo brano", { media_content_type: "track" })], { media_class: "album", media_content_type: "album", can_play: true, thumbnail: "/tools/mock/cover-a.svg" }) };
 const conn = {
   addEventListener() {}, subscribeEvents() { return Promise.resolve(() => {}); },
   subscribeMessage(cb, m) {
@@ -238,7 +272,7 @@ const conn = {
       case "nduja_dashboard/config": return { version: "0.5.0-beta", options: {}, layout: LAYOUT };
       case "nduja_dashboard/save_layout": LAYOUT = m.layout; localStorage.setItem("mockLayout", JSON.stringify(LAYOUT)); return { ok: true };
       case "config/entity_registry/list_for_display": return REG;
-      case "config/device_registry/list": return [{ id: "dev_g", name: "iPhone di Mario" }, { id: "dev_c", name: "iPhone di Anna" }, { id: "dev_a", name: "Ariston" }, ...(localStorage.getItem("mockNoCar") ? [] : [{ id: "dev_car", name: "Model 3", manufacturer: "Tesla", model: "Model 3" }])];
+      case "config/device_registry/list": return [{ id: "dev_cgrp", name: "Tutta la casa", manufacturer: "Google Inc.", model: "Google Cast Group" }, { id: "dev_g", name: "iPhone di Mario" }, { id: "dev_c", name: "iPhone di Anna" }, { id: "dev_a", name: "Ariston" }, ...(localStorage.getItem("mockNoCar") ? [] : [{ id: "dev_car", name: "Model 3", manufacturer: "Tesla", model: "Model 3" }])];
       case "config/area_registry/list": { const P = localStorage.getItem("mockPiani"), F = { soggiorno: "terra", cucina: "terra", esterno: "terra", corridoio: "primo", lavanderia: "primo" };
         return [{ area_id: "soggiorno", name: "Soggiorno" }, { area_id: "corridoio", name: "Corridoio" }, { area_id: "cucina", name: "Cucina" }, { area_id: "lavanderia", name: "Lavanderia" }, { area_id: "esterno", name: "Esterno" }].map(a => P ? { ...a, floor_id: F[a.area_id] } : a); }
       /* mockPiani: due piani (prova delle stanze divise per piano) */
@@ -255,6 +289,10 @@ const conn = {
       case "camera/webrtc/get_client_config": return { configuration: { iceServers: [] }, getCandidatesUpfront: false };
       case "camera/webrtc/candidate": { const pc = PCS[m.session_id]; if (!pc) throw { code: "not_found", message: "session" }; if (typeof m.candidate !== "object") throw { code: "invalid_format" }; await pc.addIceCandidate(m.candidate); return null; }
       case "camera/stream": return { url: "/mockhls/index.m3u8" };
+      case "media_source/browse_media": { const r = MS[m.media_content_id || ""]; if (!r) throw { code: "browse_media_failed", message: "Unknown source" }; return r; }
+      case "media_player/browse_media": { if (!m.entity_id.includes("sonos")) return MS[m.media_content_id || ""] || MS[""]; const r = SONOS[m.media_content_id || ""]; if (!r) throw { code: "browse_media_failed", message: "?" }; return r; }
+      case "media_source/resolve_media": console.log("RESOLVE", JSON.stringify(m)); return { url: brano(m.media_content_id), mime_type: "audio/wav" };
+      case "auth/sign_path": return { path: m.path + "?authSig=finto" };
       case "get_config": return { version: "2026.10.1", location_name: "Casa" };
       case "config/label_registry/list": return JSON.parse(localStorage.getItem("mockLabels") || "[]");
       case "config/label_registry/create": { const L = JSON.parse(localStorage.getItem("mockLabels") || "[]"), l = { label_id: "nduja", name: m.name, icon: m.icon }; L.push(l); localStorage.setItem("mockLabels", JSON.stringify(L)); console.log("WS", JSON.stringify(m)); return l; }
@@ -266,6 +304,11 @@ const conn = {
         if (m.domain === "weather") return { response: { [m.target.entity_id]: { forecast: [0,1,2,3,4].map(i => ({ datetime: day(i, 12), condition: i ? "sunny" : "rainy", temperature: 20 + i, templow: 12, precipitation_probability: i ? 0 : 80 })) } } };
         /* luci e interruttori: lo stato cambia davvero, come in Home Assistant (anche i membri dei gruppi) */
         if (["light", "switch"].includes(m.domain) && ["turn_on", "turn_off", "toggle"].includes(m.service)) mockLuci(m);
+        /* casse: play_media e play/pausa cambiano lo stato finto */
+        if (m.domain === "media_player" && ["play_media", "media_play_pause"].includes(m.service)) for (const id of [].concat(m.target?.entity_id || [])) { const e = ENT[id]; if (!e) continue;
+          e.s = m.service === "play_media" ? "playing" : e.s === "playing" ? "paused" : "playing";
+          if (m.service === "play_media") e.a = { ...e.a, media_title: String(m.service_data.media_content_id).split("/").pop(), media_artist: m.service_data.media_content_type };
+          setTimeout(() => window.mockStati?.({ c: { [id]: { "+": { s: e.s, a: e.a } } } }), 120); }
         console.log("SVC", JSON.stringify(m)); return { response: {} };
     }
     throw { code: "unknown", message: m.type };

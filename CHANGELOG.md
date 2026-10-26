@@ -3,6 +3,21 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.28-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+- 🇮🇹 **🎧 Musica: dove ascolti**. In cima alla pagina Musica scegli dove suona la musica: **📱 Questo dispositivo** (il telefono, il tablet o il PC che stai usando), una delle **casse** di Home Assistant (Alexa, Google/Nest, Sonos…) o un **gruppo** (👥). La scelta resta su questo dispositivo; quello che sta suonando si riconosce dalle barrette verdi.
+- 🇮🇹 **Ascolto sulla plancia**: la musica e le radio di Home Assistant (la cartella «media», Radio Browser…) suonano direttamente qui, con copertina (o un disco disegnato per 'Nduja che gira), play/pausa, avanti/indietro, barra di avanzamento, volume, «Riproduci tutto», «Casuale» e la coda «Dopo». Dove il browser lo permette funzionano anche i comandi sulla schermata di blocco e sulle cuffie.
+- 🇮🇹 **Mini lettore in basso**: resta visibile quando cambi pagina (sulla pagina Musica compare quando il lettore grande esce dallo schermo); un tocco riporta alla Musica, ✕ ferma. La scheda **In riproduzione** della Home mostra anche quello che suona qui.
+- 🇮🇹 **📂 Sfoglia** con le copertine: le cartelle e gli album sono tessere, dentro un album o una playlist i brani sono un elenco. Per le casse che hanno un loro elenco (Sonos, Google Cast…) sfogli quello e la musica parte sulla cassa; per le altre uso i media di Home Assistant. Mostro solo quello che si ascolta (niente foto, video o telecamere).
+- 🇮🇹 **🗣️ Chiedi ad Alexa**: per gli Echo (Alexa Media Player) scrivi artista, brano, playlist o radio e scegli dove cercarlo (Amazon Music, Spotify, Apple Music, Deezer, TuneIn, iHeartRadio) oppure «A voce» per dire ad Alexa quello che vuoi. Ogni cassa mostra solo i comandi che supporta davvero.
+- 🇮🇹 Corretto: nel tema chiaro le copertine delle casse e il tasto ▶ grande non si vedevano; i menu a tendina (es. «Sorgente») a volte mostravano le voci di un'altra cassa.
+- 🇬🇧 **🎧 Music: where to listen**. At the top of the Music page choose where the music plays: **📱 This device** (the phone, tablet or PC you're using), one of Home Assistant's **speakers** (Alexa, Google/Nest, Sonos…) or a **group** (👥). The choice stays on this device; what's playing shows small green bars.
+- 🇬🇧 **Listening on the dashboard**: Home Assistant's music and radio (the «media» folder, Radio Browser…) play right here, with cover art (or a spinning record drawn for 'Nduja), play/pause, previous/next, progress bar, volume, «Play all», «Shuffle» and the «Up next» queue. Where the browser allows it, lock-screen and headphone controls work too.
+- 🇬🇧 **Mini player at the bottom**: it stays visible when you change page (on the Music page it shows up when the big player scrolls off screen); a tap takes you back to Music, ✕ stops. The **Now playing** card on Home also shows what's playing here.
+- 🇬🇧 **📂 Browse** with cover art: folders and albums are tiles, inside an album or a playlist the tracks are a list. For speakers with their own library (Sonos, Google Cast…) you browse that and the music starts on the speaker; for the others I use Home Assistant's media. Only things you can listen to are shown (no photos, videos or cameras).
+- 🇬🇧 **🗣️ Ask Alexa**: for Echo devices (Alexa Media Player) type an artist, song, playlist or station and choose where to look for it (Amazon Music, Spotify, Apple Music, Deezer, TuneIn, iHeartRadio), or «Voice» to tell Alexa what you want. Every speaker shows only the controls it really supports.
+- 🇬🇧 Fixed: in the light theme speaker covers and the big ▶ button were hard to see; drop-down menus (e.g. «Source») sometimes showed another speaker's items.
+
 ## 0.7.27-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 - 🇮🇹 **💡 Luci rifatte**: in alto il **riepilogo** con quante luci sono accese e **dove** (tocca una stanza per andarci), le icone delle luci accese col loro colore, **⏻ Spegni tutto** e le **scene di luce**, se ci sono. Sotto, le **stanze divise per piano**, ognuna con «Spegni» o «Accendi».

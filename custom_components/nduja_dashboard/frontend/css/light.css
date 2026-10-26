@@ -108,8 +108,23 @@ body.light .gg1{stroke:rgba(0,0,0,0.056)!important}
 body.light .gl1{fill:rgba(28,28,30,.5)!important}
 body.light .mob1{background:rgba(0,0,0,0.035)!important;border:1px solid rgba(0,0,0,0.056)!important}
 body.light .mpl1{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.049)!important}
-body.light .mpa1{background:rgba(0,0,0,0.040) center/cover!important}
-body.light .mpc1{background:rgba(0,0,0,0.050)!important}
+body.light .mu1c{background:rgba(0,0,0,0.030)!important;border:1px solid rgba(0,0,0,0.056)!important}
+body.light .mu1c .ic{background:rgba(0,0,0,0.040)!important}
+body.light .mu1c.act .ic{background:rgba(0,0,0,0.100)!important}
+body.light .mu1a{background:linear-gradient(145deg,rgba(0,0,0,0.050),rgba(0,0,0,0.015))!important}
+body.light .mu1co button:hover{background:rgba(0,0,0,0.030)!important}
+body.light .mu1cr button:last-child{background:rgba(0,0,0,0.040)!important}
+body.light .mu1tb:hover{background:rgba(0,0,0,0.030)!important}
+body.light .mu1ti{background:linear-gradient(145deg,rgba(0,0,0,0.055),rgba(0,0,0,0.015))!important}
+body.light .mu1pl{color:#1c1c1e!important}
+body.light .mu1tp{color:#1c1c1e!important}
+body.light .mu1lr:hover{background:rgba(0,0,0,0.030)!important}
+body.light .mu1lr .pl{background:rgba(0,0,0,0.040)!important}
+body.light .mu1r:not(.mini){background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.049)!important}
+body.light .mu1bar{background:rgba(0,0,0,0.040)!important}
+body.light .mu1ax{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.049)!important}
+body.light .mu1axs button{background:rgba(0,0,0,0.035)!important;border:1px solid rgba(0,0,0,0.056)!important}
+body.light .mu1axf input{background:rgba(0,0,0,0.040)!important}
 body.light .hlv1{background:rgba(0,0,0,0.030)!important}
 body.light .car-ph{background:radial-gradient(ellipse at 50% 70%,rgba(0,0,0,0.040),rgba(0,0,0,0.010))!important}
 body.light .car-bar{background:rgba(0,0,0,0.040)!important}
@@ -194,7 +209,7 @@ body.light .mpd2{background:rgba(0,0,0,.07)}
 body.light .ss1{background:#000}body.light .ssc1{color:#fff}body.light .ssv1{background:linear-gradient(180deg,rgba(0,0,0,.05) 40%,rgba(0,0,0,.65))}
 body.light .gg1{stroke:rgba(0,0,0,.08)}body.light .gl1{fill:rgba(0,0,0,.5)}
 body.light .mob1{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08)}
-body.light .mpl1{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08)}body.light .mpc1{background:rgba(0,0,0,.07)}body.light .mpc1.big{background:#1c1c1e;color:#fff}
+body.light .mpl1{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08)}body.light .mpc1{background:rgba(0,0,0,.07)}body.light .mpc1.big{background:#1c1c1e;color:#fff}body.light .mpa1{background-color:rgba(0,0,0,.05)}body.light .mpc1.on{background:rgba(10,132,255,.3)}
 body.light .hlv1{background:rgba(0,0,0,.05)}
 
 body.light .car-c.on{background:rgba(10,132,255,.16)!important;border-color:#0a84ff!important}
@@ -269,4 +284,8 @@ body.light .lu3s.add{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.22);col
 body.light .lu3s.on{box-shadow:0 0 0 2px #fff,0 0 0 4px #1c1c1e}
 body.light .lu3w{box-shadow:0 12px 26px -16px rgba(31,45,80,.6),inset 0 0 0 1px rgba(0,0,0,.08)}
 body.light .lu5 button.on{background:rgba(255,200,0,.16);border-color:#e0a800}body.light .lu5 button.on span{background:var(--yellow)}
+body.light .mu1m{background:rgba(255,255,255,.92)!important;border-color:rgba(0,0,0,.08)!important;box-shadow:0 14px 34px -14px rgba(31,45,80,.45)!important}
+body.light .mu1c.act{background:linear-gradient(135deg,rgba(10,132,255,.2),rgba(191,90,242,.14))!important;border-color:rgba(10,132,255,.6)!important}
+body.light .mu1pl{background:rgba(0,0,0,.55)!important;color:#fff!important}body.light .mu1tp{color:#fff!important}
+body.light .mu1axs button.act{background:rgba(10,132,255,.16)!important;border-color:rgba(10,132,255,.6)!important;color:#0a63c9}
 

@@ -52,7 +52,7 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.25-dev ✅ | lun 26 ott | Clima animato o con le tue immagini |
 | 0.7.26-dev ✅ | lun 26 ott | Energia: scena animata con sole, meteo, casa ed elettrodomestici |
 | 0.7.27-dev ✅ | lun 26 ott | Luci rifatte |
-| 0.7.28-dev | lun 9 nov | Musica: ascolta su questo dispositivo, Alexa, Google, Sonos |
+| 0.7.28-dev ✅ | lun 26 ott | Musica: ascolta su questo dispositivo, Alexa, Google, Sonos |
 | 0.7.29-dev | mer 11 nov | Musica: Music Assistant e «Sposta su…» |
 | 0.7.30-dev | ven 13 nov | Media: TV, telecomando virtuale, app di streaming |
 | 0.7.31-dev | dom 15 nov | Irrigazione animata |

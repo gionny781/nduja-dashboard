@@ -4,8 +4,8 @@ diventano veli scuri leggeri e i testi chiari diventano scuri. Lanciare dopo ave
 In fondo al file generato vengono aggiunte le regole scritte a mano di tools/light_extra.css."""
 import re, pathlib
 ROOT = pathlib.Path(__file__).resolve().parent.parent / "custom_components/nduja_dashboard/frontend/css"
-# .lt2/.lu1-6: le luci hanno regole a mano in light_extra.css; .en7s: la scena dell'energia ha i suoi colori (cielo, sole, notte) uguali nei due temi
-SKIP = re.compile(r"\.en7s|\.lt2|\.lu[1-6]|\.lt4|\.pri|\.plus|\.act i|edt1\.on|\.logo|\.sw\b|\.edb|tile\.on|beta1|\.wel2b em|::selection|\.toast|\.dot")
+# .lt2/.lu1-6: le luci hanno regole a mano in light_extra.css; .mpa1/.mpc1: copertina e tasti della musica, a mano (la copertina è nello stile in linea); .en7s: la scena dell'energia ha i suoi colori (cielo, sole, notte) uguali nei due temi
+SKIP = re.compile(r"\.en7s|\.lt2|\.lu[1-6]|\.lt4|\.pri|\.plus|\.act i|edt1\.on|\.logo|\.sw\b|\.edb|tile\.on|beta1|\.wel2b em|::selection|\.toast|\.dot|\.mpa1|\.mpc1")
 W = re.compile(r"rgba\(\s*255\s*,\s*255\s*,\s*255\s*,\s*([\d.]+)\s*\)")
 TXT = re.compile(r"rgba\(\s*235\s*,\s*(?:235|240)\s*,\s*(?:245|250)\s*,\s*([\d.]+)\s*\)")
 

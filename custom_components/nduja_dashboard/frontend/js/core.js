@@ -323,6 +323,8 @@ function morph(a, b) {
   if (a.hasAttribute("data-keep") && b.hasAttribute("data-keep")) return;
   if (a.getAttribute("data-sure") === "1") return;   // pulsante in attesa di conferma: non lo tocco finché non scade
   if (a.getAttribute("data-drag") === "1") return;   // luce che si sta regolando col dito (luce.js)
+  /* un menu a tendina riusato per un'altra entità (o con altre voci): lo sostituisco, altrimenti mostrerebbe le voci vecchie */
+  if (a.tagName === "SELECT" && a !== document.activeElement && a.innerHTML !== b.innerHTML) { a.replaceWith(b); return; }
   for (const at of [...a.attributes]) if (!b.hasAttribute(at.name)) a.removeAttribute(at.name);
   for (const at of [...b.attributes]) if (a.getAttribute(at.name) !== at.value) a.setAttribute(at.name, at.value);
   if (a.tagName === "INPUT" && a.type === "range" && a !== dragging) a.value = b.getAttribute("value") ?? a.value;
@@ -424,6 +426,7 @@ export function render(now) {
       P.after?.();
       if (UI.sheet) patch($("#sheet"), `<div class="grab"></div>` + UI.sheet());
     } catch (e) { console.error(e); }
+    FISSI.forEach(f => { try { f(); } catch (e) { console.error(e); } });
   });
 }
 function renderNav() {
@@ -436,6 +439,9 @@ function renderNav() {
   patch($("#more"), v.slice(4).map(nav).join("") + nuova);
   if (!$("#navh")) document.body.insertAdjacentHTML("beforeend", `<button id="navh" class="navh1" data-act="navPeek" aria-label="${t("Mostra il menu", "Show menu")}"></button>`);
 }
+/** elementi fissi fuori dalla pagina, che restano quando si cambia pagina (il mini lettore della musica):
+    funzioni chiamate dopo ogni disegno */
+export const FISSI = [];
 /* pillole in alto: meteo, persone, luci accese, energia (se configurata) */
 export const STRIP = [];
 /** schede della Home aggiunte dalle altre pagine: { chiave: { title(), render(), show() } } (compaiono solo se show() è vero) */
