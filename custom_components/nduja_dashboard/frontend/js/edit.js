@@ -77,6 +77,22 @@ function scheda(id, pid) {
     <p class="small muted" style="margin-top:12px">${t("Il nome e la stanza cambiano solo nella plancia, non in Home Assistant.", "Name and room change only in the dashboard, not in Home Assistant.")}</p>`;
 }
 
+/* ---------- mostrare e togliere (su una copia di LAYOUT) ---------- */
+/** rende visibile un'entità nella plancia: in modalità manuale la aggiunge, in automatica la toglie dagli esclusi;
+    quelle nascoste di partenza (doppioni) o che servono anche se Home Assistant le nasconde vanno in «show» (forza: sempre) */
+export function mostra(l, id, { area = "", forza = false } = {}) {
+  if (isManual()) l.include = [...new Set([...(l.include || []), id])];
+  else { l.exclude = (l.exclude || []).filter(x => x !== id); if (forza || defaultOff(id)) l.show = [...new Set([...(l.show || []), id])]; }
+  if (area && !areaOf(id)) l.rooms = { ...(l.rooms || {}), [id]: area };
+  if (areaOf(id) && (l.hiddenAreas || []).includes(areaOf(id))) l.hiddenAreas = l.hiddenAreas.filter(a => a !== areaOf(id));
+  segnaVisti(l, [id]);   // aggiunto: non è più una novità
+}
+/** toglie un'entità dalla plancia */
+export function nascondi(l, id) {
+  if (isManual()) l.include = (l.include || []).filter(x => x !== id);
+  else { l.exclude = [...new Set([...(l.exclude || []), id])]; l.show = (l.show || []).filter(x => x !== id); }
+}
+
 /* ---------- azioni ---------- */
 Object.assign(ACT, {
   edToggle: () => { UI.edit = !UI.edit; render(true); },
@@ -85,19 +101,13 @@ Object.assign(ACT, {
   edPick: el => {
     const id = el.dataset.id, l = copia();
     if (PK.page) { const p = (l.customPages || []).find(x => x.id === PK.page); if (p && !p.items.includes(id)) p.items.push(id); }
-    else {
-      if (isManual()) l.include = [...new Set([...(l.include || []), id])]; else { l.exclude = (l.exclude || []).filter(x => x !== id); if (defaultOff(id)) l.show = [...new Set([...(l.show || []), id])]; }
-      if (PK.area && !areaOf(id)) l.rooms = { ...(l.rooms || {}), [id]: PK.area };
-      if (areaOf(id) && (l.hiddenAreas || []).includes(areaOf(id))) l.hiddenAreas = l.hiddenAreas.filter(a => a !== areaOf(id));
-      segnaVisti(l, [id]);   // aggiunto: non è più una novità
-    }
+    else mostra(l, id, { area: PK.area });
     salva(l, "＋ " + nm(id));
   },
   edDel: el => {
     const id = el.dataset.id, pid = el.dataset.page, l = copia();
     if (pid) { const p = (l.customPages || []).find(x => x.id === pid); if (p) p.items = p.items.filter(x => x !== id); }
-    else if (isManual()) l.include = (l.include || []).filter(x => x !== id);
-    else { l.exclude = [...new Set([...(l.exclude || []), id])]; l.show = (l.show || []).filter(x => x !== id); }
+    else nascondi(l, id);
     if (UI.sheet) closeSheet();
     salva(l, "✕ " + nm(id));
   },

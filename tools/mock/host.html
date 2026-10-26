@@ -49,6 +49,15 @@ const ENT = {
   "camera.garage": st("idle", { friendly_name: "Garage", entity_picture: "/custom_components/nduja_dashboard/frontend/img/chili.svg", access_token: "x" }),
   "camera.garage_sub_stream": st("idle", { friendly_name: "Garage sub", entity_picture: "/custom_components/nduja_dashboard/frontend/img/chili.svg" }),
   "camera.porta_ptz": st("unavailable", { friendly_name: "PTZ" }),
+  /* coppie di flussi: HD/SD con lo stesso nome, Clear/Fluent (Reolink), sub di un campanello sullo stesso dispositivo, sub nascosta in HA */
+  "camera.cortile_hd": st("streaming", { friendly_name: "Cortile HD", entity_picture: "/tools/mock/cam-hd.svg", access_token: "x" }),
+  "camera.cortile_sd": st("streaming", { friendly_name: "Cortile SD", entity_picture: "/tools/mock/cam-sd.svg", access_token: "x" }),
+  "camera.giardino_clear": st("idle", { friendly_name: "Giardino Clear", entity_picture: "/tools/mock/cam-hd.svg", access_token: "x" }),
+  "camera.giardino_fluent": st("idle", { friendly_name: "Giardino Fluent", entity_picture: "/tools/mock/cam-sd.svg", access_token: "x" }),
+  "camera.campanello": st("idle", { friendly_name: "Campanello", entity_picture: "/tools/mock/cam-hd.svg", access_token: "x" }),
+  "camera.campanello_video_sub": st("idle", { friendly_name: "Campanello video sub", entity_picture: "/tools/mock/cam-sd.svg", access_token: "x" }),
+  "camera.soggiorno_cam": st("idle", { friendly_name: "Soggiorno", entity_picture: "/tools/mock/cam-hd.svg", access_token: "x" }),
+  "camera.cantina": st("idle", { friendly_name: "Cantina", entity_picture: "/tools/mock/cam-sd.svg", access_token: "x" }),
   "alarm_control_panel.alarmo": st("disarmed", { friendly_name: "Alarmo", supported_features: 11, code_format: "number", code_arm_required: true }),
   "lock.porta_ingresso": st("locked", { friendly_name: "Serratura ingresso", supported_features: 1 }),
   "cover.cancello": st("closed", { friendly_name: "Cancello", device_class: "gate", supported_features: 11 }, 2*H),
@@ -128,8 +137,9 @@ const EV = {
   "calendar.raccolta_differenziata": [{ start: dstr(2), end: dstr(3), summary: "Plastica e Metalli" }, { start: dstr(3), end: dstr(4), summary: "Indifferenziato" }],
 };
 let LAYOUT = JSON.parse(localStorage.getItem("mockLayout") || '{"configured":true,"mode":"auto","energy":{"pv":["sensor.inverter_pv1_power","sensor.inverter_pv2_power","sensor.inverter_pv3_power"]}}');
-const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_sogg/.test(id) ? "soggiorno" : /echo_cucina/.test(id) ? "cucina" : /soggiorno/.test(id) ? "soggiorno" : /^(cover\.(cancello|garage|basculante)|switch\.cancellett|binary_sensor\.cancellett|button\.portone)/.test(id) ? "esterno" : /corridoio|porta|ariston/.test(id) ? "corridoio" : /cucina/.test(id) ? "cucina" : /lavatric|asciugatric/.test(id) ? "lavanderia" : /forno|frigo|lavastov/.test(id) ? "cucina" : null,
-  pl: id.includes("model_3") ? "tesla_fleet" : undefined, di: id.includes("model_3") ? "dev_car" : id.includes("ambrogio") ? "dev_v" : id.includes("mario") ? "dev_g" : id.includes("anna") ? "dev_c" : id.includes("ariston") ? "dev_a" : null })) };
+const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_sogg/.test(id) ? "soggiorno" : /echo_cucina/.test(id) ? "cucina" : /soggiorno/.test(id) ? "soggiorno" : /^(cover\.(cancello|garage|basculante)|switch\.cancellett|binary_sensor\.cancellett|button\.portone|camera\.(cortile|giardino|campanello))/.test(id) ? "esterno" : /corridoio|porta|ariston/.test(id) ? "corridoio" : /cucina/.test(id) ? "cucina" : /lavatric|asciugatric/.test(id) ? "lavanderia" : /forno|frigo|lavastov/.test(id) ? "cucina" : null,
+  hb: id === "camera.cantina" || undefined,
+  pl: id.includes("model_3") ? "tesla_fleet" : undefined, di: id.includes("model_3") ? "dev_car" : id.startsWith("camera.campanello") ? "dev_bell" : id.startsWith("camera.giardino") ? "dev_reo" : id.startsWith("camera.cortile") ? "dev_cort" : id.includes("ambrogio") ? "dev_v" : id.includes("mario") ? "dev_g" : id.includes("anna") ? "dev_c" : id.includes("ariston") ? "dev_a" : null })) };
 /* telecamere: mockCam = "webrtc" (predefinito: diretta vera via WebRTC dentro il browser) | "webrtc_ko" (WebRTC fallisce, poi HLS)
    | "hls" (serve /mockhls/, vedi README) | "mjpeg" | "foto". mockCamLog conta gli stream aperti e chiusi. */
 const CAMM = () => localStorage.getItem("mockCam") || "webrtc";

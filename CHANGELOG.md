@@ -3,6 +3,19 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.24-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+- 🇮🇹 **📷 Telecamere: flussi**. Se la stessa telecamera ha più entità (principale e sub-stream, HD e SD, Clear e Fluent) le **unisco da solo**: l'anteprima in griglia usa il **flusso leggero**, la diretta al tocco il **principale**, e il doppione non compare più come telecamera a parte. Riconosco `_sub`, `_main`, `_hd`, `_sd` (e Clear/Fluent di Reolink) e le telecamere dello stesso dispositivo. In modifica ogni tessera mostra «🔗 2 flussi».
+- 🇮🇹 Con ✏️ su una telecamera scegli **il flusso della diretta e quello dell'anteprima** (anche diversi da quelli proposti) e, per ognuno, **il metodo**: Auto, WebRTC, HLS, MJPEG o Foto per la diretta; foto leggera (di partenza) oppure WebRTC, HLS o MJPEG per avere **l'anteprima in movimento**. Vedi quali metodi offre ogni flusso. Se il metodo scelto non va, la diretta lo dice e offre «Prova gli altri metodi».
+- 🇮🇹 **＋ Aggiungi telecamera** mostra **tutte** le `camera.*`, anche quelle nascoste in Home Assistant, i doppioni e i sub-stream, con una miniatura e il motivo per cui non c'erano. **✕** toglie, **◀ ▶** riordina, ✏️ **rinomina** e cambia stanza.
+- 🇮🇹 **🗂 Gruppi** facoltativi (es. «Esterno», «Interno»): ognuno è una **scheda a parte**, nell'ordine che scegli; le telecamere si mettono nel gruppo con un tocco. Quelle senza gruppo restano in «Altre telecamere». Anche la scheda Telecamere di 🛡️ Sicurezza segue flussi e ordine.
+- 🇮🇹 Tutte le scelte si salvano nella plancia e valgono **su tutti i dispositivi**. Le anteprime in movimento si fermano mentre guardi una diretta e non bloccano il salvaschermo.
+- 🇬🇧 **📷 Cameras: streams**. When the same camera has more than one entity (main and sub-stream, HD and SD, Clear and Fluent) I **join them by myself**: the grid preview uses the **light stream**, the live view on tap the **main one**, and the duplicate no longer shows up as a separate camera. I recognise `_sub`, `_main`, `_hd`, `_sd` (and Reolink's Clear/Fluent) and cameras of the same device. In edit mode each tile shows «🔗 2 streams».
+- 🇬🇧 With ✏️ on a camera choose **the live view stream and the preview stream** (even different from the suggested ones) and, for each one, **the method**: Auto, WebRTC, HLS, MJPEG or Photo for the live view; light photo (default) or WebRTC, HLS or MJPEG for a **moving preview**. You see which methods each stream offers. If the chosen method doesn't work, the live view says so and offers «Try the other methods».
+- 🇬🇧 **＋ Add camera** lists **every** `camera.*`, including those hidden in Home Assistant, duplicates and sub-streams, with a thumbnail and the reason it wasn't there. **✕** removes, **◀ ▶** reorders, ✏️ **renames** and changes the room.
+- 🇬🇧 Optional **🗂 Groups** (e.g. «Outside», «Inside»): each one is a **separate card**, in the order you choose; cameras go into a group with one tap. Those without a group stay in «Other cameras». The Cameras card in 🛡️ Security follows streams and order too.
+- 🇬🇧 Every choice is saved in the dashboard and applies **on every device**. Moving previews pause while you watch a live view and don't block the screensaver.
+
 ## 0.7.23-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 - 🇮🇹 **📷 Telecamere in diretta**: un lettore nuovo, uguale ovunque, che sceglie da solo il modo migliore. Prova prima **WebRTC** (immagine quasi in tempo reale), poi **HLS**, poi **MJPEG** e, se proprio non va niente, mostra **una foto ogni 2 secondi**. Un'etichetta in alto dice il metodo usato e «collegamento…» mentre si collega.

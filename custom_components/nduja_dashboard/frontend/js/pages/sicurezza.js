@@ -3,7 +3,7 @@
 import { S, ACT, CHG, UI, LAYOUT, HOME_EXTRA, t, LOC, esc, nm, nmHA, ok, attr, ents, isOn, ago, card, empty, page, svc, toast, openSheet, closeSheet, render,
   deviceClass, openings, shortName, areaOf, AREAS, isAdmin, domain, sicuro, PAGES } from "../core.js";
 import { item, addBtn, scegli, cambia } from "../edit.js";
-import { anteprima, ordineCam } from "../video.js";
+import { anteprima, telecamere } from "../video.js";
 
 export const pericoli = () => ents("binary_sensor", id => isOn(id) && ["smoke", "gas", "carbon_monoxide", "moisture", "safety", "tamper"].includes(deviceClass(id)));
 const STATO = () => ({ disarmed: [t("Disinserito", "Disarmed"), "ok"], armed_home: [t("Inserito in casa", "Armed home"), "warn"], armed_away: [t("Inserito fuori casa", "Armed away"), "bad"], armed_night: [t("Inserito notte", "Armed night"), "warn"], armed_vacation: [t("Inserito vacanza", "Armed vacation"), "bad"], armed_custom_bypass: [t("Inserito personalizzato", "Armed custom"), "warn"], arming: [t("Si sta inserendo…", "Arming…"), "warn"], pending: [t("In attesa…", "Pending…"), "warn"], triggered: [t("ALLARME!", "TRIGGERED!"), "bad"] });
@@ -214,7 +214,7 @@ HOME_EXTRA.accessi = { title: () => t("Accessi", "Access"), render: homeCard, sh
 
 /* ---------- telecamere: anteprime leggere, la diretta parte al tocco ---------- */
 function telecamereCard() {
-  const L = ordineCam(ents("camera")); if (!L.length) return "";
+  const L = telecamere(); if (!L.length) return "";
   const pag = PAGES.telecamere && PAGES.telecamere.show() && LAYOUT.pages?.telecamere !== false;
   return card(`📷 ${t("Telecamere", "Cameras")} <span class="tag info">${L.length}</span>`,
     `<div class="cms1 sct1">${L.map(id => `<div class="cm1 ${ok(id) ? "" : "dis"}">${anteprima(id)}</div>`).join("")}</div>`,
