@@ -18,8 +18,15 @@ const ENT = {
   "sensor.iphone_di_anna_battery_state": st("Not Charging", { friendly_name: "iPhone di Anna Battery State" }),
   "weather.f1_weather": st("sunny", { friendly_name: "F1 Weather", temperature: 34, humidity: 30 }),
   "weather.forecast_casa": st("rainy", { friendly_name: "Forecast Casa", temperature: 19, humidity: 80, wind_speed: 12, wind_speed_unit: "km/h" }),
-  "light.soggiorno": st("on", { friendly_name: "Luce soggiorno", brightness: 200 }),
-  "light.cucina": st("off", { friendly_name: "Luce cucina" }),
+  "light.soggiorno": st("on", { friendly_name: "Lampadario soggiorno", brightness: 200, color_mode: "color_temp", supported_color_modes: ["color_temp"], color_temp_kelvin: 2900, min_color_temp_kelvin: 2200, max_color_temp_kelvin: 6500, rgb_color: [255, 176, 102] }),
+  "light.cucina": st("off", { friendly_name: "Luce cucina", supported_color_modes: ["onoff"] }),
+  /* luci 0.7.27: colori, effetti, gruppo (giardino), interruttore che comanda una luce (cantina) */
+  "light.led_tv_soggiorno": st("on", { friendly_name: "LED TV soggiorno", brightness: 150, color_mode: "hs", supported_color_modes: ["color_temp", "hs"], hs_color: [262, 69], rgb_color: [132, 80, 255], min_color_temp_kelvin: 2000, max_color_temp_kelvin: 6500, effect_list: ["Nessuno", "Arcobaleno", "Respiro", "Candela", "Onda"], effect: "Nessuno" }),
+  "light.giardino_vialetto": st("off", { friendly_name: "Vialetto giardino", supported_color_modes: ["brightness"] }),
+  "light.giardino_portico": st("on", { friendly_name: "Portico", brightness: 255, color_mode: "brightness", supported_color_modes: ["brightness"] }),
+  "light.giardino": st("on", { friendly_name: "Luci giardino", brightness: 255, color_mode: "brightness", supported_color_modes: ["brightness"], entity_id: ["light.giardino_vialetto", "light.giardino_portico"] }),
+  "switch.luce_cantina": st("off", { friendly_name: "Luce cantina" }),
+  "switch.relay_1": st("off", { friendly_name: "Relè 1", device_class: "switch" }),
   "climate.soggiorno": st("cool", { friendly_name: "Clima soggiorno", current_temperature: 25, temperature: 23, hvac_modes: ["off","cool","heat","dry","fan_only","auto"], hvac_action: "cooling", fan_mode: "high", fan_modes: ["auto","low","medium","high"] }),
   /* clima animato (0.7.25): split che scalda piano, termostato, radiatore a riposo, deumidificatore, split spento */
   "climate.cucina": st("heat", { friendly_name: "Split cucina", current_temperature: 19.5, temperature: 21, hvac_modes: ["off","cool","heat","dry","fan_only"], fan_mode: "low", fan_modes: ["low","medium","high"] }),
@@ -39,8 +46,8 @@ const ENT = {
   "calendar.famiglia": st("off", { friendly_name: "Famiglia", supported_features: 7 }),
   "calendar.raccolta_differenziata": st("off", { friendly_name: "Raccolta Differenziata", supported_features: 7 }),
   "calendar.f1_season_calendar": st("off", { friendly_name: "F1 - Race Calendario" }),
-  "scene.cena": st("2026-10-10", { friendly_name: "Cena" }),
-  "scene.film": st("2026-10-10", { friendly_name: "Film" }),
+  "scene.cena": st("2026-10-10", { friendly_name: "Cena", entity_id: ["light.soggiorno", "light.faretti_cucina"] }),
+  "scene.film": st("2026-10-10", { friendly_name: "Film", entity_id: ["light.led_tv_soggiorno", "light.soggiorno"] }),
   "vacuum.ambrogio": st("docked", { friendly_name: "Ambrogio", battery: 100, status: "sleeping", fan_speed: "turbo", cleaned_area: 62, cleaning_time: 67, error: "No error", charging: false, selected_map: "Zona", rooms: { "Zona": [{id:1,name:"Bagno"},{id:2,name:"Lavanderia"},{id:3,name:"Ingresso"},{id:4,name:"Corridoio"},{id:5,name:"Soggiorno"},{id:6,name:"Cucina"}] }, supported_features: 31676 }),
   "camera.ambrogio_map": st("idle", { friendly_name: "Ambrogio Map", entity_picture: "/custom_components/nduja_dashboard/frontend/img/chili.svg" }),
   "camera.ambrogio_map_data": st("idle", { friendly_name: "Ambrogio Map data", entity_picture: "/custom_components/nduja_dashboard/frontend/img/chili.svg" }),
@@ -127,8 +134,8 @@ const ENT = {
   "button.model_3_flash_lights": st("unknown", { friendly_name: "Model 3 Flash lights" }),
   "button.model_3_wake": st("unknown", { friendly_name: "Model 3 Wake" }),
   "select.model_3_seat_heater_front_left": st("off", { options: ["off", "low", "medium", "high"], friendly_name: "Model 3 Seat heater front left" }),
-  "light.lampada_soggiorno": st("off", { friendly_name: "Lampada soggiorno" }),
-  "light.faretti_cucina": st("on", { friendly_name: "Faretti cucina", brightness: 120 }),
+  "light.lampada_soggiorno": st("off", { friendly_name: "Lampada soggiorno", supported_color_modes: ["color_temp", "hs"], min_color_temp_kelvin: 2000, max_color_temp_kelvin: 6500 }),
+  "light.faretti_cucina": st("on", { friendly_name: "Faretti cucina", brightness: 120, color_mode: "brightness", supported_color_modes: ["brightness"] }),
   "switch.presa_cucina": st("off", { friendly_name: "Presa cucina" }),
   "cover.tapparella_soggiorno": st("open", { friendly_name: "Tapparella soggiorno", current_position: 100 }),
   "update.home_assistant_core_update": st("on", { title: "Home Assistant Core", friendly_name: "Core update" }),
@@ -154,7 +161,7 @@ const EV = {
   "calendar.raccolta_differenziata": [{ start: dstr(2), end: dstr(3), summary: "Plastica e Metalli" }, { start: dstr(3), end: dstr(4), summary: "Indifferenziato" }],
 };
 let LAYOUT = JSON.parse(localStorage.getItem("mockLayout") || '{"configured":true,"mode":"auto","energy":{"pv":["sensor.inverter_pv1_power","sensor.inverter_pv2_power","sensor.inverter_pv3_power"]}}');
-const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_sogg/.test(id) ? "soggiorno" : /echo_cucina/.test(id) ? "cucina" : /soggiorno/.test(id) ? "soggiorno" : /^(cover\.(cancello|garage|basculante)|switch\.cancellett|binary_sensor\.cancellett|button\.portone|camera\.(cortile|giardino|campanello))/.test(id) ? "esterno" : /corridoio|porta|ariston/.test(id) ? "corridoio" : /cucina/.test(id) ? "cucina" : /lavatric|asciugatric|lavanderia/.test(id) ? "lavanderia" : /forno|frigo|lavastov/.test(id) ? "cucina" : null,
+const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_sogg/.test(id) ? "soggiorno" : /echo_cucina/.test(id) ? "cucina" : /soggiorno/.test(id) ? "soggiorno" : /^(cover\.(cancello|garage|basculante)|switch\.cancellett|binary_sensor\.cancellett|button\.portone|camera\.(cortile|giardino|campanello)|light\.giardino)/.test(id) ? "esterno" : /corridoio|porta|ariston/.test(id) ? "corridoio" : /cucina/.test(id) ? "cucina" : /lavatric|asciugatric|lavanderia/.test(id) ? "lavanderia" : /forno|frigo|lavastov/.test(id) ? "cucina" : null,
   hb: id === "camera.cantina" || undefined,
   pl: id.includes("model_3") ? "tesla_fleet" : undefined, di: id.includes("model_3") ? "dev_car" : id.startsWith("camera.campanello") ? "dev_bell" : id.startsWith("camera.giardino") ? "dev_reo" : id.startsWith("camera.cortile") ? "dev_cort" : id.includes("ambrogio") ? "dev_v" : id.includes("mario") ? "dev_g" : id.includes("anna") ? "dev_c" : id.includes("ariston") ? "dev_a" : null })) };
 /* telecamere: mockCam = "webrtc" (predefinito: diretta vera via WebRTC dentro il browser) | "webrtc_ko" (WebRTC fallisce, poi HLS)
@@ -181,6 +188,24 @@ function offerta(cb, m) {
   pc.onicecandidate = e => { if (e.candidate) cb({ type: "candidate", candidate: e.candidate.toJSON() }); };
   (async () => { cb({ type: "session", session_id: sid }); await pc.setRemoteDescription({ type: "offer", sdp: m.offer }); const a = await pc.createAnswer(); await pc.setLocalDescription(a); cb({ type: "answer", answer: a.sdp }); })();
   return Promise.resolve(() => { if (PCS[sid]) { PCS[sid].close(); delete PCS[sid]; mockCamLog.chiusi++; console.log("CAM chiuso", m.entity_id); } return Promise.resolve(); });
+}
+function mockLuci(m) {
+  const d = m.service_data || {}, ids = [].concat(m.target?.entity_id || []), ch = {};
+  const hsRgb = (h, s) => { const f = n => { const k = (n + h / 60) % 6; return Math.round(255 * (1 - s / 100 * Math.max(0, Math.min(k, 4 - k, 1)))); }; return [f(5), f(3), f(1)]; };
+  const fai = (id, on) => {
+    const e = ENT[id]; if (!e) return; const a = { ...e.a };
+    if (on) {
+      if (d.brightness_pct != null) a.brightness = Math.round(d.brightness_pct * 2.55); else if (id.startsWith("light.") && a.brightness == null && (a.supported_color_modes || ["brightness"]).some(x => x !== "onoff")) a.brightness = 255;
+      if (d.color_temp_kelvin) Object.assign(a, { color_mode: "color_temp", color_temp_kelvin: d.color_temp_kelvin, hs_color: [30, 60], rgb_color: d.color_temp_kelvin < 3500 ? [255, 180, 107] : d.color_temp_kelvin < 5000 ? [255, 228, 206] : [235, 238, 255] });
+      if (d.hs_color) Object.assign(a, { color_mode: "hs", hs_color: d.hs_color, rgb_color: hsRgb(d.hs_color[0], d.hs_color[1]), color_temp_kelvin: null });
+      if (d.effect) a.effect = d.effect;
+      if (!a.color_mode && a.supported_color_modes) a.color_mode = a.supported_color_modes[0];
+    } else { a.brightness = null; a.color_mode = null; }
+    e.s = on ? "on" : "off"; e.a = a; e.lc = Date.now() / 1000; ch[id] = { "+": { s: e.s, a, lc: e.lc } };
+    (a.entity_id || []).forEach(x => fai(x, on));
+  };
+  ids.forEach(id => fai(id, m.service === "toggle" ? ENT[id]?.s !== "on" : m.service === "turn_on"));
+  setTimeout(() => window.mockStati?.({ c: ch }), 120);
 }
 const conn = {
   addEventListener() {}, subscribeEvents() { return Promise.resolve(() => {}); },
@@ -214,8 +239,10 @@ const conn = {
       case "nduja_dashboard/save_layout": LAYOUT = m.layout; localStorage.setItem("mockLayout", JSON.stringify(LAYOUT)); return { ok: true };
       case "config/entity_registry/list_for_display": return REG;
       case "config/device_registry/list": return [{ id: "dev_g", name: "iPhone di Mario" }, { id: "dev_c", name: "iPhone di Anna" }, { id: "dev_a", name: "Ariston" }, ...(localStorage.getItem("mockNoCar") ? [] : [{ id: "dev_car", name: "Model 3", manufacturer: "Tesla", model: "Model 3" }])];
-      case "config/area_registry/list": return [{ area_id: "soggiorno", name: "Soggiorno" }, { area_id: "corridoio", name: "Corridoio" }, { area_id: "cucina", name: "Cucina" }, { area_id: "lavanderia", name: "Lavanderia" }, { area_id: "esterno", name: "Esterno" }];
-      case "config/floor_registry/list": return [];
+      case "config/area_registry/list": { const P = localStorage.getItem("mockPiani"), F = { soggiorno: "terra", cucina: "terra", esterno: "terra", corridoio: "primo", lavanderia: "primo" };
+        return [{ area_id: "soggiorno", name: "Soggiorno" }, { area_id: "corridoio", name: "Corridoio" }, { area_id: "cucina", name: "Cucina" }, { area_id: "lavanderia", name: "Lavanderia" }, { area_id: "esterno", name: "Esterno" }].map(a => P ? { ...a, floor_id: F[a.area_id] } : a); }
+      /* mockPiani: due piani (prova delle stanze divise per piano) */
+      case "config/floor_registry/list": return localStorage.getItem("mockPiani") ? [{ floor_id: "terra", name: "Piano terra", level: 0 }, { floor_id: "primo", name: "Primo piano", level: 1 }] : [];
       case "recorder/statistic_during_period": return { change: 1.23 };
       case "config/auth/list": return [{ id: "u1", name: "Mario", is_owner: true, is_active: true, group_ids: ["system-admin"] }, { id: "u2", name: "Anna", is_active: true, group_ids: ["system-users"] }];
       case "get_services": return { dreame_vacuum: { vacuum_clean_segment: {} } };
@@ -237,6 +264,8 @@ const conn = {
         if (m.domain === "calendar" && m.service === "get_events") { const ids = [].concat(m.target.entity_id); return { response: Object.fromEntries(ids.map(id => [id, { events: EV[id] || [] }])) }; }
         if (m.type === "recorder/statistic_during_period") return { change: 1.23 };
         if (m.domain === "weather") return { response: { [m.target.entity_id]: { forecast: [0,1,2,3,4].map(i => ({ datetime: day(i, 12), condition: i ? "sunny" : "rainy", temperature: 20 + i, templow: 12, precipitation_probability: i ? 0 : 80 })) } } };
+        /* luci e interruttori: lo stato cambia davvero, come in Home Assistant (anche i membri dei gruppi) */
+        if (["light", "switch"].includes(m.domain) && ["turn_on", "turn_off", "toggle"].includes(m.service)) mockLuci(m);
         console.log("SVC", JSON.stringify(m)); return { response: {} };
     }
     throw { code: "unknown", message: m.type };

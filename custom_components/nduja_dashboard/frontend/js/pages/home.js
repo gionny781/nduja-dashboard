@@ -1,7 +1,7 @@
 /* Home: saluto e riepilogo, meteo, stanze (per piano), persone, scene, cose da sistemare.
    Tutto viene dalle aree e dai dispositivi di Home Assistant: niente da configurare. */
 import { S, HOME_EXTRA, AREAS, FLOORS, UI, ACT, CHG, t, LOC, esc, fnum, attr, ok, val, nm, ents, inArea, areaOf, areasSorted, roomTemp, roomHum,
-  openings, lightsOn, isOn, card, empty, lightTile, climateCard, entityRow, openSheet, closeSheet, page, WX, HVAC, forecast, deviceClass, shortName, svc, toast, ago, weatherEnt, LAYOUT, isAdmin, saveLayout, utenteCfg } from "../core.js";
+  openings, lightsOn, luci, isLightSwitch, isOn, card, empty, lightTile, climateCard, entityRow, openSheet, closeSheet, page, WX, HVAC, forecast, deviceClass, shortName, svc, toast, ago, weatherEnt, LAYOUT, isAdmin, saveLayout, utenteCfg } from "../core.js";
 import { item, addBtn, scegli, isTemp, isHum, cambia } from "../edit.js";
 import { personeCard } from "../people.js";
 import { avvisiCard } from "../avvisi.js";
@@ -11,6 +11,7 @@ import { momentiCard } from "../momenti.js";
 import { musicaCard } from "./musica.js";
 import { novitaHome } from "../novita.js";
 import { vistaClima, momentoClima } from "../climadisegni.js";
+import { luciStanza } from "../luce.js";
 
 const saluto = () => { const h = new Date().getHours(); return h < 6 ? t("Buonanotte", "Good night") : h < 13 ? t("Buongiorno", "Good morning") : h < 18 ? t("Buon pomeriggio", "Good afternoon") : t("Buonasera", "Good evening"); };
 const climaAttivi = () => ents("climate", id => ok(id) && S[id].state !== "off");
@@ -47,7 +48,7 @@ function meteo() {
 function stanza(a) {
   const T = roomTemp(a), H = roomHum(a), L = lightsOn(a).length, O = inArea(a, "binary_sensor", id => ["door", "window", "opening", "garage_door"].includes(deviceClass(id)) && isOn(id)).length;
   const C = inArea(a, "climate").find(id => ok(id) && S[id].state !== "off"), mc = C ? momentoClima(C).k : null;
-  const nLuci = inArea(a, "light").length;
+  const nLuci = luci(a).length;
   return `<button class="rm1 ${L ? "lit" : ""} ${O ? "open" : ""} ${(LAYOUT.hiddenAreas || []).includes(a) ? "off1" : ""}" data-act="room" data-id="${a}">
     <span class="rn">${esc(AREAS[a].name)}</span>
     <span class="rt">${T != null ? fnum(T) + "°" : "—"}${H != null ? `<small>${Math.round(H)}%</small>` : ""}</span>
@@ -89,8 +90,8 @@ function benvenuto() {
 function schedaStanza(a) {
   const ar = AREAS[a]; if (!ar) return "";
   const T = roomTemp(a), H = roomHum(a);
-  const L = inArea(a, "light"), C = inArea(a, "climate");
-  const R = ["cover", "switch", "fan", "lock", "media_player", "humidifier", "vacuum"].flatMap(d => inArea(a, d));
+  const L = luciStanza(a), C = inArea(a, "climate");
+  const R = ["cover", "switch", "fan", "lock", "media_player", "humidifier", "vacuum"].flatMap(d => inArea(a, d)).filter(id => !isLightSwitch(id));
   const O = inArea(a, "binary_sensor", id => ["door", "window", "opening", "garage_door"].includes(deviceClass(id)));
   const SN = inArea(a, "sensor", id => ["temperature", "humidity", "illuminance", "carbon_dioxide", "pm25", "power", "energy"].includes(deviceClass(id)) && ok(id)).slice(0, 12);
   return `<div class="sh-head"><div><h3>${esc(ar.name)}</h3><div class="small muted">${T != null ? fnum(T) + "°" : ""}${H != null ? " · " + Math.round(H) + "%" : ""}${ar.floor && FLOORS[ar.floor] ? " · " + esc(FLOORS[ar.floor].name) : ""}</div></div>${isAdmin() ? `<button class="btn sm" data-act="rmEdit" data-id="${a}">✏️ ${t("Personalizza", "Customize")}</button>` : ""}<button class="x" data-act="sheetClose">×</button></div>

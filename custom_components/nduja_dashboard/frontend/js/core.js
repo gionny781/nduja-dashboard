@@ -112,7 +112,33 @@ export function km(a1, o1, a2, o2) {
   const q = Math.sin(d1 / 2) ** 2 + Math.cos(r(a1)) * Math.cos(r(a2)) * Math.sin(d2 / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(q));
 }
-export const lightsOn = (area) => ents("light", id => S[id].state === "on" && (!area || areaOf(id) === area));
+/* ---------- luci: luci vere, gruppi e interruttori usati come luci (scelti con ✏️ nella pagina Luci) ---------- */
+/** membri di un gruppo di luci (gruppi di Home Assistant, Zigbee, Hue…: hanno l'attributo entity_id) */
+export function membriLuce(id) {
+  const e = attr(id, "entity_id");
+  if (Array.isArray(e)) return e.filter(x => /^(light|switch)\./.test(x) && x !== id);
+  /* gruppi Hue: hanno i nomi delle luci (attributo lights), non le entità */
+  const N = attr(id, "lights"); if (!Array.isArray(N) || !N.length) return [];
+  const nomi = new Set(N.map(n => String(n).toLowerCase()));
+  return Object.keys(S).filter(x => x !== id && x.startsWith("light.") && !Array.isArray(attr(x, "lights")) && nomi.has(nmHA(x).toLowerCase()));
+}
+export const isLightGroup = id => id.startsWith("light.") && (membriLuce(id).length > 0 || attr(id, "is_hue_group") === true);
+/** interruttori (switch) che comandano una luce: li sceglie l'utente con ✏️ */
+export const isLightSwitch = id => id.startsWith("switch.") && (LAYOUT.lightSwitches || []).includes(id);
+/** tutte le luci della plancia (anche i gruppi), di una stanza o della casa */
+export const luci = area => [...ents("light"), ...ents("switch", isLightSwitch)].filter(id => !area || areaOf(id) === area);
+/** le luci da contare: senza i gruppi che ripetono luci già presenti nella plancia (niente doppioni) */
+export function luciContate(area) {
+  const L = luci(), vis = new Set(L);
+  const doppio = id => isLightGroup(id) && membriLuce(id).some(m => vis.has(m));
+  return L.filter(id => !doppio(id) && (!area || areaOf(id) === area));
+}
+export const lightsOn = area => luciContate(area).filter(id => S[id].state === "on");
+/** accende o spegne un elenco di luci (anche interruttori) */
+export function luciComando(ids, on) {
+  const per = {}; ids.forEach(id => (per[domain(id)] = per[domain(id)] || []).push(id));
+  return Promise.all(Object.entries(per).map(([d, L]) => svc(d, on ? "turn_on" : "turn_off", {}, { entity_id: L })));
+}
 
 /* ================= servizi ================= */
 export function toast(msg, err) {
@@ -169,9 +195,11 @@ export const WX = () => ({ "clear-night": ["🌙", t("Sereno", "Clear")], cloudy
   rainy: ["🌦️", t("Pioggia", "Rain")], snowy: ["❄️", t("Neve", "Snow")], "snowy-rainy": ["🌨️", t("Nevischio", "Sleet")], sunny: ["☀️", t("Sereno", "Sunny")], windy: ["💨", t("Vento", "Windy")],
   "windy-variant": ["💨", t("Vento", "Windy")], exceptional: ["⚠️", t("Allerta", "Alert")] });
 
+/* la tessera delle luci vera è in luce.js (VISTE.luce); questa resta se luce.js non si carica */
 const lightIcon = id => { const s = id + nm(id); return /led|strip|striscia/i.test(s) ? "▮" : /spot|faretti/i.test(s) ? "✨" : /lamp|abat|piantana/i.test(s) ? "🛋" : /esterno|outdoor|giardino|garden|portico|porch/i.test(s) ? "🏮" : "💡"; };
 export function lightTile(id, label) {
   const s = S[id]; if (!s) return "";
+  if (VISTE.luce) return VISTE.luce(id, label);
   const on = s.state === "on", b = s.attributes.brightness, un = !ok(id);
   const dim = on && b != null, pct = b != null ? Math.round(b / 2.55) : null;
   const rgb = on && s.attributes.rgb_color ? `style="--lc:rgb(${s.attributes.rgb_color.join(",")})"` : "";
@@ -248,7 +276,7 @@ Object.assign(ACT, {
     svc("climate", "set_temperature", { temperature: v }, { entity_id: id });
   },
   more: el => el.dataset.id ? moreInfo(el.dataset.id) : $("#more").classList.toggle("open"),
-  lightsOff: el => { const L = el.dataset.area ? lightsOn(el.dataset.area) : lightsOn(); if (L.length) svc("light", "turn_off", {}, { entity_id: L }).then(() => toast(t("Luci spente: ", "Lights off: ") + L.length)); },
+  lightsOff: el => { const L = el.dataset.area ? lightsOn(el.dataset.area) : lightsOn(); if (L.length) luciComando(L, false).then(() => toast(t("Luci spente: ", "Lights off: ") + L.length)); },
   sheetClose: () => closeSheet(),
 });
 CHG.bright = el => svc("light", "turn_on", { brightness_pct: +el.value }, { entity_id: el.dataset.id });
@@ -294,6 +322,7 @@ function morph(a, b) {
   if (a.nodeType !== 1) return;
   if (a.hasAttribute("data-keep") && b.hasAttribute("data-keep")) return;
   if (a.getAttribute("data-sure") === "1") return;   // pulsante in attesa di conferma: non lo tocco finché non scade
+  if (a.getAttribute("data-drag") === "1") return;   // luce che si sta regolando col dito (luce.js)
   for (const at of [...a.attributes]) if (!b.hasAttribute(at.name)) a.removeAttribute(at.name);
   for (const at of [...b.attributes]) if (a.getAttribute(at.name) !== at.value) a.setAttribute(at.name, at.value);
   if (a.tagName === "INPUT" && a.type === "range" && a !== dragging) a.value = b.getAttribute("value") ?? a.value;

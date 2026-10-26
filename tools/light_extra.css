@@ -88,3 +88,22 @@ body.light .aut-x:hover,body.light .aut-x:focus-visible{background:rgba(0,0,0,.0
 body.light .cld1.m-cool{--cc:#18a2e6}body.light .cld1.m-heat{--cc:#f97316}body.light .cld1.m-dry{--cc:#12b39b}body.light .cld1.m-fan{--cc:#7d92aa}
 body.light .clv5 em{color:#0a6fd6}
 body.light .mpd2.cl2.m-cool{background:rgba(24,162,230,.2)}body.light .mpd2.cl2.m-heat{background:rgba(249,115,22,.2)}body.light .mpd2.cl2.m-dry{background:rgba(18,179,155,.2)}body.light .mpd2.cl2.m-fan{background:rgba(125,146,170,.2)}
+/* luci (0.7.27) */
+body.light .lt2{background:rgba(255,255,255,.72);border-color:rgba(0,0,0,.07);box-shadow:0 6px 18px -12px rgba(31,45,80,.35)}
+body.light .lt2.on{background:var(--lb);border-color:rgba(var(--lr),.75);box-shadow:0 14px 30px -12px rgba(var(--lr),var(--lh)),0 0 0 1px rgba(var(--lr),.25)}
+body.light .lt2i,body.light .lu3i,body.light .lu5 button span{background:rgba(0,0,0,.05)}
+body.light .lt2.on .lt2i,body.light .lu3i.on{background:var(--lc)}
+body.light .lt2d:hover{background:rgba(0,0,0,.06)}
+body.light .editing .ed1>.lt2{outline-color:rgba(0,0,0,.2)}
+body.light .lu1z button{background:rgba(255,190,0,.14);border-color:rgba(200,150,0,.3)}
+body.light .lu4{color:rgba(28,28,30,.4)}body.light .lu4.on{color:rgba(28,28,30,.78)}
+body.light .mpd2.lt4.on{background:rgba(0,0,0,.05)}
+body.light .lu3p,body.light .lu3b,body.light .lu3c button,body.light .lu3e button,body.light .lu5 button{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08)}
+body.light .lu3p.on{background:var(--lc);border-color:transparent}
+body.light .lu3b.on{background:var(--lb);border-color:rgba(var(--lr),.55)}
+body.light .lu3c button.on{background:#fff;border-color:rgba(28,28,30,.45)}
+body.light .lu3e button.on{background:var(--blue);color:#fff}
+body.light .lu3s.add{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.22);color:#b88600}
+body.light .lu3s.on{box-shadow:0 0 0 2px #fff,0 0 0 4px #1c1c1e}
+body.light .lu3w{box-shadow:0 12px 26px -16px rgba(31,45,80,.6),inset 0 0 0 1px rgba(0,0,0,.08)}
+body.light .lu5 button.on{background:rgba(255,200,0,.16);border-color:#e0a800}body.light .lu5 button.on span{background:var(--yellow)}

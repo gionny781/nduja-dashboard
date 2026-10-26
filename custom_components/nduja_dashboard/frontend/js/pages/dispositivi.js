@@ -1,9 +1,9 @@
 /* Prese e dispositivi: prese e interruttori, tapparelle, ventilatori, TV, serrature, robot… divisi per stanza. */
-import { AREAS, t, esc, ents, areaOf, areasSorted, entityRow, card, empty, page, UI, isAdmin } from "../core.js";
+import { AREAS, t, esc, ents, isLightSwitch, areaOf, areasSorted, entityRow, card, empty, page, UI, isAdmin } from "../core.js";
 import { item, addBtn } from "../edit.js";
 
 const DOM = ["switch", "cover", "fan", "lock", "humidifier", "valve", "siren", "input_boolean"];
-const tutti = () => DOM.flatMap(d => ents(d));
+const tutti = () => DOM.flatMap(d => ents(d)).filter(id => !isLightSwitch(id));   // gli interruttori scelti come luci stanno nella pagina Luci
 function pagina() {
   const L = tutti(), g = {};
   L.forEach(id => (g[areaOf(id) && AREAS[areaOf(id)] ? areaOf(id) : "_"] = g[areaOf(id) && AREAS[areaOf(id)] ? areaOf(id) : "_"] || []).push(id));

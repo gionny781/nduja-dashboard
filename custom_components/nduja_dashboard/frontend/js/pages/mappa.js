@@ -1,11 +1,12 @@
 /* Mappa della casa: le stanze di ogni piano disegnate su una griglia, con luci accese, finestre aperte,
    clima, movimento e temperatura. Si costruisce da sola dalle aree; con ✏️ Modifica sposti e ridimensioni
    le stanze (frecce e ＋/−) e puoi mettere sotto la piantina vera (un'immagine in /local/…). */
-import { S, AREAS, FLOORS, ACT, CHG, LAYOUT, UI, t, esc, fnum, ok, isOn, inArea, areaOf, areasSorted, roomTemp, roomHum, lightsOn,
+import { S, AREAS, FLOORS, ACT, CHG, LAYOUT, UI, t, esc, fnum, ok, isOn, inArea, areaOf, areasSorted, roomTemp, roomHum, lightsOn, luciContate, luciComando, isLightSwitch,
   deviceClass, svc, toast, card, empty, page, sGet, sSet, render, isAdmin, attr, openSheet, closeSheet, nm, moreInfo } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 import { elettroMappa } from "./elettrodomestici.js";
 import { vistaClima, momentoClima } from "../climadisegni.js";
+import { luciStanza, iconaPiccola } from "../luce.js";
 
 const COL = 12;
 /* stanze della mappa: le aree di Home Assistant (anche vuote) più le stanze create solo nella mappa */
@@ -72,19 +73,21 @@ const ICO_D = (id) => { const d = id.split(".")[0], on = isOn(id) || ["open", "p
 const devsConf = (f, a) => mp(f).devs?.[a] || {};
 export function dispositivi(a, f) {
   const c = devsConf(f, a), manuale = mp(f).devMode === "manual";
-  const auto = manuale || !AREAS[a] ? [] : DOM_MAPPA.flatMap(d => inArea(a, d));
+  /* luci come nella pagina Luci: i gruppi raccolgono le loro luci, gli interruttori scelti come luci contano come luci */
+  const auto = manuale || !AREAS[a] ? [] : [...luciStanza(a), ...DOM_MAPPA.filter(d => d !== "light").flatMap(d => inArea(a, d)).filter(id => !isLightSwitch(id))];
   return [...new Set([...auto.filter(id => !(c.hide || []).includes(id)), ...(c.add || []).filter(id => S[id])])];
 }
 /* il clima con il suo aspetto (animazione, immagini o icona), come nella pagina Clima */
-const chipD = (id, a, f) => `<span class="mpd2 ${id.startsWith("climate.") ? "cl2 m-" + momentoClima(id).k : isOn(id) || ["open", "playing", "cleaning", "unlocked"].includes(S[id]?.state) ? "on" : ""}">
-  <button data-act="mpDev" data-id="${id}" title="${esc(nm(id))}">${id.startsWith("climate.") ? vistaClima(id, "xs") : ICO_D(id)}</button>${UI.edit ? `<button class="dx" data-act="mpDevDel" data-id="${id}" data-a="${a}" data-f="${f}">✕</button>` : ""}</span>`;
+const eLuce = id => id.startsWith("light.") || isLightSwitch(id);
+const chipD = (id, a, f) => `<span class="mpd2 ${id.startsWith("climate.") ? "cl2 m-" + momentoClima(id).k : eLuce(id) ? "lt4 " + (isOn(id) ? "on" : "") : isOn(id) || ["open", "playing", "cleaning", "unlocked"].includes(S[id]?.state) ? "on" : ""}">
+  <button data-act="mpDev" data-id="${id}" title="${esc(nm(id))}">${id.startsWith("climate.") ? vistaClima(id, "xs") : eLuce(id) ? iconaPiccola(id) : ICO_D(id)}</button>${UI.edit ? `<button class="dx" data-act="mpDevDel" data-id="${id}" data-a="${a}" data-f="${f}">✕</button>` : ""}</span>`;
 /* elettrodomestici della stanza: con il loro aspetto (animazione, immagine o icona), si scelgono nella pagina Elettrodomestici */
 const rigaDev = (a, f) => { const D = dispositivi(a, f), E = AREAS[a] ? elettroMappa(a) : "";
   return D.length || E || UI.edit ? `<div class="mpd1">${E}${D.map(id => chipD(id, a, f)).join("")}${UI.edit ? `<button class="mpd2 add" data-act="mpDevAdd" data-a="${a}" data-f="${f}">＋</button>` : ""}</div>` : ""; };
 
 function stanza(a, p, f) {
   if (!AREAS[a]) return pezzi(p).map((r, i) => `<div class="mpr1 cust ${i ? "pz" : ""}" style="grid-column:${r.x + 1} / span ${r.w};grid-row:${r.y + 1} / span ${r.h}">${i === 0 ? `<button class="mpb1" ${isAdmin() ? `data-act="mpCustom" data-id="${a}" data-f="${f}"` : ""}><b>${esc(nomeStanza(a, f))}</b></button>${rigaDev(a, f)}` : `<span class="mpb1"></span>`}${UI.edit ? comandi(a, i, f) : ""}</div>`).join("");
-  const T = roomTemp(a), H = roomHum(a), L = lightsOn(a).length, nL = inArea(a, "light").length;
+  const T = roomTemp(a), H = roomHum(a), L = lightsOn(a).length, nL = luciContate(a).length;
   const O = inArea(a, "binary_sensor", id => ["door", "window", "opening", "garage_door"].includes(deviceClass(id)) && isOn(id)).length;
   const mov = inArea(a, "binary_sensor", id => ["motion", "occupancy", "presence"].includes(deviceClass(id)) && isOn(id)).length;
   const C = inArea(a, "climate").find(id => ok(id) && S[id].state !== "off"), freddo = C && ["cool", "dry"].includes(S[C].state);
@@ -158,8 +161,7 @@ Object.assign(ACT, {
   m3Rot: el => { V3.rz += +el.dataset.v; salva3(); render(true); },
   m3Tilt: el => { V3.rx = Math.max(0, Math.min(75, V3.rx + +el.dataset.v)); salva3(); render(true); },
   mpFloor: el => { sSet("mapFloor", el.dataset.v); render(true); },
-  mpLights: el => { const a = el.dataset.id, on = lightsOn(a), all = inArea(a, "light");
-    svc("light", on.length ? "turn_off" : "turn_on", {}, { entity_id: on.length ? on : all }); },
+  mpLights: el => { const a = el.dataset.id, on = lightsOn(a); luciComando(on.length ? on : luciContate(a), !on.length); },
   mpMove: el => {
     const a = el.dataset.id, i = +el.dataset.i || 0, [k, d] = el.dataset.v.split(",");
     modifica(a, room => {

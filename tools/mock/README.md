@@ -33,3 +33,10 @@ scalda, `climate.radiatore_lavanderia` è a riposo (`hvac_action: idle`), `clima
 # notte serena, batteria che scarica
 LS='{"mockEnt":"{\"sun.sun\":[\"below_horizon\",{\"elevation\":-30,\"rising\":false,\"next_rising\":\"@+8h\",\"next_setting\":\"@+19h\"}],\"weather.forecast_casa\":[\"clear-night\",{}],\"sensor.battery_power\":[\"380\"]}"}' node tools/mock/shot.mjs energia 1280 900 notte.png
 ```
+
+**Luci** (0.7.27): i comandi `light.*` e `switch.*` (accendi, spegni, luminosità, bianco, colore, effetto) cambiano davvero lo stato finto, anche dei membri dei gruppi.
+`light.soggiorno` è bianca regolabile, `light.led_tv_soggiorno` è a colori con gli effetti, `light.giardino` è un gruppo (vialetto e portico, in Esterno),
+`switch.luce_cantina` e `switch.relay_1` si possono aggiungere come luci. Con `mockPiani` in `LS` le stanze sono divise in due piani.
+```bash
+LS='{"mockPiani":"1"}' node tools/mock/shot.mjs luci 1280 900 luci.png '[data-act="luDet"][data-id="light.led_tv_soggiorno"]'
+```
