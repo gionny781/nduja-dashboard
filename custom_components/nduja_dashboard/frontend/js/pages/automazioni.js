@@ -1,34 +1,102 @@
-/* Automazioni: tutte le automazioni di Home Assistant (accendi/spegni, esegui, quando sono partite l'ultima volta)
+/* Automazioni: un tasto per ogni automazione di Home Assistant — tocchi e si accende o si spegne; con ⋯ la metti
+   in pausa (1 ora, 4 ore, fino a domattina: Home Assistant la riaccende da solo), la esegui, la porti in Home o la nascondi.
    e un costruttore semplice per crearne di nuove senza uscire dalla plancia:
    QUANDO (ora, un dispositivo cambia, alba/tramonto, qualcuno arriva o esce) → SOLO SE (facoltativo) → ALLORA (azioni).
    Le automazioni create qui si salvano in Home Assistant (automations.yaml) e si possono modificare anche qui. */
-import { S, ACT, CHG, LAYOUT, UI, t, esc, nm, ok, attr, ents, allEnts, ago, card, empty, page, svc, toast, openSheet, closeSheet,
+import { S, ACT, CHG, LAYOUT, UI, HOME_EXTRA, t, esc, nm, ok, attr, ents, allEnts, ago, hhmm, card, empty, page, svc, toast, openSheet, closeSheet,
   render, isAdmin, api, apriHA, ws, cached, LOC, etichettaNduja } from "../core.js";
+import { casa, casaCambia } from "../casa.js";
 import { scegli, cambia } from "../edit.js";
 
-const V = { q: "", filtro: "tutte" };
+const V = { q: "", filtro: "tutte", nascoste: false, menu: null };
 const autos = () => allEnts("automation").sort((a, b) => nm(a).localeCompare(nm(b), LOC));
 
-function riga(id) {
-  const on = S[id].state === "on", lt = attr(id, "last_triggered"), mia = !!LAYOUT.autoModels?.[attr(id, "id")];
-  return `<div class="li au1 ${on ? "" : "dis"}"><span class="ic">${mia ? "🌶️" : "⚙️"}</span>
-    <div class="tx"><b>${esc(nm(id))}</b><span>${lt ? t("partita ", "ran ") + ago(lt) : t("mai partita", "never ran")}${attr(id, "current") ? " · ▶ " + t("in corso", "running") : ""}</span></div>
-    <button class="btn sm" data-act="auRun" data-id="${id}" title="${t("Esegui adesso", "Run now")}">▶</button>
-    ${isAdmin() ? `<button class="btn sm" data-act="auEdit" data-id="${id}" title="${t("Modifica", "Edit")}">✏️</button>` : ""}
-    <button class="sw ${on ? "on" : ""}" data-act="auToggle" data-id="${id}" aria-label="${esc(nm(id))}"><i></i></button></div>`;
+/* pause (le gestisce Home Assistant) e scelte condivise: preferite in Home, nascoste dai tasti */
+const pause = () => casa("pause")?.dati || {};
+const scelte = () => casa("automazioni")?.dati || {};
+const preferite = () => (scelte().preferite || []).filter(id => S[id]);
+const nascosta = id => (scelte().nascoste || []).includes(id);
+const pausaFino = id => { const f = pause()[id], d = f ? new Date(f) : null; return d && d > Date.now() ? d : null; };
+const quando = d => { const oggi = new Date(), dom = new Date(Date.now() + 864e5);
+  return d.toDateString() === oggi.toDateString() ? hhmm(d) : d.toDateString() === dom.toDateString() ? t("domani ", "tomorrow ") + hhmm(d) : d.toLocaleDateString(LOC, { day: "numeric", month: "short" }) + " " + hhmm(d); };
+
+/* un'icona che si capisce al volo, dal nome dell'automazione */
+const ICONE = [[/luc|light|lamp|neon|led/, "💡"], [/nott|night|dorm|sleep|buonanott/, "🌙"], [/matt|sveglia|morning|alba|sunrise/, "🌅"], [/tramont|sera|sunset|evening/, "🌇"],
+  [/irrig|giardin|prato|water|sprink/, "💧"], [/allarm|alarm|sicur|security|intrus/, "🛡️"], [/tappar|tend|cover|blind|shutter|persian/, "🪟"],
+  [/clima|risc|termo|caldo|freddo|temp|heat|cool|condiz|aria/, "🌡️"], [/notif|avvis|messag|telegram|alert/, "🔔"], [/cancell|garage|gate|porta|door|serrat|lock/, "🚪"],
+  [/arriv|casa|home|esco|uscit|leave|presen/, "🏠"], [/energ|solar|fotovolt|batter|consum|power|carica|charg/, "⚡"], [/lavatr|lavastov|forno|asciug|washer|dryer|oven/, "🧺"],
+  [/aspirap|robot|vacuum|pulizi/, "🧹"], [/music|radio|tv|media|film|spotify|sonos/, "🎵"], [/\bauto\b|tesla|macchin/, "🚗"], [/telecam|camera|video/, "📷"], [/meteo|pioggia|vento|rain|wind/, "🌦️"]];
+const icona = id => { const n = (nm(id) + " " + id.split(".")[1]).toLowerCase(); return (ICONE.find(([r]) => r.test(n)) || [0, "⚡"])[1]; };
+
+/** un tasto: tocchi ovunque e cambia; ⋯ per le altre scelte */
+function tasto(id) {
+  const on = S[id].state === "on", pz = pausaFino(id), lt = attr(id, "last_triggered");
+  const sub = pz ? "⏸ " + t("in pausa fino a ", "paused until ") + quando(pz)
+    : !on ? t("spenta", "off")
+    : attr(id, "current") ? "▶ " + t("in corso", "running")
+    : lt ? t("attiva · partita ", "on · ran ") + ago(lt) : t("attiva · mai partita", "on · never ran");
+  return `<div class="aut ${on ? "on" : ""} ${pz ? "pz" : ""}">
+    <button class="aut-m" data-act="auTile" data-id="${id}" aria-pressed="${on}" aria-label="${esc(nm(id))}: ${on ? t("attiva, tocca per spegnere", "on, tap to turn off") : t("spenta, tocca per accendere", "off, tap to turn on")}">
+      <span class="aut-i">${icona(id)}</span><span class="aut-t"><b>${esc(nm(id))}</b><small>${esc(sub)}</small></span>
+      <span class="sw ${on ? "on" : ""}" aria-hidden="true"><i></i></span></button>
+    <button class="aut-x" data-act="auMenu" data-id="${id}" aria-label="${t("Altre scelte per ", "More for ")}${esc(nm(id))}">⋯</button></div>`;
 }
 
 function pagina() {
-  const A = autos(), q = V.q.toLowerCase();
-  const L = A.filter(id => (!q || (nm(id) + id).toLowerCase().includes(q)) && (V.filtro === "tutte" || (V.filtro === "attive") === (S[id].state === "on")));
-  const nOn = A.filter(id => S[id].state === "on").length;
+  const A = autos(), q = V.q.toLowerCase(), P = pause();
+  const visibili = A.filter(id => V.nascoste || !nascosta(id)), nNasc = A.filter(nascosta).length;
+  const L = visibili.filter(id => (!q || (nm(id) + id).toLowerCase().includes(q)) && (V.filtro === "tutte"
+    || (V.filtro === "attive" && S[id].state === "on") || (V.filtro === "spente" && S[id].state !== "on" && !pausaFino(id)) || (V.filtro === "pausa" && !!pausaFino(id))));
+  const nOn = A.filter(id => S[id].state === "on").length, nPz = A.filter(id => P[id] && pausaFino(id)).length;
+  const filtri = [["tutte", t("Tutte", "All")], ["attive", t("Attive", "On")], ["spente", t("Spente", "Off")], ...(nPz ? [["pausa", "⏸ " + t("In pausa", "Paused")]] : [])];
   return `<div class="g">
     <section class="card"><div class="ch"><h2>🔁 ${t("Automazioni", "Automations")} <span class="tag info">${nOn}/${A.length}</span></h2>${isAdmin() ? `<button class="btn pri" data-act="auNew">＋ ${t("Nuova automazione", "New automation")}</button>` : ""}</div>
-      <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:10px"><input id="au1q" class="pk1q" style="flex:1;min-width:180px;margin:0" type="search" placeholder="🔍 ${t("Cerca…", "Search…")}" value="${esc(V.q)}">
-        <div class="seg">${[["tutte", t("Tutte", "All")], ["attive", t("Attive", "On")], ["spente", t("Spente", "Off")]].map(([k, n]) => `<button class="${V.filtro === k ? "act" : ""}" data-act="auFiltro" data-v="${k}">${n}</button>`).join("")}</div></div>
-      ${L.length ? `<div class="stack">${L.map(riga).join("")}</div>` : empty(A.length ? t("Nessun risultato.", "No results.") : t("Non hai ancora automazioni: creane una con ＋.", "No automations yet: create one with ＋."))}
+      <p class="small muted" style="margin:0 0 12px">${t("Tocca un tasto per accendere o spegnere un'automazione. Con ⋯ la metti in pausa: Home Assistant la riaccende da solo.", "Tap a button to turn an automation on or off. Use ⋯ to pause it: Home Assistant turns it back on by itself.")}</p>
+      ${A.length > 6 ? `<div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:12px"><input id="au1q" class="pk1q" style="flex:1;min-width:180px;margin:0" type="search" placeholder="🔍 ${t("Cerca…", "Search…")}" value="${esc(V.q)}">
+        <div class="seg">${filtri.map(([k, n]) => `<button class="${V.filtro === k ? "act" : ""}" data-act="auFiltro" data-v="${k}">${n}</button>`).join("")}</div></div>` : ""}
+      ${L.length ? `<div class="autg">${L.map(tasto).join("")}</div>` : empty(A.length ? t("Nessun risultato.", "No results.") : t("Non hai ancora automazioni: creane una con ＋.", "No automations yet: create one with ＋."))}
+      ${nNasc ? `<button class="btn ghost sm" style="margin-top:12px" data-act="auNascoste">${V.nascoste ? "🙈 " + t("Nascondi di nuovo", "Hide again") : "👁 " + t(`Mostra le nascoste (${nNasc})`, `Show hidden (${nNasc})`)}</button>` : ""}
     </section></div>`;
 }
+
+/* ⋯ : pausa, esegui, Home, nascondi, modifica */
+const minutiADomattina = () => { const d = new Date(); d.setDate(d.getDate() + (d.getHours() >= 7 ? 1 : 0)); d.setHours(7, 0, 0, 0); return Math.max(1, Math.round((d - Date.now()) / 6e4)); };
+function menu() {
+  const id = V.menu; if (!id || !S[id]) return "";
+  const on = S[id].state === "on", pz = pausaFino(id), pref = preferite().includes(id), nas = nascosta(id);
+  const op = (act, txt, extra = "", cls = "") => `<button class="btn ${cls}" data-act="${act}" data-id="${id}" ${extra}>${txt}</button>`;
+  return `<div class="sh-head"><div><h3>${icona(id)} ${esc(nm(id))}</h3><div class="small muted">${pz ? "⏸ " + t("in pausa fino a ", "paused until ") + quando(pz) : on ? t("attiva", "on") : t("spenta", "off")}</div></div><button class="x" data-act="sheetClose">×</button></div>
+    <div class="fl1">${t("Metti in pausa", "Pause")}</div>
+    <div class="aut-op">
+      ${op("auPausa", "⏸ " + t("1 ora", "1 hour"), 'data-m="60"')}${op("auPausa", "⏸ " + t("4 ore", "4 hours"), 'data-m="240"')}
+      ${op("auPausa", "🌙 " + t("Fino a domattina", "Until tomorrow morning"), `data-m="${minutiADomattina()}"`)}${op("auPausa", "📅 " + t("Una settimana", "One week"), 'data-m="10080"')}
+    </div>
+    <small class="muted">${t("Dopo la pausa Home Assistant la riaccende da solo, anche se la plancia è chiusa.", "After the pause Home Assistant turns it back on by itself, even with the dashboard closed.")}</small>
+    <div class="fl1">${t("Altro", "More")}</div>
+    <div class="aut-op">
+      ${pz ? op("auRiprendi", "▶ " + t("Riaccendi adesso", "Turn back on now"), "", "pri") : op("auTile", on ? "⛔ " + t("Spegni", "Turn off") : "✅ " + t("Accendi", "Turn on"))}
+      ${op("auRun", "▶ " + t("Esegui adesso", "Run now"))}
+      ${op("auPref", pref ? "⭐ " + t("Togli dalla Home", "Remove from Home") : "☆ " + t("Mostra in Home", "Show on Home"))}
+      ${op("auNasc", nas ? "👁 " + t("Rimetti tra i tasti", "Show again") : "🙈 " + t("Nascondi da qui", "Hide from here"))}
+      ${isAdmin() ? op("auEdit", "✏️ " + t("Modifica", "Edit")) : ""}
+    </div>`;
+}
+async function pausa(id, minuti) {
+  try {
+    await ws({ type: "nduja_dashboard/pausa", entity_id: id, minuti });
+    return true;
+  } catch (e) {
+    toast(/unknown_command|unknown command/i.test(e?.code || e?.message || "") ? t("Aggiorna e riavvia Home Assistant per usare le pause", "Update and restart Home Assistant to use pauses") : t("Non riuscito: ", "Failed: ") + (e?.message || e?.code || e), true);
+    return false;
+  }
+}
+
+/* Home: le automazioni preferite, come tasti */
+function homeCard() {
+  const L = preferite(); if (!L.length) return "";
+  return card("🔁 " + t("Automazioni", "Automations"), `<div class="autg sm">${L.map(tasto).join("")}</div>`, { link: [t("Tutte", "All"), "automazioni"] });
+}
+HOME_EXTRA.automazioni = { title: () => t("Automazioni", "Automations"), render: homeCard, show: () => preferite().length > 0 };
 document.addEventListener("input", e => { if (e.target.id === "au1q") { V.q = e.target.value; render(); } });
 
 /* ---------------- costruttore ---------------- */
@@ -112,10 +180,31 @@ let riapri = () => openSheet(costruttore);
 export function usaModello(m, r) { M = m; riapri = r; }
 Object.assign(ACT, {
   auToggle: el => { const id = el.dataset.id; svc("automation", S[id].state === "on" ? "turn_off" : "turn_on", {}, { entity_id: id }); },
-  auRun: el => svc("automation", "trigger", { skip_condition: true }, { entity_id: el.dataset.id }).then(() => toast("▶ " + nm(el.dataset.id))),
+  /* tocco sul tasto: accende/spegne (se era in pausa, toglie la pausa e la riaccende) */
+  auTile: async el => {
+    const id = el.dataset.id; if (!S[id]) return;
+    if (UI.sheet === menu) closeSheet();
+    if (pausaFino(id)) { if (await pausa(id, 0)) toast("✅ " + nm(id) + " · " + t("riaccesa", "back on")); return; }
+    const on = S[id].state === "on";
+    if (on && pause()[id]) await pausa(id, 0);   // pausa scaduta rimasta: la pulisco
+    await svc("automation", on ? "turn_off" : "turn_on", {}, { entity_id: id });
+    toast((on ? "⛔ " : "✅ ") + nm(id) + " · " + (on ? t("spenta", "off") : t("attiva", "on")));
+  },
+  auMenu: el => { V.menu = el.dataset.id; openSheet(menu); },
+  auPausa: async el => { const id = el.dataset.id, m = +el.dataset.m;
+    if (await pausa(id, m)) { closeSheet(); toast("⏸ " + nm(id) + " · " + t("in pausa fino a ", "paused until ") + quando(new Date(Date.now() + m * 6e4))); } },
+  auRiprendi: async el => { const id = el.dataset.id; if (await pausa(id, 0)) { closeSheet(); toast("✅ " + nm(id) + " · " + t("riaccesa", "back on")); } },
+  auPref: el => { const id = el.dataset.id;
+    casaCambia("automazioni", d => { const p = d.preferite = (d.preferite || []).filter(x => x !== id); if (!preferite().includes(id)) p.push(id); },
+      preferite().includes(id) ? "☆ " + t("Tolta dalla Home", "Removed from Home") : "⭐ " + t("In Home", "On Home")); },
+  auNasc: el => { const id = el.dataset.id, era = nascosta(id);
+    casaCambia("automazioni", d => { const n = d.nascoste = (d.nascoste || []).filter(x => x !== id); if (!era) n.push(id); }, era ? "👁 " + nm(id) : "🙈 " + nm(id));
+    if (!era) closeSheet(); },
+  auNascoste: () => { V.nascoste = !V.nascoste; render(); },
+  auRun: el => { if (UI.sheet === menu) closeSheet(); return svc("automation", "trigger", { skip_condition: true }, { entity_id: el.dataset.id }).then(() => toast("▶ " + nm(el.dataset.id))); },
   auFiltro: el => { V.filtro = el.dataset.v; render(); },
   auNew: () => { M = nuovo(); mId = null; riapri = () => openSheet(costruttore); riapri(); },
-  auEdit: el => { const id = el.dataset.id, cfg = attr(id, "id"), mod = LAYOUT.autoModels?.[cfg];
+  auEdit: el => { if (UI.sheet === menu) closeSheet(); const id = el.dataset.id, cfg = attr(id, "id"), mod = LAYOUT.autoModels?.[cfg];
     if (mod) { M = JSON.parse(JSON.stringify(mod)); mId = cfg; riapri = () => openSheet(costruttore); return riapri(); }
     apriHA("/config/automation/edit/" + encodeURIComponent(cfg || "")); },
   auQuando: el => { M.quando = { tipo: el.dataset.v, giorni: [] }; render(); },

@@ -80,3 +80,10 @@ body.light .bcb1.warn{background:rgba(255,159,10,.16)!important;color:#b86e00}
 body.light .bcw1f small.poco{color:#d27400}
 body.light .bcv1 button.on{background:rgba(10,132,255,.12)!important}
 body.light .bcs2{background:rgba(255,255,255,.6)!important}
+/* Automazioni (tema chiaro) */
+body.light .aut{background:rgba(255,255,255,.75);border-color:rgba(0,0,0,.08)}
+body.light .aut-i{background:rgba(0,0,0,.05)}
+body.light .aut.on{background:linear-gradient(135deg,rgba(48,209,88,.18),rgba(255,255,255,.8));border-color:rgba(36,160,70,.45)}
+body.light .aut.pz{background:linear-gradient(135deg,rgba(255,159,10,.16),rgba(255,255,255,.8));border-color:rgba(200,120,0,.5)}
+body.light .aut.pz .aut-t small{color:#9a5a00}
+body.light .aut-x:hover,body.light .aut-x:focus-visible{background:rgba(0,0,0,.05)}

@@ -3,6 +3,15 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.22-dev1
+> 🧪 Anteprima / preview · ⚠️ **riavvia Home Assistant** dopo l'aggiornamento / **restart Home Assistant** after updating.
+- 🇮🇹 **Automazioni come tasti**: ogni automazione è un tasto moderno. Lo tocchi e si accende o si spegne; acceso è verde, spento è grigio.
+- 🇮🇹 **Pausa**: con ⋯ metti in pausa un'automazione per 1 ora, 4 ore, fino a domattina o una settimana. Home Assistant la riaccende da solo, anche con la plancia chiusa e dopo un riavvio. Toccando un tasto in pausa la riaccendi subito.
+- 🇮🇹 Sempre da ⋯: **Esegui adesso**, **Mostra in Home** (le preferite diventano una scheda «Automazioni» in Home) e **Nascondi da qui** (per quelle tecniche che non vuoi vedere). Valgono per tutti, su tutti i dispositivi.
+- 🇬🇧 **Automations as buttons**: every automation is a modern button. Tap it to turn it on or off; green when on, grey when off.
+- 🇬🇧 **Pause**: with ⋯ pause an automation for 1 hour, 4 hours, until tomorrow morning or one week. Home Assistant turns it back on by itself, even with the dashboard closed and after a restart. Tap a paused button to turn it back on right away.
+- 🇬🇧 Also from ⋯: **Run now**, **Show on Home** (favourites become an «Automations» card on Home) and **Hide from here** (for technical ones you don't want to see). They apply to everyone, on every device.
+
 ## 0.7.22-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 > ⚠️ 🇮🇹 Se arrivi da una versione prima della 0.7.21-dev **riavvia Home Assistant** dopo l'aggiornamento. · 🇬🇧 If you're coming from a version before 0.7.21-dev, **restart Home Assistant** after updating.

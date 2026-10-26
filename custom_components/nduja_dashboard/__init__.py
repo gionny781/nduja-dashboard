@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
@@ -10,8 +11,11 @@ import voluptuous as vol
 from homeassistant.components import frontend, websocket_api
 from homeassistant.components.http import HomeAssistantView, StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import Context, HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError, Unauthorized
+from homeassistant.helpers.event import async_track_point_in_utc_time
 from homeassistant.helpers.storage import Store
+from homeassistant.util import dt as dt_util
 
 from .const import (CONF_ADMIN, CONF_ICON, CONF_TITLE, DEFAULT_ICON, DEFAULT_TITLE,
                     DOMAIN, PANEL_URL, STATIC_URL, VERSION)
@@ -74,6 +78,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         websocket_api.async_register_command(hass, ws_casa_get)
         websocket_api.async_register_command(hass, ws_casa_save)
         websocket_api.async_register_command(hass, ws_casa_subscribe)
+        websocket_api.async_register_command(hass, ws_pausa)
         data["static"] = True
     if "store" not in data:
         data["store"] = Store(hass, STORE_VERSION, f"{DOMAIN}.layout")
@@ -81,6 +86,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if "casa_store" not in data:
         data["casa_store"] = Store(hass, STORE_VERSION, STORE_CASA)
         data["casa"] = await data["casa_store"].async_load() or {}
+    if not data.get("pause_avviate"):
+        data["pause_avviate"] = True
+        _pause_riprendi(hass)
     data["entry"] = entry
     _register_panel(hass, entry)
     entry.async_on_unload(entry.add_update_listener(_reload))
@@ -119,6 +127,9 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     await Store(hass, STORE_VERSION, STORE_CASA).async_remove()
     data.pop("store", None)
     data.pop("layout", None)
+    for annulla in data.pop("pause_timers", {}).values():
+        annulla()
+    data.pop("pause_avviate", None)
     data.pop("casa_store", None)
     data.pop("casa", None)   # i file statici restano registrati fino al riavvio
 
@@ -212,3 +223,93 @@ def ws_casa_subscribe(hass: HomeAssistant, connection, msg) -> None:
 
     connection.subscriptions[msg["id"]] = hass.bus.async_listen(EVENT_CASA, inoltra)
     connection.send_result(msg["id"])
+
+
+# ---------------- Automazioni in pausa ----------------
+# «Spegni per un'ora / fino a domattina»: l'automazione si spegne e Home Assistant la riaccende da solo
+# all'ora giusta, anche se nessuno ha la plancia aperta e anche dopo un riavvio.
+# Le pause stanno nei dati della casa (sezione «pause»: {entity_id: fino_iso}), così tutti i dispositivi le vedono.
+PAUSE = "pause"
+
+
+async def _pause_salva(hass: HomeAssistant, dati: dict[str, str]) -> None:
+    data = hass.data[DOMAIN]
+    casa = data["casa"]
+    rev = _sezione(casa, PAUSE)["rev"] + 1
+    casa[PAUSE] = {"rev": rev, "dati": dati}
+    await data["casa_store"].async_save(casa)
+    hass.bus.async_fire(EVENT_CASA, {"sezione": PAUSE, "rev": rev})
+
+
+async def _pause_fine(hass: HomeAssistant, entity_id: str, riaccendi: bool = True, context: Context | None = None) -> None:
+    """Toglie la pausa (e il timer) e, se richiesto, riaccende l'automazione."""
+    data = hass.data.get(DOMAIN, {})
+    annulla = data.get("pause_timers", {}).pop(entity_id, None)
+    if annulla:
+        annulla()
+    dati = dict(_sezione(data.get("casa", {}), PAUSE)["dati"])
+    if entity_id in dati:
+        dati.pop(entity_id)
+        await _pause_salva(hass, dati)
+    if riaccendi:
+        await hass.services.async_call("automation", "turn_on", {"entity_id": entity_id}, blocking=True, context=context)
+
+
+@callback
+def _pause_programma(hass: HomeAssistant, entity_id: str, fino) -> None:
+    timers = hass.data[DOMAIN].setdefault("pause_timers", {})
+    vecchio = timers.pop(entity_id, None)
+    if vecchio:
+        vecchio()
+
+    async def riaccendi(_ora) -> None:
+        timers.pop(entity_id, None)
+        try:
+            await _pause_fine(hass, entity_id)
+        except HomeAssistantError:
+            pass
+
+    timers[entity_id] = async_track_point_in_utc_time(hass, riaccendi, fino)
+
+
+@callback
+def _pause_riprendi(hass: HomeAssistant) -> None:
+    """All'avvio rimetto i timer; le pause già scadute le chiudo tra un minuto (quando le automazioni sono caricate)."""
+    ora = dt_util.utcnow()
+    for eid, iso in _sezione(hass.data[DOMAIN].get("casa", {}), PAUSE)["dati"].items():
+        fino = dt_util.parse_datetime(str(iso)) or ora
+        _pause_programma(hass, eid, max(fino, ora + timedelta(minutes=1)))
+
+
+@websocket_api.websocket_command({
+    vol.Required("type"): f"{DOMAIN}/pausa",
+    vol.Required("entity_id"): vol.All(str, vol.Match(r"^automation\.[a-z0-9_]+$")),
+    vol.Required("minuti"): vol.All(int, vol.Range(min=0, max=60 * 24 * 31)),
+})
+@websocket_api.async_response
+async def ws_pausa(hass: HomeAssistant, connection, msg) -> None:
+    """Qualsiasi utente mette in pausa un'automazione per «minuti» (0 = togli la pausa e riaccendi)."""
+    data = hass.data.get(DOMAIN, {})
+    if "casa" not in data:
+        connection.send_error(msg["id"], "not_ready", "'Nduja Dashboard non è configurata")
+        return
+    eid, ctx = msg["entity_id"], Context(user_id=connection.user.id)
+    if hass.states.get(eid) is None:
+        connection.send_error(msg["id"], "not_found", eid)
+        return
+    try:
+        if msg["minuti"] == 0:
+            await _pause_fine(hass, eid, True, ctx)
+            connection.send_result(msg["id"], {"fino": None})
+            return
+        fino = dt_util.utcnow() + timedelta(minutes=msg["minuti"])
+        await hass.services.async_call("automation", "turn_off", {"entity_id": eid}, blocking=True, context=ctx)
+        dati = dict(_sezione(data["casa"], PAUSE)["dati"])
+        dati[eid] = fino.isoformat()
+        await _pause_salva(hass, dati)
+        _pause_programma(hass, eid, fino)
+        connection.send_result(msg["id"], {"fino": fino.isoformat()})
+    except Unauthorized:
+        connection.send_error(msg["id"], "unauthorized", "non puoi comandare questa automazione")
+    except HomeAssistantError as err:
+        connection.send_error(msg["id"], "failed", str(err))

@@ -173,6 +173,8 @@ body.light .bcpn1 .l{fill:rgba(28,28,30,.65)!important}
 body.light .bcz1i{background:rgba(0,0,0,0.030)!important}
 body.light .bcc1 button{background:rgba(0,0,0,0.025)!important}
 body.light .bcdt1{background:rgba(0,0,0,0.040)!important}
+body.light .aut-i{background:rgba(0,0,0,0.035)!important}
+body.light .aut-x:hover,body.light .aut-x:focus-visible{background:rgba(0,0,0,0.025)!important}
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
 body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
@@ -255,4 +257,11 @@ body.light .bcb1.warn{background:rgba(255,159,10,.16)!important;color:#b86e00}
 body.light .bcw1f small.poco{color:#d27400}
 body.light .bcv1 button.on{background:rgba(10,132,255,.12)!important}
 body.light .bcs2{background:rgba(255,255,255,.6)!important}
+/* Automazioni (tema chiaro) */
+body.light .aut{background:rgba(255,255,255,.75);border-color:rgba(0,0,0,.08)}
+body.light .aut-i{background:rgba(0,0,0,.05)}
+body.light .aut.on{background:linear-gradient(135deg,rgba(48,209,88,.18),rgba(255,255,255,.8));border-color:rgba(36,160,70,.45)}
+body.light .aut.pz{background:linear-gradient(135deg,rgba(255,159,10,.16),rgba(255,255,255,.8));border-color:rgba(200,120,0,.5)}
+body.light .aut.pz .aut-t small{color:#9a5a00}
+body.light .aut-x:hover,body.light .aut-x:focus-visible{background:rgba(0,0,0,.05)}
 

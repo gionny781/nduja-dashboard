@@ -134,7 +134,8 @@ const conn = {
   addEventListener() {}, subscribeEvents() { return Promise.resolve(() => {}); },
   subscribeMessage(cb, m) {
     if (m?.type === "nduja_dashboard/casa_subscribe") { if (localStorage.getItem("mockNoCasa")) return Promise.reject({ code: "unknown_command" }); window.mockCasaEv = cb; return Promise.resolve(() => {}); }
-    window.mockStati = cb; window.mockDati = () => cb({ a: ENT });   // mockStati({ a: { id: { s, a } } }) fa comparire entità nuove
+    window.mockStati = cb; window.mockDati = () => cb({ a: ENT });
+    window.mockStato = (id, s) => cb({ c: { [id]: { "+": { s } } } });   // mockStati({ a: { id: { s, a } } }) fa comparire entità nuove
     if (!localStorage.getItem("mockNoData")) setTimeout(window.mockDati, 50); return Promise.resolve(() => {}); },   // mockNoData: niente dati (prova della schermata d'errore)
   async sendMessagePromise(m) {
     switch (m.type) {
@@ -148,6 +149,14 @@ const conn = {
         C[m.sezione] = { rev: x.rev + 1, dati: m.dati }; localStorage.setItem("mockCasa", JSON.stringify(C)); console.log("CASA", JSON.stringify(m));
         setTimeout(() => window.mockCasaEv?.({ sezione: m.sezione, rev: x.rev + 1 }), 30);
         return { sezione: m.sezione, rev: x.rev + 1 }; }
+      /* pausa di un'automazione: spengo e salvo la scadenza nella sezione «pause» (il vero lo fa Home Assistant) */
+      case "nduja_dashboard/pausa": {
+        const C = JSON.parse(localStorage.getItem("mockCasa") || "{}"), x = C.pause || { rev: 0, dati: {} }, d = { ...x.dati };
+        if (m.minuti) { d[m.entity_id] = new Date(Date.now() + m.minuti * 6e4).toISOString(); window.mockStato?.(m.entity_id, "off"); }
+        else { delete d[m.entity_id]; window.mockStato?.(m.entity_id, "on"); }
+        C.pause = { rev: x.rev + 1, dati: d }; localStorage.setItem("mockCasa", JSON.stringify(C)); console.log("PAUSA", JSON.stringify(m));
+        setTimeout(() => window.mockCasaEv?.({ sezione: "pause", rev: x.rev + 1 }), 30);
+        return { fino: d[m.entity_id] || null }; }
       case "nduja_dashboard/config": return { version: "0.5.0-beta", options: {}, layout: LAYOUT };
       case "nduja_dashboard/save_layout": LAYOUT = m.layout; localStorage.setItem("mockLayout", JSON.stringify(LAYOUT)); return { ok: true };
       case "config/entity_registry/list_for_display": return REG;
