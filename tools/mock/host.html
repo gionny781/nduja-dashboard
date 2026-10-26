@@ -130,9 +130,35 @@ const EV = {
 let LAYOUT = JSON.parse(localStorage.getItem("mockLayout") || '{"configured":true,"mode":"auto","energy":{"pv":["sensor.inverter_pv1_power","sensor.inverter_pv2_power","sensor.inverter_pv3_power"]}}');
 const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_sogg/.test(id) ? "soggiorno" : /echo_cucina/.test(id) ? "cucina" : /soggiorno/.test(id) ? "soggiorno" : /^(cover\.(cancello|garage|basculante)|switch\.cancellett|binary_sensor\.cancellett|button\.portone)/.test(id) ? "esterno" : /corridoio|porta|ariston/.test(id) ? "corridoio" : /cucina/.test(id) ? "cucina" : /lavatric|asciugatric/.test(id) ? "lavanderia" : /forno|frigo|lavastov/.test(id) ? "cucina" : null,
   pl: id.includes("model_3") ? "tesla_fleet" : undefined, di: id.includes("model_3") ? "dev_car" : id.includes("ambrogio") ? "dev_v" : id.includes("mario") ? "dev_g" : id.includes("anna") ? "dev_c" : id.includes("ariston") ? "dev_a" : null })) };
+/* telecamere: mockCam = "webrtc" (predefinito: diretta vera via WebRTC dentro il browser) | "webrtc_ko" (WebRTC fallisce, poi HLS)
+   | "hls" (serve /mockhls/, vedi README) | "mjpeg" | "foto". mockCamLog conta gli stream aperti e chiusi. */
+const CAMM = () => localStorage.getItem("mockCam") || "webrtc";
+window.mockCamLog = { aperti: 0, chiusi: 0 };
+function fintaCam() {
+  const c = document.createElement("canvas"); c.width = 960; c.height = 540; const g = c.getContext("2d");
+  const disegna = () => { const t = Date.now() / 1000;
+    const gr = g.createLinearGradient(0, 0, 960, 540); gr.addColorStop(0, "#1b2a3a"); gr.addColorStop(1, "#3a2416"); g.fillStyle = gr; g.fillRect(0, 0, 960, 540);
+    g.fillStyle = "#e8eef7"; g.globalAlpha = .12; for (let i = 0; i < 6; i++) g.fillRect(((t * 60 + i * 180) % 1140) - 180, 300 + i * 30, 120, 10); g.globalAlpha = 1;
+    g.beginPath(); g.arc(480 + Math.cos(t) * 260, 270 + Math.sin(t * 1.3) * 120, 34, 0, 7); g.fillStyle = "#ff6a3d"; g.fill();
+    g.font = "bold 30px sans-serif"; g.fillStyle = "#fff"; g.fillText("CAM DEMO  " + new Date().toLocaleTimeString("it-IT"), 30, 52); };
+  disegna(); setInterval(disegna, 66);
+  const st = c.captureStream(15);
+  try { const ac = new AudioContext(), o = ac.createOscillator(), d = ac.createMediaStreamDestination(); o.connect(d); o.start(); d.stream.getAudioTracks().forEach(tr => st.addTrack(tr)); } catch {}
+  return st;
+}
+let CAMST = null; const PCS = {};
+function offerta(cb, m) {
+  if (CAMM() === "webrtc_ko") { setTimeout(() => cb({ type: "error", code: "webrtc_offer_failed", message: "go2rtc non raggiungibile (finto)" }), 300); return Promise.resolve(() => Promise.resolve()); }
+  const sid = "s" + Math.random().toString(36).slice(2, 8), pc = new RTCPeerConnection(); PCS[sid] = pc; mockCamLog.aperti++; console.log("CAM aperto", m.entity_id);
+  CAMST ||= fintaCam(); CAMST.getTracks().forEach(tr => pc.addTrack(tr, CAMST));
+  pc.onicecandidate = e => { if (e.candidate) cb({ type: "candidate", candidate: e.candidate.toJSON() }); };
+  (async () => { cb({ type: "session", session_id: sid }); await pc.setRemoteDescription({ type: "offer", sdp: m.offer }); const a = await pc.createAnswer(); await pc.setLocalDescription(a); cb({ type: "answer", answer: a.sdp }); })();
+  return Promise.resolve(() => { if (PCS[sid]) { PCS[sid].close(); delete PCS[sid]; mockCamLog.chiusi++; console.log("CAM chiuso", m.entity_id); } return Promise.resolve(); });
+}
 const conn = {
   addEventListener() {}, subscribeEvents() { return Promise.resolve(() => {}); },
   subscribeMessage(cb, m) {
+    if (m?.type === "camera/webrtc/offer") return offerta(cb, m);
     if (m?.type === "nduja_dashboard/casa_subscribe") { if (localStorage.getItem("mockNoCasa")) return Promise.reject({ code: "unknown_command" }); window.mockCasaEv = cb; return Promise.resolve(() => {}); }
     window.mockStati = cb; window.mockDati = () => cb({ a: ENT });
     window.mockStato = (id, s) => cb({ c: { [id]: { "+": { s } } } });   // mockStati({ a: { id: { s, a } } }) fa comparire entità nuove
@@ -171,6 +197,10 @@ const conn = {
         for (const id of m.statistic_ids) { out[id] = []; for (let x = st, i = 0; x < Date.now(); x += step, i++) out[id].push({ start: x, change: id.includes("prod") ? 8 + 6*Math.sin(i) : id.includes("imp") ? 2 + Math.random()*3 : 3 + Math.random()*4, mean: 21 + 2*Math.sin(i/4), min: 19 + Math.sin(i/4), max: 23 + 2*Math.sin(i/4) }); }
         return out; }
       case "history/history_during_period": return {};
+      case "camera/capabilities": return { frontend_stream_types: { webrtc: ["hls", "web_rtc"], webrtc_ko: ["hls", "web_rtc"], hls: ["hls"] }[CAMM()] || [] };
+      case "camera/webrtc/get_client_config": return { configuration: { iceServers: [] }, getCandidatesUpfront: false };
+      case "camera/webrtc/candidate": { const pc = PCS[m.session_id]; if (!pc) throw { code: "not_found", message: "session" }; if (typeof m.candidate !== "object") throw { code: "invalid_format" }; await pc.addIceCandidate(m.candidate); return null; }
+      case "camera/stream": return { url: "/mockhls/index.m3u8" };
       case "get_config": return { version: "2026.10.1", location_name: "Casa" };
       case "config/label_registry/list": return JSON.parse(localStorage.getItem("mockLabels") || "[]");
       case "config/label_registry/create": { const L = JSON.parse(localStorage.getItem("mockLabels") || "[]"), l = { label_id: "nduja", name: m.name, icon: m.icon }; L.push(l); localStorage.setItem("mockLabels", JSON.stringify(L)); console.log("WS", JSON.stringify(m)); return l; }

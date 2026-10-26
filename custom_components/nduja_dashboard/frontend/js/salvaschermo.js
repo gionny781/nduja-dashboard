@@ -2,6 +2,7 @@
    temperatura di casa e il prossimo impegno; se scegli una cartella di foto (Media di Home Assistant) le fa scorrere
    in dissolvenza. Si sveglia al primo tocco. Tutto si sceglie per ogni dispositivo (⚙️ Impostazioni → Questo dispositivo). */
 import { S, ACT, t, LOC, esc, fnum, attr, sGet, sSet, ws, toast, openSheet, closeSheet, render, weatherEnt, WX, ents, roomTemp, areasSorted } from "./core.js";
+import { inDiretta } from "./video.js";
 
 export const ssMin = () => +(sGet("ssMin") || 0);          // 0 = spento
 export const ssStile = () => sGet("ssStile") || "orologio"; // orologio | foto
@@ -51,8 +52,10 @@ async function prossimaFoto() {
     const vecchie = el.querySelectorAll(".ssf1"); if (vecchie.length > 2) vecchie[0].remove();
   }; img.src = url;
 }
-export async function mostra() {
-  if (attivo) return; attivo = true;
+export async function mostra(prova) {
+  if (attivo) return;
+  if (inDiretta() && prova !== true) { riarma(); return; }   // si sta guardando una telecamera: non la copro
+  attivo = true;
   el = document.createElement("div"); el.className = "ss1"; el.innerHTML = `<div class="ssb1"></div><div class="ssv1"></div><div class="ssw1">${contenuto()}</div>`;
   document.body.appendChild(el); requestAnimationFrame(() => el && el.classList.add("on"));
   giro = setInterval(() => { if (el) el.querySelector(".ssw1").innerHTML = contenuto(); }, 20000);
@@ -84,7 +87,7 @@ const storia = [];
 Object.assign(ACT, {
   ssMin: el => { sSet("ssMin", el.dataset.v); riarma(); render(); },
   ssStile: el => { sSet("ssStile", el.dataset.v); render(); if (el.dataset.v === "foto" && !ssDir()) ACT.ssDir(); },
-  ssProva: () => { closeSheet(); setTimeout(mostra, 200); },
+  ssProva: () => { closeSheet(); setTimeout(() => mostra(true), 200); },
   ssDir: () => { storia.length = 0; openSheet(sfoglia); apri("media-source://media_source"); },
   ssApri: el => { storia.push(dir); apri(el.dataset.id); },
   ssSu: () => apri(storia.pop() || "media-source://media_source"),

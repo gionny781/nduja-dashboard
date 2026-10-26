@@ -3,6 +3,21 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.23-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+- 🇮🇹 **📷 Telecamere in diretta**: un lettore nuovo, uguale ovunque, che sceglie da solo il modo migliore. Prova prima **WebRTC** (immagine quasi in tempo reale), poi **HLS**, poi **MJPEG** e, se proprio non va niente, mostra **una foto ogni 2 secondi**. Un'etichetta in alto dice il metodo usato e «collegamento…» mentre si collega.
+- 🇮🇹 Ogni dispositivo **ricorda il metodo che ha funzionato** per ogni telecamera e la volta dopo parte da quello: la diretta si apre prima.
+- 🇮🇹 Le griglie mostrano **anteprime leggere** (con il tasto ▶); la diretta parte **al tocco**, in un foglio più grande. Comandi: **audio** (muto di partenza, si attiva con un tocco), **tutto schermo** e **📸 Istantanea**, che salva il fotogramma che vedi (su telefono e tablet si apre «Condividi», da cui la salvi nelle Foto).
+- 🇮🇹 Gli stream si **chiudono davvero** quando chiudi il foglio, cambi pagina o metti la plancia in secondo piano (e si riaprono quando torni): niente traffico nascosto. Mentre guardi una telecamera il salvaschermo non parte.
+- 🇮🇹 In **🛡️ Sicurezza** c'è la nuova scheda **Telecamere** con le anteprime; anche le telecamere delle pagine create da te aprono la diretta. Le scritte sulle anteprime ora si leggono anche col tema chiaro.
+- 🇮🇹 Per WebRTC serve **go2rtc** in Home Assistant: è incluso di serie nelle versioni recenti. Senza, la plancia usa HLS o MJPEG da sola.
+- 🇬🇧 **📷 Live cameras**: a new player, the same everywhere, that picks the best way by itself. It tries **WebRTC** first (almost real time), then **HLS**, then **MJPEG** and, if nothing else works, shows **a photo every 2 seconds**. A badge at the top shows the method in use and «connecting…» while it connects.
+- 🇬🇧 Each device **remembers the method that worked** for each camera and starts from it next time, so the live view opens faster.
+- 🇬🇧 Grids show **light previews** (with a ▶ button); the live view starts **on tap**, in a larger sheet. Controls: **sound** (muted at first, one tap to turn it on), **full screen** and **📸 Snapshot**, which saves the frame you're seeing (on phones and tablets it opens «Share», so you can save it to Photos).
+- 🇬🇧 Streams are **really closed** when you close the sheet, change page or put the dashboard in the background (and reopened when you come back): no hidden traffic. The screensaver doesn't start while you're watching a camera.
+- 🇬🇧 **🛡️ Security** has a new **Cameras** card with previews; cameras on your own pages open the live view too. Labels on the previews are now readable in the light theme as well.
+- 🇬🇧 WebRTC needs **go2rtc** in Home Assistant: it's included by default in recent versions. Without it, the dashboard uses HLS or MJPEG by itself.
+
 ## 0.7.22-dev1
 > 🧪 Anteprima / preview · ⚠️ **riavvia Home Assistant** dopo l'aggiornamento / **restart Home Assistant** after updating.
 - 🇮🇹 **Automazioni come tasti**: ogni automazione è un tasto moderno. Lo tocchi e si accende o si spegne; acceso è verde, spento è grigio.

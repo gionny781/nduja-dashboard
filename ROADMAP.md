@@ -47,7 +47,7 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.21-dev ✅ | lun 26 ott | Faccende (e dati condivisi tra tutti gli utenti) |
 | 0.7.22-dev ✅ | lun 26 ott | Bacheca |
 | 0.7.22-dev1 ✅ | lun 26 ott | Automazioni come tasti, con pausa (chiesta da Giovanni) |
-| 0.7.23-dev | ven 30 ott | Telecamere in diretta (WebRTC → HLS → MJPEG → foto) |
+| 0.7.23-dev ✅ | lun 26 ott | Telecamere in diretta (WebRTC → HLS → MJPEG → foto) |
 | 0.7.24-dev | dom 1 nov | Telecamere: scelta dei flussi, aggiungi/togli, gruppi |
 | 0.7.25-dev | mar 3 nov | Clima animato o con le tue immagini |
 | 0.7.26-dev | gio 5 nov | Energia: scena animata con sole, meteo, casa ed elettrodomestici |

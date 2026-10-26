@@ -24,7 +24,7 @@ function pagina(p) {
     ${C.length ? card("❄️ " + t("Clima", "Climate"), `<div class="stack">${C.map(id => item(id, climateCard(id), k)).join("")}</div>`) : ""}
     ${R.length ? card("🔌 " + t("Dispositivi", "Devices"), `<div class="stack">${R.map(id => item(id, entityRow(id), k)).join("")}</div>`) : ""}
     ${V.length ? card("📈 " + t("Sensori", "Sensors"), `<div class="sg1">${V.map(id => item(id, sensore(id), k)).join("")}</div>`) : ""}
-    ${CAM.length ? card("📷 " + t("Telecamere", "Cameras"), `<div class="cg1">${CAM.map(id => item(id, `<button class="cam1" data-act="more" data-id="${id}"><img src="${esc(attr(id, "entity_picture") || "")}" alt=""><span>${esc(nm(id))}</span></button>`, k)).join("")}</div>`, { cls: "span3" }) : ""}
+    ${CAM.length ? card("📷 " + t("Telecamere", "Cameras"), `<div class="cg1">${CAM.map(id => item(id, `<button class="cam1" data-act="camLive" data-id="${id}"><img src="${esc(attr(id, "entity_picture") || "")}" alt=""><span>${esc(nm(id))}</span></button>`, k)).join("")}</div>`, { cls: "span3" }) : ""}
     ${UI.edit ? `<section class="card span3">${addBtn(TUTTI(), { page: k, label: t("Aggiungi a questa pagina", "Add to this page"), big: true })}</section>` : ""}
   </div>`;
 }
