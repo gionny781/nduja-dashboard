@@ -2,7 +2,7 @@
    con la sua integrazione (Tesla, BMW, Volkswagen, Kia/Hyundai, Renault, Polestar, Mercedes…).
    Tutto viene dal dispositivo dell'auto: batteria, autonomia, ricarica, clima, serrature, posizione e comandi.
    La foto è quella dell'integrazione; se non c'è, la cerco su Wikipedia con marca e modello. */
-import { S, REG, DEVICES, ACT, CHG, LAYOUT, UI, STRIP, HOME_EXTRA, DEFAULT_OFF, t, LOC, esc, fnum, nm, ok, val, attr, unit, card, empty, page,
+import { S, REG, DEVICES, ACT, CHG, LAYOUT, UI, STRIP, HOME_EXTRA, DEFAULT_OFF, t, LOC, esc, fnum, nm, ok, val, attr, unit, W, card, empty, page,
   svc, toast, go, isAdmin, shortName, deviceClass, km, ago, sGet, sSet, render, openSheet, closeSheet, sicuro } from "../core.js";
 import { cambia } from "../edit.js";
 
@@ -104,6 +104,12 @@ function dove(r) {
   const st = S[p].state, z = st === "home" ? t("A casa", "Home") : st === "not_home" ? t("Fuori", "Away") : (S["zone." + st]?.attributes?.friendly_name || st);
   const la = attr(p, "latitude"), lo = attr(p, "longitude"), dist = st !== "home" && la != null ? km(la, lo, attr("zone.home", "latitude"), attr("zone.home", "longitude")) : null;
   return { z, dist, la, lo, home: st === "home" };
+}
+/** ricarica di un'auto per la pagina Energia: { id (sensore da aprire), nome, b (%), w (W), ric, spina, casa (true a casa, false fuori, null se non si sa) } */
+export function ricarica(d) {
+  const r = ruoli(d), p = dove(r);
+  return { id: r.potenza || r.batt || null, nome: nomeAuto(d), b: r.batt ? val(r.batt) : null, ric: inRicarica(r), w: r.potenza && ok(r.potenza) ? W(r.potenza) : null,
+    spina: r.spina && ok(r.spina) ? S[r.spina].state === "on" : null, casa: p ? p.home : null };
 }
 const minuti = id => { const v = val(id), u = unit(id).toLowerCase(); if (v == null) { const d = Date.parse(S[id]?.state); return isNaN(d) ? null : Math.max(0, Math.round((d - Date.now()) / 60000)); } return u.startsWith("h") ? v * 60 : u.startsWith("s") ? v / 60 : v; };
 const durata = m => m == null ? "—" : m >= 60 ? `${Math.floor(m / 60)} h ${String(Math.round(m % 60)).padStart(2, "0")}` : `${Math.round(m)} min`;

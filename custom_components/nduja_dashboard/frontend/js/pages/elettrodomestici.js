@@ -4,7 +4,7 @@
    con ✏️ scegli tu nome, aspetto e qualsiasi sensore; con ＋ ne aggiungi di nuovi.
    Aspetto per fermo, in funzione e finito: le animazioni della plancia (disegni.js), le tue immagini o GIF (/local/…) oppure l'icona.
    Lo stesso aspetto compare nella pagina, nella scheda della Home e nella mappa (nella stanza della presa o del sensore). */
-import { S, REG, ACT, CHG, LAYOUT, UI, HOME_EXTRA, t, esc, nm, ok, val, attr, allEnts, deviceClass, watts, W, fnum, ago, hhmm, card, empty, page, svc, toast,
+import { S, REG, ACT, CHG, LAYOUT, UI, HOME_EXTRA, VISTE, t, esc, nm, ok, val, attr, allEnts, deviceClass, watts, W, fnum, ago, hhmm, card, empty, page, svc, toast,
   openSheet, closeSheet, render, isAdmin, LOC, areaOf, go } from "../core.js";
 import { scegli, cambia, fileEsiste, indirizzoLocale } from "../edit.js";
 import { disegno, DISEGNI, riconosci } from "../disegni.js";
@@ -218,6 +218,9 @@ function homeCard() {
     { link: [t("Tutti", "All"), "elettrodomestici"] });
 }
 HOME_EXTRA.elettrodomestici = { title: () => t("Elettrodomestici", "Appliances"), render: homeCard, show: () => elenco().length > 0 };
+/** elettrodomestici in funzione per la scena della pagina Energia, dal più energivoro: { nome, w, vista(cls, key) } */
+VISTE.elettroAccesi = () => elenco().map(a => ({ a, st: stato(a) })).filter(x => x.st.k === "on")
+  .map(({ a, st }) => ({ nome: a.nome, w: st.w, vista: (cls, key) => vista(a, "on", key, cls) })).sort((x, y) => (y.w ?? -1) - (x.w ?? -1));
 /** stanza di un elettrodomestico: quella della presa, altrimenti dei suoi sensori */
 const stanzaDi = a => [a.switch, a.power, a.status, a.energy, a.end].map(id => id && S[id] ? areaOf(id) : null).find(Boolean) || null;
 /** pallini degli elettrodomestici di una stanza, per la mappa */

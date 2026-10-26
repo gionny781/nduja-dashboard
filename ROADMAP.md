@@ -50,7 +50,7 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.23-dev ✅ | lun 26 ott | Telecamere in diretta (WebRTC → HLS → MJPEG → foto) |
 | 0.7.24-dev ✅ | lun 26 ott | Telecamere: scelta dei flussi, aggiungi/togli, gruppi |
 | 0.7.25-dev ✅ | lun 26 ott | Clima animato o con le tue immagini |
-| 0.7.26-dev | gio 5 nov | Energia: scena animata con sole, meteo, casa ed elettrodomestici |
+| 0.7.26-dev ✅ | lun 26 ott | Energia: scena animata con sole, meteo, casa ed elettrodomestici |
 | 0.7.27-dev | sab 7 nov | Luci rifatte |
 | 0.7.28-dev | lun 9 nov | Musica: ascolta su questo dispositivo, Alexa, Google, Sonos |
 | 0.7.29-dev | mer 11 nov | Musica: Music Assistant e «Sposta su…» |

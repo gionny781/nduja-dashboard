@@ -4,7 +4,8 @@ diventano veli scuri leggeri e i testi chiari diventano scuri. Lanciare dopo ave
 In fondo al file generato vengono aggiunte le regole scritte a mano di tools/light_extra.css."""
 import re, pathlib
 ROOT = pathlib.Path(__file__).resolve().parent.parent / "custom_components/nduja_dashboard/frontend/css"
-SKIP = re.compile(r"\.pri|\.plus|\.act i|edt1\.on|\.logo|\.sw\b|\.edb|tile\.on|beta1|\.wel2b em|::selection|\.toast|\.dot")
+# .en7s: la scena dell'energia ha i suoi colori (cielo, sole, notte) uguali nei due temi
+SKIP = re.compile(r"\.en7s|\.pri|\.plus|\.act i|edt1\.on|\.logo|\.sw\b|\.edb|tile\.on|beta1|\.wel2b em|::selection|\.toast|\.dot")
 W = re.compile(r"rgba\(\s*255\s*,\s*255\s*,\s*255\s*,\s*([\d.]+)\s*\)")
 TXT = re.compile(r"rgba\(\s*235\s*,\s*(?:235|240)\s*,\s*(?:245|250)\s*,\s*([\d.]+)\s*\)")
 

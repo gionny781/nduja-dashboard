@@ -65,27 +65,12 @@ body.light .pk1:hover{background:rgba(0,0,0,0.050)!important}
 body.light .fld1 input,body.light .fld1 select{background:rgba(0,0,0,0.040)!important}
 body.light .ic1 button{background:rgba(0,0,0,0.025)!important}
 body.light .sv1{background:rgba(0,0,0,0.025)!important}
-body.light .bx68 rect{fill:rgba(28,28,30,.055)!important;stroke:rgba(0,0,0,0.140)!important}
-body.light .lb68{fill:rgba(28,28,30,.6)!important}
-body.light .vl68{fill:#1c1c1e!important}
-body.light .sb68{fill:rgba(28,28,30,.55)!important}
-body.light .mi68 rect{fill:rgba(28,28,30,.04)!important;stroke:rgba(0,0,0,0.098)!important}
-body.light .ml68{fill:rgba(28,28,30,.6)!important}
-body.light .mv68{fill:#1c1c1e!important}
-body.light .mi68:not(.on) .mv68{fill:rgba(28,28,30,.55)!important}
-body.light .tx68{fill:rgba(28,28,30,.8)!important}
-body.light .tx68.dim{fill:rgba(28,28,30,.5)!important}
-body.light .inf68 text{fill:rgba(28,28,30,.6)!important}
-body.light .inf68 text.r{fill:#1c1c1e!important}
-body.light .ln68{stroke:rgba(0,0,0,0.112)!important}
-body.light .pyl68 path{stroke:rgba(28,28,30,.6)!important}
-body.light .inv68 .body{stroke:rgba(0,0,0,0.196)!important}
-body.light .inv68 .bar{fill:rgba(28,28,30,.18)!important}
-body.light .inv68 .nm{fill:rgba(28,28,30,.55)!important}
-body.light .bt68 .case{fill:rgba(28,28,30,.06)!important;stroke:rgba(28,28,30,.55)!important}
+body.light .en7k{border:1px solid rgba(0,0,0,0.112)!important;color:#1c1c1e!important}
+body.light .en7t .en7k{background:rgba(0,0,0,0.030)!important;border-color:rgba(0,0,0,0.056)!important}
+body.light .en7ai{background:rgba(0,0,0,0.030)!important;border:1px solid rgba(0,0,0,0.042)!important}
+body.light .en7ai i{background:rgba(0,0,0,0.040)!important}
+body.light .en7ai.top{background:linear-gradient(135deg,rgba(255,159,10,.17),rgba(0,0,0,0.025))!important}
 body.light .og68 div{background:rgba(0,0,0,0.025)!important}
-body.light .inv68 .t{fill:#1c1c1e!important}
-body.light .inv68 .s{fill:rgba(28,28,30,.6)!important}
 body.light .cn1{border-bottom:1px solid rgba(0,0,0,0.035)!important}
 body.light .cn1 i{background:rgba(0,0,0,0.035)!important}
 body.light body.navauto.navhide .navh1{background:rgba(0,0,0,0.090)!important}
@@ -188,19 +173,16 @@ body.light .pillv{background:rgba(255,255,255,.75)!important;border-color:rgba(0
 body.light .seg button.act,body.light .pkt1 button.act{background:#fff!important;box-shadow:0 2px 8px rgba(0,0,0,.12)}
 body.light select option{background:#fff!important;color:#1c1c1e}
 body.light .wel2b:first-child{background:linear-gradient(160deg,rgba(255,69,58,.14),rgba(255,255,255,.75))!important}
-body.light .inv68 .body{fill:rgba(100,180,255,.12)!important}
-body.light .bt68 .case{stroke:rgba(28,28,30,.45)!important;fill:rgba(0,0,0,.04)!important}
-body.light .pyl68 path{stroke:rgba(28,28,30,.55)!important}
-body.light .vl68,body.light .inv68 .t,body.light .mv68,body.light .inf68 text.r{fill:#1c1c1e!important}
-body.light .ln68{stroke:rgba(0,0,0,.14)!important}
 body.light .rm1.lit{background:linear-gradient(160deg,rgba(255,200,40,.22),rgba(255,255,255,.7))!important}
 body.light .toast{background:rgba(255,255,255,.95);color:#1c1c1e}
-body.light .bx68.sol rect{stroke:rgba(214,160,0,.75)!important}body.light .bx68.red rect{stroke:rgba(255,69,58,.7)!important}
-body.light .bx68.grn rect{stroke:rgba(36,170,70,.7)!important}body.light .bx68.home rect{stroke:rgba(0,122,255,.55)!important}
 body.light [style*="#ffd60a"],body.light .pillv.sun{color:#b88600!important}
 body.light [style*="#64d2ff"]{color:#0a7fd1!important}
-body.light .sun68 circle,body.light .sun68 line{stroke:#e0a800!important}
 body.light .tt68 b[style*="#30d158"],body.light .og68 b[style*="#30d158"]{color:#1f9e45!important}
+body.light .en7k{background:rgba(255,255,255,.86)!important;color:#1c1c1e!important;border-color:rgba(0,0,0,.08)!important;box-shadow:0 6px 18px -10px rgba(31,45,80,.45)!important}
+body.light .en7t .en7k{background:rgba(0,0,0,.035)!important;box-shadow:none!important}
+body.light .en7k.sol b{color:#b88600}body.light .en7k.imp b{color:#e0352b}body.light .en7k.exp b{color:#1f9e45}body.light .en7k.casa b,body.light .en7k.ev b{color:#0a7fd1}body.light .en7k.bat b{color:#8a4fd6}
+body.light .en7::after{box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}body.light .en7{box-shadow:0 16px 36px -26px rgba(31,45,80,.55)}
+body.light .en7ai.top .tx>span em{color:#c26a00}
 body.light .av2{color:#fff;background-color:#8e8e93;border-color:rgba(0,0,0,.12)}body.light .ps2.home .av2{border-color:var(--green)}
 body.light .av2 b{border-color:#fff}body.light .pb2{border-color:rgba(0,0,0,.35)}
 body.light .x3{background:rgba(0,0,0,.06)}

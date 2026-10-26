@@ -3,6 +3,23 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.26-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+- 🇮🇹 **⚡ Energia più bella**: la parte alta della pagina Energia ora è una **scena animata** disegnata apposta per 'Nduja. Tutti i dati, lo storico e i costi restano com'erano.
+- 🇮🇹 **Cielo vero**: il sole si muove su un arco seguendo l'ora reale tra alba e tramonto (da `sun.sun`); il colore del cielo passa da alba a giorno, tramonto e notte. Di notte compaiono la **luna**, con la sua fase del giorno, e le **stelle**. Il **meteo di casa** cambia la scena: nuvole che passano (più veloci col vento), pioggia, rovesci, nebbia, neve (anche sul prato), grandine e temporale con i lampi.
+- 🇮🇹 **La casa al centro**: i **pannelli sul tetto** si illuminano in proporzione alla produzione (rispetto al massimo degli ultimi 30 giorni), la **batteria** mostra il livello e se si carica o si scarica, il **contatore** dice se prelevi o immetti, e l'**auto in carica** (se c'è ed è a casa) compare davanti alla colonnina. Di notte si accendono le finestre.
+- 🇮🇹 **Linee di energia** con i pallini che scorrono: sole → casa, sole → batteria, sole → rete, rete ↔ casa, batteria ↔ casa e casa → auto. Verso e velocità seguono i watt. Le etichette sulla scena mostrano i valori e, toccate, aprono il sensore; sul telefono stanno in tessere sotto la scena.
+- 🇮🇹 **Elettrodomestici accesi** sotto la scena, con le animazioni della 0.7.18 e i watt di ciascuno; quelli che consumano di più sono **in evidenza**, con la parte dei consumi della casa.
+- 🇮🇹 **Riepilogo in parole semplici**, per esempio «Il sole copre il 78% dei consumi, stai immettendo 1,2 kW», più batteria e auto in carica.
+- 🇮🇹 Senza fotovoltaico, batteria o auto gli elementi mancanti non compaiono. La scena è leggera (solo CSS, poche decine di animazioni), uguale col tema chiaro e scuro, e con «Riduci movimento» resta ferma.
+- 🇬🇧 **⚡ A nicer Energy page**: the top of the Energy page is now an **animated scene** drawn for 'Nduja. All the data, history and costs stay as they were.
+- 🇬🇧 **A real sky**: the sun moves along an arc following the real time between sunrise and sunset (from `sun.sun`); the sky colour goes from dawn to day, sunset and night. At night the **moon**, in today's phase, and the **stars** come out. The **home weather** changes the scene: passing clouds (faster with wind), rain, downpours, fog, snow (on the lawn too), hail and thunderstorms with lightning.
+- 🇬🇧 **The house in the middle**: the **roof panels** light up in proportion to production (compared with the peak of the last 30 days), the **battery** shows its level and whether it's charging or discharging, the **meter** shows whether you import or export, and the **charging car** (if there is one and it's at home) appears by the charger. At night the windows light up.
+- 🇬🇧 **Energy lines** with flowing dots: sun → home, sun → battery, sun → grid, grid ↔ home, battery ↔ home and home → car. Direction and speed follow the watts. The labels on the scene show the values and open the sensor on tap; on phones they sit in tiles below the scene.
+- 🇬🇧 **Appliances running** below the scene, with the 0.7.18 animations and the watts of each; the biggest consumers are **highlighted**, with their share of the home's consumption.
+- 🇬🇧 **A plain-language summary**, for example «The sun covers 78% of what the house uses, you're exporting 1.2 kW», plus battery and charging car.
+- 🇬🇧 Without solar, battery or car the missing parts don't show. The scene is light (CSS only, a few dozen animations), the same in light and dark theme, and still with «Reduce motion».
+
 ## 0.7.25-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 - 🇮🇹 **🌡️ Clima animato**: ogni condizionatore, termostato e radiatore ha il suo disegno animato, fatto apposta per 'Nduja. Il **condizionatore** muove le alette; quando raffresca soffia aria blu con i fiocchi, quando scalda aria arancione a onde, quando deumidifica fa scendere le gocce e in ventilazione gira la ventola. Il **termostato** ha la fiamma che guizza (o il fiocco, la goccia, la ventola) e l'anello che respira; il **radiatore** si scalda elemento dopo elemento con le onde di calore che salgono.

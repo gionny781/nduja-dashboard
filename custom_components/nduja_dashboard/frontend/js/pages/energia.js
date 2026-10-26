@@ -1,11 +1,14 @@
-/* Energia: flusso in tempo reale (sole, rete, casa, batteria), totali di oggi e consumi dei dispositivi.
+/* Energia: «Adesso» come scena animata (cielo, meteo, casa, batteria, rete, auto, elettrodomestici accesi; scenaenergia.js),
+   totali di oggi, storico e costi, consumi dei dispositivi.
    I sensori si trovano da soli: prima le scelte dell'utente (✏️ Modifica → ⚙️ Sensori), poi le opzioni
    dell'integrazione, poi la configurazione «Energia» di Home Assistant, infine i nomi dei sensori.
    Segni: rete + = prelievo / − = immissione; batteria + = scarica / − = carica (come Home Assistant). */
 import { S, ACT, CHG, LAYOUT, UI, STRIP, t, LOC, esc, fnum, nm, ok, val, attr, W, watts, ws, cached, card, empty, page, isAdmin,
-  saveLayout, toast, openSheet, closeSheet, render, allEnts, deviceClass, REG, DEVICES } from "../core.js";
+  saveLayout, toast, openSheet, closeSheet, render, allEnts, deviceClass, REG, DEVICES, VISTE } from "../core.js";
 import { scegli, cambia } from "../edit.js";
 import { statistiche, barre } from "../grafici.js";
+import { scena, intestazione, etichette } from "../scenaenergia.js";
+import { auto, ricarica } from "./auto.js";
 
 /* ---------- da dove leggo ---------- */
 const prefs = () => cached("energy:prefs", 10 * 60000, () => ws({ type: "energy/get_prefs" }).catch(() => ({}))) || {};
@@ -106,52 +109,84 @@ function totali() {
   return { imp, exp, pv, bOut, bIn, casa, ok: src.length > 0 || ["pvKwh", "impKwh", "expKwh"].some(k => scelti(k).length) };
 }
 
-/* ---------- flusso ---------- */
-const box = (x, y, w, h, lab, v, sub, cls = "") => `<g class="bx68 ${cls}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12"/>
-  <text x="${x + w / 2}" y="${y + 17}" class="lb68">${lab}</text><text x="${x + w / 2}" y="${y + h / 2 + (sub ? 12 : 16)}" class="vl68">${v}</text>${sub ? `<text x="${x + w / 2}" y="${y + h - 9}" class="sb68">${sub}</text>` : ""}</g>`;
-const ln = (d, col, on, rev) => `<path d="${d}" class="ln68"/>${on ? `<path d="${d}" class="fl68 ${rev ? "rev" : ""}" style="stroke:${col}"/>` : ""}`;
-function flusso() {
-  const { s, pv, rete, bat, casa, soc } = letture(), haPv = !!s.pv, haBat = !!(s.battery || s.soc);
-  const sole = (pv || 0) > 20, compra = rete != null && rete > 20, vende = rete != null && rete < -20, scarica = bat != null && bat > 20, carica = bat != null && bat < -20;
-  const bil = pv != null && casa != null ? pv - casa : null, socC = soc == null ? "#8e8e93" : soc < 20 ? "#ff453a" : soc < 40 ? "#ff9f0a" : "#30d158";
-  if (window.innerWidth < 700) return flussoTel({ s, pv, rete, bat, casa, soc, haPv, haBat, sole, compra, vende, scarica, carica, bil, socC });
-  return `<section class="card span3 fw68"><div class="ch"><h2>⚡ ${t("Adesso", "Now")}</h2><span class="muted small">${bil == null ? "" : bil >= 0 ? t(`surplus ${watts(bil)}`, `surplus ${watts(bil)}`) : t(`mancano ${watts(-bil)}`, `short by ${watts(-bil)}`)}</span></div>
-  <svg viewBox="0 30 1000 ${haBat ? 470 : 360}" class="sv68" role="img" aria-label="${t("Flusso di energia", "Energy flow")}">
-    ${haPv ? `<g class="sun68 ${sole ? "on" : ""}" transform="translate(330 80)"><circle r="15"/>${[0, 45, 90, 135, 180, 225, 270, 315].map(a => `<line x1="0" y1="-21" x2="0" y2="-28" transform="rotate(${a})"/>`).join("")}</g>
-      ${box(370, 44, 180, 78, t("SOLE", "SOLAR"), watts(pv), "", sole ? "sol" : "")}${ln("M460 122 V250", "#ffd60a", sole)}` : ""}
-    ${ln("M305 315 H405", compra ? "#ff6961" : "#30d158", compra || vende, vende)}
-    ${box(165, 278, 140, 74, t("RETE", "GRID"), watts(rete == null ? null : Math.abs(rete)), compra ? t("prelievo", "import") : vende ? t("immissione", "export") : t("in pari", "idle"), compra ? "red" : vende ? "grn" : "")}
-    <g class="pyl68" transform="translate(88 300)"><path d="M-14 34 L0 -26 L14 34 M-9 12 H9 M-12 -6 H12 M-20 -16 H20 M-5 -6 L7 12 M5 -6 L-7 12"/></g>
-    <g class="inv68"><circle cx="460" cy="315" r="54" class="body"/><text x="460" y="310" class="t">${casa == null ? "—" : watts(casa)}</text><text x="460" y="330" class="s">${t("casa", "home")}</text></g>
-    ${ln("M515 315 H595", "#64d2ff", (casa || 0) > 20)}
-    <g class="house68" transform="translate(650 312)"><path d="M-36 4 L0 -30 L36 4" class="roof"/><rect x="-26" y="2" width="52" height="38" rx="3" class="wall"/><rect x="-7" y="18" width="14" height="22" rx="2" class="door"/></g>
-    <text x="760" y="300" class="tx68" style="text-anchor:start">${t("Consumo", "Consumption")}</text><text x="760" y="326" class="vl68" style="text-anchor:start;font-size:22px">${watts(casa)}</text>
-    ${haBat ? `${ln("M460 369 V420", "#30d158", carica || scarica, scarica)}
-      <g class="bt68"><rect x="426" y="420" width="68" height="34" rx="7" class="case"/><rect x="494" y="431" width="6" height="12" rx="2" class="case"/>
-      <rect x="429" y="423" width="${soc == null ? 0 : Math.max(3, Math.min(62, 62 * soc / 100)).toFixed(1)}" height="28" rx="5" style="fill:${socC}"/></g>
-      <text x="460" y="484" class="soc68" style="fill:${socC}">${soc == null ? "—" : Math.round(soc) + "%"}</text>
-      ${box(560, 410, 160, 74, carica ? t("IN CARICA", "CHARGING") : scarica ? t("IN SCARICA", "DISCHARGING") : t("BATTERIA", "BATTERY"), watts(bat == null ? null : Math.abs(bat)), "", carica || scarica ? "grn" : "")}` : ""}
-  </svg>
-  ${!haEnergia() ? `<div class="note1">${t("Non ho trovato i sensori dell'energia. Configurali in Home Assistant (Impostazioni → Plance → Energia) oppure con ✏️ Modifica → ⚙️ Sensori.", "No energy sensors found. Set them up in Home Assistant (Settings → Dashboards → Energy) or with ✏️ Edit → ⚙️ Sensors.")}</div>` : ""}</section>`;
+/* ---------- adesso: la scena animata (scenaenergia.js) ---------- */
+/** come si divide l'energia in questo momento (W): da dove arriva e dove va */
+export function ripartisci({ pv, rete, bat }) {
+  const P = Math.max(0, pv || 0), imp = Math.max(0, rete || 0), exp = Math.max(0, -(rete || 0)), car = Math.max(0, -(bat || 0)), sc = Math.max(0, bat || 0);
+  const solBat = Math.min(P, car), solRete = Math.min(P - solBat, exp), solCasa = Math.max(0, P - solBat - solRete);
+  const reteBat = Math.min(imp, car - solBat), reteCasa = imp - reteBat;
+  const batRete = Math.min(sc, exp - solRete), batCasa = sc - batRete;
+  return { solCasa, solBat, solRete, reteCasa, reteBat, batCasa, batRete };
 }
-
-/* versione per il telefono: stesso schema, più stretto, scritte più grandi */
-function flussoTel(o) {
-  const { pv, rete, bat, casa, soc, haPv, haBat, sole, compra, vende, scarica, carica, bil, socC } = o, y0 = haPv ? 0 : -90;
-  return `<section class="card span3 fw68"><div class="ch"><h2>⚡ ${t("Adesso", "Now")}</h2><span class="muted small">${bil == null ? "" : bil >= 0 ? `+${watts(bil)}` : `−${watts(-bil)}`}</span></div>
-  <svg viewBox="0 ${y0} 400 ${(haBat ? 380 : 250) - y0}" class="sv68 tel68" role="img" aria-label="${t("Flusso di energia", "Energy flow")}">
-    ${haPv ? `${box(110, 4, 180, 76, "☀ " + t("SOLE", "SOLAR"), watts(pv), "", sole ? "sol" : "")}${ln("M200 80 V142", "#ffd60a", sole)}` : ""}
-    ${ln("M124 190 H152", compra ? "#ff6961" : "#30d158", compra || vende, vende)}
-    ${box(4, 150, 120, 80, t("RETE", "GRID"), watts(rete == null ? null : Math.abs(rete)), compra ? t("prelievo", "import") : vende ? t("immissione", "export") : t("in pari", "idle"), compra ? "red" : vende ? "grn" : "")}
-    <g class="inv68"><circle cx="200" cy="190" r="48" class="body"/><text x="200" y="190" class="t">${casa == null ? "—" : watts(casa)}</text><text x="200" y="210" class="s">${t("casa", "home")}</text></g>
-    ${ln("M248 190 H276", "#64d2ff", (casa || 0) > 20)}
-    ${box(276, 150, 120, 80, "🏠 " + t("CASA", "HOME"), watts(casa), t("consumo", "use"), "home")}
-    ${haBat ? `${ln("M200 238 V276", "#30d158", carica || scarica, scarica)}
-      <g class="bt68"><rect x="160" y="276" width="80" height="40" rx="8" class="case"/><rect x="240" y="289" width="7" height="14" rx="2" class="case"/>
-      <rect x="164" y="280" width="${soc == null ? 0 : Math.max(3, Math.min(72, 72 * soc / 100)).toFixed(1)}" height="32" rx="6" style="fill:${socC}"/></g>
-      <text x="200" y="352" class="soc68" style="fill:${socC}">${soc == null ? "—" : Math.round(soc) + "%"}</text>
-      ${box(266, 284, 130, 72, carica ? t("CARICA", "CHARGE") : scarica ? t("SCARICA", "DISCHARGE") : "🔋", watts(bat == null ? null : Math.abs(bat)), "", carica || scarica ? "grn" : "")}` : ""}
-  </svg></section>`;
+/** potenza più alta del fotovoltaico negli ultimi 30 giorni (statistiche), per far brillare i pannelli in proporzione */
+let maxVisto = 0;
+function picco(ids, pv) {
+  maxVisto = Math.max(maxVisto, pv || 0);
+  const k = id => { const u = String(attr(id, "unit_of_measurement") || "").toLowerCase(); return u === "kw" ? 1000 : u === "mw" ? 1e6 : 1; };
+  const r = ids.length ? cached("enPicco:" + ids.join(","), 3 * 3600e3, () => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - 30);
+    return ws({ type: "recorder/statistics_during_period", start_time: d.toISOString(), statistic_ids: ids, period: "day", types: ["max"] }).catch(() => ({})); }) : null;
+  const st = ids.reduce((a, id) => a + Math.max(0, ...(r?.[id] || []).map(x => +x.max || 0)) * k(id), 0);
+  return Math.max(st, maxVisto, 800);
+}
+/** l'auto da mostrare davanti a casa: prima quella in carica, poi quella collegata; solo se è a casa */
+function autoACasa() {
+  const L = auto().map(ricarica).filter(a => a.casa === true || (a.casa == null && (a.ric || a.spina)));
+  return L.find(a => a.ric) || L.find(a => a.spina) || L[0] || null;
+}
+/** riepilogo in parole semplici: «Il sole copre il 78% dei consumi, stai immettendo 1,2 kW.» */
+function riepilogo(Lt, F, A) {
+  const { pv, rete, casa, soc } = Lt, C = casa || 0, imp = Math.max(0, rete || 0), exp = Math.max(0, -(rete || 0));
+  const pct = v => Math.round(Math.min(100, v / C * 100)), parti = [];
+  let tuttaRete = false;
+  if (C > 20) {
+    const sol = (pv || 0) > 20 ? pct(F.solCasa) : 0, bt = pct(F.batCasa);
+    if (sol >= 99) parti.push(t("Il sole copre tutti i consumi", "The sun covers everything the house uses"));
+    else if (sol > 0) parti.push(t(`Il sole copre il ${sol}% dei consumi`, `The sun covers ${sol}% of what the house uses`) + (bt >= 5 ? t(`, la batteria il ${bt}%`, `, the battery ${bt}%`) : ""));
+    else if (bt >= 99) parti.push(t("La batteria copre tutti i consumi", "The battery covers everything the house uses"));
+    else if (bt > 0) parti.push(t(`La batteria copre il ${bt}% dei consumi`, `The battery covers ${bt}% of what the house uses`));
+    else if (imp > 20) { tuttaRete = true; parti.push(t(`La casa usa ${watts(C)}, tutti dalla rete`, `The house uses ${watts(C)}, all from the grid`)); }
+    else parti.push(t(`La casa usa ${watts(C)}`, `The house uses ${watts(C)}`));
+  } else if ((pv || 0) > 20) parti.push(t(`Il sole produce ${watts(pv)}`, `The sun is producing ${watts(pv)}`));
+  if (exp > 20) parti.push(t(`stai immettendo ${watts(exp)}`, `you're exporting ${watts(exp)}`));
+  else if (imp > 20 && !tuttaRete) parti.push(t(`prelevi ${watts(imp)} dalla rete`, `you're drawing ${watts(imp)} from the grid`));
+  const altro = [];
+  if ((Lt.bat || 0) < -20) altro.push(t(`La batteria si sta caricando${soc != null ? ` (${Math.round(soc)}%)` : ""}.`, `The battery is charging${soc != null ? ` (${Math.round(soc)}%)` : ""}.`));
+  if (A?.ric) altro.push(t(`${A.nome} si ricarica${A.w ? " a " + watts(A.w) : ""}.`, `${A.nome} is charging${A.w ? " at " + watts(A.w) : ""}.`));
+  return { frase: parti.length ? parti.join(", ") + "." : "", altro: altro.join(" ") };
+}
+/** elettrodomestici accesi (dalla pagina Elettrodomestici), quelli che consumano di più in evidenza */
+function accesi(casa) {
+  const L = VISTE.elettroAccesi?.(); if (!L) return "";
+  if (!L.length) return `<div class="en7a"><div class="small muted">🧺 ${t("Nessun elettrodomestico acceso adesso.", "No appliances running right now.")}</div></div>`;
+  const tot = casa > 0 ? casa : null, max = Math.max(...L.map(a => a.w || 0), 1);
+  return `<div class="en7a"><div class="en7ah">🧺 ${t("Elettrodomestici accesi", "Appliances running")}</div><div class="en7al">${L.map((a, i) => {
+    const q = a.w != null && tot ? Math.round(Math.min(100, a.w / tot * 100)) : null, top = a.w != null && a.w > 20 && (i === 0 || (q != null && q >= 25));
+    const barra = a.w != null ? (q != null ? q : Math.round(a.w / max * 100)) : 0;
+    return `<button class="en7ai ${top ? "top" : ""}" data-act="apGo">${a.vista(top ? "md" : "sm", "en" + i)}<span class="tx"><b>${esc(a.nome)}</b>
+      <span>${a.w != null ? `<em>${watts(a.w)}</em>${q != null ? ` · ${q}%<span class="en7q">${t(" della casa", " of the house")}</span>` : ""}` : t("in funzione", "running")}</span><i><u style="width:${barra}%"></u></i></span></button>`; }).join("")}</div></div>`;
+}
+function adesso() {
+  const Lt = letture(), { s, pv, rete, bat, casa, soc } = Lt, haPv = !!s.pv, haBat = !!(s.battery || s.soc), haRete = rete != null || !!s.grid;
+  const F = ripartisci(Lt), A = autoACasa(), stretto = window.innerWidth < 700;
+  const { frase, altro } = riepilogo(Lt, F, A);
+  const pvIds = haPv ? stringhe(s.pv) : [];
+  const sc = scena({ stretto, pv, haPv, rete, haRete, bat, haBat, soc, casa, F, auto: A, picco: haPv ? picco(pvIds, pv) : 1, titolo: frase || t("Energia adesso", "Energy now") });
+  const soci = scelti("soc").length ? scelti("soc") : s.soc ? [s.soc] : [], primo = L => L[0] || null;
+  const E = [
+    haPv && { k: "pv", id: primo(pvIds), ic: "☀️", v: watts(pv), s: t("produzione", "solar"), cls: "sol" },
+    haRete && { k: "rete", id: primo(scelti("grid").length ? scelti("grid") : [s.grid]), ic: rete > 20 ? "↓" : rete < -20 ? "↑" : "⚡", v: watts(rete == null ? null : Math.abs(rete)),
+      s: rete > 20 ? t("prelievo", "import") : rete < -20 ? t("immissione", "export") : t("rete in pari", "grid idle"), cls: rete > 20 ? "imp" : rete < -20 ? "exp" : "" },
+    { k: "casa", id: primo(scelti("home").length ? scelti("home") : [s.home]), ic: "🏠", v: watts(casa), s: t("consumo", "use"), cls: "casa" },
+    haBat && { k: "bat", id: primo(soci) || primo(scelti("battery").length ? scelti("battery") : [s.battery]), ic: "🔋", v: soc == null ? watts(bat == null ? null : Math.abs(bat)) : Math.round(soc) + "%",
+      s: bat < -20 ? t("in carica", "charging") + (soc != null ? " · " + watts(-bat) : "") : bat > 20 ? t("in uso", "in use") + (soc != null ? " · " + watts(bat) : "") : t("ferma", "idle"), cls: "bat" },
+    A && { k: "auto", id: A.id, ic: "🚗", v: A.b != null ? Math.round(A.b) + "%" : esc(A.nome), s: A.ric ? "⚡ " + (A.w ? watts(A.w) : t("in carica", "charging")) : A.spina ? t("collegata", "plugged in") : t("a casa", "home"), cls: "ev" },
+  ].filter(Boolean);
+  return `<section class="card span3 en7c"><div class="ch"><h2>⚡ ${t("Adesso", "Now")}</h2><span class="muted small">${esc(intestazione(sc.sole, sc.meteo))}</span></div>
+    ${frase ? `<div class="en7r">${esc(frase)}${altro ? `<small>${esc(altro)}</small>` : ""}</div>` : ""}
+    <div class="en7 ${stretto ? "tel" : ""}">${sc.html}${stretto ? "" : etichette(E, sc.g)}</div>
+    ${stretto ? `<div class="en7t">${etichette(E, null)}</div>` : ""}
+    ${accesi(casa)}
+    ${!haEnergia() ? `<div class="note1">${t("Non ho trovato i sensori dell'energia. Configurali in Home Assistant (Impostazioni → Plance → Energia) oppure con ✏️ Modifica → ⚙️ Sensori.", "No energy sensors found. Set them up in Home Assistant (Settings → Dashboards → Energy) or with ✏️ Edit → ⚙️ Sensors.")}</div>` : ""}</section>`;
 }
 window.addEventListener("resize", () => { clearTimeout(window.__enR); window.__enR = setTimeout(() => render(true), 300); });
 
@@ -277,7 +312,7 @@ ACT.enStor = el => { VS.p = el.dataset.v; render(); };
 function pagina() {
   return `<div class="g g3">
     ${isAdmin() ? `<section class="card span3 row between" style="flex-wrap:wrap;gap:8px"><span class="muted">${t("Scegli tu i sensori: stringhe del fotovoltaico, rete, casa, batterie, contatori di oggi.", "Choose your sensors: solar strings, grid, home, batteries, today's meters.")}</span><button class="btn" data-act="enSensors">⚙️ ${t("Sensori", "Sensors")}</button></section>` : ""}
-    ${flusso()}${cardStringhe()}${cardOggi()}${cardStorico()}${consumi()}
+    ${adesso()}${cardStringhe()}${cardOggi()}${cardStorico()}${consumi()}
   </div>`;
 }
 page("energia", { title: t("Energia", "Energy"), short: t("Energia", "Energy"), icon: "⚡", order: 15, editable: true, show: () => haEnergia() || isAdmin(), render: pagina });

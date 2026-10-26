@@ -11,19 +11,16 @@ body.light .pillv{background:rgba(255,255,255,.75)!important;border-color:rgba(0
 body.light .seg button.act,body.light .pkt1 button.act{background:#fff!important;box-shadow:0 2px 8px rgba(0,0,0,.12)}
 body.light select option{background:#fff!important;color:#1c1c1e}
 body.light .wel2b:first-child{background:linear-gradient(160deg,rgba(255,69,58,.14),rgba(255,255,255,.75))!important}
-body.light .inv68 .body{fill:rgba(100,180,255,.12)!important}
-body.light .bt68 .case{stroke:rgba(28,28,30,.45)!important;fill:rgba(0,0,0,.04)!important}
-body.light .pyl68 path{stroke:rgba(28,28,30,.55)!important}
-body.light .vl68,body.light .inv68 .t,body.light .mv68,body.light .inf68 text.r{fill:#1c1c1e!important}
-body.light .ln68{stroke:rgba(0,0,0,.14)!important}
 body.light .rm1.lit{background:linear-gradient(160deg,rgba(255,200,40,.22),rgba(255,255,255,.7))!important}
 body.light .toast{background:rgba(255,255,255,.95);color:#1c1c1e}
-body.light .bx68.sol rect{stroke:rgba(214,160,0,.75)!important}body.light .bx68.red rect{stroke:rgba(255,69,58,.7)!important}
-body.light .bx68.grn rect{stroke:rgba(36,170,70,.7)!important}body.light .bx68.home rect{stroke:rgba(0,122,255,.55)!important}
 body.light [style*="#ffd60a"],body.light .pillv.sun{color:#b88600!important}
 body.light [style*="#64d2ff"]{color:#0a7fd1!important}
-body.light .sun68 circle,body.light .sun68 line{stroke:#e0a800!important}
 body.light .tt68 b[style*="#30d158"],body.light .og68 b[style*="#30d158"]{color:#1f9e45!important}
+body.light .en7k{background:rgba(255,255,255,.86)!important;color:#1c1c1e!important;border-color:rgba(0,0,0,.08)!important;box-shadow:0 6px 18px -10px rgba(31,45,80,.45)!important}
+body.light .en7t .en7k{background:rgba(0,0,0,.035)!important;box-shadow:none!important}
+body.light .en7k.sol b{color:#b88600}body.light .en7k.imp b{color:#e0352b}body.light .en7k.exp b{color:#1f9e45}body.light .en7k.casa b,body.light .en7k.ev b{color:#0a7fd1}body.light .en7k.bat b{color:#8a4fd6}
+body.light .en7::after{box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}body.light .en7{box-shadow:0 16px 36px -26px rgba(31,45,80,.55)}
+body.light .en7ai.top .tx>span em{color:#c26a00}
 body.light .av2{color:#fff;background-color:#8e8e93;border-color:rgba(0,0,0,.12)}body.light .ps2.home .av2{border-color:var(--green)}
 body.light .av2 b{border-color:#fff}body.light .pb2{border-color:rgba(0,0,0,.35)}
 body.light .x3{background:rgba(0,0,0,.06)}

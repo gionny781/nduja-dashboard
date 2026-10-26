@@ -135,6 +135,17 @@ const ENT = {
   "switch.presa_studio": st("unavailable", { friendly_name: "Presa studio" }),
   "light.striscia_corridoio": st("unavailable", { friendly_name: "Striscia LED corridoio" }),
 };
+/* sole finto: alba alle 7, tramonto alle 18 di oggi */
+{ const d0 = new Date(); d0.setHours(0, 0, 0, 0); const al = d0.getTime() + 7*H*1e3, tr = d0.getTime() + 18*H*1e3, n = Date.now(), su = n >= al && n < tr, G = 864e5;
+  const f = su ? (n - al) / (tr - al) : 0, el = su ? Math.round(Math.sin(Math.PI * f) * 38 * 10) / 10 : -Math.min(40, Math.round(Math.min(Math.abs(n - tr), Math.abs(n - al - G), Math.abs(n - al)) / 6e4 / 4));
+  ENT["sun.sun"] = st(su ? "above_horizon" : "below_horizon", { friendly_name: "Sun", elevation: el, rising: n < (al + tr) / 2,
+    next_rising: new Date(n < al ? al : al + G).toISOString(), next_setting: new Date(n < tr ? tr : tr + G).toISOString() }); }
+/* LS mockEnt = { entity_id: [stato, {attributi}] | null (la toglie) } cambia gli stati finti; "@+5h" / "@-30m" negli attributi = adesso + 5 ore / − 30 minuti */
+for (const [id, v] of Object.entries(JSON.parse(localStorage.getItem("mockEnt") || "{}"))) {
+  if (!v) { delete ENT[id]; continue; }
+  const at = Object.fromEntries(Object.entries(v[1] || {}).map(([k, x]) => { const m = typeof x === "string" && x.match(/^@([+-][\d.]+)([hm])$/); return [k, m ? new Date(Date.now() + +m[1] * (m[2] === "h" ? 3600e3 : 6e4)).toISOString() : x]; }));
+  ENT[id] = st(v[0], { ...(ENT[id]?.a || {}), ...at });
+}
 const day = (o, h, m=0) => { const d = new Date(); d.setDate(d.getDate()+o); d.setHours(h, m, 0, 0); return d.toISOString(); };
 const dstr = o => { const d = new Date(); d.setDate(d.getDate()+o); return d.toISOString().slice(0,10); };
 const EV = {
@@ -210,7 +221,7 @@ const conn = {
       case "get_services": return { dreame_vacuum: { vacuum_clean_segment: {} } };
       case "energy/get_prefs": return { energy_sources: [{ type: "grid", stat_energy_from: "sensor.imp", stat_energy_to: "sensor.exp", number_energy_price: 0.35, number_energy_price_export: 0.044 }, { type: "solar", stat_energy_from: "sensor.prod" }], device_consumption: [] };
       case "recorder/statistics_during_period": { const out = {}; const st = new Date(m.start_time).getTime(), step = m.period === "hour" ? 3600e3 : m.period === "month" ? 30*864e5 : 864e5;
-        for (const id of m.statistic_ids) { out[id] = []; for (let x = st, i = 0; x < Date.now(); x += step, i++) out[id].push({ start: x, change: id.includes("prod") ? 8 + 6*Math.sin(i) : id.includes("imp") ? 2 + Math.random()*3 : 3 + Math.random()*4, mean: 21 + 2*Math.sin(i/4), min: 19 + Math.sin(i/4), max: 23 + 2*Math.sin(i/4) }); }
+        for (const id of m.statistic_ids) { out[id] = []; for (let x = st, i = 0; x < Date.now(); x += step, i++) out[id].push({ start: x, change: id.includes("prod") ? 8 + 6*Math.sin(i) : id.includes("imp") ? 2 + Math.random()*3 : 3 + Math.random()*4, mean: 21 + 2*Math.sin(i/4), min: 19 + Math.sin(i/4), max: /pv\d?_power/.test(id) ? (ENT[id]?.a?.unit_of_measurement === "kW" ? 2.2 : 2200) : 23 + 2*Math.sin(i/4) }); }
         return out; }
       case "history/history_during_period": return {};
       case "camera/capabilities": return { frontend_stream_types: { webrtc: ["hls", "web_rtc"], webrtc_ko: ["hls", "web_rtc"], hls: ["hls"] }[CAMM()] || [] };
