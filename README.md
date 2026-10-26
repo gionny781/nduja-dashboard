@@ -30,6 +30,7 @@ it builds itself from your **areas, floors and devices**.
 - **Energy** – live flow (solar, grid, home, battery), today's totals and device consumption, from Home Assistant's Energy configuration.
 - **Calendar** – events from your Home Assistant calendars (today, week, month) and ＋ Event.
 - **Chores** – household chores with how often they're due, whose turn it is among your Home Assistant people (taking turns or always the same person) and the last time: «Done» records who and when and passes the turn; overdue ones stand out, «Today's chores» on Home. Shared by everyone: any user can add and mark them.
+- **Notice board** – short family messages with author, date and colour: pin one to the top, give it an optional expiry and it disappears by itself. Shared by everyone and it shows up right away on every device; the author or an admin can delete it. The latest ones are on Home.
 - **Map** – 2D or 3D, every floor drawn from your areas: lights, windows, climate, motion, temperature; move and resize rooms, put your floor plan underneath.
 - **Appliances** – washing machine, dryer, dishwasher, oven…: running/done, power, today's kWh, end time, plug. Each one is **animated** (idle, running, done) with the dashboard's own drawings or with your images/GIFs, also on Home and on the map.
 - **Car** – shown only if Home Assistant has a car (Tesla, BMW, VW, Kia/Hyundai, Renault, Polestar, Mercedes…): photo, battery and range, charging, location and controls (lock, climate, charging, trunk, charge limit…).
@@ -73,6 +74,7 @@ si costruisce da sola dalle tue **aree, piani e dispositivi**.
 - **Energia** – flusso in tempo reale (sole, rete, casa, batteria), totali di oggi e consumi dei dispositivi, dalla configurazione Energia di Home Assistant.
 - **Calendario** – gli eventi dei calendari di Home Assistant (oggi, settimana, mese) e ＋ Evento.
 - **Faccende** – i lavori di casa con ogni quanto vanno fatti, a chi tocca tra le persone di Home Assistant (a turno o sempre la stessa) e l'ultima volta: «Fatto» registra chi e quando e passa il turno; quelli in ritardo si vedono subito, in Home «Faccende di oggi». Condivise da tutti: qualsiasi utente può aggiungerle e segnarle.
+- **Bacheca** – messaggi brevi per la famiglia con autore, data e colore: uno si può appuntare in alto e con la scadenza facoltativa sparisce da solo. Condivisa da tutti e subito visibile su ogni dispositivo; la cancella chi l'ha scritto oppure un amministratore. Gli ultimi messaggi sono anche in Home.
 - **Mappa** – in 2D o 3D, ogni piano disegnato dalle aree: luci, finestre, clima, movimento, temperatura; sposta e ridimensiona le stanze, metti sotto la tua piantina.
 - **Elettrodomestici** – lavatrice, asciugatrice, lavastoviglie, forno…: in funzione/finito, potenza, kWh di oggi, ora di fine, presa. Ognuno è **animato** (fermo, in funzione, finito) con i disegni della plancia o con le tue immagini/GIF, anche nella Home e nella mappa.
 - **Auto** – compare solo se in Home Assistant c'è un'auto (Tesla, BMW, VW, Kia/Hyundai, Renault, Polestar, Mercedes…): foto, batteria e autonomia, ricarica, posizione e comandi (apri/chiudi, clima, ricarica, baule, limite di ricarica…).

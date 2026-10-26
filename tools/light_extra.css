@@ -73,3 +73,10 @@ body.light .fkp1.me>span:last-child,body.light .fkw1.sel button.on small{color:#
 body.light .fkx1{background:rgba(48,209,88,.14)!important;border-color:rgba(31,158,69,.5)!important;color:#1f9e45}
 body.light .s-oggi em{color:#d27400}body.light .fk1.fatto em,body.light .fkok1>span{color:#1f9e45}
 body.light .fkw1.sel button.on{background:rgba(10,132,255,.12)!important}
+/* bacheca: iniziali bianche sugli avatar, riflesso bianco sulla puntina */
+body.light .bca1{color:#fff!important;border-color:rgba(var(--bc,0,0,0),.55)}
+body.light .bcpn1 .l{fill:rgba(255,255,255,.75)!important}
+body.light .bcb1.warn{background:rgba(255,159,10,.16)!important;color:#b86e00}
+body.light .bcw1f small.poco{color:#d27400}
+body.light .bcv1 button.on{background:rgba(10,132,255,.12)!important}
+body.light .bcs2{background:rgba(255,255,255,.6)!important}

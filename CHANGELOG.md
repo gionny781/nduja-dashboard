@@ -3,6 +3,20 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.22-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+> ⚠️ 🇮🇹 Se arrivi da una versione prima della 0.7.21-dev **riavvia Home Assistant** dopo l'aggiornamento. · 🇬🇧 If you're coming from a version before 0.7.21-dev, **restart Home Assistant** after updating.
+- 🇮🇹 **📌 Bacheca** (pagina nuova): i messaggi di famiglia. Ognuno ha testo (fino a 280 caratteri), **autore** (chi lo scrive, con la foto della sua persona), data e **colore** a scelta tra sei.
+- 🇮🇹 Un messaggio si può **appuntare in alto** (con la puntina) e può avere una **scadenza**: stasera, domani, 3 giorni, una settimana o un giorno scelto; allo scadere **sparisce da solo**. Senza scadenza resta finché qualcuno non lo cancella.
+- 🇮🇹 Lo **cancella** (con il doppio tocco di conferma) o lo appunta **chi l'ha scritto oppure un amministratore**.
+- 🇮🇹 Usa i dati condivisi della 0.7.21: **qualsiasi utente** può scrivere, i messaggi valgono su tutti i dispositivi e **uno nuovo compare subito** sugli altri telefoni e tablet, con una piccola animazione d'arrivo (ferma con «Riduci movimento»).
+- 🇮🇹 In **Home** la scheda **«Bacheca»** con gli ultimi messaggi (prima gli appuntati) e «Scrivi»; si nasconde con ✏️ Modifica o per persona, come le altre. La pagina si sceglie in Impostazioni e nella plancia per persona.
+- 🇬🇧 **📌 Notice board** (new page): family messages. Each one has text (up to 280 characters), **author** (whoever writes it, with their person's photo), date and one of six **colours**.
+- 🇬🇧 A message can be **pinned to the top** (with a drawn pin) and can have an **expiry**: tonight, tomorrow, 3 days, a week or a chosen day; when it expires it **disappears by itself**. Without an expiry it stays until someone deletes it.
+- 🇬🇧 **The author or an admin** can **delete** it (double tap to confirm) or pin it.
+- 🇬🇧 It uses the shared data from 0.7.21: **any user** can write, messages are the same on every device and **a new one shows up right away** on the other phones and tablets, with a small arrival animation (still with «Reduce motion»).
+- 🇬🇧 On **Home**, the **«Notice board»** card with the latest messages (pinned first) and «Write»; hide it with ✏️ Edit or per person, like the others. The page can be chosen in Settings and in the per-person dashboard.
+
 ## 0.7.21-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 > ⚠️ 🇮🇹 Dopo l'aggiornamento **riavvia Home Assistant**: cambia anche la parte in Python. · 🇬🇧 After updating **restart Home Assistant**: the Python part changes too.
