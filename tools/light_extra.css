@@ -111,3 +111,7 @@ body.light .mu1m{background:rgba(255,255,255,.92)!important;border-color:rgba(0,
 body.light .mu1c.act{background:linear-gradient(135deg,rgba(10,132,255,.2),rgba(191,90,242,.14))!important;border-color:rgba(10,132,255,.6)!important}
 body.light .mu1pl{background:rgba(0,0,0,.55)!important;color:#fff!important}body.light .mu1tp{color:#fff!important}
 body.light .mu1axs button.act{background:rgba(10,132,255,.16)!important;border-color:rgba(10,132,255,.6)!important;color:#0a63c9}
+/* 0.7.29: stelle dei preferiti e ⋯ sopra le copertine restano su fondo scuro; fuori, la stella piena è dorata scura */
+body.light .mu1lw>.mu1st.on,body.light .mu1az .btn.on{color:#b98900!important}
+body.light .mu1t>.ma1m,body.light .mu1t>.mu1st{background:rgba(0,0,0,.5)!important;color:#fff!important}body.light .mu1t>.mu1st.on{color:#ffd60a!important}
+body.light .mu1fx{color:#fff!important}

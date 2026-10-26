@@ -3,6 +3,19 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.29-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+- 🇮🇹 **🔎 Music Assistant**: se è installata, nella pagina Musica cerchi **brani, artisti, album, playlist e radio** (tutto insieme o un tipo alla volta) e li fai partire con un tocco sulla sua cassa. Con **⋯** scegli «Dopo questo», «Aggiungi alla coda» o **📻 Radio da qui** (musica simile senza fine, dove il servizio lo permette). Se «Dove ascolti» non è una cassa di Music Assistant, scegli su quale suonare.
+- 🇮🇹 **Coda visibile**: sotto il lettore di una cassa di Music Assistant vedi il brano di adesso, quello dopo e quanti brani ci sono in coda.
+- 🇮🇹 Senza Music Assistant, una riga discreta (solo per gli amministratori) spiega che installandola puoi cercare e ascoltare da Spotify, Apple Music, radio…, con il link alla guida ufficiale.
+- 🇮🇹 **⇄ Sposta su…**: passa la musica da una cassa all'altra, anche da e verso questo dispositivo. Tra casse di Music Assistant passa **tutta la coda**; dalla plancia a una cassa che accetta la coda passa anche i brani dopo; negli altri casi riparte lo stesso brano o la stessa radio sulla nuova cassa, quando si può, e la cassa di prima si mette in pausa. «Dove ascolti» segue la musica.
+- 🇮🇹 **⭐ Preferiti**: con ☆ su una playlist o una radio (in «Sfoglia» o nella ricerca di Music Assistant) la metti tra i preferiti, in cima alla pagina Musica. Valgono per **tutta la casa**; suonano dove ascolti oppure, se lì non si può, dove si può. Con ✏️ Modifica li togli.
+- 🇬🇧 **🔎 Music Assistant**: if it's installed, on the Music page you search **songs, artists, albums, playlists and radio** (all together or one kind at a time) and start them with a tap on its speaker. With **⋯** choose «Play next», «Add to queue» or **📻 Radio from here** (endless similar music, where the service allows it). If «Where to listen» isn't a Music Assistant speaker, choose which one plays.
+- 🇬🇧 **Queue you can see**: under the player of a Music Assistant speaker you see the current track, the next one and how many tracks are queued.
+- 🇬🇧 Without Music Assistant, a discreet line (admins only) explains that installing it lets you search and listen from Spotify, Apple Music, radio…, with a link to the official guide.
+- 🇬🇧 **⇄ Move to…**: moves the music from one speaker to another, also from and to this device. Between Music Assistant speakers the **whole queue** moves; from the dashboard to a speaker that accepts a queue the following tracks go too; otherwise the same track or station starts again on the new speaker, when possible, and the previous one pauses. «Where to listen» follows the music.
+- 🇬🇧 **⭐ Favourites**: with ☆ on a playlist or a station (in «Browse» or in the Music Assistant search) you add it to the favourites at the top of the Music page. They apply to the **whole home**; they play where you listen or, if that's not possible there, where they can. Remove them with ✏️ Edit.
+
 ## 0.7.28-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 - 🇮🇹 **🎧 Musica: dove ascolti**. In cima alla pagina Musica scegli dove suona la musica: **📱 Questo dispositivo** (il telefono, il tablet o il PC che stai usando), una delle **casse** di Home Assistant (Alexa, Google/Nest, Sonos…) o un **gruppo** (👥). La scelta resta su questo dispositivo; quello che sta suonando si riconosce dalle barrette verdi.

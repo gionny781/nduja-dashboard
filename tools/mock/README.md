@@ -47,3 +47,10 @@ node tools/mock/shot.mjs musica 1280 900 musica.png '.mu1tb >> nth=0|.mu1tb >> n
 ```bash
 LS='{"mockPiani":"1"}' node tools/mock/shot.mjs luci 1280 900 luci.png '[data-act="luDet"][data-id="light.led_tv_soggiorno"]'
 ```
+
+**Music Assistant** (0.7.29): `media_player.ma_soggiorno` (suona, con la coda) e `media_player.ma_cucina` sono di `music_assistant`; `music_assistant.search` cerca in un piccolo
+catalogo inventato (prova «demo» o «onde»), `get_queue`, `play_media` (anche `enqueue` e `radio_mode`) e `transfer_queue` cambiano lo stato finto. Con `mockNoMA` in `LS`
+Music Assistant non c'è (compare la riga «installa Music Assistant»). I preferiti si provano mettendo `muPreferiti` in `mockLayout`.
+```bash
+LS='{"nduja_mu_dove":"media_player.ma_soggiorno"}' node tools/mock/shot.mjs musica 1280 900 ma.png '[data-act="mu1sp"]'
+```

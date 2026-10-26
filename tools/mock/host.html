@@ -110,6 +110,10 @@ const ENT = {
   "media_player.sonos_soggiorno": st("paused", { friendly_name: "Sonos soggiorno", supported_features: 973375, media_title: "Notturno", media_artist: "Demo Trio", volume_level: .3, shuffle: false, repeat: "off", source_list: ["TV", "Linea"] }),
   "media_player.nest_studio": st("idle", { friendly_name: "Nest Mini studio", supported_features: 152511, volume_level: .5 }),
   "media_player.casa_tutta": st("off", { friendly_name: "Tutta la casa", supported_features: 152511, volume_level: .4 }),
+  /* Music Assistant 0.7.29: due casse di MA (mockNoMA le toglie: Music Assistant non installata) */
+  "media_player.ma_soggiorno": st("playing", { friendly_name: "Soggiorno MA", supported_features: 2544575, media_title: "Mattino lento", media_artist: "Demo Trio", media_album_name: "Album demo",
+    media_content_id: "library://track/12", media_content_type: "music", entity_picture: "/tools/mock/cover-a.svg", volume_level: .4, shuffle: false, repeat: "off", media_duration: 214, media_position: 63 }),
+  "media_player.ma_cucina": st("idle", { friendly_name: "Cucina MA", supported_features: 2544575, volume_level: .3, shuffle: false, repeat: "off" }),
   "media_player.tv_soggiorno": st("off", { friendly_name: "TV soggiorno", device_class: "tv", supported_features: 23997, volume_level: .2, source_list: ["HDMI 1","Netflix","YouTube"] }),
   "sensor.model_3_battery_level": st("64", { device_class: "battery", unit_of_measurement: "%", friendly_name: "Model 3 Battery level" }),
   "sensor.model_3_battery_range": st("312", { device_class: "distance", unit_of_measurement: "km", friendly_name: "Model 3 Battery range" }),
@@ -151,6 +155,7 @@ const ENT = {
   const f = su ? (n - al) / (tr - al) : 0, el = su ? Math.round(Math.sin(Math.PI * f) * 38 * 10) / 10 : -Math.min(40, Math.round(Math.min(Math.abs(n - tr), Math.abs(n - al - G), Math.abs(n - al)) / 6e4 / 4));
   ENT["sun.sun"] = st(su ? "above_horizon" : "below_horizon", { friendly_name: "Sun", elevation: el, rising: n < (al + tr) / 2,
     next_rising: new Date(n < al ? al : al + G).toISOString(), next_setting: new Date(n < tr ? tr : tr + G).toISOString() }); }
+if (localStorage.getItem("mockNoMA")) for (const id of Object.keys(ENT)) if (id.startsWith("media_player.ma_")) delete ENT[id];
 /* LS mockEnt = { entity_id: [stato, {attributi}] | null (la toglie) } cambia gli stati finti; "@+5h" / "@-30m" negli attributi = adesso + 5 ore / − 30 minuti */
 for (const [id, v] of Object.entries(JSON.parse(localStorage.getItem("mockEnt") || "{}"))) {
   if (!v) { delete ENT[id]; continue; }
@@ -167,7 +172,7 @@ const EV = {
 let LAYOUT = JSON.parse(localStorage.getItem("mockLayout") || '{"configured":true,"mode":"auto","energy":{"pv":["sensor.inverter_pv1_power","sensor.inverter_pv2_power","sensor.inverter_pv3_power"]}}');
 const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_sogg/.test(id) ? "soggiorno" : /echo_cucina/.test(id) ? "cucina" : /soggiorno/.test(id) ? "soggiorno" : /^(cover\.(cancello|garage|basculante)|switch\.cancellett|binary_sensor\.cancellett|button\.portone|camera\.(cortile|giardino|campanello)|light\.giardino)/.test(id) ? "esterno" : /corridoio|porta|ariston/.test(id) ? "corridoio" : /cucina/.test(id) ? "cucina" : /lavatric|asciugatric|lavanderia/.test(id) ? "lavanderia" : /forno|frigo|lavastov/.test(id) ? "cucina" : null,
   hb: id === "camera.cantina" || undefined,
-  pl: id.includes("model_3") ? "tesla_fleet" : id === "media_player.echo_cucina" ? "alexa_media" : id.startsWith("media_player.sonos") ? "sonos" : /^media_player\.(nest|casa_tutta)/.test(id) ? "cast" : undefined,
+  pl: id.startsWith("media_player.ma_") ? "music_assistant" : id.includes("model_3") ? "tesla_fleet" : id === "media_player.echo_cucina" ? "alexa_media" : id.startsWith("media_player.sonos") ? "sonos" : /^media_player\.(nest|casa_tutta)/.test(id) ? "cast" : undefined,
   di: id === "media_player.casa_tutta" ? "dev_cgrp" : id.includes("model_3") ? "dev_car" : id.startsWith("camera.campanello") ? "dev_bell" : id.startsWith("camera.giardino") ? "dev_reo" : id.startsWith("camera.cortile") ? "dev_cort" : id.includes("ambrogio") ? "dev_v" : id.includes("mario") ? "dev_g" : id.includes("anna") ? "dev_c" : id.includes("ariston") ? "dev_a" : null })) };
 /* telecamere: mockCam = "webrtc" (predefinito: diretta vera via WebRTC dentro il browser) | "webrtc_ko" (WebRTC fallisce, poi HLS)
    | "hls" (serve /mockhls/, vedi README) | "mjpeg" | "foto". mockCamLog conta gli stream aperti e chiusi. */
@@ -241,6 +246,38 @@ const SONOS = { "": dir("", "Sonos", [dir("favorites", "Preferiti", [], { media_
   "favorites": dir("favorites", "Preferiti", [brn("FV:2/1", "Radio del mattino", { media_class: "channel", media_content_type: "favorite_item_id", thumbnail: "/tools/mock/cover-b.svg" }), brn("FV:2/2", "Playlist cena", { media_class: "playlist", media_content_type: "favorite_item_id", thumbnail: "/tools/mock/cover-a.svg" })], { media_content_type: "favorites" }),
   "library": dir("library", "Libreria musicale", [dir("A:ALBUM/Demo", "Album demo", [], { media_class: "album", media_content_type: "album", can_play: true, thumbnail: "/tools/mock/cover-a.svg" })], { media_content_type: "library" }),
   "A:ALBUM/Demo": dir("A:ALBUM/Demo", "Album demo", [brn("T:1", "Primo brano", { media_content_type: "track" }), brn("T:2", "Secondo brano", { media_content_type: "track" })], { media_class: "album", media_content_type: "album", can_play: true, thumbnail: "/tools/mock/cover-a.svg" }) };
+/* Music Assistant finta (0.7.29): catalogo inventato, nessun dato vero */
+const MAC = { A: "/tools/mock/cover-a.svg", B: "/tools/mock/cover-b.svg" };
+const MACAT = [
+  { media_type: "artist", uri: "library://artist/1", name: "Demo Trio", image: MAC.A },
+  { media_type: "artist", uri: "library://artist/2", name: "Onde Corte", image: null },
+  { media_type: "album", uri: "library://album/3", name: "Album demo", image: MAC.A, artists: [{ name: "Demo Trio" }] },
+  { media_type: "album", uri: "library://album/4", name: "Mare d'inverno", image: MAC.B, artists: [{ name: "Onde Corte" }] },
+  ...["Mattino lento", "Caffè in terrazza", "Strada di casa", "Notte di vento", "Mare piatto"].map((n, i) => ({ media_type: "track", uri: "library://track/" + (12 + i), name: n, version: i === 3 ? "dal vivo" : "", image: i % 2 ? MAC.B : MAC.A, artists: [{ name: i % 2 ? "Onde Corte" : "Demo Trio" }], album: { name: i % 2 ? "Mare d'inverno" : "Album demo" } })),
+  { media_type: "playlist", uri: "library://playlist/5", name: "Domenica mattina", image: MAC.B },
+  { media_type: "playlist", uri: "library://playlist/6", name: "Cena con amici", image: null },
+  { media_type: "radio", uri: "library://radio/7", name: "Radio Demo FM", image: MAC.B },
+  { media_type: "radio", uri: "library://radio/8", name: "Radio Notturna", image: null } ];
+const MAQ = { "media_player.ma_soggiorno": { i: 0, L: ["library://track/12", "library://track/13", "library://track/14", "library://track/15"] }, "media_player.ma_cucina": { i: -1, L: [] } };
+const maIt = uri => MACAT.find(x => x.uri === uri) || { media_type: "track", uri, name: String(uri).split("/").pop(), image: null };
+function mockMA(m) {
+  const d = m.service_data || {}, ids = [].concat(m.target?.entity_id || []);
+  if (m.service === "search") { const q = String(d.name || "").toLowerCase().split(/\s+/).filter(Boolean), T = [].concat(d.media_type || ["artist", "album", "track", "playlist", "radio"]), out = { artists: [], albums: [], tracks: [], playlists: [], radio: [], audiobooks: [], podcasts: [] };
+    const G = { artist: "artists", album: "albums", track: "tracks", playlist: "playlists", radio: "radio" };
+    for (const x of MACAT) if (T.includes(x.media_type) && q.every(w => (x.name + " " + (x.artists || []).map(a => a.name).join(" ") + " " + (x.album?.name || "")).toLowerCase().includes(w)) && out[G[x.media_type]].length < (d.limit || 5)) out[G[x.media_type]].push(x);
+    return out; }
+  if (m.service === "get_queue") return Object.fromEntries(ids.map(id => { const q = MAQ[id] || { i: -1, L: [] }, it = k => q.L[k] ? { queue_item_id: "q" + k, name: maIt(q.L[k]).name, duration: 180 + k * 17, media_item: maIt(q.L[k]) } : null;
+    return [id, { queue_id: id, active: q.i >= 0, name: ENT[id]?.a.friendly_name, items: q.L.length, shuffle_enabled: false, repeat_mode: "off", current_index: q.i, elapsed_time: 63, current_item: it(q.i), next_item: it(q.i + 1) }]; }));
+  if (m.service === "play_media") for (const id of ids) { const q = MAQ[id] = MAQ[id] || { i: -1, L: [] }, x = maIt([].concat(d.media_id)[0]), e = ENT[id]; if (!e) continue;
+    if (d.enqueue === "add") q.L.push(x.uri); else if (d.enqueue === "next") q.L.splice(q.i + 1, 0, x.uri); else { q.L.splice(q.i + 1, 0, x.uri); q.i++; if (q.i < 0) q.i = 0;
+      e.s = "playing"; e.a = { ...e.a, media_title: x.name, media_artist: (x.artists || []).map(a => a.name).join(", ") || (d.radio_mode ? "Radio" : ""), media_content_id: x.uri, entity_picture: x.image || undefined };
+      setTimeout(() => window.mockStati?.({ c: { [id]: { "+": { s: e.s, a: e.a } } } }), 120); } }
+  if (m.service === "transfer_queue") for (const id of ids) { const da = d.source_player, e = ENT[id], s = ENT[da]; if (!e || !s) continue;
+    MAQ[id] = MAQ[da]; MAQ[da] = { i: -1, L: [] }; e.s = "playing"; e.a = { ...e.a, media_title: s.a.media_title, media_artist: s.a.media_artist, media_content_id: s.a.media_content_id, entity_picture: s.a.entity_picture };
+    s.s = "idle"; s.a = { ...s.a, media_title: undefined, media_artist: undefined, media_content_id: undefined, entity_picture: undefined };
+    setTimeout(() => window.mockStati?.({ c: { [id]: { "+": { s: e.s, a: e.a } }, [da]: { "+": { s: s.s, a: s.a } } } }), 120); }
+  return {};
+}
 const conn = {
   addEventListener() {}, subscribeEvents() { return Promise.resolve(() => {}); },
   subscribeMessage(cb, m) {
@@ -296,16 +333,20 @@ const conn = {
       case "get_config": return { version: "2026.10.1", location_name: "Casa" };
       case "config/label_registry/list": return JSON.parse(localStorage.getItem("mockLabels") || "[]");
       case "config/label_registry/create": { const L = JSON.parse(localStorage.getItem("mockLabels") || "[]"), l = { label_id: "nduja", name: m.name, icon: m.icon }; L.push(l); localStorage.setItem("mockLabels", JSON.stringify(L)); console.log("WS", JSON.stringify(m)); return l; }
-      case "config/entity_registry/get": return { entity_id: m.entity_id, labels: ["casa"] };
+      case "config/entity_registry/get": return { entity_id: m.entity_id, labels: ["casa"], ...(m.entity_id.startsWith("media_player.ma_") ? { config_entry_id: "ma_finta", platform: "music_assistant" } : {}) };
       case "config/entity_registry/update": console.log("WS", JSON.stringify(m)); return { entity_entry: { entity_id: m.entity_id, labels: m.labels } };
       case "call_service":
         if (m.domain === "calendar" && m.service === "get_events") { const ids = [].concat(m.target.entity_id); return { response: Object.fromEntries(ids.map(id => [id, { events: EV[id] || [] }])) }; }
         if (m.type === "recorder/statistic_during_period") return { change: 1.23 };
         if (m.domain === "weather") return { response: { [m.target.entity_id]: { forecast: [0,1,2,3,4].map(i => ({ datetime: day(i, 12), condition: i ? "sunny" : "rainy", temperature: 20 + i, templow: 12, precipitation_probability: i ? 0 : 80 })) } } };
+        /* Music Assistant finta: ricerca in un piccolo catalogo inventato, coda, riproduzione e passaggio della coda */
+        if (m.domain === "music_assistant") { const r = mockMA(m); console.log("SVC", JSON.stringify(m)); return { response: r }; }
+        if (m.domain === "media_player" && ["media_pause", "media_stop"].includes(m.service)) for (const id of [].concat(m.target?.entity_id || [])) { const e = ENT[id]; if (!e) continue;
+          e.s = m.service === "media_pause" ? "paused" : "idle"; setTimeout(() => window.mockStati?.({ c: { [id]: { "+": { s: e.s } } } }), 120); }
         /* luci e interruttori: lo stato cambia davvero, come in Home Assistant (anche i membri dei gruppi) */
         if (["light", "switch"].includes(m.domain) && ["turn_on", "turn_off", "toggle"].includes(m.service)) mockLuci(m);
         /* casse: play_media e play/pausa cambiano lo stato finto */
-        if (m.domain === "media_player" && ["play_media", "media_play_pause"].includes(m.service)) for (const id of [].concat(m.target?.entity_id || [])) { const e = ENT[id]; if (!e) continue;
+        if (m.domain === "media_player" && ["play_media", "media_play_pause"].includes(m.service) && !m.service_data?.enqueue) for (const id of [].concat(m.target?.entity_id || [])) { const e = ENT[id]; if (!e) continue;
           e.s = m.service === "play_media" ? "playing" : e.s === "playing" ? "paused" : "playing";
           if (m.service === "play_media") e.a = { ...e.a, media_title: String(m.service_data.media_content_id).split("/").pop(), media_artist: m.service_data.media_content_type };
           setTimeout(() => window.mockStati?.({ c: { [id]: { "+": { s: e.s, a: e.a } } } }), 120); }
