@@ -3,6 +3,10 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.29-dev2
+- 🇮🇹 **Avvisi sul telefono**: l'avviso «nuovo aggiornamento disponibile» non veniva aggiunto all'automazione (gli aggiornamenti erano scartati). Riapri 📱 e premi «Salva».
+- 🇬🇧 **Phone alerts**: the «new update available» alert was not added to the automation (updates were skipped). Reopen 📱 and press «Save».
+
 ## 0.7.29-dev1
 - 🇮🇹 **Avvisi sul telefono** (Home → Avvisi → 📱): due avvisi nuovi, **pioggia che inizia con finestre aperte** e **nuovo aggiornamento disponibile**. Come gli altri si accendono e spengono uno per uno; per chi li ha già attivi basta riaprire 📱 e premere «Salva».
 - 🇬🇧 **Phone alerts** (Home → Alerts → 📱): two new alerts, **rain starting with windows open** and **new update available**. Like the others, each can be turned on or off; if you already use them, reopen 📱 and press «Save».
