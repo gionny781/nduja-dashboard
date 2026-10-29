@@ -3,6 +3,21 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.33-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+- 🇮🇹 **🏎️ Formula 1**, pagina nuova: compare da sola se in Home Assistant c'è **F1 Sensor** (HACS), un **calendario della Formula 1** («Gran Premio d'Italia - Qualifiche», «… - Gara») o **Team Tracker** con lo sport «racing». Altrimenti in ⚙️ Impostazioni → Personalizza → «Formula 1» (o con ✏️) scegli una fonte, con la spiegazione di cosa installare.
+- 🇮🇹 **Prossimo Gran Premio**: nome, round, circuito e città, **conto alla rovescia** (ai secondi nell'ultima ora) alla prossima sessione, l'ora in pista e i giri; il **tracciato** è l'immagine dell'integrazione, e se manca un circuito astratto disegnato per 'Nduja. **Programma del weekend** con libere, qualifiche, sprint e gara nell'**ora di casa**, con quelle finite, quella in corso e la prossima.
+- 🇮🇹 **Weekend in corso** (con i dati live di F1 Sensor): sessione e manche delle qualifiche, **bandiere** (verde, gialla, rossa, a scacchi) e **Safety Car / VSC** disegnate, giro, tempo che manca, giro veloce, **ordine in pista** con distacchi o tempi, pit stop e ritiri, i messaggi della **direzione gara**.
+- 🇮🇹 **Classifiche piloti e costruttori** con i colori dei team, e **ultima gara** con il podio e tutti i risultati. Il **pilota e il team preferiti** (⭐, si scelgono con ✏️ o in Impostazioni, per tutta la casa) sono evidenziati ovunque.
+- 🇮🇹 **Scheda «Formula 1» in Home**: la prossima sessione con il «tra quanto» e l'orario della gara, oppure la sessione in corso con bandiera, giro e primi tre.
+- 🇮🇹 **📱 Avvisi sul telefono** (facoltativi): su richiesta la plancia crea in Home Assistant l'automazione **«'Nduja · Formula 1»** con l'etichetta «'Nduja», che avvisa **15 minuti prima** delle sessioni scelte («Tra 15 minuti partono le qualifiche»), anche a plancia chiusa.
+- 🇬🇧 **🏎️ Formula 1**, a new page: shown by itself if Home Assistant has **F1 Sensor** (HACS), a **Formula 1 calendar** («Italian Grand Prix - Qualifying», «… - Race») or **Team Tracker** with the «racing» sport. Otherwise in ⚙️ Settings → Customize → «Formula 1» (or with ✏️) pick a source, with an explanation of what to install.
+- 🇬🇧 **Next Grand Prix**: name, round, circuit and city, a **countdown** (to the second in the last hour) to the next session, the track time and laps; the **circuit** is the integration's image, or else an abstract circuit drawn for 'Nduja. **Weekend schedule** with practice, qualifying, sprint and race in your **home time zone**, showing the ones done, the live one and the next.
+- 🇬🇧 **Live weekend** (with F1 Sensor's live data): session and qualifying part, drawn **flags** (green, yellow, red, chequered) and **Safety Car / VSC**, lap, time left, fastest lap, **running order** with gaps or times, pit stops and retirements, **race control** messages.
+- 🇬🇧 **Drivers' and constructors' standings** with team colours, and the **last race** with its podium and all results. Your **favourite driver and team** (⭐, chosen with ✏️ or in Settings, for the whole home) are highlighted everywhere.
+- 🇬🇧 **«Formula 1» card on Home**: the next session with the time left and the race time, or the live session with flag, lap and top three.
+- 🇬🇧 **📱 Phone alerts** (optional): on request the dashboard creates the **«'Nduja · Formula 1»** automation in Home Assistant, with the «'Nduja» label, which alerts **15 minutes before** the chosen sessions («Qualifying starts in 15 minutes»), even with the dashboard closed.
+
 ## 0.7.32-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 - 🇮🇹 **⚽ La mia squadra**, pagina nuova: compare da sola se in Home Assistant c'è **Team Tracker** o **Calcio Live** (HACS); altrimenti in ⚙️ Impostazioni → Personalizza → «La mia squadra» (o con ✏️) scegli un loro sensore oppure un **calendario con le partite** («Inter - Milan», «Serie A: Inter - Milan», «Inter 2-1 Milan»). Si seguono **più squadre**: le scegli in alto. Lo stesso club da Team Tracker e da Calcio Live diventa una squadra sola.

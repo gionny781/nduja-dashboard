@@ -77,3 +77,11 @@ una «TBD»), `sensor.calciolive_classifica_lega_demo` è la classifica. `calend
 ```bash
 LS='{"nduja_sq_sel":"sq:sporting lago"}' node tools/mock/shot.mjs squadra 1280 1100 squadra.png
 ```
+
+**Formula 1** (0.7.33), campionato inventato con F1 Sensor (`sensor.f1_next_race`, classifiche, ultima gara, lista piloti; `platform: f1_sensor`): weekend del «Gran Premio di Valle Demo»
+con le libere finite, le qualifiche tra circa due ore e la gara domani; il tracciato è `pista-demo.svg` (togli `circuit_outline_url` con `mockEnt` per vedere il circuito disegnato).
+Con `mockF1Live` = `gara` (gara in corso con la Safety Car, ordine in pista, direzione gara) o `quali` (Q2 con bandiera gialla); con `mockF1Solo` = `cal` restano solo gli eventi di
+`calendar.f1_season_calendar`. Pilota e team preferiti: `{"f1":{"pilota":{"code":"RIV","nome":"Rivera"},"team":{"id":"aurora","nome":"Aurora Racing"}}}` in `mockLayout`.
+```bash
+LS='{"mockF1Live":"gara"}' node tools/mock/shot.mjs formula1 1280 1500 f1.png
+```

@@ -215,6 +215,24 @@ body.light .sq1es{color:#1c1c1e!important}
 body.light .sq1tr:not(.hd):nth-child(odd){background:rgba(0,0,0,0.015)!important}
 body.light .sq1hr{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.042)!important}
 body.light .sq1edp{background:rgba(0,0,0,0.030)!important}
+body.light .fo1cd>div{background:rgba(0,0,0,0.035)!important;border:1px solid rgba(0,0,0,0.056)!important}
+body.light .fo1chip,body.light .fo1ps{background:rgba(0,0,0,0.035)!important;border:1px solid rgba(0,0,0,0.056)!important}
+body.light .fo1p3 span{background:rgba(0,0,0,0.030)!important;border:1px solid rgba(0,0,0,0.049)!important}
+body.light .fo1p3 em{background:rgba(0,0,0,0.050)!important}
+body.light .fo1trk .asf{stroke:rgba(0,0,0,0.091)!important}
+body.light .fo1trk .lin{stroke:rgba(0,0,0,0.300)!important}
+body.light .fo1trk .cv{fill:rgba(28,28,30,.35)!important}
+body.light .fo1se{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.035)!important}
+body.light .fo1se .d{background:rgba(0,0,0,0.040)!important}
+body.light .fo1ban{background:rgba(0,0,0,0.035)!important;border:1px solid rgba(0,0,0,0.056)!important}
+body.light .fo1kv{background:rgba(0,0,0,0.030)!important;border:1px solid rgba(0,0,0,0.049)!important}
+body.light .fo1or:nth-child(4n+1),body.light .fo1or:nth-child(4n+2){background:rgba(0,0,0,0.018)!important}
+body.light .fo1cr:nth-child(odd){background:rgba(0,0,0,0.015)!important}
+body.light .fo1cr .pt i{background:linear-gradient(90deg,var(--tc) var(--pc),rgba(0,0,0,0.050) var(--pc))!important}
+body.light .fo1sb{background:rgba(0,0,0,0.035)!important}
+body.light .fo1hr{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.042)!important}
+body.light .fo1hi{background:rgba(0,0,0,0.035)!important}
+body.light .fo1ch button{background:rgba(0,0,0,0.030)!important}
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
 body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
@@ -352,4 +370,15 @@ body.light .sq1cp path,body.light .sq1cp circle{stroke:#1c1c1e}body.light .sq1cp
 body.light .sq1min{color:#d70015}body.light .sq1hr .lv{color:#d70015}body.light .sq1hr strong{color:#1f9e45}
 body.light .sq1tr.noi{box-shadow:inset 0 0 0 1px rgba(10,132,255,.45)}
 body.light svg.sq1bd{filter:drop-shadow(0 3px 6px rgba(31,45,80,.25))}
+/* Formula 1 (0.7.33): tracciato dell'integrazione (bianco) scuro, linee e messaggi a mano, rosso più profondo */
+body.light .fo1img{filter:invert(1) drop-shadow(0 4px 10px rgba(31,45,80,.18))}
+body.light .fo1sp path{stroke:#1c1c1e}
+body.light .fo1fl .asta{stroke:rgba(28,28,30,.55)}body.light .fo1fl .tl{stroke:rgba(0,0,0,.3)}body.light .fo1fl.scacchi .tl{fill:#fff}
+body.light .fo1rm{background:rgba(0,0,0,.025)}body.light .fo1rm:not(.yellow):not(.double_yellow):not(.red):not(.green):not(.clear):not(.chequered){border-left-color:rgba(0,0,0,.15)}
+body.light .fo1now,body.light .fo1se .st.in,body.light .fo1hr .lv{color:#d70015}body.light .fo1se .st.nx{color:#c45f00}
+body.light .fo1trk .via rect{fill:#fff;stroke:rgba(0,0,0,.25);stroke-width:.3}body.light .fo1trk .via rect.b{fill:#1c1c1e}
+body.light .fo1or.pref,body.light .fo1cr.pref{box-shadow:inset 0 0 0 1px rgba(200,150,0,.7)}body.light .fo1pp.pref .tla{color:#b58900}
+body.light .fo1or .tg.pit{color:#0a64c8}body.light .fo1or .tg.rit{color:#d70015}body.light .fo1ch button.act{background:rgba(255,190,0,.18);border-color:rgba(200,150,0,.6)}
+body.light .fo1pp .blk{background:linear-gradient(180deg,color-mix(in srgb,var(--tc) 38%,#fff),color-mix(in srgb,var(--tc) 12%,#fff))}
+body.light .fo1pp .blk em{color:#1c1c1e;text-shadow:none}body.light .fo1pp .blk small{color:rgba(28,28,30,.75)}
 

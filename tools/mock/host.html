@@ -214,6 +214,73 @@ const ENT = {
   const f = su ? (n - al) / (tr - al) : 0, el = su ? Math.round(Math.sin(Math.PI * f) * 38 * 10) / 10 : -Math.min(40, Math.round(Math.min(Math.abs(n - tr), Math.abs(n - al - G), Math.abs(n - al)) / 6e4 / 4));
   ENT["sun.sun"] = st(su ? "above_horizon" : "below_horizon", { friendly_name: "Sun", elevation: el, rising: n < (al + tr) / 2,
     next_rising: new Date(n < al ? al : al + G).toISOString(), next_setting: new Date(n < tr ? tr : tr + G).toISOString() }); }
+/* Formula 1 (0.7.33), campionato inventato con F1 Sensor: weekend del «Gran Premio di Valle Demo» in corso (libere finite, qualifiche tra ~2 ore,
+   gara domani), classifiche, ultima gara. mockF1Live = "gara" (gara in corso con la safety car) | "quali" (Q2 in corso); mockF1Solo = "cal" (solo il calendario). */
+const F1T = (() => { const q = Math.round((Date.now() + 2.25 * 3600e3) / 3e5) * 3e5, L = localStorage.getItem("mockF1Live"), h = 3600e3;
+  if (L === "gara") return { fp1: q - 50 * h, fp2: q - 46 * h, fp3: q - 26 * h, q: q - 22 * h, r: Date.now() - 52 * 6e4 };
+  if (L === "quali") return { fp1: q - 28 * h, fp2: q - 24 * h, fp3: q - 4.25 * h, q: Date.now() - 31 * 6e4, r: q + 22 * h };
+  return { fp1: q - 28 * h, fp2: q - 24 * h, fp3: q - 4.25 * h, q, r: q + 22 * h }; })();
+{ const iso = ms => new Date(ms).toISOString(), L = localStorage.getItem("mockF1Live");
+  const TEAM = [["Aurora Racing", "#E8002D", "aurora"], ["Vortice GP", "#FF8000", "vortice"], ["Stella Polare", "#27F4D2", "stella"], ["Fulmine Blu", "#3671C6", "fulmine"], ["Selva Motorsport", "#229971", "selva"],
+    ["Cometa F1 Team", "#0093CC", "cometa"], ["Orsa Corse", "#B6BABD", "orsa"], ["Brezza Racing", "#6692FF", "brezza"], ["Lince GP", "#52E252", "lince"], ["Nebbia Team", "#64C4FF", "nebbia"]];
+  const PIL = [["7", "VEN", "Marco", "Ventresca", 0], ["21", "BRA", "Lukas", "Brandt", 0], ["4", "SAN", "Elio", "Santini", 1], ["33", "HOL", "James", "Holloway", 1], ["12", "RIV", "Tomas", "Rivera", 2], ["8", "MOR", "Aiko", "Mori", 2],
+    ["19", "LAC", "Pierre", "Lacombe", 3], ["26", "BER", "Nils", "Berg", 3], ["15", "FON", "Dario", "Fontana", 4], ["41", "LQV", "Oskar", "Lindqvist", 4], ["9", "DUA", "Rafael", "Duarte", 5], ["24", "ARA", "Kenji", "Arai", 5],
+    ["30", "KES", "Victor", "Kessler", 6], ["2", "BEL", "Luca", "Bellini", 6], ["17", "WHI", "Sam", "Whitaker", 7], ["55", "MRL", "Hugo", "Morel", 7], ["11", "VAR", "Mateo", "Varga", 8], ["38", "AUE", "Felix", "Auer", 8],
+    ["66", "PET", "Ivan", "Petrov", 9], ["77", "CLA", "Noah", "Clarke", 9]];
+  const punti = [331, 298, 287, 254, 230, 199, 171, 140, 118, 97, 76, 58, 41, 33, 22, 15, 9, 6, 2, 0], ord = [2, 0, 4, 3, 1, 6, 5, 7, 8, 10, 9, 12, 11, 14, 13, 16, 15, 18, 17, 19];
+  const Drv = p => ({ driverId: p[3].toLowerCase(), permanentNumber: p[0], code: p[1], givenName: p[2], familyName: p[3], nationality: "Demo" });
+  const Con = i => ({ constructorId: TEAM[i][2], name: TEAM[i][0], nationality: "Demo" });
+  const sess = { first_practice: F1T.fp1, second_practice: F1T.fp2, third_practice: F1T.fp3, qualifying: F1T.q, race: F1T.r };
+  const ses = Object.fromEntries(Object.entries(sess).flatMap(([k, v]) => [[k + "_start_utc", iso(v)], [k + "_start", iso(v)], [k + "_start_local", iso(v)]]));
+  Object.assign(ENT, {
+    "sensor.f1_next_race": st(iso(F1T.r), { friendly_name: "F1 - Race Prossima gara", device_class: "timestamp", season: "2026", round: "19", race_name: "Gran Premio di Valle Demo", scheduled_laps: 57,
+      circuit_id: "valle", circuit_name: "Circuito della Valle", circuit_locality: "Valle Alta", circuit_country: "Italia", country_code: "it", country_flag_url: null,
+      circuit_outline_url: "/tools/mock/pista-demo.svg", circuit_timezone: "America/Mexico_City", ...ses, sprint_qualifying_start: null, sprint_start: null }),
+    "sensor.f1_driver_standings": st("20", { friendly_name: "F1 - Championship Campionato piloti", season: "2026", round: "18",
+      driver_standings: ord.map((pi, i) => ({ position: String(i + 1), positionText: String(i + 1), points: String(punti[i]), wins: String(i < 3 ? 6 - i * 2 : i === 4 ? 1 : 0), Driver: Drv(PIL[pi]), Constructors: [Con(PIL[pi][4])] })) }),
+    "sensor.f1_constructor_standings": st("10", { friendly_name: "F1 - Championship Campionato costruttori", season: "2026", round: "18",
+      constructor_standings: [1, 0, 2, 3, 4, 5, 6, 7, 8, 9].map((ti, i) => ({ position: String(i + 1), positionText: String(i + 1), points: String([585, 553, 425, 311, 216, 132, 74, 37, 16, 2][i]), wins: String([5, 7, 3, 1, 1, 0, 0, 0, 0, 0][i]), Constructor: Con(ti) })) }),
+    "sensor.f1_last_race_results": st("Santini", { friendly_name: "F1 - Race Risultati dell'ultima gara", round: "18", race_name: "Gran Premio del Lago Demo", circuit_name: "Autodromo del Lago", circuit_locality: "Lago", circuit_country: "Italia",
+      race_start: iso(Date.now() - 4 * 864e5),
+      results: [2, 0, 4, 1, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15, 17, 18, 19].map((pi, i) => ({ number: PIL[pi][0], position: String(i + 1), grid: String(((i * 7) % 20) + 1), laps: i < 17 ? "56" : String(30 + i),
+        time: i === 0 ? "1:33:12.408" : i < 17 ? "+" + (i * 4.217).toFixed(3) : null, points: String([25, 18, 15, 12, 10, 8, 6, 4, 2, 1][i] || 0), status: i < 15 ? "Finished" : i < 17 ? "Lapped" : "Retired",
+        driver: { permanentNumber: PIL[pi][0], code: PIL[pi][1], givenName: PIL[pi][2], familyName: PIL[pi][3] }, constructor: Con(PIL[pi][4]) })) }),
+    "sensor.f1_driver_list": st("20", { friendly_name: "F1 - Drivers Lista piloti", drivers: PIL.map(p => ({ racing_number: p[0], tla: p[1], name: p[2] + " " + p[3].toUpperCase(), first_name: p[2], last_name: p[3], team: TEAM[p[4]][0], team_color: TEAM[p[4]][1] })) }),
+    "binary_sensor.f1_race_week": st("on", { friendly_name: "F1 - Race Weekend di gara", days_until_next_race: 1 }),
+    "sensor.f1_track_status": st("unavailable", { friendly_name: "F1 - Session Stato pista" }),
+    "sensor.f1_session_status": st("unavailable", { friendly_name: "F1 - Session Stato sessione" }),
+    "sensor.f1_current_session": st("unavailable", { friendly_name: "F1 - Session Sessione attuale" }),
+    "sensor.f1_race_lap_count": st("unavailable", { friendly_name: "F1 - Session Numero giri" }),
+    "binary_sensor.f1_safety_car": st("unavailable", { friendly_name: "F1 - Session Safety car" }),
+    "sensor.f1_driver_positions": st("unavailable", { friendly_name: "F1 - Drivers Posizione piloti" }),
+    "sensor.f1_race_control": st("unavailable", { friendly_name: "F1 - Officials Direzione gara" }),
+    "sensor.f1_session_time_remaining": st("unavailable", { friendly_name: "F1 - Session Tempo rimanente" }),
+    "sensor.f1_top_three_p1": st("unavailable", { friendly_name: "F1 - Drivers Podio (P1)" }),
+  });
+  if (L) {
+    const gara = L === "gara", ordine = gara ? [2, 0, 4, 3, 1, 6, 8, 5, 7, 10, 9, 12, 11, 14, 13, 16, 15, 18, 17, 19] : [0, 2, 4, 1, 3, 6, 5, 8, 7, 9, 10, 12, 11, 14, 13, 16, 15, 18, 17, 19];
+    const drivers = ordine.map((pi, i) => { const p = PIL[pi], bt = 78.412 + i * 0.137 + (i > 9 ? 0.2 : 0);
+      return { racing_number: p[0], tla: p[1], name: p[2] + " " + p[3], last_name: p[3], team: TEAM[p[4]][0], team_color: TEAM[p[4]][1], current_position: String(i + 1), grid_position: String(((i * 7) % 20) + 1),
+        completed_laps: gara ? (i === 19 ? 14 : 22) : 6, status: gara && i === 6 ? "pit_in" : "on_track", in_pit: gara && i === 6, retired: gara && i === 19, stopped: false,
+        gap_to_leader: gara ? (i === 0 ? "" : i === 19 ? "" : "+" + (i * 1.38).toFixed(3)) : "", interval_to_position_ahead: gara ? (i === 0 ? "" : "+" + (0.9 + (i % 4) * 0.31).toFixed(3)) : "",
+        best_lap_time: `1:${(bt - 60).toFixed(3).padStart(6, "0")}`, best_lap_time_secs: bt, fastest_lap: gara && i === 2,
+        q1_knocked_out: !gara && i >= 15, q2_knocked_out: false };
+    });
+    Object.assign(ENT, {
+      "sensor.f1_session_status": st("live", { friendly_name: "F1 - Session Stato sessione", meeting_name: "Gran Premio di Valle Demo" }),
+      "sensor.f1_current_session": st(gara ? "Race" : "Qualifying", { friendly_name: "F1 - Session Sessione attuale" }),
+      "sensor.f1_track_status": st(gara ? "SC" : "YELLOW", { friendly_name: "F1 - Session Stato pista" }),
+      "binary_sensor.f1_safety_car": st(gara ? "on" : "off", { friendly_name: "F1 - Session Safety car", track_status: gara ? "SC" : "YELLOW" }),
+      "sensor.f1_race_lap_count": st(gara ? "23" : "unknown", { friendly_name: "F1 - Session Numero giri", total_laps: 57 }),
+      "sensor.f1_session_time_remaining": st(gara ? "1:08:12" : "0:07:41", { friendly_name: "F1 - Session Tempo rimanente" }),
+      "sensor.f1_driver_positions": st(gara ? "23" : "unknown", { friendly_name: "F1 - Drivers Posizione piloti", drivers, total_laps: gara ? 57 : null,
+        fastest_lap: gara ? { racing_number: "12", tla: "RIV", lap: 19, time: "1:18.689", time_secs: 78.689 } : null, current_qualifying_part: gara ? null : 2 }),
+      "sensor.f1_race_control": st(gara ? "SAFETY CAR DEPLOYED" : "YELLOW IN TRACK SECTOR 7", { friendly_name: "F1 - Officials Direzione gara", utc: iso(Date.now() - 3 * 6e4), category: gara ? "SafetyCar" : "Flag", flag: gara ? "" : "YELLOW",
+        history: gara ? [{ utc: iso(Date.now() - 3 * 6e4), message: "SAFETY CAR DEPLOYED" }, { utc: iso(Date.now() - 4 * 6e4), flag: "YELLOW", message: "DOUBLE YELLOW IN TRACK SECTOR 11" }, { utc: iso(Date.now() - 18 * 6e4), message: "CAR 77 (CLA) TIME 1:21.402 DELETED - TRACK LIMITS AT TURN 4" }] : [] }),
+    });
+  }
+  if (localStorage.getItem("mockF1Solo") === "cal") for (const id of Object.keys(ENT)) if (/^(sensor|binary_sensor)\.f1_/.test(id)) delete ENT[id];
+}
 if (localStorage.getItem("mockNoMA")) for (const id of Object.keys(ENT)) if (id.startsWith("media_player.ma_")) delete ENT[id];
 /* LS mockEnt = { entity_id: [stato, {attributi}] | null (la toglie) } cambia gli stati finti; "@+5h" / "@-30m" negli attributi = adesso + 5 ore / − 30 minuti */
 for (const [id, v] of Object.entries(JSON.parse(localStorage.getItem("mockEnt") || "{}"))) {
@@ -225,7 +292,8 @@ const day = (o, h, m=0) => { const d = new Date(); d.setDate(d.getDate()+o); d.s
 const dstr = o => { const d = new Date(); d.setDate(d.getDate()+o); return d.toISOString().slice(0,10); };
 const EV = {
   "calendar.famiglia": [{ start: day(0, 18, 30), end: day(0, 19, 30), summary: "Calcetto Mario", location: "Campo comunale" }, { start: day(1, 10), end: day(1, 11), summary: "Dentista Anna" }, { start: dstr(3), end: dstr(4), summary: "Compleanno nonna" }],
-  "calendar.f1_season_calendar": [{ start: day(4, 14), end: day(4, 16), summary: "GP del Messico" }],
+  "calendar.f1_season_calendar": [["fp1", "Practice 1", 60], ["fp2", "Practice 2", 60], ["fp3", "Practice 3", 60], ["q", "Qualifying", 60], ["r", "Race", 120]].map(([k, n, m]) =>
+    ({ start: new Date(F1T[k]).toISOString(), end: new Date(F1T[k] + m * 6e4).toISOString(), summary: "Gran Premio di Valle Demo - " + n, location: "Circuito della Valle, Valle Alta, Italia", description: "Round 19 of the 2026 Formula 1 Season" })),
   "calendar.rain_bird_controller_irrigation_schedule": [{ start: day(1, 6), end: day(1, 6, 40), summary: "Programma A" }, { start: day(3, 6), end: day(3, 6, 40), summary: "Programma A" }],
   "calendar.raccolta_differenziata": [{ start: dstr(2), end: dstr(3), summary: "Plastica e Metalli" }, { start: dstr(3), end: dstr(4), summary: "Indifferenziato" }],
   "calendar.partite_calcio_demo": [{ start: day(-6, 15), end: day(-6, 17), summary: "Virtus Colle 1-2 Pro Valle" }, { start: day(-13, 15), end: day(-13, 17), summary: "Pro Valle 0-0 Aurora Campi" },
@@ -242,6 +310,7 @@ for (const e of REG.entities) {
   if (/rain_bird|prato_|orto_|siepe|terreno/.test(e.ei)) e.ai = "esterno";
   if (e.ei.includes("rain_bird")) { e.pl = "rainbird"; e.di = "dev_rb"; } else if (e.ei.includes("prato_dietro")) { e.pl = "hydrawise"; e.di = "dev_hw"; }
   else if (e.ei === "valve.orto_gocciolatore") e.pl = "zha"; else if (e.ei === "switch.zona_siepe") e.pl = "mqtt";
+  if (/^(sensor|binary_sensor|calendar)\.f1_/.test(e.ei)) e.pl = "f1_sensor";
   if (e.ei === "sensor.real_borgo") e.pl = "teamtracker"; else if (e.ei.startsWith("sensor.calciolive_")) e.pl = "calcio_live";
 }
 /* telecamere: mockCam = "webrtc" (predefinito: diretta vera via WebRTC dentro il browser) | "webrtc_ko" (WebRTC fallisce, poi HLS)
