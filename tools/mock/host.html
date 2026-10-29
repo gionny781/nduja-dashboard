@@ -52,6 +52,65 @@ const ENT = {
   "binary_sensor.allagamento_lavanderia_moisture": st("off", { device_class: "moisture", friendly_name: "Sensore allagamento lavanderia" }, 12*24*H),
   "sensor.finestra_soggiorno_battery": st("63", { device_class: "battery", unit_of_measurement: "%", friendly_name: "Finestra soggiorno Batteria" }, 6*H),
   "sensor.valvola_bagno_battery": st("unavailable", { device_class: "battery", unit_of_measurement: "%", friendly_name: "Valvola termostatica bagno Battery" }, 2*24*H),
+  /* rete e server (0.7.36): modem FRITZ!Box finto, speedtest, NAS, Proxmox con una VM spenta, PC con Wake on LAN, System Monitor, stampante, UPS (NUT).
+     Indirizzi e nomi inventati (IP pubblico dell'intervallo di documentazione 203.0.113.x). mockNoInternet: connessione giù */
+  ...(() => { const giu = localStorage.getItem("mockNoInternet"), iso = s => new Date(Date.now() - s * 1000).toISOString(); return {
+  "binary_sensor.fritz_box_7590_connection": st(giu ? "off" : "on", { device_class: "connectivity", friendly_name: "FRITZ!Box 7590 Connection" }, giu ? 420 : 3*24*H),
+  "sensor.fritz_box_7590_external_ip": st(giu ? "unavailable" : "203.0.113.42", { friendly_name: "FRITZ!Box 7590 External IP" }),
+  "sensor.fritz_box_7590_download_throughput": st(giu ? "0" : "5320.4", { device_class: "data_rate", unit_of_measurement: "kB/s", state_class: "measurement", friendly_name: "FRITZ!Box 7590 Download throughput" }, 20),
+  "sensor.fritz_box_7590_upload_throughput": st(giu ? "0" : "641.8", { device_class: "data_rate", unit_of_measurement: "kB/s", state_class: "measurement", friendly_name: "FRITZ!Box 7590 Upload throughput" }, 20),
+  "sensor.fritz_box_7590_link_download_throughput": st("100000", { device_class: "data_rate", unit_of_measurement: "kbit/s", friendly_name: "FRITZ!Box 7590 Link download throughput" }, 3*24*H),
+  "sensor.fritz_box_7590_link_upload_throughput": st("20000", { device_class: "data_rate", unit_of_measurement: "kbit/s", friendly_name: "FRITZ!Box 7590 Link upload throughput" }, 3*24*H),
+  "sensor.fritz_box_7590_gb_received": st("812.4", { device_class: "data_size", unit_of_measurement: "GB", friendly_name: "FRITZ!Box 7590 GB received" }),
+  "sensor.fritz_box_7590_connection_uptime": st(iso(3*24*H + 5*H), { device_class: "timestamp", friendly_name: "FRITZ!Box 7590 Connection uptime" }, 3*24*H),
+  "sensor.fritz_box_7590_device_uptime": st(iso(12*24*H), { device_class: "timestamp", friendly_name: "FRITZ!Box 7590 Last restart" }, 12*24*H),
+  "button.fritz_box_7590_reboot": st("unknown", { device_class: "restart", friendly_name: "FRITZ!Box 7590 Reboot" }),
+  "button.fritz_box_7590_reconnect": st("unknown", { device_class: "restart", friendly_name: "FRITZ!Box 7590 Reconnect" }),
+  "switch.fritz_box_7590_wi_fi_ospiti_casa": st("on", { friendly_name: "FRITZ!Box 7590 Wi-Fi Ospiti Casa" }, 5*H),
+  "update.fritz_box_7590_firmware": st("on", { friendly_name: "FRITZ!Box 7590 Firmware", title: "FRITZ!OS", installed_version: "8.00", latest_version: "8.02", supported_features: 1 }),
+  "device_tracker.pixel_demo": st("home", { source_type: "router", ip: "192.168.178.23", mac: "02:00:00:00:00:23", host_name: "pixel-demo", friendly_name: "Pixel demo" }, 2*H),
+  "device_tracker.portatile_lavoro": st("home", { source_type: "router", ip: "192.168.178.31", mac: "02:00:00:00:00:31", friendly_name: "Portatile lavoro" }, 6*H),
+  "device_tracker.tv_cameretta": st("not_home", { source_type: "router", ip: "192.168.178.40", mac: "02:00:00:00:00:40", friendly_name: "TV cameretta" }, 20*H),
+  "device_tracker.tablet_ospite": st("home", { source_type: "router", ip: "192.168.178.57", mac: "02:00:00:00:00:57", friendly_name: "Tablet ospite" }, 40*60),
+  "device_tracker.presa_smart_salotto": st("home", { source_type: "router", ip: "192.168.178.61", mac: "02:00:00:00:00:61", friendly_name: "Presa smart salotto" }, 3*24*H),
+  "switch.pixel_demo_internet_access": st("on", { friendly_name: "Pixel demo Internet Access" }),
+  "sensor.speedtest_download": st("87.42", { unit_of_measurement: "Mbit/s", device_class: "data_rate", state_class: "measurement", friendly_name: "SpeedTest Download" }, 47*60),
+  "sensor.speedtest_upload": st("18.91", { unit_of_measurement: "Mbit/s", device_class: "data_rate", state_class: "measurement", friendly_name: "SpeedTest Upload" }, 47*60),
+  "sensor.speedtest_ping": st("14", { unit_of_measurement: "ms", device_class: "duration", state_class: "measurement", friendly_name: "SpeedTest Ping" }, 47*60),
+  "sensor.nas_di_casa_cpu_utilization_total": st("12", { unit_of_measurement: "%", state_class: "measurement", friendly_name: "NAS di casa CPU utilization (total)" }, 60),
+  "sensor.nas_di_casa_memory_usage_real": st("38", { unit_of_measurement: "%", state_class: "measurement", friendly_name: "NAS di casa Memory usage (real)" }, 60),
+  "sensor.nas_di_casa_volume_1_volume_used": st("81.3", { unit_of_measurement: "%", state_class: "measurement", friendly_name: "NAS di casa (Volume 1) Volume used" }, 60),
+  "sensor.nas_di_casa_volume_2_volume_used": st("22.0", { unit_of_measurement: "%", state_class: "measurement", friendly_name: "NAS di casa (Volume 2) Volume used" }, 60),
+  "sensor.nas_di_casa_temperature": st("41", { device_class: "temperature", unit_of_measurement: "°C", friendly_name: "NAS di casa Temperature" }, 60),
+  "button.nas_di_casa_reboot": st("unknown", { friendly_name: "NAS di casa Reboot" }),
+  "button.nas_di_casa_shutdown": st("unknown", { friendly_name: "NAS di casa Shutdown" }),
+  "binary_sensor.pve_status": st("on", { device_class: "running", friendly_name: "pve Status" }, 9*24*H),
+  "sensor.pve_cpu_used": st("23.4", { unit_of_measurement: "%", friendly_name: "pve CPU used" }, 60),
+  "sensor.pve_memory_used_percentage": st("64.1", { unit_of_measurement: "%", friendly_name: "pve Memory used percentage" }, 60),
+  "sensor.pve_disk_used_percentage": st("47.0", { unit_of_measurement: "%", friendly_name: "pve Disk used percentage" }, 60),
+  "sensor.pve_uptime": st(iso(9*24*H + 3*H), { device_class: "timestamp", friendly_name: "pve Uptime" }, 9*24*H),
+  "button.pve_reboot": st("unknown", { friendly_name: "pve Reboot" }), "button.pve_shutdown": st("unknown", { friendly_name: "pve Shutdown" }),
+  "binary_sensor.vm_media_status": st("off", { device_class: "running", friendly_name: "VM media Status" }, 2*H),
+  "sensor.vm_media_cpu_used": st("0", { unit_of_measurement: "%", friendly_name: "VM media CPU used" }, 2*H),
+  "button.vm_media_start": st("unknown", { friendly_name: "VM media Start" }), "button.vm_media_shutdown": st("unknown", { friendly_name: "VM media Shutdown" }),
+  "switch.pc_studio": st("off", { friendly_name: "PC studio" }, 5*H),
+  "sensor.system_monitor_processor_use": st("8", { unit_of_measurement: "%", friendly_name: "System Monitor Processor use" }, 60),
+  "sensor.system_monitor_memory_usage": st("41.2", { unit_of_measurement: "%", friendly_name: "System Monitor Memory usage" }, 60),
+  "sensor.system_monitor_disk_usage": st("33.5", { unit_of_measurement: "%", friendly_name: "System Monitor Disk usage /" }, 60),
+  "sensor.system_monitor_processor_temperature": st("52.3", { device_class: "temperature", unit_of_measurement: "°C", friendly_name: "System Monitor Processor temperature" }, 60),
+  "sensor.system_monitor_last_boot": st(iso(26*24*H), { device_class: "timestamp", friendly_name: "System Monitor Last boot" }, 26*24*H),
+  "sensor.stampante_ufficio": st("idle", { friendly_name: "Stampante ufficio" }, 3*H),
+  "sensor.stampante_ufficio_black_ink": st("64", { unit_of_measurement: "%", friendly_name: "Stampante ufficio Black ink" }),
+  "sensor.stampante_ufficio_cyan_ink": st("22", { unit_of_measurement: "%", friendly_name: "Stampante ufficio Cyan ink" }),
+  "sensor.stampante_ufficio_magenta_ink": st("48", { unit_of_measurement: "%", friendly_name: "Stampante ufficio Magenta ink" }),
+  "sensor.stampante_ufficio_yellow_ink": st("9", { unit_of_measurement: "%", friendly_name: "Stampante ufficio Yellow ink" }),
+  "sensor.ups_studio_battery_charge": st(localStorage.getItem("mockUpsBatt") ? "63" : "100", { device_class: "battery", unit_of_measurement: "%", friendly_name: "UPS studio Battery charge" }),
+  "sensor.ups_studio_battery_runtime": st(localStorage.getItem("mockUpsBatt") ? "780" : "2460", { device_class: "duration", unit_of_measurement: "s", friendly_name: "UPS studio Battery runtime" }),
+  "sensor.ups_studio_load": st("18", { unit_of_measurement: "%", friendly_name: "UPS studio Load" }),
+  "sensor.ups_studio_status": st(localStorage.getItem("mockUpsBatt") ? "On Battery" : "Online", { friendly_name: "UPS studio Status" }),
+  "sensor.ups_studio_status_data": st(localStorage.getItem("mockUpsBatt") ? "OB DISCHRG" : "OL", { friendly_name: "UPS studio Status data" }),
+  "sensor.ups_studio_input_voltage": st(localStorage.getItem("mockUpsBatt") ? "0" : "231", { device_class: "voltage", unit_of_measurement: "V", friendly_name: "UPS studio Input voltage" }),
+  }; })(),
   "sensor.raccolta_differenziata": st("Sacco Umido & Verde", { friendly_name: "Raccolta Differenziata" }),
   "sensor.raccolta_differenziata_2": st("Sacco Carta e Vetro", { friendly_name: "Raccolta Differenziata Domani" }),
   "sensor.versione_centro_controllo_raccolta_differenziata": st("1.0", { friendly_name: "Versione raccolta" }),
@@ -323,6 +382,17 @@ for (const e of REG.entities) {
   if (m) e.di = "dev_b_" + m[1]; if (e.ei === "binary_sensor.finestra_soggiorno" || e.ei === "sensor.finestra_soggiorno_battery") e.di = "dev_b_finestra";
   if (/_battery(_low)?$/.test(e.ei) && !/iphone|model_3/.test(e.ei)) e.ec = 1;
 }
+/* rete e server (0.7.36): integrazione e dispositivo */
+const RETE = [[/^(binary_sensor|sensor|button|switch|update)\.fritz_box_7590_/, "fritz", "dev_fritz"], [/^(device_tracker|switch)\.(pixel_demo)/, "fritz", "dev_cl_pixel"], [/^device_tracker\.(portatile_lavoro|tv_cameretta|tablet_ospite|presa_smart_salotto)$/, "fritz", null],
+  [/^sensor\.speedtest_/, "speedtestdotnet", "dev_speed"], [/^(sensor|button)\.nas_di_casa_/, "synology_dsm", "dev_nas"], [/^(binary_sensor|sensor|button)\.pve_/, "proxmoxve", "dev_pve"],
+  [/^(binary_sensor|sensor|button)\.vm_media_/, "proxmoxve", "dev_vm"], [/^switch\.pc_studio$/, "wake_on_lan", null], [/^sensor\.system_monitor_/, "systemmonitor", "dev_sysmon"],
+  [/^sensor\.stampante_ufficio/, "ipp", "dev_prn"], [/^sensor\.ups_studio_/, "nut", "dev_ups"]];
+for (const e of REG.entities) { const r = RETE.find(([re]) => re.test(e.ei)); if (!r) continue; e.pl = r[1]; e.di = r[2] || (e.ei.startsWith("device_tracker.") ? "dev_cl_" + e.ei.split(".")[1] : null); e.ai = null;
+  if (/^(sensor|binary_sensor|button)\./.test(e.ei) && /fritz|nas_di_casa|system_monitor|pve_|ups_studio_(status_data|input)/.test(e.ei) && !/connection$|download|upload|external_ip/.test(e.ei)) e.ec = 1; if (e.ei.startsWith("switch.pixel")) e.ec = 2; }
+/* registro completo (data di creazione delle entità): il tablet ospite e un dispositivo disattivato sono nuovi di oggi */
+const REG_FULL = () => { const oggi = new Date(); oggi.setHours(0, 0, 0, 0); const prima = oggi.getTime() / 1000 - 40 * 86400;
+  return [...REG.entities.map(e => ({ entity_id: e.ei, platform: e.pl || "demo", device_id: e.di, disabled_by: null, created_at: e.ei === "device_tracker.tablet_ospite" ? Date.now() / 1000 - 40 * 60 : prima })),
+    { entity_id: "device_tracker.dispositivo_02_00_00_00_00_77", platform: "fritz", disabled_by: "integration", original_name: "ESP-7A11C3", created_at: Date.now() / 1000 - 3 * 3600 }]; };
 /* irrigazione: stanza, integrazione e dispositivo */
 for (const e of REG.entities) {
   if (/rain_bird|prato_|orto_|siepe|terreno/.test(e.ei)) e.ai = "esterno";
@@ -491,10 +561,14 @@ const conn = {
       case "nduja_dashboard/config": return { version: "0.5.0-beta", options: {}, layout: LAYOUT };
       case "nduja_dashboard/save_layout": LAYOUT = m.layout; localStorage.setItem("mockLayout", JSON.stringify(LAYOUT)); return { ok: true };
       case "config/entity_registry/list_for_display": return REG;
+      case "config/entity_registry/list": return REG_FULL();
       case "config/device_registry/list": return [{ id: "dev_cgrp", name: "Tutta la casa", manufacturer: "Google Inc.", model: "Google Cast Group" }, { id: "dev_g", name: "iPhone di Mario" }, { id: "dev_c", name: "iPhone di Anna" }, { id: "dev_a", name: "Ariston" }, { id: "dev_tv", name: "TV soggiorno", manufacturer: "Samsung", model: "QE55 demo" }, { id: "dev_atv", name: "Apple TV soggiorno", manufacturer: "Apple", model: "Apple TV 4K" },
         { id: "dev_gtv", name: "Google TV cucina", manufacturer: "Google", model: "Chromecast with Google TV" }, { id: "dev_lg", name: "TV camera", manufacturer: "LG", model: "OLED demo" }, { id: "dev_rb", name: "Rain Bird", manufacturer: "Rain Bird", model: "ESP-ME demo" }, { id: "dev_hw", name: "Prato dietro", manufacturer: "Hunter", model: "Hydrawise zona" }, ...(localStorage.getItem("mockNoCar") ? [] : [{ id: "dev_car", name: "Model 3", manufacturer: "Tesla", model: "Model 3" }]),
         ...[["trv_soggiorno", "Termostatica soggiorno"], ["movimento_corridoio", "Sensore movimento corridoio"], ["fumo_cucina", "Rilevatore fumo cucina"], ["telecomando_ikea", "Telecomando IKEA"],
-          ["serratura_ingresso", "Serratura ingresso"], ["allagamento_lavanderia", "Sensore allagamento lavanderia"], ["valvola_bagno", "Valvola termostatica bagno"], ["finestra", "Sensore finestra soggiorno"]].map(([k, name]) => ({ id: "dev_b_" + k, name }))];
+          ["serratura_ingresso", "Serratura ingresso"], ["allagamento_lavanderia", "Sensore allagamento lavanderia"], ["valvola_bagno", "Valvola termostatica bagno"], ["finestra", "Sensore finestra soggiorno"]].map(([k, name]) => ({ id: "dev_b_" + k, name })),
+        { id: "dev_fritz", name: "FRITZ!Box 7590", manufacturer: "AVM", model: "FRITZ!Box 7590" }, { id: "dev_cl_pixel", name: "Pixel demo" }, ...["portatile_lavoro", "tv_cameretta", "tablet_ospite", "presa_smart_salotto"].map(k => ({ id: "dev_cl_" + k, name: k.replace(/_/g, " ") })),
+        { id: "dev_speed", name: "SpeedTest", manufacturer: "Ookla" }, { id: "dev_nas", name: "NAS di casa", manufacturer: "Synology", model: "DS220+" }, { id: "dev_pve", name: "Node pve", manufacturer: "Proxmox VE", model: "Node" },
+        { id: "dev_vm", name: "VM media", manufacturer: "Proxmox VE", model: "QEMU" }, { id: "dev_sysmon", name: "System Monitor" }, { id: "dev_prn", name: "Stampante ufficio", manufacturer: "Demo", model: "InkJet demo" }, { id: "dev_ups", name: "UPS studio", manufacturer: "Demo", model: "UPS 1000" }];
       case "config/area_registry/list": { const P = localStorage.getItem("mockPiani"), F = { soggiorno: "terra", cucina: "terra", esterno: "terra", corridoio: "primo", lavanderia: "primo" };
         return [{ area_id: "soggiorno", name: "Soggiorno" }, { area_id: "corridoio", name: "Corridoio" }, { area_id: "cucina", name: "Cucina" }, { area_id: "lavanderia", name: "Lavanderia" }, { area_id: "esterno", name: "Esterno" }].map(a => P ? { ...a, floor_id: F[a.area_id] } : a); }
       /* mockPiani: due piani (prova delle stanze divise per piano) */
@@ -550,6 +624,10 @@ const conn = {
           else if (["volume_up", "volume_down"].includes(m.service)) a.volume_level = Math.round(Math.min(1, Math.max(0, (a.volume_level || 0) + (m.service === "volume_up" ? .02 : -.02))) * 100) / 100;
           else continue;
           e.a = a; setTimeout(() => window.mockStati?.({ c: { [id]: { "+": { s: e.s, a } } } }), 120); }
+        /* speedtest (0.7.36): update_entity porta valori nuovi dopo qualche secondo */
+        if (m.domain === "homeassistant" && m.service === "update_entity" && [].concat(m.target?.entity_id || []).some(id => id.startsWith("sensor.speedtest_"))) setTimeout(() => {
+          const v = { "sensor.speedtest_download": (80 + Math.random() * 15).toFixed(2), "sensor.speedtest_upload": (17 + Math.random() * 3).toFixed(2), "sensor.speedtest_ping": String(12 + Math.round(Math.random() * 5)) }, c = {};
+          for (const [id, s] of Object.entries(v)) { ENT[id].s = s; c[id] = { "+": { s, lc: Date.now() / 1000 } }; } window.mockStati?.({ c }); }, 3000);
         console.log("SVC", JSON.stringify(m)); return { response: {} };
     }
     throw { code: "unknown", message: m.type };

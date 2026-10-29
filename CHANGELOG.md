@@ -3,6 +3,23 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.36-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+- 🇮🇹 **🌐 Rete e server**, pagina nuova che compare solo se trova qualcosa. **Internet**: connesso o no (e da quanto), una piccola scena animata casa → modem → internet, **download e upload in tempo reale** dal modem con la scala della linea, **IP pubblico** nascosto finché non lo tocchi. Riconosce da sola FRITZ!Box, UniFi, TP-Link Omada e Deco, Mikrotik, OpenWrt, Netgear, Asus, Huawei LTE, Vodafone Station, UPnP e altri, dai sensori standard (velocità, connettività).
+- 🇮🇹 **🚀 Speedtest** (Speedtest.net o Fast.com): ultimo download, upload e ping, grafico degli ultimi 7 giorni e **▶ Prova adesso**.
+- 🇮🇹 **Dispositivi e server**: una scheda per modem/router, mini PC, NAS, Proxmox (anche le macchine virtuali), Raspberry e stampanti, con **acceso/spento**, **CPU, RAM, disco** (il più pieno), **temperatura**, da quanto è acceso e i pulsanti **Riavvia / Spegni / Accendi** (anche Wake on LAN) con **doppia conferma**. Le stampanti mostrano lo stato e i livelli di inchiostro o toner; se c'è un aggiornamento compare il tasto che porta agli Aggiornamenti (gruppo «Rete e server»).
+- 🇮🇹 **🔗 Dispositivi collegati**: quanti sono online adesso e l'elenco dei **nuovi visti oggi**, anche quelli che Home Assistant ha disattivato (utile per la sicurezza).
+- 🇮🇹 **📶 Wi-Fi ospiti**: accendi e spegni la rete ospiti e mostra il **QR da inquadrare** per collegarsi, disegnato da 'Nduja senza librerie esterne (nome e password si scrivono con ✏️).
+- 🇮🇹 **🔋 Gruppo di continuità** (NUT, APC UPS Daemon): carica, autonomia, carico, tensione e se va a batteria perché manca la corrente.
+- 🇮🇹 **✏️ Modifica** (amministratori): aggiungi un dispositivo, toglilo (e rimettilo), cambia nome e tipo, scegli i sensori di ogni dispositivo, di internet e dello speedtest. In **Home** la scheda compatta **«Rete»**: internet ok o giù, velocità, dispositivi online, modem e server spenti, UPS a batteria. La rete ospiti e le accensioni dei PC passano dalla pagina Prese alla pagina Rete.
+- 🇬🇧 **🌐 Network and servers**, a new page shown only when it finds something. **Internet**: connected or not (and for how long), a small animated scene home → modem → internet, **live download and upload** from the modem with the line scale, **public IP** hidden until you tap it. Recognises FRITZ!Box, UniFi, TP-Link Omada and Deco, Mikrotik, OpenWrt, Netgear, Asus, Huawei LTE, Vodafone Station, UPnP and more by itself, from standard sensors (data rate, connectivity).
+- 🇬🇧 **🚀 Speedtest** (Speedtest.net or Fast.com): latest download, upload and ping, a chart of the last 7 days and **▶ Test now**.
+- 🇬🇧 **Devices and servers**: one card each for modem/router, mini PC, NAS, Proxmox (virtual machines too), Raspberry and printers, with **on/off**, **CPU, RAM, disk** (the fullest one), **temperature**, uptime and **Restart / Shut down / Turn on** buttons (Wake on LAN too) with **double confirmation**. Printers show their status and ink or toner levels; when an update is available a button leads to Updates (group «Network and servers»).
+- 🇬🇧 **🔗 Connected devices**: how many are online now and the list of **new ones seen today**, including those Home Assistant disabled (handy for security).
+- 🇬🇧 **📶 Guest Wi-Fi**: turn the guest network on and off and show the **QR code to scan** to connect, drawn by 'Nduja without external libraries (name and password are entered with ✏️).
+- 🇬🇧 **🔋 UPS** (NUT, APC UPS Daemon): charge, runtime, load, voltage and whether it's on battery because the power is out.
+- 🇬🇧 **✏️ Edit** (admins): add a device, remove it (and restore it), change name and type, pick the sensors of each device, of the internet line and of the speedtest. On **Home** the compact **«Network»** card: internet up or down, speed, devices online, modem and servers off, UPS on battery. The guest network and PC power-on move from the Plugs page to the Network page.
+
 ## 0.7.35-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 - 🇮🇹 **🔋 Batterie**, pagina nuova: trova da sola tutte le pile di casa — sensori di batteria in %, «batteria bassa» sì/no e l'attributo `battery_level` (serrature, telecomandi…), anche quelli «diagnostici» — **una per dispositivo**, senza doppioni. Restano fuori i **telefoni** (sono in Persone), l'**auto** (pagina Auto) e la **batteria di casa** del fotovoltaico.

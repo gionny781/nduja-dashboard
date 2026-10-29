@@ -100,3 +100,11 @@ e `sensor.valvola_bagno_battery` non raggiungibile. I telefoni, la Model 3 e `se
 ```bash
 LS='{"mockLayout":"{\"configured\":true,\"batterie\":{\"d\":{\"dev_b_fumo_cucina\":{\"tipo\":\"CR2032\",\"qta\":2}}}}"}' node tools/mock/shot.mjs batterie 1280 1000 batterie.png
 ```
+
+**Rete e server** (0.7.36): FRITZ!Box finto (`platform: fritz`) con connessione, IP pubblico `203.0.113.42` (intervallo di documentazione), velocità in kB/s e massimo della linea in kbit/s, riavvio, Wi-Fi ospiti «Ospiti Casa» e un aggiornamento; Speedtest.net, NAS Synology (due volumi), nodo Proxmox `pve` e una VM spenta, `switch.pc_studio` (Wake on LAN), System Monitor, stampante IPP con gli inchiostri e UPS NUT.
+Cinque `device_tracker` del router; `config/entity_registry/list` dice che il «Tablet ospite» e un dispositivo disattivato sono nuovi di oggi. Con `mockNoInternet` la connessione è giù, con `mockUpsBatt` l'UPS va a batteria. «Prova adesso» porta valori nuovi dopo 3 secondi.
+La password della rete ospiti (per il QR) si mette in `rete.ospiti.pwd` dentro `mockLayout`.
+```bash
+LS='{"mockLayout":"{\"configured\":true,\"rete\":{\"ospiti\":{\"pwd\":\"pane-vino-2026\"}}}"}' node tools/mock/shot.mjs rete 1280 1500 rete.png
+LS='{"mockNoInternet":"1","mockUpsBatt":"1"}' node tools/mock/shot.mjs rete 1280 900 giu.png
+```

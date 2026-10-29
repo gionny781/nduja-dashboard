@@ -1,6 +1,6 @@
 /* Aggiornamenti: installa dalla plancia quello che Home Assistant propone (Home Assistant, componenti aggiuntivi,
    HACS, firmware). Novità, backup prima di installare, avanzamento, «Installa tutti» (Home Assistant per ultimo), versioni saltate. */
-import { S, ACT, esc, card, svc, ws, toast, render, openSheet, page, t } from "../core.js";
+import { S, ACT, VISTE, esc, card, svc, ws, toast, render, openSheet, page, t } from "../core.js";
 
 const F = { INSTALL: 1, VERSION: 2, PROGRESS: 4, BACKUP: 8, NOTES: 16 };
 const has = (id, f) => ((S[id]?.attributes?.supported_features || 0) & f) === f;
@@ -17,7 +17,7 @@ function tipo(id) {
   if (/home_assistant_(core|supervisor|operating_system)/.test(id)) return ["🏠", "Home Assistant", 0];
   if (has(id, 29) && a.title && !/github\.com/.test(u)) return ["🧩", t("Componenti aggiuntivi", "Add-ons"), 1];
   if (/github\.com/.test(u) && has(id, 23)) return ["📦", "HACS", 2];
-  if (/fritz/i.test(id + (a.title || ""))) return ["📶", t("Rete", "Network"), 3];
+  if (/fritz/i.test(id + (a.title || "")) || VISTE.reteAgg?.(id)) return ["📶", t("Rete e server", "Network and servers"), 3];   // modem, NAS, server (pagina Rete)
   if (/firmware|shelly|0x/i.test(id + u)) return ["🔌", t("Firmware dispositivi", "Device firmware"), 4];
   return ["⚙️", t("Altro", "Other"), 5];
 }

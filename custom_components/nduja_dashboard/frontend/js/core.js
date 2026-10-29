@@ -51,6 +51,14 @@ export const ago = iso => {
   if (s < 86400) return Math.floor(s / 3600) + t(" h fa", " h ago");
   return new Date(iso).toLocaleDateString(LOC, { day: "numeric", month: "short" });
 };
+/** durata leggibile da secondi: «45 s», «12 min», «5 h 20 min», «3 g 4 h» */
+export const durata = sec => {
+  if (sec == null || isNaN(sec) || sec < 0) return "—";
+  const g = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60);
+  if (g) return g + t(" g", " d") + (h && g < 10 ? " " + h + " h" : "");
+  if (h) return h + " h" + (m ? " " + m + " min" : "");
+  return m ? m + " min" : Math.round(sec) + " s";
+};
 export const hhmm = d => new Date(d).toLocaleTimeString(LOC, { hour: "2-digit", minute: "2-digit" });
 export const domain = id => id.split(".")[0];
 /* in modalità manuale queste cose si vedono solo se l'utente le ha aggiunte */

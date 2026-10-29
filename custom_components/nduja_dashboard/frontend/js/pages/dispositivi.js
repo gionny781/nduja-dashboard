@@ -7,7 +7,11 @@ const DOM = ["switch", "cover", "fan", "lock", "humidifier", "valve", "siren", "
 function zoneIrrigazione() {
   try { return PAGES.irrigazione?.show() && LAYOUT.pages?.irrigazione !== false && utenteCfg().pages?.irrigazione !== false ? new Set(VISTE.irrTutte()) : new Set(); } catch { return new Set(); }
 }
-const tutti = () => { const Z = zoneIrrigazione(); return DOM.flatMap(d => ents(d)).filter(id => !isLightSwitch(id) && !Z.has(id)); };   // gli interruttori scelti come luci stanno nella pagina Luci
+/* la rete ospiti e le accensioni dei server (Wake on LAN) stanno nella pagina Rete, se c'è e non è spenta */
+function comandiRete() {
+  try { return PAGES.rete?.show() && LAYOUT.pages?.rete !== false && utenteCfg().pages?.rete !== false && VISTE.reteMostrati ? VISTE.reteMostrati() : new Set(); } catch { return new Set(); }
+}
+const tutti = () => { const Z = zoneIrrigazione(), R = comandiRete(); return DOM.flatMap(d => ents(d)).filter(id => !isLightSwitch(id) && !Z.has(id) && !R.has(id)); };   // gli interruttori scelti come luci stanno nella pagina Luci
 function pagina() {
   const L = tutti(), g = {};
   L.forEach(id => (g[areaOf(id) && AREAS[areaOf(id)] ? areaOf(id) : "_"] = g[areaOf(id) && AREAS[areaOf(id)] ? areaOf(id) : "_"] || []).push(id));
