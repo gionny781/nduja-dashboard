@@ -58,21 +58,21 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.31-dev ✅ | gio 29 ott | Irrigazione animata |
 | 0.7.32-dev ✅ | gio 29 ott | La mia squadra (calcio) |
 | 0.7.33-dev ✅ | ven 30 ott | Formula 1 |
-| 0.7.34-dev | dom 1 nov | Salvaschermo nuovo (della plancia, tuo o automatico) |
-| 0.7.35-dev | mar 3 nov | Batterie |
-| 0.7.36-dev | gio 5 nov | Rete e server (modem, mini PC, NAS, UPS) |
-| 0.7.37-dev | sab 7 nov | Caldaia |
-| 0.7.38-dev | lun 9 nov | Chat di famiglia |
-| 0.7.39-dev | mer 11 nov | Liste: spesa e cose da fare |
-| 0.7.40-dev | ven 13 nov | Scadenze e promemoria |
-| 0.7.41-dev | dom 15 nov | Meteo completo |
-| 0.7.42-dev | mar 17 nov | Tapparelle e tende |
-| 0.7.43-dev | gio 19 nov | Qualità dell'aria |
-| 0.7.44-dev | sab 21 nov | Acqua e gas |
-| 0.7.45-dev | lun 23 nov | Assistente vocale (Assist) |
-| 0.7.46-dev | mer 25 nov | Piante e giardino |
-| 0.7.47-dev | ven 27 nov | Guida all'installazione illustrata e controllo finale |
-| 0.7.48-dev | dom 29 nov | In auto: comandi per CarPlay e Android Auto |
+| 0.7.34-dev | ven 30 ott | Salvaschermo nuovo (della plancia, tuo o automatico) |
+| 0.7.35-dev | dom 1 nov | Batterie |
+| 0.7.36-dev | mar 3 nov | Rete e server (modem, mini PC, NAS, UPS) |
+| 0.7.37-dev | gio 5 nov | Caldaia |
+| 0.7.38-dev | sab 7 nov | Chat di famiglia |
+| 0.7.39-dev | lun 9 nov | Liste: spesa e cose da fare |
+| 0.7.40-dev | mer 11 nov | Scadenze e promemoria |
+| 0.7.41-dev | ven 13 nov | Meteo completo |
+| 0.7.42-dev | dom 15 nov | Tapparelle e tende |
+| 0.7.43-dev | mar 17 nov | Qualità dell'aria |
+| 0.7.44-dev | gio 19 nov | Acqua e gas |
+| 0.7.45-dev | sab 21 nov | Assistente vocale (Assist) |
+| 0.7.46-dev | lun 23 nov | Piante e giardino |
+| 0.7.47-dev | mer 25 nov | Guida all'installazione illustrata e controllo finale |
+| 0.7.48-dev | ven 27 nov | In auto: comandi per CarPlay e Android Auto |
 
 ## Dopo
 - 0.8.0 — versione ufficiale con tutte le anteprime, guida COME_INSTALLARE con foto, ritocchi
