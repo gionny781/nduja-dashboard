@@ -3,6 +3,19 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.35-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+- 🇮🇹 **🔋 Batterie**, pagina nuova: trova da sola tutte le pile di casa — sensori di batteria in %, «batteria bassa» sì/no e l'attributo `battery_level` (serrature, telecomandi…), anche quelli «diagnostici» — **una per dispositivo**, senza doppioni. Restano fuori i **telefoni** (sono in Persone), l'**auto** (pagina Auto) e la **batteria di casa** del fotovoltaico.
+- 🇮🇹 **Elenco dalla più scarica**, con il disegno della pila colorato (verde, arancio, rosso sotto la soglia), stanza, tipo di pila e da quanto il dispositivo non si fa sentire: se tace da **7 giorni** o non risponde lo dice («forse è scarica o scollegata»). Filtri **tutte / da cambiare / per stanza** e un riepilogo con la più scarica e le pile mute.
+- 🇮🇹 **🛒 Ti servono**: «2 × CR2032, 1 × AA» con le pile da cambiare, comodo per la spesa. **🔄 Ho cambiato la pila** registra la data del cambio e la mostra; finché il dispositivo non manda una lettura nuova la pila non risulta più da cambiare.
+- 🇮🇹 **✏️ Modifica** (amministratori): aggiungi un sensore mancante, nascondi quelli che non ti interessano (e li rimostri), cambia la **soglia** di avviso per tutta la casa (20% di partenza) o per un dispositivo, il **tipo di pila** (con le più comuni a un tocco), quante ne usa e il nome.
+- 🇮🇹 **Avvisi collegati**: gli avvisi «pila scarica» della Home e quelli **sul telefono** (📱, da salvare di nuovo) usano le soglie e le pile nascoste della pagina Batterie e portano alla pagina; i telefoni scarichi restano avvisati come prima.
+- 🇬🇧 **🔋 Batteries**, a new page: finds every battery in your home by itself — battery % sensors, «battery low» yes/no and the `battery_level` attribute (locks, remotes…), «diagnostic» ones included — **one per device**, without duplicates. **Phones** (in People), the **car** (Car page) and the solar **home battery** stay out.
+- 🇬🇧 **List from the lowest**, with a drawn battery coloured green, orange or red below the threshold, room, battery type and how long the device has been silent: after **7 days** of silence, or when it doesn't respond, it says so («maybe flat or disconnected»). Filters **all / to replace / by room** and a summary with the lowest one and the silent ones.
+- 🇬🇧 **🛒 You need**: «2 × CR2032, 1 × AA» for the batteries to replace, handy for shopping. **🔄 I replaced it** records the replacement date and shows it; until the device sends a new reading the battery no longer counts as to be replaced.
+- 🇬🇧 **✏️ Edit** (admins): add a missing sensor, hide the ones you don't care about (and show them again), change the alert **threshold** for the whole home (20% by default) or for one device, the **battery type** (common ones in one tap), how many it takes and the name.
+- 🇬🇧 **Linked alerts**: the «low battery» alerts on Home and **on the phone** (📱, save them again) use the thresholds and hidden batteries of the Batteries page and open it; low phones are still reported as before.
+
 ## 0.7.34-dev1
 - 🇮🇹 **Grafica leggera** (Impostazioni → Questo dispositivo → Grafica): senza effetto vetro sfocato e senza luci in movimento sullo sfondo, e con meno ridisegni al secondo. Molto più fluida su tablet Android e Fully Kiosk. «Automatica» (predefinita) la accende da sola sui dispositivi Android; si può forzare «Leggera» o «Completa» su ogni dispositivo.
 - 🇬🇧 **Light graphics** (Settings → This device → Graphics): no blurred glass and no moving background lights, and fewer redraws per second. Much smoother on Android tablets and Fully Kiosk. «Auto» (default) turns it on by itself on Android devices; you can force «Light» or «Full» on each device.

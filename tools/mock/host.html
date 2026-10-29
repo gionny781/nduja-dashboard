@@ -40,6 +40,18 @@ const ENT = {
   "sensor.ariston_ch_flow_temp": st("50", { device_class: "temperature", unit_of_measurement: "°C", friendly_name: "Ariston CH flow" }),
   "sensor.temp_corridoio": st("20.1", { device_class: "temperature", unit_of_measurement: "°C", friendly_name: "Temperatura corridoio" }),
   "sensor.sensore_porta_battery": st("9", { device_class: "battery", unit_of_measurement: "%", friendly_name: "Sensore porta batteria" }),
+  /* batterie (0.7.35): una per dispositivo; i telefoni, l'auto e la batteria di casa non devono comparire */
+  "sensor.trv_soggiorno_battery": st("82", { device_class: "battery", unit_of_measurement: "%", friendly_name: "Termostatica soggiorno Batteria" }, 2*H),
+  "sensor.movimento_corridoio_battery": st("17", { device_class: "battery", unit_of_measurement: "%", friendly_name: "Sensore movimento corridoio Battery" }, 5*H),
+  "binary_sensor.movimento_corridoio_occupancy": st("off", { device_class: "occupancy", friendly_name: "Sensore movimento corridoio Occupancy" }, 1800),
+  "binary_sensor.fumo_cucina_battery_low": st("on", { device_class: "battery", friendly_name: "Rilevatore fumo cucina Battery low" }, 26*H),
+  "sensor.telecomando_ikea_battery": st("45", { device_class: "battery", unit_of_measurement: "%", friendly_name: "Telecomando IKEA Battery" }, 3*24*H),
+  "binary_sensor.telecomando_ikea_battery_low": st("off", { device_class: "battery", friendly_name: "Telecomando IKEA Battery low" }, 3*24*H),
+  "lock.serratura_ingresso": st("locked", { friendly_name: "Serratura ingresso", battery_level: 34 }, 4*H),
+  "sensor.allagamento_lavanderia_battery": st("100", { device_class: "battery", unit_of_measurement: "%", friendly_name: "Sensore allagamento lavanderia Battery" }, 12*24*H),
+  "binary_sensor.allagamento_lavanderia_moisture": st("off", { device_class: "moisture", friendly_name: "Sensore allagamento lavanderia" }, 12*24*H),
+  "sensor.finestra_soggiorno_battery": st("63", { device_class: "battery", unit_of_measurement: "%", friendly_name: "Finestra soggiorno Batteria" }, 6*H),
+  "sensor.valvola_bagno_battery": st("unavailable", { device_class: "battery", unit_of_measurement: "%", friendly_name: "Valvola termostatica bagno Battery" }, 2*24*H),
   "sensor.raccolta_differenziata": st("Sacco Umido & Verde", { friendly_name: "Raccolta Differenziata" }),
   "sensor.raccolta_differenziata_2": st("Sacco Carta e Vetro", { friendly_name: "Raccolta Differenziata Domani" }),
   "sensor.versione_centro_controllo_raccolta_differenziata": st("1.0", { friendly_name: "Versione raccolta" }),
@@ -305,6 +317,12 @@ const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_
   pl: /^(media_player|remote)\.tv_soggiorno$/.test(id) ? "samsungtv" : /apple_tv_/.test(id) ? "apple_tv" : /google_tv_/.test(id) ? "androidtv_remote" : id === "media_player.lg_camera" ? "webostv" : id === "remote.harmony_studio" ? "harmony" :
     id.startsWith("media_player.ma_") ? "music_assistant" : id.includes("model_3") ? "tesla_fleet" : id === "media_player.echo_cucina" ? "alexa_media" : id.startsWith("media_player.sonos") ? "sonos" : /^media_player\.(nest|casa_tutta)/.test(id) ? "cast" : undefined,
   di: /tv_soggiorno$/.test(id) && !/apple/.test(id) ? "dev_tv" : /apple_tv_/.test(id) ? "dev_atv" : /google_tv_/.test(id) ? "dev_gtv" : id === "media_player.lg_camera" ? "dev_lg" : id === "media_player.casa_tutta" ? "dev_cgrp" : id.includes("model_3") ? "dev_car" : id.startsWith("camera.campanello") ? "dev_bell" : id.startsWith("camera.giardino") ? "dev_reo" : id.startsWith("camera.cortile") ? "dev_cort" : id.includes("ambrogio") ? "dev_v" : id.includes("mario") ? "dev_g" : id.includes("anna") ? "dev_c" : id.includes("ariston") ? "dev_a" : null })) };
+/* batterie (0.7.35): dispositivi e categoria «diagnostica» (ec: 1) come in Home Assistant */
+for (const e of REG.entities) {
+  const m = e.ei.match(/^(?:sensor|binary_sensor|lock)\.(trv_soggiorno|movimento_corridoio|fumo_cucina|telecomando_ikea|serratura_ingresso|allagamento_lavanderia|valvola_bagno)/);
+  if (m) e.di = "dev_b_" + m[1]; if (e.ei === "binary_sensor.finestra_soggiorno" || e.ei === "sensor.finestra_soggiorno_battery") e.di = "dev_b_finestra";
+  if (/_battery(_low)?$/.test(e.ei) && !/iphone|model_3/.test(e.ei)) e.ec = 1;
+}
 /* irrigazione: stanza, integrazione e dispositivo */
 for (const e of REG.entities) {
   if (/rain_bird|prato_|orto_|siepe|terreno/.test(e.ei)) e.ai = "esterno";
@@ -474,7 +492,9 @@ const conn = {
       case "nduja_dashboard/save_layout": LAYOUT = m.layout; localStorage.setItem("mockLayout", JSON.stringify(LAYOUT)); return { ok: true };
       case "config/entity_registry/list_for_display": return REG;
       case "config/device_registry/list": return [{ id: "dev_cgrp", name: "Tutta la casa", manufacturer: "Google Inc.", model: "Google Cast Group" }, { id: "dev_g", name: "iPhone di Mario" }, { id: "dev_c", name: "iPhone di Anna" }, { id: "dev_a", name: "Ariston" }, { id: "dev_tv", name: "TV soggiorno", manufacturer: "Samsung", model: "QE55 demo" }, { id: "dev_atv", name: "Apple TV soggiorno", manufacturer: "Apple", model: "Apple TV 4K" },
-        { id: "dev_gtv", name: "Google TV cucina", manufacturer: "Google", model: "Chromecast with Google TV" }, { id: "dev_lg", name: "TV camera", manufacturer: "LG", model: "OLED demo" }, { id: "dev_rb", name: "Rain Bird", manufacturer: "Rain Bird", model: "ESP-ME demo" }, { id: "dev_hw", name: "Prato dietro", manufacturer: "Hunter", model: "Hydrawise zona" }, ...(localStorage.getItem("mockNoCar") ? [] : [{ id: "dev_car", name: "Model 3", manufacturer: "Tesla", model: "Model 3" }])];
+        { id: "dev_gtv", name: "Google TV cucina", manufacturer: "Google", model: "Chromecast with Google TV" }, { id: "dev_lg", name: "TV camera", manufacturer: "LG", model: "OLED demo" }, { id: "dev_rb", name: "Rain Bird", manufacturer: "Rain Bird", model: "ESP-ME demo" }, { id: "dev_hw", name: "Prato dietro", manufacturer: "Hunter", model: "Hydrawise zona" }, ...(localStorage.getItem("mockNoCar") ? [] : [{ id: "dev_car", name: "Model 3", manufacturer: "Tesla", model: "Model 3" }]),
+        ...[["trv_soggiorno", "Termostatica soggiorno"], ["movimento_corridoio", "Sensore movimento corridoio"], ["fumo_cucina", "Rilevatore fumo cucina"], ["telecomando_ikea", "Telecomando IKEA"],
+          ["serratura_ingresso", "Serratura ingresso"], ["allagamento_lavanderia", "Sensore allagamento lavanderia"], ["valvola_bagno", "Valvola termostatica bagno"], ["finestra", "Sensore finestra soggiorno"]].map(([k, name]) => ({ id: "dev_b_" + k, name }))];
       case "config/area_registry/list": { const P = localStorage.getItem("mockPiani"), F = { soggiorno: "terra", cucina: "terra", esterno: "terra", corridoio: "primo", lavanderia: "primo" };
         return [{ area_id: "soggiorno", name: "Soggiorno" }, { area_id: "corridoio", name: "Corridoio" }, { area_id: "cucina", name: "Cucina" }, { area_id: "lavanderia", name: "Lavanderia" }, { area_id: "esterno", name: "Esterno" }].map(a => P ? { ...a, floor_id: F[a.area_id] } : a); }
       /* mockPiani: due piani (prova delle stanze divise per piano) */

@@ -5,12 +5,14 @@
    - elettrodomestico finito (lavatrice, asciugatrice, lavastoviglie: dal consumo)
    - pile scariche, telefoni scarichi, aggiornamenti, raccolta da esporre stasera
    Ogni avviso si può nascondere con ✕ (torna se la situazione cambia). */
-import { S, ACT, CHG, LAYOUT, t, esc, nm, ok, val, attr, ents, allEnts, isOn, ago, deviceClass, areaOf, openings, shortName, card, render, sGet, sSet, weatherEnt, forecast,
+import { S, ACT, CHG, LAYOUT, PAGES, utenteCfg, t, esc, nm, ok, val, attr, ents, allEnts, isOn, ago, deviceClass, areaOf, openings, shortName, card, render, sGet, sSet, weatherEnt, forecast,
   ws, cached, api, toast, openSheet, closeSheet, isAdmin, etichettaNduja } from "./core.js";
 import { cambia } from "./edit.js";
 import { ritiri, chip } from "./raccolta.js";
 import { pericoli } from "./pages/sicurezza.js";
 import { novitaAvvisi } from "./novita.js";
+import { daCambiare, perAutomazione, tTipo } from "./batterie.js";
+import { info } from "./people.js";
 
 const MIN = 6e4;
 const vecchio = id => Date.now() - new Date(S[id].last_changed).getTime();
@@ -66,8 +68,11 @@ export function avvisi() {
     A.push({ k: "el:" + id + EL[id].fine, ic: "🧺", b: `${esc(shortName(id).replace(/\s*(potenza|power|consumo)\s*/ig, " ").trim())} ${t("ha finito", "is done")}`, s: ago(new Date(EL[id].fine).toISOString()), id });
   const R = new Date().getHours() >= 17 ? ritiri().domani : [];
   if (R.length) A.push({ k: "rf:" + new Date().toDateString(), ic: "♻️", b: t("Stasera esponi", "Put out tonight"), s: R.map(chip).join(" "), raw: true });
-  ents("sensor", id => deviceClass(id) === "battery" && ok(id) && val(id) != null && val(id) < 20).sort((a, b) => val(a) - val(b))
-    .forEach(id => A.push({ k: "bt:" + id, ic: "🪫", b: esc(nm(id).replace(/\s*(livello\s*)?(batteria|battery)(\s*level)?\s*/ig, " ").trim()), s: `${t("pila al", "battery at")} ${Math.round(val(id))}%`, id }));
+  /* pile scariche: le scelte della pagina Batterie (soglie, nascoste, aggiunte; niente telefoni, auto e batteria di casa) */
+  const pagBatt = PAGES.batterie?.show() && LAYOUT.pages?.batterie !== false && utenteCfg().pages?.batterie !== false;
+  /* i telefoni non sono pile: restano qui come prima (sotto il 20% e non in carica) */
+  ents("person").map(info).filter(p => p.bat != null && p.bat < 20 && !p.carica).forEach(p => A.push({ k: "tel:" + p.pid, ic: "📱", b: t("Telefono di ", "Phone of ") + esc(p.nome), s: `${t("batteria al", "battery at")} ${Math.round(p.bat)}%`, id: p.pid }));
+  daCambiare().forEach(x => A.push({ k: "bt:" + x.k, ic: "🪫", b: esc(x.nome), s: (x.pct != null ? `${t("pila al", "battery at")} ${Math.round(x.pct)}%` : t("pila scarica", "battery low")) + (x.tipo ? " · " + esc(tTipo(x)) : ""), ...(pagBatt ? { go: "batterie" } : { id: x.id }) }));
   A.push(...novitaAvvisi());   // dispositivi nuovi e auto nuove (solo amministratori)
   const U = Object.keys(S).filter(id => id.startsWith("update.") && S[id].state === "on");
   if (U.length) A.push({ k: "up:" + U.join(","), ic: "⬆️", b: `${U.length} ${t(U.length === 1 ? "aggiornamento" : "aggiornamenti", U.length === 1 ? "update" : "updates")}`, s: U.slice(0, 3).map(id => esc(String(attr(id, "title") || nm(id)).replace(/\s*(update|aggiornamento)$/i, ""))).join(", "), go: "aggiornamenti" });
@@ -89,7 +94,7 @@ const TIPI_N = () => [
   ["allarme", "🛡️ " + t("Allarme scattato", "Alarm triggered")],
   ["porta", "🚪 " + t("Porta o finestra aperta da più di 10 minuti", "Door or window open for over 10 minutes")],
   ["elettro", "🧺 " + t("Elettrodomestico finito", "Appliance done")],
-  ["batteria", "🪫 " + t("Pila sotto il 15%", "Battery below 15%")],
+  ["batteria", "🪫 " + t("Pila scarica (soglie della pagina Batterie)", "Low battery (thresholds from the Batteries page)")],
   ["pioggia", "🌧️ " + t("Inizia a piovere con finestre aperte", "Rain starts with windows open")],
   ["aggiornamento", "⬆️ " + t("Nuovo aggiornamento disponibile", "New update available")],
 ];
@@ -110,11 +115,17 @@ function automazione(c) {
   const al = allEnts("alarm_control_panel"); if (tipo("allarme") && al.length) T.push({ trigger: "state", entity_id: al, to: "triggered", id: "allarme" });
   const op = ents("binary_sensor", id => ["door", "window", "garage_door", "opening"].includes(deviceClass(id))); if (tipo("porta") && op.length) T.push({ trigger: "state", entity_id: op, to: "on", for: { minutes: 10 }, id: "porta" });
   const el = elettro(); if (tipo("elettro") && el.length) T.push({ trigger: "numeric_state", entity_id: el, below: 5, for: { minutes: 3 }, id: "elettro" });
-  const bt = ents("sensor", id => deviceClass(id) === "battery"); if (tipo("batteria") && bt.length) T.push({ trigger: "numeric_state", entity_id: bt, below: 15, id: "batteria" });
+  /* pile: con le soglie e senza le pile nascoste della pagina Batterie */
+  if (tipo("batteria")) {
+    const B = perAutomazione();
+    for (const [sg, L] of Object.entries(B.soglie)) T.push({ trigger: "numeric_state", entity_id: L, below: +sg, id: "batteria" });
+    for (const [sg, L] of Object.entries(B.attributi)) T.push({ trigger: "numeric_state", entity_id: L, attribute: "battery_level", below: +sg, id: "batteria_attr" });
+    if (B.basse.length) T.push({ trigger: "state", entity_id: B.basse, from: "off", to: "on", id: "batteria_bassa" });
+  }
   const fin = ents("binary_sensor", id => deviceClass(id) === "window"), w = weatherEnt();
   if (tipo("pioggia") && fin.length && w) T.push({ trigger: "state", entity_id: w, to: ["rainy", "pouring", "lightning-rainy", "hail", "snowy-rainy"], not_from: ["rainy", "pouring", "lightning-rainy", "hail", "snowy-rainy"], id: "pioggia" });
   const up = Object.keys(S).filter(id => id.startsWith("update."));   // gli update hanno quasi sempre una categoria (config): allEnts li scarterebbe if (tipo("aggiornamento") && up.length) T.push({ trigger: "state", entity_id: up, from: "off", to: "on", id: "aggiornamento" });
-  const msg = "{% set n = trigger.to_state.name %}{% if trigger.id == 'pericolo' %}🚨 {{ n }}: " + t("rilevato!", "detected!") + "{% elif trigger.id == 'allarme' %}🚨 " + t("Allarme scattato", "Alarm triggered") + ": {{ n }}{% elif trigger.id == 'porta' %}🚪 {{ n }} " + t("aperta da 10 minuti", "open for 10 minutes") + "{% elif trigger.id == 'elettro' %}🧺 {{ n | regex_replace('(?i)\\s*(power|potenza|consumo)$', '') }} " + t("ha finito", "is done") + "{% elif trigger.id == 'pioggia' %}🌧️ " + t("Inizia a piovere e ci sono finestre aperte", "It's starting to rain and windows are open") + "{% elif trigger.id == 'aggiornamento' %}⬆️ " + t("Aggiornamento disponibile", "Update available") + ": {{ state_attr(trigger.entity_id, 'title') or n }} {{ state_attr(trigger.entity_id, 'latest_version') or '' }}{% else %}🪫 {{ n }} " + t("al", "at") + " {{ trigger.to_state.state }}%{% endif %}";
+  const msg = "{% set n = trigger.to_state.name %}{% if trigger.id == 'pericolo' %}🚨 {{ n }}: " + t("rilevato!", "detected!") + "{% elif trigger.id == 'allarme' %}🚨 " + t("Allarme scattato", "Alarm triggered") + ": {{ n }}{% elif trigger.id == 'porta' %}🚪 {{ n }} " + t("aperta da 10 minuti", "open for 10 minutes") + "{% elif trigger.id == 'elettro' %}🧺 {{ n | regex_replace('(?i)\\s*(power|potenza|consumo)$', '') }} " + t("ha finito", "is done") + "{% elif trigger.id == 'pioggia' %}🌧️ " + t("Inizia a piovere e ci sono finestre aperte", "It's starting to rain and windows are open") + "{% elif trigger.id == 'aggiornamento' %}⬆️ " + t("Aggiornamento disponibile", "Update available") + ": {{ state_attr(trigger.entity_id, 'title') or n }} {{ state_attr(trigger.entity_id, 'latest_version') or '' }}{% elif trigger.id == 'batteria_bassa' %}🪫 {{ n | regex_replace('(?i)\\s*(battery|batteria)(\\s*(low|bassa))?$', '') }}: " + t("pila scarica", "battery low") + "{% elif trigger.id == 'batteria_attr' %}🪫 {{ n }} " + t("al", "at") + " {{ trigger.to_state.attributes.battery_level }}%{% else %}🪫 {{ n }} " + t("al", "at") + " {{ trigger.to_state.state }}%{% endif %}";
   return { id: "nduja_avvisi", alias: "'Nduja · " + t("avvisi sul telefono", "phone alerts"), description: t("Creata da 'Nduja Dashboard (Home → Avvisi → 📱)", "Created by 'Nduja Dashboard (Home → Alerts → 📱)"),
     triggers: T, conditions: fin.length && tipo("pioggia") ? [{ condition: "template", value_template: "{{ trigger.id != 'pioggia' or " + JSON.stringify(fin) + " | select('is_state', 'on') | list | count > 0 }}" }] : [], actions: c.servizi.map(s => ({ action: "notify." + s, data: { title: "🌶️ 'Nduja", message: msg } })), mode: "queued", max: 20 };
 }

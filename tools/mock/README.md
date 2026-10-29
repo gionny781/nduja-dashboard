@@ -93,3 +93,10 @@ LS='{"mockF1Live":"gara"}' node tools/mock/shot.mjs formula1 1280 1500 f1.png
 ORA="2026-10-30T17:45" LS='{"nduja_ssMin":"5","nduja_ssStile":"cielo"}' node tools/mock/shot.mjs impostazioni 1280 800 cielo.png '[data-act="ssProva"]'
 LS='{"nduja_ssMin":"5","nduja_ssStile":"foto","nduja_ssDir":"media-source://media_source/local/Salvaschermo"}' node tools/mock/shot.mjs impostazioni 1280 800 foto.png '[data-act="ssProva"]'
 ```
+
+**Batterie** (0.7.35): nove dispositivi con la pila (categoria «diagnostica» come in Home Assistant): `sensor.movimento_corridoio_battery` al 17%, `binary_sensor.fumo_cucina_battery_low` acceso (solo sì/no),
+`sensor.telecomando_ikea_battery` con anche il sì/no dello stesso dispositivo (deve comparire una volta sola), `lock.serratura_ingresso` con `battery_level`, `sensor.allagamento_lavanderia_battery` muto da 12 giorni
+e `sensor.valvola_bagno_battery` non raggiungibile. I telefoni, la Model 3 e `sensor.battery_soc` (batteria di casa) NON devono comparire. Le scelte stanno in `batterie` dentro `mockLayout`.
+```bash
+LS='{"mockLayout":"{\"configured\":true,\"batterie\":{\"d\":{\"dev_b_fumo_cucina\":{\"tipo\":\"CR2032\",\"qta\":2}}}}"}' node tools/mock/shot.mjs batterie 1280 1000 batterie.png
+```
