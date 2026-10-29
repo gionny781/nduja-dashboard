@@ -5,7 +5,7 @@
    - elettrodomestico finito (lavatrice, asciugatrice, lavastoviglie: dal consumo)
    - pile scariche, telefoni scarichi, aggiornamenti, raccolta da esporre stasera
    Ogni avviso si può nascondere con ✕ (torna se la situazione cambia). */
-import { S, ACT, CHG, LAYOUT, PAGES, utenteCfg, t, esc, nm, ok, val, attr, ents, allEnts, isOn, ago, deviceClass, areaOf, openings, shortName, card, render, sGet, sSet, weatherEnt, forecast,
+import { S, ACT, CHG, LAYOUT, PAGES, VISTE, utenteCfg, t, esc, nm, ok, val, attr, ents, allEnts, isOn, ago, deviceClass, areaOf, openings, shortName, card, render, sGet, sSet, weatherEnt, forecast,
   ws, cached, api, toast, openSheet, closeSheet, isAdmin, etichettaNduja } from "./core.js";
 import { cambia } from "./edit.js";
 import { ritiri, chip } from "./raccolta.js";
@@ -73,6 +73,7 @@ export function avvisi() {
   /* i telefoni non sono pile: restano qui come prima (sotto il 20% e non in carica) */
   ents("person").map(info).filter(p => p.bat != null && p.bat < 20 && !p.carica).forEach(p => A.push({ k: "tel:" + p.pid, ic: "📱", b: t("Telefono di ", "Phone of ") + esc(p.nome), s: `${t("batteria al", "battery at")} ${Math.round(p.bat)}%`, id: p.pid }));
   daCambiare().forEach(x => A.push({ k: "bt:" + x.k, ic: "🪫", b: esc(x.nome), s: (x.pct != null ? `${t("pila al", "battery at")} ${Math.round(x.pct)}%` : t("pila scarica", "battery low")) + (x.tipo ? " · " + esc(tTipo(x)) : ""), ...(pagBatt ? { go: "batterie" } : { id: x.id }) }));
+  try { A.push(...(VISTE.caldaiaAvvisi?.() || [])); } catch {}   // promemoria della manutenzione della caldaia (pages/caldaia.js)
   A.push(...novitaAvvisi());   // dispositivi nuovi e auto nuove (solo amministratori)
   const U = Object.keys(S).filter(id => id.startsWith("update.") && S[id].state === "on");
   if (U.length) A.push({ k: "up:" + U.join(","), ic: "⬆️", b: `${U.length} ${t(U.length === 1 ? "aggiornamento" : "aggiornamenti", U.length === 1 ? "update" : "updates")}`, s: U.slice(0, 3).map(id => esc(String(attr(id, "title") || nm(id)).replace(/\s*(update|aggiornamento)$/i, ""))).join(", "), go: "aggiornamenti" });

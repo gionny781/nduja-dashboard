@@ -2058,3 +2058,127 @@ body.lite .rt1sc .fl,body.lite .rt1sc .led{animation:none!important}
   .rt1v b{font-size:21px}.rt1sk b{font-size:19px}.rt1cn>b{font-size:34px}
   .rt1u{gap:12px}.rt1ring{width:80px;height:80px}
 }
+/* ===== Caldaia (0.7.37): la caldaia disegnata (fiamma che cresce con la modulazione, acqua nei tubi), impianto, riscaldamento, acqua calda, errori, gas ===== */
+.cd1h{display:flex;flex-direction:column}.cd1h.ko,.cd1im.ko,.cd1ers.ko{border-color:rgba(255,69,58,.45)}
+.cd1in{flex:1;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px;align-items:center}
+.cd1sc{width:100%;max-width:480px;justify-self:center}
+.cd1f{font-size:17px;font-weight:700;letter-spacing:-.02em;margin-bottom:12px}
+.cd1ks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.cd1k{display:block;text-align:left;padding:11px 13px;border-radius:16px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.06);min-width:0}
+.cd1k small,.cd1g small,.cd1at small,.cd1as small{display:block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--tx3);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cd1k b{display:block;font-size:24px;font-weight:700;letter-spacing:-.03em;margin-top:3px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cd1k.on b{color:var(--orange)}.cd1k.m b{color:#ff8a4c}.cd1k.r b{color:#5eb0ff}.cd1k.bad b{color:var(--red)}
+.cd1bar{display:block;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:7px}
+.cd1bar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#3f8cff,#ff9f0a);transition:width .8s ease}
+/* la scena (viewBox 320×200; .xs = solo la caldaia, per la Home) */
+.cd1s{--cdb:rgba(255,255,255,.085);--cds:rgba(235,240,250,.42);--cdk:rgba(235,240,250,.55);--cdin:rgba(0,0,0,.42);--cdt:rgba(235,240,250,.2);--cdhl:rgba(255,255,255,.32);
+  display:block;width:100%;height:auto;overflow:visible}
+.cd1s .cs{fill:var(--cdb);stroke:var(--cds);stroke-width:1.6}
+.cd1s .hl{fill:none;stroke:var(--cdhl);stroke-width:2;stroke-linecap:round}
+.cd1s .fin{fill:var(--cdin);stroke:var(--cds);stroke-width:1.2}
+.cd1s .bag{opacity:0;transition:opacity .8s}.cd1s .bag ellipse{fill:#ff8a3d;opacity:.2}
+.cd1s.on .bag{opacity:calc(.35 + var(--mod) * .65)}
+.cd1s .bru{fill:var(--cdk);opacity:.55}.cd1s.on .bru{fill:#8fb7e6;opacity:.9}
+.cd1s .fia{transform-origin:160px 76px;transform:scale(calc(.6 + var(--mod) * .4),calc(.42 + var(--mod) * .58));opacity:0;transition:opacity .6s,transform 1.2s ease}
+.cd1s.on .fia{opacity:1}
+.cd1s .fo{fill:#3f8cff}.cd1s .fp{fill:#ffa43a;opacity:calc(var(--mod) * .95)}.cd1s .fc{fill:#d4e9ff}
+.cd1s .lg{transform-box:fill-box;transform-origin:50% 100%}
+.cd1s .lcd{fill:rgba(6,10,18,.78);stroke:var(--cds);stroke-width:1}
+.cd1s .lt{fill:#aab6c6;font:700 11.5px var(--mono);letter-spacing:.02em}
+.cd1s.on .lt{fill:#ffb36b}.cd1s.err .lcd{stroke:var(--red)}.cd1s.err .lt{fill:#ff6961}
+.cd1s .mq,.cd1s .kn{fill:var(--cdin);stroke:var(--cds);stroke-width:1.2}
+.cd1s .mz{fill:none;stroke:#ff453a;stroke-width:1.6;opacity:.75}
+.cd1s .ago{stroke:var(--tx);stroke-width:1.5;stroke-linecap:round;transform-origin:160px 126px;transition:transform 1s ease}
+.cd1s .hub{fill:var(--cdk)}.cd1s.pk .mq{stroke:var(--red)}.cd1s.pk .ago{stroke:var(--red)}
+.cd1s .led{fill:var(--cdk);opacity:.35}.cd1s.on .led{fill:#30d158;opacity:1}.cd1s.err .led{fill:#ff453a;opacity:1}
+/* tubi: mandata (caldo) e ritorno (freddo) verso il termosifone, gas, acqua calda al rubinetto */
+.cd1s .tu{fill:none;stroke:var(--cdt);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;transition:stroke .8s}
+.cd1s .tu.g{stroke:rgba(255,214,10,.42)}
+.cd1s.ch .tu.m,.cd1s.acs .tu.a{stroke:rgba(255,122,69,.4)}.cd1s.ch .tu.r{stroke:rgba(74,168,255,.4)}
+.cd1s .fx{fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:3 9;opacity:0;transition:opacity .6s}
+.cd1s .fx.m,.cd1s .fx.a{stroke:#ff9a62}.cd1s .fx.r{stroke:#7cc4ff}
+.cd1s.fl.ch .fx.m,.cd1s.fl.ch .fx.r,.cd1s.acs .fx.a{opacity:1}
+.cd1s .vg{fill:#ffd60a;opacity:.7}
+.cd1s .col{fill:var(--cdb);stroke:var(--cds);stroke-width:1.2}.cd1s .k2{fill:var(--cdk);opacity:.45}
+.cd1s .cal{fill:#ff7a45;opacity:0;transition:opacity 1.6s}.cd1s.ch .cal{opacity:.34}
+.cd1s .ond path{fill:none;stroke:#ff9a62;stroke-width:1.6;stroke-linecap:round;opacity:0}
+.cd1s .rub .mx{fill:none;stroke:var(--cds);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}.cd1s .rub .cr{fill:var(--cdb);stroke:var(--cds);stroke-width:1.4}
+.cd1s .gcc circle{fill:#7cc4ff;opacity:0}
+.cd1s .et{font:600 9.5px var(--font);fill:var(--tx3)}.cd1s .et.m{fill:#ff9a62}.cd1s .et.r{fill:#7cc4ff}.cd1s.acs .et.a{fill:#ff9a62}.cd1s .et.g{fill:rgba(255,214,10,.8)}
+.cd1s.un{opacity:.6;filter:grayscale(.8)}
+@media (prefers-reduced-motion:no-preference){
+  .cd1s.on .lg{animation:cdGuizzo 1.25s ease-in-out infinite alternate}
+  .cd1s.on .l1{animation-delay:-.4s;animation-duration:1.05s}.cd1s.on .l2{animation-delay:-.8s;animation-duration:1.4s}.cd1s.on .l3{animation-delay:-.2s;animation-duration:1.15s}.cd1s.on .l4{animation-delay:-.6s;animation-duration:1.3s}
+  .cd1s.fl.ch .fx.m,.cd1s.fl.ch .fx.r,.cd1s.acs .fx.a{animation:cdScorre 1.4s linear infinite}
+  .cd1s.on.ch:not(.acs) .ond path{animation:cdSale 2.6s ease-out infinite}.cd1s .ond path:nth-child(2){animation-delay:-.9s}.cd1s .ond path:nth-child(3){animation-delay:-1.7s}
+  .cd1s.acs .gcc circle{animation:cdGoccia 1.2s linear infinite}.cd1s .gcc circle:nth-child(2){animation-delay:-.3s}.cd1s .gcc circle:nth-child(3){animation-delay:-.6s}.cd1s .gcc circle:nth-child(4){animation-delay:-.9s}
+  .cd1s.err .lt,.cd1s.pk .ago{animation:btLampo 1.6s ease-in-out infinite}
+}
+@media (prefers-reduced-motion:reduce){.cd1s *{transition:none!important}.cd1s.acs .gcc circle{opacity:.8}.cd1s.on.ch .ond path{opacity:.5}}
+body.lite .cd1s *{animation:none!important}body.lite .cd1s.acs .gcc circle{opacity:.8}
+@keyframes cdGuizzo{0%{transform:scale(1,1) skewX(0)}50%{transform:scale(.94,.84) skewX(4deg)}100%{transform:scale(1.04,1.07) skewX(-3deg)}}
+@keyframes cdScorre{to{stroke-dashoffset:-24}}
+@keyframes cdSale{0%{opacity:0;transform:translateY(4px)}30%{opacity:.85}100%{opacity:0;transform:translateY(-10px)}}
+@keyframes cdGoccia{0%{opacity:0;transform:translateY(-6px)}20%{opacity:.95}100%{opacity:0;transform:translateY(8px)}}
+/* impianto */
+.cd1p{display:block;width:100%;text-align:left}
+.cd1p>b{font-size:40px;font-weight:700;letter-spacing:-.04em;font-variant-numeric:tabular-nums}.cd1p>b small{font-size:15px;color:var(--tx2);font-weight:600}
+.cd1p.bassa>b,.cd1p.alta>b{color:var(--red)}
+.cd1pt{position:relative;display:block;height:10px;border-radius:5px;background:rgba(255,255,255,.08);margin-top:10px}
+.cd1pt .z{position:absolute;top:0;bottom:0;border-radius:5px;background:rgba(48,209,88,.38)}
+.cd1pt .n{position:absolute;top:-4px;width:4px;height:18px;margin-left:-2px;border-radius:2px;background:var(--tx);box-shadow:0 0 0 2px rgba(0,0,0,.3);transition:left .8s ease}
+.cd1p.bassa .n,.cd1p.alta .n{background:var(--red)}
+.cd1ps{display:flex;justify-content:space-between;font-size:10.5px;color:var(--tx3);margin-top:5px;font-variant-numeric:tabular-nums}
+.cd1msg{margin-top:12px;padding:10px 12px;border-radius:14px;font-size:12.5px;line-height:1.45;background:rgba(255,255,255,.05);color:var(--tx2)}
+.cd1msg.ok{background:rgba(48,209,88,.1);color:var(--tx)}.cd1msg.bad{background:rgba(255,69,58,.12);border:1px solid rgba(255,69,58,.35);color:var(--tx)}
+.cd1im button.li{width:100%;text-align:left}
+.cd1dot{width:9px;height:9px;border-radius:50%;flex:none;background:rgba(255,255,255,.22)}.cd1dot.on{background:var(--green);box-shadow:0 0 8px rgba(48,209,88,.7)}
+/* riscaldamento e acqua calda */
+.cd1row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.06)}
+.cd1row .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.cd1row .tx b{font-size:14.5px}.cd1row .tx span{font-size:12.5px;color:var(--tx2)}
+.cd1row .tx span.cd1hot{color:var(--orange)}
+.cd1rs{margin-top:12px;flex-wrap:wrap}
+.cd1rg{display:flex;align-items:center;gap:8px;flex:none}
+.cd1rg .step{width:38px;height:38px;font-size:20px}
+.cd1rg .tgt{font-size:26px;font-weight:600;letter-spacing:-.03em;min-width:62px;text-align:center;font-variant-numeric:tabular-nums}
+.cd1v{font-size:22px;font-variant-numeric:tabular-nums}
+.cd1seg{display:flex;width:100%}.cd1seg button{flex:1 1 auto;display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:0}
+.cd1sel{width:100%;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid var(--line)}
+.cd1 .fl1{margin-top:14px}
+.cd1 .card>.stack>button.li{width:100%;text-align:left}
+.cd1ac{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:14px;padding:0 4px}
+.cd1at{flex:1;min-width:110px}
+.cd1at b{display:block;font-size:44px;font-weight:300;letter-spacing:-.04em;line-height:1.05;font-variant-numeric:tabular-nums}
+.cd1at span{font-size:12.5px;color:var(--tx2)}.cd1ac.on .cd1at b{color:#ff9a62}.cd1ac.on .cd1at span{color:var(--orange)}
+.cd1as{display:flex;flex-direction:column;align-items:center;gap:4px}
+.cd1acq.on{border-color:rgba(255,159,10,.4)}
+/* errori e manutenzione */
+.cd1ok{padding:12px 14px;border-radius:16px;background:rgba(48,209,88,.1);font-weight:600;font-size:13.5px}
+.li.cd1er{width:100%;text-align:left;border-color:rgba(255,69,58,.4);background:rgba(255,69,58,.1)}.li.cd1er .tx b{white-space:normal;line-height:1.35}
+.cd1cod{display:inline-block;font-family:var(--mono);font-weight:700;font-size:12.5px;padding:1px 7px;border-radius:6px;background:rgba(255,69,58,.22);color:#ff6961;margin-right:7px}
+.cd1mn{display:flex;align-items:flex-start;gap:11px;padding:11px 13px;border-radius:18px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.06)}
+.cd1mn .ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.09);font-size:16px;flex:none}
+.cd1mn .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}.cd1mn .tx b{font-size:14px;font-weight:600}.cd1mn .tx span{font-size:12px;color:var(--tx2)}
+.cd1mn em{font-style:normal;font-size:12px;color:var(--tx3)}
+.cd1mn.warn{border-color:rgba(255,159,10,.42);background:rgba(255,159,10,.1)}.cd1mn.warn .tx span{color:var(--orange)}
+.cd1mn.bad{border-color:rgba(255,69,58,.45);background:rgba(255,69,58,.1)}.cd1mn.bad .tx span{color:var(--red)}
+/* gas */
+.cd1gw{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:18px;align-items:start}
+.cd1gs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.cd1g{padding:13px 14px;border-radius:18px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.06);min-width:0}
+.cd1g b{display:block;font-size:24px;font-weight:700;letter-spacing:-.03em;margin-top:4px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cd1g span{display:block;font-size:12.5px;color:var(--orange);font-weight:600;margin-top:2px;white-space:nowrap}.cd1g.eu b{color:var(--orange)}.cd1g.eu span{color:var(--tx2);font-weight:500}
+.cd1gas .gr1{width:100%;height:auto}
+.cd1e .fl1{margin-top:16px}
+/* scheda della Home */
+.cd1hb{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:8px 12px 8px 8px;border-radius:16px;background:rgba(255,255,255,.055)}
+.cd1hs{width:58px;flex:none}
+.cd1hb .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.cd1hb .tx b{font-size:15px}.cd1hb .tx span{font-size:12.5px;color:var(--tx2)}
+.cd1hb.on .tx b{color:var(--orange)}.cd1hb.bad{background:rgba(255,69,58,.12)}.cd1hb.bad .tx b{color:var(--red)}
+.cd1ht{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+@media (max-width:1180px){.cd1gw{grid-template-columns:1fr}.cd1gs{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:760px){
+  .cd1in{grid-template-columns:1fr;gap:12px}.cd1sc{max-width:340px}
+  .cd1k b,.cd1g b{font-size:21px}.cd1at b{font-size:38px}.cd1p>b{font-size:34px}
+  .cd1gs{grid-template-columns:repeat(2,minmax(0,1fr))}
+}

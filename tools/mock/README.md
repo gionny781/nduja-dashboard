@@ -108,3 +108,13 @@ La password della rete ospiti (per il QR) si mette in `rete.ospiti.pwd` dentro `
 LS='{"mockLayout":"{\"configured\":true,\"rete\":{\"ospiti\":{\"pwd\":\"pane-vino-2026\"}}}"}' node tools/mock/shot.mjs rete 1280 1500 rete.png
 LS='{"mockNoInternet":"1","mockUpsBatt":"1"}' node tools/mock/shot.mjs rete 1280 900 giu.png
 ```
+
+**Caldaia** (0.7.37), dati inventati: una caldaia «Ariston» finta (`platform: ariston`) con fiamma, modulazione al 64%, mandata e ritorno, pressione 1,4 bar, esterna, modalità estate/inverno (`select`),
+mandata impostata (`number`), un circuito `climate.caldaia_circuito` (deve uscire dalla pagina Clima), `climate.ariston_zona_1` che è un termostato vero (resta nel Clima, in Soggiorno), acqua calda `water_heater.ariston`
+(comfort/eco/boost) e la pompa; il contatore del gas `sensor.contatore_gas` è nella configurazione Energia con 1,05 €/m³. Con `mockCaldaia` = `off` (ferma), `acs` (acqua calda in uso) o `otgw` (al posto della Ariston
+un OpenTherm Gateway con i sensori «diagnostici»); `mockCaldaiaErr` porta un errore e la pressione bassa, `mockNoCaldaia` toglie la caldaia (in ✏️ del Clima compare «aggiungila a mano»), `mockNoGas` toglie il gas.
+La manutenzione annotata sta in `caldaia.manut` dentro `mockLayout`.
+```bash
+LS='{"mockCaldaia":"acs"}' node tools/mock/shot.mjs caldaia 1280 1300 caldaia.png
+LS='{"mockCaldaia":"otgw","mockCaldaiaErr":"1"}' node tools/mock/shot.mjs caldaia 1280 1300 errore.png
+```

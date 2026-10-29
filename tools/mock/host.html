@@ -37,7 +37,52 @@ const ENT = {
   "binary_sensor.finestra_soggiorno": st("on", { device_class: "window", friendly_name: "Finestra soggiorno" }, 1500),
   "binary_sensor.porta_ingresso": st("on", { device_class: "door", friendly_name: "Porta ingresso" }, 1500),
   "sensor.temp_soggiorno": st("22.4", { device_class: "temperature", unit_of_measurement: "°C", friendly_name: "Temperatura soggiorno", state_class: "measurement" }),
-  "sensor.ariston_ch_flow_temp": st("50", { device_class: "temperature", unit_of_measurement: "°C", friendly_name: "Ariston CH flow" }),
+  /* caldaia (0.7.37), dati inventati: caldaia «Ariston» finta (integrazione ariston, dispositivo dev_a) con fiamma, modulazione, mandata e ritorno, pressione, esterna,
+     modalità estate/inverno, mandata impostata, un circuito (climate: esce dal Clima), una zona che è un termostato vero (resta nel Clima), acqua calda (water_heater) e pompa.
+     mockCaldaia: "off" (ferma), "acs" (acqua calda in uso), "otgw" (al posto della Ariston un OpenTherm Gateway, con i sensori «diagnostici»);
+     mockCaldaiaErr: errore e pressione bassa; mockNoCaldaia: nessuna caldaia; mockNoGas: niente contatore del gas */
+  ...(() => { if (localStorage.getItem("mockNoCaldaia")) return {};
+    const M = localStorage.getItem("mockCaldaia") || "", err = localStorage.getItem("mockCaldaiaErr"), ferma = M === "off", acs = M === "acs", on = !ferma;
+    const T = (v, n, x = {}) => st(String(v), { device_class: "temperature", unit_of_measurement: "°C", state_class: "measurement", friendly_name: n, ...x }, 300);
+    if (M === "otgw") return {
+      "climate.otgw_thermostat": st("heat", { friendly_name: "OpenTherm Gateway Thermostat", current_temperature: 20.1, temperature: 20.5, hvac_modes: ["heat"], hvac_action: on ? "heating" : "idle", min_temp: 1, max_temp: 30, target_temp_step: 0.5 }),
+      "binary_sensor.otgw_flame": st(on ? "on" : "off", { friendly_name: "OpenTherm Gateway Flame" }, 240),
+      "binary_sensor.otgw_central_heating_1": st(on && !acs ? "on" : "off", { friendly_name: "OpenTherm Gateway Central heating 1" }),
+      "binary_sensor.otgw_central_heating_2": st("off", { friendly_name: "OpenTherm Gateway Central heating 2" }),
+      "binary_sensor.otgw_hot_water": st(acs ? "on" : "off", { friendly_name: "OpenTherm Gateway Hot water" }),
+      "binary_sensor.otgw_dhw_present": st("on", { friendly_name: "OpenTherm Gateway DHW present" }),
+      "binary_sensor.otgw_fault_indication": st(err ? "on" : "off", { device_class: "problem", friendly_name: "OpenTherm Gateway Fault indication" }, 900),
+      "binary_sensor.otgw_low_water_pressure": st(err ? "on" : "off", { device_class: "problem", friendly_name: "OpenTherm Gateway Low water pressure" }, 900),
+      "binary_sensor.otgw_service_required": st("off", { device_class: "problem", friendly_name: "OpenTherm Gateway Service required" }),
+      "sensor.otgw_boiler_water_temperature": T(on ? 48 : 31, "OpenTherm Gateway Boiler water temperature"),
+      "sensor.otgw_return_water_temperature": T(on ? 39 : 29, "OpenTherm Gateway Return water temperature"),
+      "sensor.otgw_relative_modulation_level": st(on ? "35" : "0", { unit_of_measurement: "%", state_class: "measurement", friendly_name: "OpenTherm Gateway Relative modulation level" }),
+      "sensor.otgw_ch_water_pressure": st(err ? "0.6" : "1.2", { device_class: "pressure", unit_of_measurement: "bar", state_class: "measurement", friendly_name: "OpenTherm Gateway Central heating water pressure" }),
+      "sensor.otgw_control_setpoint": T(on ? 52 : 10, "OpenTherm Gateway Control setpoint"),
+      "sensor.otgw_max_ch_water_setpoint": T(70, "OpenTherm Gateway Max CH water setpoint"),
+      "sensor.otgw_dhw_temperature": T(acs ? 43 : 47, "OpenTherm Gateway DHW temperature"),
+      "sensor.otgw_dhw_setpoint": T(50, "OpenTherm Gateway DHW setpoint"),
+      "sensor.otgw_outside_temperature": T(8, "OpenTherm Gateway Outside temperature"),
+      "sensor.otgw_oem_fault_code": st(err ? "37" : "0", { friendly_name: "OpenTherm Gateway OEM fault code" }, 900),
+    };
+    return {
+      "sensor.ariston_ch_flow_temp": T(on ? 52 : 34, "Ariston CH flow"),
+      "sensor.ariston_ch_return_temp": T(on ? 41 : 32, "Ariston CH return"),
+      "binary_sensor.ariston_flame": st(on ? "on" : "off", { friendly_name: "Ariston Flame" }, 420),
+      "sensor.ariston_burner_modulation": st(on ? (acs ? "88" : "64") : "0", { unit_of_measurement: "%", state_class: "measurement", friendly_name: "Ariston Burner modulation" }),
+      "sensor.ariston_ch_pressure": st(err ? "0.7" : "1.4", { device_class: "pressure", unit_of_measurement: "bar", state_class: "measurement", friendly_name: "Ariston CH pressure" }),
+      "sensor.ariston_outside_temperature": T(9.5, "Ariston Outside temperature"),
+      "binary_sensor.ariston_pump": st(on ? "on" : "off", { friendly_name: "Ariston Pump" }),
+      "binary_sensor.ariston_dhw_active": st(acs ? "on" : "off", { friendly_name: "Ariston DHW active" }),
+      "select.ariston_plant_mode": st("winter", { friendly_name: "Ariston Plant mode", options: ["summer", "winter", "heating_only", "off"] }),
+      "number.ariston_ch_flow_setpoint": st("55", { friendly_name: "Ariston CH flow setpoint", min: 20, max: 80, step: 1, unit_of_measurement: "°C" }),
+      "climate.caldaia_circuito": st("heat", { friendly_name: "Caldaia circuito riscaldamento", current_temperature: on ? 52 : 34, temperature: 55, min_temp: 20, max_temp: 80, target_temp_step: 1, hvac_modes: ["off", "heat"], hvac_action: on && !acs ? "heating" : "idle" }),
+      "climate.ariston_zona_1": st("heat", { friendly_name: "Ariston Zona giorno", current_temperature: 20.4, temperature: 21, min_temp: 5, max_temp: 30, target_temp_step: 0.5, hvac_modes: ["off", "heat", "auto"], hvac_action: on && !acs ? "heating" : "idle" }),
+      "water_heater.ariston": st("comfort", { friendly_name: "Ariston Acqua calda", current_temperature: acs ? 44 : 48, temperature: 50, min_temp: 40, max_temp: 65, target_temp_step: 1, operation_list: ["off", "comfort", "eco", "boost"], operation_mode: "comfort", supported_features: 3 }),
+      "sensor.ariston_errore": st(err ? "E99" : "0", { friendly_name: "Ariston Errore", ...(err ? { description: "Errore inventato di prova: bruciatore in blocco" } : {}) }, 900),
+    };
+  })(),
+  ...(localStorage.getItem("mockNoGas") ? {} : { "sensor.contatore_gas": st("1834.512", { device_class: "gas", unit_of_measurement: "m³", state_class: "total_increasing", friendly_name: "Contatore gas" }, 900) }),
   "sensor.temp_corridoio": st("20.1", { device_class: "temperature", unit_of_measurement: "°C", friendly_name: "Temperatura corridoio" }),
   "sensor.sensore_porta_battery": st("9", { device_class: "battery", unit_of_measurement: "%", friendly_name: "Sensore porta batteria" }),
   /* batterie (0.7.35): una per dispositivo; i telefoni, l'auto e la batteria di casa non devono comparire */
@@ -387,6 +432,11 @@ const RETE = [[/^(binary_sensor|sensor|button|switch|update)\.fritz_box_7590_/, 
   [/^sensor\.speedtest_/, "speedtestdotnet", "dev_speed"], [/^(sensor|button)\.nas_di_casa_/, "synology_dsm", "dev_nas"], [/^(binary_sensor|sensor|button)\.pve_/, "proxmoxve", "dev_pve"],
   [/^(binary_sensor|sensor|button)\.vm_media_/, "proxmoxve", "dev_vm"], [/^switch\.pc_studio$/, "wake_on_lan", null], [/^sensor\.system_monitor_/, "systemmonitor", "dev_sysmon"],
   [/^sensor\.stampante_ufficio/, "ipp", "dev_prn"], [/^sensor\.ups_studio_/, "nut", "dev_ups"]];
+/* caldaia (0.7.37): integrazione, dispositivo e categoria «diagnostica» (OpenTherm Gateway) come in Home Assistant */
+for (const e of REG.entities) {
+  if (/ariston|^climate\.caldaia_/.test(e.ei)) { e.di = "dev_a"; e.pl = "ariston"; if (e.ei === "climate.ariston_zona_1") e.ai = "soggiorno"; }
+  if (/^[a-z_]+\.otgw_/.test(e.ei)) { e.di = "dev_otgw"; e.pl = "opentherm_gw"; e.ai = e.ei.startsWith("climate.") ? "soggiorno" : "corridoio"; if (!/^climate\.|flame|boiler_water|return_water|ch_water_pressure|hot_water$/.test(e.ei)) e.ec = 1; }
+}
 for (const e of REG.entities) { const r = RETE.find(([re]) => re.test(e.ei)); if (!r) continue; e.pl = r[1]; e.di = r[2] || (e.ei.startsWith("device_tracker.") ? "dev_cl_" + e.ei.split(".")[1] : null); e.ai = null;
   if (/^(sensor|binary_sensor|button)\./.test(e.ei) && /fritz|nas_di_casa|system_monitor|pve_|ups_studio_(status_data|input)/.test(e.ei) && !/connection$|download|upload|external_ip/.test(e.ei)) e.ec = 1; if (e.ei.startsWith("switch.pixel")) e.ec = 2; }
 /* registro completo (data di creazione delle entità): il tablet ospite e un dispositivo disattivato sono nuovi di oggi */
@@ -562,7 +612,7 @@ const conn = {
       case "nduja_dashboard/save_layout": LAYOUT = m.layout; localStorage.setItem("mockLayout", JSON.stringify(LAYOUT)); return { ok: true };
       case "config/entity_registry/list_for_display": return REG;
       case "config/entity_registry/list": return REG_FULL();
-      case "config/device_registry/list": return [{ id: "dev_cgrp", name: "Tutta la casa", manufacturer: "Google Inc.", model: "Google Cast Group" }, { id: "dev_g", name: "iPhone di Mario" }, { id: "dev_c", name: "iPhone di Anna" }, { id: "dev_a", name: "Ariston" }, { id: "dev_tv", name: "TV soggiorno", manufacturer: "Samsung", model: "QE55 demo" }, { id: "dev_atv", name: "Apple TV soggiorno", manufacturer: "Apple", model: "Apple TV 4K" },
+      case "config/device_registry/list": return [{ id: "dev_cgrp", name: "Tutta la casa", manufacturer: "Google Inc.", model: "Google Cast Group" }, { id: "dev_g", name: "iPhone di Mario" }, { id: "dev_c", name: "iPhone di Anna" }, { id: "dev_a", name: "Ariston", manufacturer: "Ariston", model: "Caldaia demo" }, { id: "dev_otgw", name: "OpenTherm Gateway", manufacturer: "Demo", model: "OpenTherm Gateway" }, { id: "dev_tv", name: "TV soggiorno", manufacturer: "Samsung", model: "QE55 demo" }, { id: "dev_atv", name: "Apple TV soggiorno", manufacturer: "Apple", model: "Apple TV 4K" },
         { id: "dev_gtv", name: "Google TV cucina", manufacturer: "Google", model: "Chromecast with Google TV" }, { id: "dev_lg", name: "TV camera", manufacturer: "LG", model: "OLED demo" }, { id: "dev_rb", name: "Rain Bird", manufacturer: "Rain Bird", model: "ESP-ME demo" }, { id: "dev_hw", name: "Prato dietro", manufacturer: "Hunter", model: "Hydrawise zona" }, ...(localStorage.getItem("mockNoCar") ? [] : [{ id: "dev_car", name: "Model 3", manufacturer: "Tesla", model: "Model 3" }]),
         ...[["trv_soggiorno", "Termostatica soggiorno"], ["movimento_corridoio", "Sensore movimento corridoio"], ["fumo_cucina", "Rilevatore fumo cucina"], ["telecomando_ikea", "Telecomando IKEA"],
           ["serratura_ingresso", "Serratura ingresso"], ["allagamento_lavanderia", "Sensore allagamento lavanderia"], ["valvola_bagno", "Valvola termostatica bagno"], ["finestra", "Sensore finestra soggiorno"]].map(([k, name]) => ({ id: "dev_b_" + k, name })),
@@ -573,12 +623,13 @@ const conn = {
         return [{ area_id: "soggiorno", name: "Soggiorno" }, { area_id: "corridoio", name: "Corridoio" }, { area_id: "cucina", name: "Cucina" }, { area_id: "lavanderia", name: "Lavanderia" }, { area_id: "esterno", name: "Esterno" }].map(a => P ? { ...a, floor_id: F[a.area_id] } : a); }
       /* mockPiani: due piani (prova delle stanze divise per piano) */
       case "config/floor_registry/list": return localStorage.getItem("mockPiani") ? [{ floor_id: "terra", name: "Piano terra", level: 0 }, { floor_id: "primo", name: "Primo piano", level: 1 }] : [];
-      case "recorder/statistic_during_period": return { change: 1.23 };
+      case "recorder/statistic_during_period": return { change: /gas/.test(m.statistic_id) ? (m.calendar?.period === "month" ? 61.3 : 2.84) : 1.23 };
       case "config/auth/list": return [{ id: "u1", name: "Mario", is_owner: true, is_active: true, group_ids: ["system-admin"] }, { id: "u2", name: "Anna", is_active: true, group_ids: ["system-users"] }];
       case "get_services": return { notify: { mobile_app_telefono_demo: {}, persistent_notification: {} }, dreame_vacuum: { vacuum_clean_segment: {} }, rainbird: { start_irrigation: {} }, hydrawise: { start_watering: {}, suspend: {}, resume: {} } };
-      case "energy/get_prefs": return { energy_sources: [{ type: "grid", stat_energy_from: "sensor.imp", stat_energy_to: "sensor.exp", number_energy_price: 0.35, number_energy_price_export: 0.044 }, { type: "solar", stat_energy_from: "sensor.prod" }], device_consumption: [] };
+      case "energy/get_prefs": return { energy_sources: [{ type: "grid", stat_energy_from: "sensor.imp", stat_energy_to: "sensor.exp", number_energy_price: 0.35, number_energy_price_export: 0.044 }, { type: "solar", stat_energy_from: "sensor.prod" },
+        ...(localStorage.getItem("mockNoGas") ? [] : [{ type: "gas", stat_energy_from: "sensor.contatore_gas", number_energy_price: 1.05 }])], device_consumption: [] };
       case "recorder/statistics_during_period": { const out = {}; const st = new Date(m.start_time).getTime(), step = m.period === "hour" ? 3600e3 : m.period === "month" ? 30*864e5 : 864e5;
-        for (const id of m.statistic_ids) { out[id] = []; for (let x = st, i = 0; x < Date.now(); x += step, i++) out[id].push({ start: x, change: id.includes("prod") ? 8 + 6*Math.sin(i) : id.includes("imp") ? 2 + Math.random()*3 : 3 + Math.random()*4, mean: 21 + 2*Math.sin(i/4), min: 19 + Math.sin(i/4), max: /pv\d?_power/.test(id) ? (ENT[id]?.a?.unit_of_measurement === "kW" ? 2.2 : 2200) : 23 + 2*Math.sin(i/4) }); }
+        for (const id of m.statistic_ids) { out[id] = []; for (let x = st, i = 0; x < Date.now(); x += step, i++) out[id].push({ start: x, change: id.includes("gas") ? (m.period === "month" ? 18 + 140 * Math.max(0, Math.cos((new Date(x).getMonth() + .5) / 12 * 2 * Math.PI)) : 1.4 + 1.6 * Math.abs(Math.sin(i / 3)) + .4 * (i % 2)) : id.includes("prod") ? 8 + 6*Math.sin(i) : id.includes("imp") ? 2 + Math.random()*3 : 3 + Math.random()*4, mean: 21 + 2*Math.sin(i/4), min: 19 + Math.sin(i/4), max: /pv\d?_power/.test(id) ? (ENT[id]?.a?.unit_of_measurement === "kW" ? 2.2 : 2200) : 23 + 2*Math.sin(i/4) }); }
         return out; }
       case "history/history_during_period": return {};
       case "camera/capabilities": return { frontend_stream_types: { webrtc: ["hls", "web_rtc"], webrtc_ko: ["hls", "web_rtc"], hls: ["hls"] }[CAMM()] || [] };
@@ -605,6 +656,11 @@ const conn = {
             precipitation_probability: i === 0 ? 80 : pd && i === 1 ? 85 : pd && i === 3 ? 20 : 0, precipitation: pd && i === 1 ? 6.5 : 0 })) } } }; }
         /* irrigazione (0.7.31): Rain Bird, Hydrawise, valvole, script del timer e ritardo pioggia cambiano lo stato finto */
         if (mockIrr(m)) { console.log("SVC", JSON.stringify(m)); return { response: {} }; }
+        /* caldaia (0.7.37): acqua calda, modalità e circuito cambiano lo stato finto */
+        if (["water_heater", "select", "climate"].includes(m.domain) && /^(set_temperature|set_operation_mode|select_option|set_hvac_mode|turn_on|turn_off)$/.test(m.service)) for (const id of [].concat(m.target?.entity_id || [])) { const e = ENT[id]; if (!e) continue; const d = m.service_data || {}, a = { ...e.a };
+          if (m.service === "set_temperature") a.temperature = d.temperature; else if (m.service === "set_operation_mode") { a.operation_mode = d.operation_mode; e.s = d.operation_mode; }
+          else if (m.service === "select_option") e.s = d.option; else if (m.service === "set_hvac_mode") e.s = d.hvac_mode; else if (m.service === "turn_off") e.s = "off"; else if (m.service === "turn_on") e.s = m.domain === "climate" ? (a.hvac_modes || []).find(x => x !== "off") || "heat" : "on";
+          e.a = a; setTimeout(() => window.mockStati?.({ c: { [id]: { "+": { s: e.s, a } } } }), 120); }
         /* Music Assistant finta: ricerca in un piccolo catalogo inventato, coda, riproduzione e passaggio della coda */
         if (m.domain === "music_assistant") { const r = mockMA(m); console.log("SVC", JSON.stringify(m)); return { response: r }; }
         if (m.domain === "media_player" && ["media_pause", "media_stop"].includes(m.service)) for (const id of [].concat(m.target?.entity_id || [])) { const e = ENT[id]; if (!e) continue;

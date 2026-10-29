@@ -261,6 +261,17 @@ body.light .rt1mb{background:rgba(0,0,0,0.040)!important}
 body.light .rt1ink span{background:rgba(0,0,0,0.035)!important}
 body.light .rt1tp button{background:rgba(0,0,0,0.030)!important}
 body.light .rt1h{background:rgba(0,0,0,0.028)!important}
+body.light .cd1k{background:rgba(0,0,0,0.028)!important;border:1px solid rgba(0,0,0,0.042)!important}
+body.light .cd1bar{background:rgba(0,0,0,0.040)!important}
+body.light .cd1pt{background:rgba(0,0,0,0.040)!important}
+body.light .cd1msg{background:rgba(0,0,0,0.025)!important}
+body.light .cd1dot{background:rgba(0,0,0,0.110)!important}
+body.light .cd1row{background:rgba(0,0,0,0.028)!important;border:1px solid rgba(0,0,0,0.042)!important}
+body.light .cd1sel{background:rgba(0,0,0,0.040)!important}
+body.light .cd1mn{background:rgba(0,0,0,0.028)!important;border:1px solid rgba(0,0,0,0.042)!important}
+body.light .cd1mn .ic{background:rgba(0,0,0,0.045)!important}
+body.light .cd1g{background:rgba(0,0,0,0.028)!important;border:1px solid rgba(0,0,0,0.042)!important}
+body.light .cd1hb{background:rgba(0,0,0,0.028)!important}
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
 body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
@@ -413,4 +424,15 @@ body.light .rt1sc.on .led{fill:var(--green)!important}body.light .rt1sc.on .led.
 body.light .rt1sc.on .gl .mu{stroke:rgba(10,132,255,.6)!important;fill:rgba(10,132,255,.08)!important}body.light .rt1sc.on .gl .me{stroke:rgba(10,132,255,.4)!important}
 body.light .rt1sc.on .cs .fi{fill:rgba(255,159,10,.85)!important}body.light .rt1sc.ko .ln{stroke:rgba(255,69,58,.5)!important}
 body.light .rt1dot.on{background:var(--green)!important}body.light .rt1dot.off{background:var(--red)!important}
+/* caldaia (0.7.37) */
+body.light .cd1s{--cdb:rgba(255,255,255,.92);--cds:rgba(28,28,30,.32);--cdk:rgba(28,28,30,.5);--cdin:rgba(28,28,30,.1);--cdt:rgba(28,28,30,.14);--cdhl:rgba(255,255,255,1)}
+body.light .cd1s .fin{fill:rgba(18,24,38,.86)}body.light .cd1s .kn,body.light .cd1s .mq{fill:rgba(28,28,30,.08)}
+body.light .cd1s.ch .tu.m,body.light .cd1s.acs .tu.a{stroke:rgba(255,106,40,.45)}body.light .cd1s.ch .tu.r{stroke:rgba(10,132,255,.42)}
+body.light .cd1s .fx.m,body.light .cd1s .fx.a{stroke:#ff6a28}body.light .cd1s .fx.r{stroke:#0a84ff}body.light .cd1s .gcc circle{fill:#2f9be6}
+body.light .cd1s .et.m,body.light .cd1s.acs .et.a{fill:#e0561c}body.light .cd1s .et.r{fill:#0a6fd1}body.light .cd1s .et.g{fill:#a57c00}body.light .cd1s .tu.g{stroke:rgba(214,170,0,.5)}
+body.light .cd1k.m b{color:#e0561c}body.light .cd1k.r b{color:#0a6fd1}body.light .cd1ac.on .cd1at b{color:#e0561c}
+body.light .cd1pt .n{box-shadow:0 0 0 2px rgba(255,255,255,.9)}
+body.light .cd1cod{color:#d0302a}
+body.light .cd1g span,body.light .cd1g.eu b,body.light .cd1k.on b,body.light .cd1row .tx span.cd1hot,body.light .cd1mn.warn .tx span,body.light .cd1hb.on .tx b{color:#c26a00}
+body.light .cd1dot.on{background:var(--green)!important}
 

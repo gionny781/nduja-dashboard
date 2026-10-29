@@ -61,7 +61,7 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.34-dev ✅ | ven 30 ott | Salvaschermo nuovo (della plancia, tuo o automatico) |
 | 0.7.35-dev ✅ | ven 30 ott | Batterie |
 | 0.7.36-dev ✅ | ven 30 ott | Rete e server (modem, mini PC, NAS, UPS) |
-| 0.7.37-dev | ven 30 ott | Caldaia |
+| 0.7.37-dev ✅ | ven 30 ott | Caldaia |
 | 0.7.38-dev | dom 1 nov | Chat di famiglia |
 | 0.7.39-dev | mar 3 nov | Liste: spesa e cose da fare |
 | 0.7.40-dev | gio 5 nov | Scadenze e promemoria |
