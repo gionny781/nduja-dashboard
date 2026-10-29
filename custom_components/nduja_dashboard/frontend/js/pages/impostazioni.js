@@ -6,7 +6,7 @@ import { ssMin, ssVoce } from "../salvaschermo.js";
 import { schedeHome } from "./home.js";
 import { controllaCard } from "../controlla.js";
 import { S, UI, AREAS, FLOORS, REG, ACT, CHG, LAYOUT, PAGES, t, LOC, esc, nm, ok, attr, allEnts, shortName, climateSensors,
-  saveLayout, render, toast, go, page, ws, openSheet, isAdmin, deviceClass, HVAC, manualKind, excluded, tema, navMode, chiosco, sGet, sSet } from "../core.js";
+  saveLayout, render, toast, go, page, ws, openSheet, isAdmin, deviceClass, HVAC, manualKind, excluded, tema, navMode, chiosco, sGet, sSet, grafica, leggera, applyTheme } from "../core.js";
 
 const DEV = ["cover", "switch", "fan", "lock", "media_player", "humidifier", "vacuum", "siren", "valve"];
 const OPEN = ["door", "window", "opening", "garage_door"];
@@ -151,9 +151,12 @@ function dispositivo() {
     <div><b>${t("Salvaschermo", "Screensaver")}</b>${seg("ssMin", String(ssMin()), [["0", t("Spento", "Off")], ["1", "1 min"], ["5", "5 min"], ["10", "10 min"], ["30", "30 min"]])}
       ${ssMin() ? ssVoce() : ""}
       <small class="muted">${t("Dopo qualche minuto senza tocchi: orologio, cielo vivo, la tua casa, un minimal per la notte o le tue foto, oppure «Automatico». Si sveglia al tocco.", "After a few minutes without touches: clock, live sky, your home, a night minimal or your photos, or «Automatic». Wakes on touch.")}</small></div>
+    <div><b>${t("Grafica", "Graphics")}</b>${seg("liteSet", grafica(), [["auto", t("Automatica", "Auto")], ["1", "⚡ " + t("Leggera", "Light")], ["0", "✨ " + t("Completa", "Full")]])}
+      <small class="muted">${t("Leggera: senza effetto vetro sfocato e senza luci in movimento sullo sfondo, molto più fluida su tablet Android e Fully Kiosk. «Automatica» la accende da sola sui dispositivi Android.", "Light: no blurred glass and no moving lights in the background, much smoother on Android tablets and Fully Kiosk. «Auto» turns it on by itself on Android devices.")}${leggera() ? " ✓ " + t("Ora è attiva.", "Now on.") : ""}</small></div>
     <div><b>${t("Modalità chiosco", "Kiosk mode")}</b>${seg("kioskSet", chiosco() ? "1" : "0", [["0", t("Spenta", "Off")], ["1", "🖥️ " + t("Attiva", "On")]])}
       <small class="muted">${t("Nasconde la barra laterale e l'intestazione di Home Assistant su questo dispositivo, a ogni apertura. Il pulsante ⛶ in alto mette a tutto schermo (dove il browser lo permette).", "Hides Home Assistant's sidebar and header on this device, every time. The ⛶ button at the top goes full screen (where the browser allows it).")}</small></div></div></section>`;
 }
+ACT.liteSet = el => { sSet("lite", el.dataset.v); applyTheme(); render(true); };
 ACT.kioskSet = el => { if ((el.dataset.v === "1") !== chiosco()) ACT.kiosk(); };
 ACT.themeSet = el => { try { localStorage.setItem("nduja_theme", el.dataset.v); } catch {} ; ACT.theme && (document.body.classList.remove("light")); render(true); };
 

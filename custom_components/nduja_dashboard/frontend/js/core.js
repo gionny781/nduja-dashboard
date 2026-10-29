@@ -370,8 +370,12 @@ function haScuro() {
   try { const h = parent.document.querySelector("home-assistant")?.hass; if (h?.themes && typeof h.themes.darkMode === "boolean") return h.themes.darkMode; } catch {}
   return matchMedia("(prefers-color-scheme: dark)").matches;
 }
+/** modalità leggera: niente sfocature né sfondo animato. «auto» = accesa sui dispositivi Android (Fully Kiosk, app di HA, Chrome) */
+export const grafica = () => sGet("lite") || "auto";
+export const leggera = () => grafica() === "1" || (grafica() === "auto" && /Android/i.test(navigator.userAgent));
 export function applyTheme() {
   applyKiosk();
+  document.body.classList.toggle("lite", leggera());
   const m = tema(), scuro = m === "dark" || (m === "auto" && haScuro());
   document.body.classList.toggle("light", !scuro);
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", scuro ? "#05070d" : "#eef2f8");
@@ -592,7 +596,7 @@ function renderDaStati() {
     attesaRender = null;
     if (tocco) return renderDaStati();
     ultimoRender = performance.now(); render();
-  }, Math.max(0, 400 - (performance.now() - ultimoRender)));
+  }, Math.max(0, (document.body.classList.contains("lite") ? 900 : 400) - (performance.now() - ultimoRender)));   // in modalità leggera ridisegno meno spesso
 }
 document.addEventListener("pointerdown", () => { tocco = true; }, { passive: true });
 for (const ev of ["pointerup", "pointercancel"]) document.addEventListener(ev, () => { setTimeout(() => { tocco = false; }, 120); }, { passive: true });

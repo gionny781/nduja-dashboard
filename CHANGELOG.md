@@ -3,6 +3,10 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.34-dev1
+- 🇮🇹 **Grafica leggera** (Impostazioni → Questo dispositivo → Grafica): senza effetto vetro sfocato e senza luci in movimento sullo sfondo, e con meno ridisegni al secondo. Molto più fluida su tablet Android e Fully Kiosk. «Automatica» (predefinita) la accende da sola sui dispositivi Android; si può forzare «Leggera» o «Completa» su ogni dispositivo.
+- 🇬🇧 **Light graphics** (Settings → This device → Graphics): no blurred glass and no moving background lights, and fewer redraws per second. Much smoother on Android tablets and Fully Kiosk. «Auto» (default) turns it on by itself on Android devices; you can force «Light» or «Full» on each device.
+
 ## 0.7.34-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 - 🇮🇹 **🌙 Salvaschermo nuovo** (⚙️ Impostazioni → Questo dispositivo → Salvaschermo → «Personalizza»), con stili disegnati per 'Nduja: **Orologio** rifinito (ora grande, data, un alone che segue il sole), **Cielo vivo** (i colori del cielo seguono il sole; nuvole, pioggia, neve, grandine, nebbia e lampi dal meteo di casa; di notte le stelle e la **luna con la sua fase vera**; sotto le colline con la casetta che accende la finestra al buio), **Casa** (pannelli che si alternano: meteo con le previsioni, temperatura delle stanze, persone, prossimi impegni e consumi), **Minimal notturno** (nero, ora grande in un arancio tenue, per la camera da letto) e **Foto**.
