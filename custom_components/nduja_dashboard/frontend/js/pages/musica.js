@@ -1,10 +1,10 @@
 /* Musica e TV: «Dove ascolti» (questo dispositivo, le casse, i gruppi), il lettore della plancia con il mini lettore in basso,
    «Sfoglia» con le copertine e, per Alexa, «Chiedi ad Alexa». Con Music Assistant: ricerca, riproduzione (anche «radio») e coda.
    «Sposta su…» passa la musica da una cassa all'altra; i «Preferiti» (playlist e radio) valgono per tutta la casa.
-   Sotto, casse, TV e lettori per stanza.
+   Sotto, casse e lettori per stanza (le TV stanno nella pagina Media, se c'è: vedi tvInMedia in core.js).
    In Home la scheda «In riproduzione» mostra solo quello che sta suonando (anche su questo dispositivo). */
 import { S, ACT, CHG, UI, REG, DEVICES, LAYOUT, t, esc, nm, ok, attr, ents, areaOf, AREAS, areasSorted, card, empty, page, svc, svcResp, ws, sGet, sSet,
-  toast, render, cached, uncache, go, patch, FISSI, isAdmin, openSheet, closeSheet } from "../core.js";
+  toast, render, cached, uncache, go, patch, FISSI, isAdmin, openSheet, closeSheet, PAGES, isTV, tvInMedia } from "../core.js";
 import { item, addBtn, cambia } from "../edit.js";
 
 const F = { PAUSE: 1, SEEK: 2, VOL: 4, MUTE: 8, PREV: 16, NEXT: 32, ON: 128, OFF: 256, PLAY_MEDIA: 512, SOURCE: 2048, STOP: 4096, PLAY: 16384, SHUFFLE: 32768,
@@ -33,7 +33,8 @@ function lettore(id, piccolo = false) {
     </div></div>`;
 }
 
-const tutti = () => ents("media_player", id => !attr(id, "group_members") || attr(id, "group_members").length <= 1 || attr(id, "group_members")[0] === id);
+/* le TV stanno nella pagina Media (se c'è): qui restano le casse */
+const tutti = () => { const tv = tvInMedia(); return ents("media_player", id => (!attr(id, "group_members") || attr(id, "group_members").length <= 1 || attr(id, "group_members")[0] === id) && !(tv && isTV(id))); };
 
 /* ================= Dove ascolti ================= */
 const piattaforma = id => REG[id]?.platform || "";
@@ -49,7 +50,8 @@ const questo = () => /iPad|Tablet/i.test(navigator.userAgent) || (/Macintosh/.te
   : /Mobi|Android|iPhone/i.test(navigator.userAgent) ? t("questo telefono", "this phone") : t("questo computer", "this computer");
 
 function scelta() {
-  const chi = dove(), C = casse(), G = C.filter(isGruppo), K = C.filter(id => !isGruppo(id)), b = brano();
+  /* le TV passate in Media non compaiono tra le casse, tranne quella già scelta qui (la scelta resta) */
+  const tv = tvInMedia(), chi = dove(), C = casse().filter(id => !tv || !isTV(id) || id === chi), G = C.filter(isGruppo), K = C.filter(id => !isGruppo(id)), b = brano();
   const chip = (id, ic, nome, sotto, attivo) => `<button class="mu1c ${chi === id ? "act" : ""} ${attivo ? "play" : ""}" data-act="mu1dove" data-id="${id}" aria-pressed="${chi === id}">
     <span class="ic">${ic}</span><span class="tx"><b>${esc(nome)}</b><small>${esc(sotto)}</small></span>${attivo ? eq() : ""}</button>`;
   const sottoCassa = id => suona(id) && attr(id, "media_title") ? "▶ " + attr(id, "media_title")
@@ -536,7 +538,7 @@ function pagina() {
     <div class="span3 mu1g ${destra ? "" : "solo"}">${chi === "qui" ? card("📱 " + t("Questo dispositivo", "This device"), lettoreQui(), { cls: "mu1p" }) : cardCassa(chi)}${destra ? `<div class="mu1dx">${destra}</div>` : ""}</div>
     ${play.length ? card("🎶 " + t("In riproduzione", "Now playing"), `<div class="mpg2">${play.map(id => lettore(id)).join("")}</div>`, { cls: "span3" }) : ""}
     ${ord.map(a => card(esc(a === "_" ? t("Senza stanza", "No room") : AREAS[a].name), `<div class="stack">${g[a].filter(id => !suona(id)).map(id => item(id, lettore(id))).join("") || `<div class="small muted">${t("Sta suonando qui sopra.", "Playing above.")}</div>`}${addBtn(["media_player"], { area: a === "_" ? "" : a })}</div>`)).join("")}
-    ${!L.length && UI.edit ? card("🎵 " + t("Musica e TV", "Music and TV"), empty(t("Nessun lettore multimediale.", "No media player.")) + addBtn(["media_player"], { big: true }), { cls: "span3" }) : ""}
+    ${!L.length && UI.edit ? card("🎵 " + titolo(), empty(t("Nessun lettore multimediale.", "No media player.")) + addBtn(["media_player"], { big: true }), { cls: "span3" }) : ""}
   </div>`;
 }
 /** scheda Home: solo quello che suona adesso (anche su questo dispositivo) */
@@ -631,4 +633,7 @@ CHG.muSrc = el => svc("media_player", "select_source", { source: el.value }, { e
 CHG.muSound = el => svc("media_player", "select_sound_mode", { sound_mode: el.value }, { entity_id: el.dataset.id });
 
 page("musica", { title: t("Musica e TV", "Music and TV"), short: t("Musica", "Music"), icon: "🎵", order: 33, editable: true,
-  show: () => ents("media_player").length > 0 || !!brano() || fonti(), badge: () => tutti().some(suona) || QUI.stato === "play", render: pagina });
+  show: () => tutti().length > 0 || !!brano() || fonti(), badge: () => tutti().some(suona) || QUI.stato === "play", render: pagina });
+/* con la pagina Media le TV sono là: il titolo diventa «Musica» */
+const titolo = () => tvInMedia() ? t("Musica", "Music") : t("Musica e TV", "Music and TV");
+Object.defineProperty(PAGES.musica, "title", { get: titolo, configurable: true });

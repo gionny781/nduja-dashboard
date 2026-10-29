@@ -3,6 +3,21 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.30-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+- 🇮🇹 **📺 Media**, pagina nuova: compare solo se hai TV, decoder, Apple TV, Chromecast, Fire TV, console o telecomandi (`remote.*`). Se ne hai più di uno li scegli in alto; la scelta resta su questo dispositivo.
+- 🇮🇹 **Scheda della TV**: uno schermo disegnato che mostra quello che è in onda (l'immagine, oppure i colori dell'app aperta) e si accende con un piccolo effetto; accensione e spegnimento, volume e muto, la **sorgente** (HDMI, TV…), play/pausa se c'è qualcosa in riproduzione.
+- 🇮🇹 **🎛️ Telecomando virtuale**: croce direzionale e OK, indietro, home, menu, volume, canali e i **numeri** in un pannello a scomparsa. Manda i comandi giusti per **Android/Google TV**, **Apple TV**, **Samsung**, **LG webOS**, **Sony Bravia**, **Philips** e **Fire TV** (ADB); volume e muto passano dal lettore quando basta. Mostra **solo i tasti che funzionano**; con ✏️ Modifica tocchi un tasto e gli dai un **comando tuo** (anche uno script), con «Prova» e «Torna a quello di partenza». Sul PC vanno anche le frecce, Invio e ⌫.
+- 🇮🇹 **App di streaming**: pulsanti grandi con un logo di testo e colori disegnati per 'Nduja (niente loghi ufficiali) per Netflix, Prime Video, Disney+, YouTube, RaiPlay, Mediaset Infinity, DAZN, Spotify e altre; l'elenco viene dalla TV, l'app aperta si riconosce. Su Android/Google TV si aprono con il loro link. I telecomandi Harmony mostrano le loro **attività**.
+- 🇮🇹 **Scheda «Media» in Home** per la TV accesa: cosa c'è, volume − +, spegni, e un tocco porta alla pagina.
+- 🇮🇹 **Musica e Media separate**: le TV passano nella pagina Media e in **Musica** restano le casse (la pagina si chiama «Musica»). Nomi, stanze e scelte restano come prima; se spegni la pagina Media, le TV tornano in Musica.
+- 🇬🇧 **📺 Media**, a new page: shown only if you have TVs, set-top boxes, Apple TV, Chromecast, Fire TV, consoles or remotes (`remote.*`). If you have more than one, pick it at the top; the choice stays on this device.
+- 🇬🇧 **TV card**: a drawn screen that shows what's on (the picture, or the colours of the open app) and switches on with a small effect; power, volume and mute, the **source** (HDMI, TV…), play/pause when something is playing.
+- 🇬🇧 **🎛️ Virtual remote**: D-pad and OK, back, home, menu, volume, channels and the **numbers** in a fold-out panel. It sends the right commands for **Android/Google TV**, **Apple TV**, **Samsung**, **LG webOS**, **Sony Bravia**, **Philips** and **Fire TV** (ADB); volume and mute go through the player when that's enough. Only **keys that work** are shown; with ✏️ Edit tap a key to give it **your own command** (a script too), with «Try» and «Back to default». On a PC the arrows, Enter and ⌫ work too.
+- 🇬🇧 **Streaming apps**: big buttons with a text logo and colours drawn for 'Nduja (no official logos) for Netflix, Prime Video, Disney+, YouTube, RaiPlay, Mediaset Infinity, DAZN, Spotify and more; the list comes from the TV and the open app is highlighted. On Android/Google TV they open with their link. Harmony remotes show their **activities**.
+- 🇬🇧 **«Media» card on Home** for the TV that's on: what's on, volume − +, power off, and a tap takes you to the page.
+- 🇬🇧 **Music and Media apart**: TVs move to the Media page and **Music** keeps the speakers (the page is now called «Music»). Names, rooms and choices stay as they were; if you turn the Media page off, TVs go back to Music.
+
 ## 0.7.29-dev2
 - 🇮🇹 **Avvisi sul telefono**: l'avviso «nuovo aggiornamento disponibile» non veniva aggiunto all'automazione (gli aggiornamenti erano scartati). Riapri 📱 e premi «Salva».
 - 🇬🇧 **Phone alerts**: the «new update available» alert was not added to the automation (updates were skipped). Reopen 📱 and press «Save».

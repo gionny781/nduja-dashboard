@@ -18,6 +18,7 @@ export const TIPI = () => ({
   sensor: ["📈", t("Sensori", "Sensors"), t("sensore", "sensor")], binary_sensor: ["🚪", t("Porte, finestre e sensori", "Doors, windows and sensors"), t("sensore", "sensor")],
   camera: ["📷", t("Telecamere", "Cameras"), t("telecamera", "camera")], script: ["▶️", "Script", "script"], input_boolean: ["🔘", t("Interruttori virtuali", "Toggles"), t("interruttore", "toggle")],
   alarm_control_panel: ["🛡️", t("Allarmi", "Alarms"), t("allarme", "alarm")],
+  remote: ["🎛️", t("Telecomandi", "Remotes"), t("telecomando", "remote")],
   valve: ["🚰", t("Valvole", "Valves"), t("valvola", "valve")], siren: ["🚨", t("Sirene", "Sirens"), t("sirena", "siren")],
 });
 const custom = pid => (LAYOUT.customPages || []).find(p => p.id === pid);

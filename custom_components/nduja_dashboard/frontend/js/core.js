@@ -54,7 +54,7 @@ export const ago = iso => {
 export const hhmm = d => new Date(d).toLocaleTimeString(LOC, { hour: "2-digit", minute: "2-digit" });
 export const domain = id => id.split(".")[0];
 /* in modalità manuale queste cose si vedono solo se l'utente le ha aggiunte */
-export const MANUAL = ["light", "climate", "switch", "cover", "fan", "media_player", "lock", "humidifier", "vacuum", "valve", "siren", "scene", "person", "camera", "alarm_control_panel"];
+export const MANUAL = ["light", "climate", "switch", "cover", "fan", "media_player", "lock", "humidifier", "vacuum", "valve", "siren", "scene", "person", "camera", "alarm_control_panel", "remote"];
 /** entità nascoste finché l'utente non le aggiunge (doppioni delle telecamere, mappe dei robot…): funzioni registrate dalle pagine */
 export const DEFAULT_OFF = [];
 export const defaultOff = id => DEFAULT_OFF.some(f => { try { return f(id); } catch { return false; } }) && !(LAYOUT.show || []).includes(id);
@@ -139,6 +139,30 @@ export function luciComando(ids, on) {
   const per = {}; ids.forEach(id => (per[domain(id)] = per[domain(id)] || []).push(id));
   return Promise.all(Object.entries(per).map(([d, L]) => svc(d, on ? "turn_on" : "turn_off", {}, { entity_id: L })));
 }
+/* ---------- TV e schermi (pagina Media): TV, decoder, Apple TV, Chromecast, Fire TV, console ---------- */
+const TV_PIATT = ["androidtv_remote", "androidtv", "apple_tv", "samsungtv", "webostv", "braviatv", "philips_js", "roku", "vizio", "panasonic_viera", "ps4", "xbox", "firetv"];
+/** il telecomando (remote.*) di un lettore: sullo stesso dispositivo, altrimenti con lo stesso nome */
+export function remotoDi(id) {
+  const dev = REG[id]?.device, R = Object.keys(S).filter(x => x.startsWith("remote."));
+  return (dev && R.find(x => REG[x]?.device === dev)) || R.find(x => nmHA(x).toLowerCase() === nmHA(id).toLowerCase()) || null;
+}
+/** il lettore (media_player) di un telecomando, se c'è */
+export function lettoreDi(rid) {
+  const dev = REG[rid]?.device, M = Object.keys(S).filter(x => x.startsWith("media_player."));
+  return (dev && M.find(x => REG[x]?.device === dev)) || M.find(x => nmHA(x).toLowerCase() === nmHA(rid).toLowerCase()) || null;
+}
+/** è uno schermo (TV, decoder, box, console) e non una cassa? */
+export function isTV(id) {
+  if (!id.startsWith("media_player.")) return false;
+  const dc = attr(id, "device_class"); if (dc === "tv" || dc === "receiver") return true;
+  if (dc === "speaker") return false;
+  if (TV_PIATT.includes(REG[id]?.platform) || remotoDi(id)) return true;
+  const mod = String(DEVICES[REG[id]?.device]?.model || "");
+  if (REG[id]?.platform === "cast") return /chromecast(?!\s*audio)|google\s*tv|shield|\btv\b/i.test(mod + " " + nmHA(id));
+  return /\btv\b|_tv\b|^media_player\.tv_|televis|chromecast(?!\s*audio)|fire\s*tv|apple\s*tv|shield|decoder|sky\s*q|tim\s*box|xbox|playstation|\bps[45]\b/i.test(id + " " + nmHA(id) + " " + mod);
+}
+/** le TV vanno nella pagina Media (se c'è e non è spenta): allora la pagina Musica tiene solo le casse */
+export const tvInMedia = () => { try { return !!PAGES.media && PAGES.media.show() && LAYOUT.pages?.media !== false && utenteCfg().pages?.media !== false; } catch { return false; } };
 
 /* ================= servizi ================= */
 export function toast(msg, err) {

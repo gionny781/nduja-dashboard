@@ -114,7 +114,17 @@ const ENT = {
   "media_player.ma_soggiorno": st("playing", { friendly_name: "Soggiorno MA", supported_features: 2544575, media_title: "Mattino lento", media_artist: "Demo Trio", media_album_name: "Album demo",
     media_content_id: "library://track/12", media_content_type: "music", entity_picture: "/tools/mock/cover-a.svg", volume_level: .4, shuffle: false, repeat: "off", media_duration: 214, media_position: 63 }),
   "media_player.ma_cucina": st("idle", { friendly_name: "Cucina MA", supported_features: 2544575, volume_level: .3, shuffle: false, repeat: "off" }),
-  "media_player.tv_soggiorno": st("off", { friendly_name: "TV soggiorno", device_class: "tv", supported_features: 23997, volume_level: .2, source_list: ["HDMI 1","Netflix","YouTube"] }),
+  /* Media (0.7.30): TV Samsung con il suo telecomando, Apple TV, Google TV (Android TV Remote), LG webOS spenta, Harmony senza lettore */
+  "media_player.tv_soggiorno": st("on", { friendly_name: "TV soggiorno", device_class: "tv", supported_features: 128|256|1024|4|8|2048|512|1|16384|16|32, volume_level: .18, is_volume_muted: false,
+    source: "Netflix", app_name: "Netflix", source_list: ["TV", "HDMI 1", "HDMI 2", "Netflix", "YouTube", "Prime Video", "Disney+", "RaiPlay", "Mediaset Infinity", "DAZN", "Spotify", "Arte TV"] }),
+  "remote.tv_soggiorno": st("on", { friendly_name: "TV soggiorno" }),
+  "media_player.apple_tv_soggiorno": st("playing", { friendly_name: "Apple TV soggiorno", supported_features: 128|256|1|16384|16|32|512|2048|1024, media_title: "Il faro", media_series_title: "Serie demo",
+    media_content_type: "tvshow", entity_picture: "/tools/mock/cover-b.svg", app_name: "Apple TV", app_id: "com.apple.TVWatchList", source: "Apple TV", source_list: ["Apple TV", "Netflix", "YouTube", "RaiPlay", "Disney+", "Musica", "Foto"] }),
+  "remote.apple_tv_soggiorno": st("on", { friendly_name: "Apple TV soggiorno" }),
+  "media_player.google_tv_cucina": st("on", { friendly_name: "Google TV cucina", supported_features: 128|256|1024|8|512, app_id: "com.google.android.youtube.tv", app_name: "YouTube", volume_level: .3 }),
+  "remote.google_tv_cucina": st("on", { friendly_name: "Google TV cucina", current_activity: "com.google.android.youtube.tv" }),
+  "media_player.lg_camera": st("off", { friendly_name: "TV camera", device_class: "tv", supported_features: 128|256|1024|4|8|2048|512, source_list: ["HDMI 1", "Live TV", "Netflix", "YouTube", "Prime Video", "DAZN", "Mediaset Infinity", "Spotify"] }),
+  "remote.harmony_studio": st("off", { friendly_name: "Harmony studio", activity_list: ["Guarda la TV", "Film", "PlayStation", "PowerOff"], current_activity: "PowerOff" }),
   "sensor.model_3_battery_level": st("64", { device_class: "battery", unit_of_measurement: "%", friendly_name: "Model 3 Battery level" }),
   "sensor.model_3_battery_range": st("312", { device_class: "distance", unit_of_measurement: "km", friendly_name: "Model 3 Battery range" }),
   "sensor.model_3_odometer": st("48211", { device_class: "distance", unit_of_measurement: "km", friendly_name: "Model 3 Odometer" }),
@@ -172,8 +182,9 @@ const EV = {
 let LAYOUT = JSON.parse(localStorage.getItem("mockLayout") || '{"configured":true,"mode":"auto","energy":{"pv":["sensor.inverter_pv1_power","sensor.inverter_pv2_power","sensor.inverter_pv3_power"]}}');
 const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_sogg/.test(id) ? "soggiorno" : /echo_cucina/.test(id) ? "cucina" : /soggiorno/.test(id) ? "soggiorno" : /^(cover\.(cancello|garage|basculante)|switch\.cancellett|binary_sensor\.cancellett|button\.portone|camera\.(cortile|giardino|campanello)|light\.giardino)/.test(id) ? "esterno" : /corridoio|porta|ariston/.test(id) ? "corridoio" : /cucina/.test(id) ? "cucina" : /lavatric|asciugatric|lavanderia/.test(id) ? "lavanderia" : /forno|frigo|lavastov/.test(id) ? "cucina" : null,
   hb: id === "camera.cantina" || undefined,
-  pl: id.startsWith("media_player.ma_") ? "music_assistant" : id.includes("model_3") ? "tesla_fleet" : id === "media_player.echo_cucina" ? "alexa_media" : id.startsWith("media_player.sonos") ? "sonos" : /^media_player\.(nest|casa_tutta)/.test(id) ? "cast" : undefined,
-  di: id === "media_player.casa_tutta" ? "dev_cgrp" : id.includes("model_3") ? "dev_car" : id.startsWith("camera.campanello") ? "dev_bell" : id.startsWith("camera.giardino") ? "dev_reo" : id.startsWith("camera.cortile") ? "dev_cort" : id.includes("ambrogio") ? "dev_v" : id.includes("mario") ? "dev_g" : id.includes("anna") ? "dev_c" : id.includes("ariston") ? "dev_a" : null })) };
+  pl: /^(media_player|remote)\.tv_soggiorno$/.test(id) ? "samsungtv" : /apple_tv_/.test(id) ? "apple_tv" : /google_tv_/.test(id) ? "androidtv_remote" : id === "media_player.lg_camera" ? "webostv" : id === "remote.harmony_studio" ? "harmony" :
+    id.startsWith("media_player.ma_") ? "music_assistant" : id.includes("model_3") ? "tesla_fleet" : id === "media_player.echo_cucina" ? "alexa_media" : id.startsWith("media_player.sonos") ? "sonos" : /^media_player\.(nest|casa_tutta)/.test(id) ? "cast" : undefined,
+  di: /tv_soggiorno$/.test(id) && !/apple/.test(id) ? "dev_tv" : /apple_tv_/.test(id) ? "dev_atv" : /google_tv_/.test(id) ? "dev_gtv" : id === "media_player.lg_camera" ? "dev_lg" : id === "media_player.casa_tutta" ? "dev_cgrp" : id.includes("model_3") ? "dev_car" : id.startsWith("camera.campanello") ? "dev_bell" : id.startsWith("camera.giardino") ? "dev_reo" : id.startsWith("camera.cortile") ? "dev_cort" : id.includes("ambrogio") ? "dev_v" : id.includes("mario") ? "dev_g" : id.includes("anna") ? "dev_c" : id.includes("ariston") ? "dev_a" : null })) };
 /* telecamere: mockCam = "webrtc" (predefinito: diretta vera via WebRTC dentro il browser) | "webrtc_ko" (WebRTC fallisce, poi HLS)
    | "hls" (serve /mockhls/, vedi README) | "mjpeg" | "foto". mockCamLog conta gli stream aperti e chiusi. */
 const CAMM = () => localStorage.getItem("mockCam") || "webrtc";
@@ -309,7 +320,8 @@ const conn = {
       case "nduja_dashboard/config": return { version: "0.5.0-beta", options: {}, layout: LAYOUT };
       case "nduja_dashboard/save_layout": LAYOUT = m.layout; localStorage.setItem("mockLayout", JSON.stringify(LAYOUT)); return { ok: true };
       case "config/entity_registry/list_for_display": return REG;
-      case "config/device_registry/list": return [{ id: "dev_cgrp", name: "Tutta la casa", manufacturer: "Google Inc.", model: "Google Cast Group" }, { id: "dev_g", name: "iPhone di Mario" }, { id: "dev_c", name: "iPhone di Anna" }, { id: "dev_a", name: "Ariston" }, ...(localStorage.getItem("mockNoCar") ? [] : [{ id: "dev_car", name: "Model 3", manufacturer: "Tesla", model: "Model 3" }])];
+      case "config/device_registry/list": return [{ id: "dev_cgrp", name: "Tutta la casa", manufacturer: "Google Inc.", model: "Google Cast Group" }, { id: "dev_g", name: "iPhone di Mario" }, { id: "dev_c", name: "iPhone di Anna" }, { id: "dev_a", name: "Ariston" }, { id: "dev_tv", name: "TV soggiorno", manufacturer: "Samsung", model: "QE55 demo" }, { id: "dev_atv", name: "Apple TV soggiorno", manufacturer: "Apple", model: "Apple TV 4K" },
+        { id: "dev_gtv", name: "Google TV cucina", manufacturer: "Google", model: "Chromecast with Google TV" }, { id: "dev_lg", name: "TV camera", manufacturer: "LG", model: "OLED demo" }, ...(localStorage.getItem("mockNoCar") ? [] : [{ id: "dev_car", name: "Model 3", manufacturer: "Tesla", model: "Model 3" }])];
       case "config/area_registry/list": { const P = localStorage.getItem("mockPiani"), F = { soggiorno: "terra", cucina: "terra", esterno: "terra", corridoio: "primo", lavanderia: "primo" };
         return [{ area_id: "soggiorno", name: "Soggiorno" }, { area_id: "corridoio", name: "Corridoio" }, { area_id: "cucina", name: "Cucina" }, { area_id: "lavanderia", name: "Lavanderia" }, { area_id: "esterno", name: "Esterno" }].map(a => P ? { ...a, floor_id: F[a.area_id] } : a); }
       /* mockPiani: due piani (prova delle stanze divise per piano) */
@@ -350,6 +362,14 @@ const conn = {
           e.s = m.service === "play_media" ? "playing" : e.s === "playing" ? "paused" : "playing";
           if (m.service === "play_media") e.a = { ...e.a, media_title: String(m.service_data.media_content_id).split("/").pop(), media_artist: m.service_data.media_content_type };
           setTimeout(() => window.mockStati?.({ c: { [id]: { "+": { s: e.s, a: e.a } } } }), 120); }
+        /* TV e telecomandi (0.7.30): accensione, sorgente, volume e attività cambiano lo stato finto */
+        if (["media_player", "remote"].includes(m.domain)) for (const id of [].concat(m.target?.entity_id || [])) { const e = ENT[id]; if (!e) continue; const d = m.service_data || {}, a = { ...e.a };
+          if (m.service === "turn_on") { e.s = "on"; if (d.activity) a.current_activity = d.activity; } else if (m.service === "turn_off") { e.s = "off"; if (id.startsWith("remote.")) a.current_activity = "PowerOff"; }
+          else if (m.service === "select_source") { a.source = d.source; a.app_name = d.source; e.s = e.s === "off" ? "on" : e.s; }
+          else if (m.service === "volume_set") a.volume_level = d.volume_level; else if (m.service === "volume_mute") a.is_volume_muted = d.is_volume_muted;
+          else if (["volume_up", "volume_down"].includes(m.service)) a.volume_level = Math.round(Math.min(1, Math.max(0, (a.volume_level || 0) + (m.service === "volume_up" ? .02 : -.02))) * 100) / 100;
+          else continue;
+          e.a = a; setTimeout(() => window.mockStati?.({ c: { [id]: { "+": { s: e.s, a } } } }), 120); }
         console.log("SVC", JSON.stringify(m)); return { response: {} };
     }
     throw { code: "unknown", message: m.type };

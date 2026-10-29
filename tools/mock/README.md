@@ -54,3 +54,10 @@ Music Assistant non c'è (compare la riga «installa Music Assistant»). I prefe
 ```bash
 LS='{"nduja_mu_dove":"media_player.ma_soggiorno"}' node tools/mock/shot.mjs musica 1280 900 ma.png '[data-act="mu1sp"]'
 ```
+
+**Media** (0.7.30): `media_player.tv_soggiorno` è una Samsung accesa su Netflix con `remote.tv_soggiorno` (comandi `KEY_*`), `media_player.apple_tv_soggiorno` riproduce
+con la copertina (`remote.apple_tv_soggiorno`), `media_player.google_tv_cucina` è di `androidtv_remote` (app con i link, `current_activity`), `media_player.lg_camera` è una LG webOS
+spenta (`webostv.button`) e `remote.harmony_studio` è un Harmony senza lettore, con le attività. Accensione, sorgente, volume e attività cambiano lo stato finto; i comandi compaiono come `SVC`.
+```bash
+LS='{"nduja_md_tv":"media_player.tv_soggiorno"}' node tools/mock/shot.mjs media 1280 1000 media.png '[data-act="mdNum"]'
+```

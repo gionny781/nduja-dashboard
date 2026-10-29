@@ -1312,3 +1312,98 @@ a.btn{color:var(--tx);text-decoration:none}.car-c.on{background:rgba(10,132,255,
 .pk1 .lu6{display:grid;place-items:center;color:var(--tx2)}.lu6 svg{width:21px;height:21px}
 @media (max-width:520px){.lts2{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.lt2{min-height:122px;padding:12px 12px 11px}.lu1n b{font-size:36px}.lu1x{margin-left:0}.lu3w{width:190px;height:190px}}
 @media (prefers-reduced-motion:reduce){.lt2,.lt2 .lf2,.lt2i,.lu3b .lf2,.lu3i,.lu3p,.lt2 .g{transition:none}.lt2:active:not(.drag),.lu3s:active{transform:none}}
+
+/* ===== Media (0.7.30): TV, telecomando virtuale, app di streaming ===== */
+.md1g{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,360px);grid-template-areas:"tv rm" "ap rm";grid-template-rows:auto 1fr;gap:16px;align-items:start}
+.md1g>.md1a1{grid-area:tv}.md1g>.md1a2{grid-area:rm}.md1g>.md1a3{grid-area:ap}
+.md1g:not(:has(>.md1a2)){grid-template-columns:minmax(0,1fr);grid-template-areas:"tv" "ap"}
+@media (max-width:900px){.md1g{grid-template-columns:minmax(0,1fr);grid-template-areas:"tv" "rm" "ap"}}
+.md1ch .ic{font-size:17px}
+/* scheda della TV: lo schermo disegnato e i comandi */
+.md1tc{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px;align-items:center;position:relative;z-index:1}
+@media (max-width:640px){.md1tc{grid-template-columns:minmax(0,1fr);gap:14px}}
+.md1tv{position:relative;padding-bottom:14px;min-width:0}
+.md1sc{position:relative;aspect-ratio:16/9;border-radius:14px;background:#06070b;border:5px solid #16181f;overflow:hidden;display:grid;place-items:center;
+  box-shadow:0 0 0 1px rgba(255,255,255,.08),0 22px 40px -24px rgba(0,0,0,.9);transition:box-shadow .5s}
+.md1tv.on .md1sc{box-shadow:0 0 0 1px rgba(255,255,255,.1),0 26px 60px -22px rgba(94,140,255,.55)}
+.md1ft{position:absolute;left:50%;bottom:0;width:30%;height:10px;transform:translateX(-50%);border-radius:2px 2px 8px 8px;background:linear-gradient(180deg,#2b2f39,#15171d);box-shadow:0 6px 12px -6px rgba(0,0,0,.6)}
+.md1ft::before{content:"";position:absolute;left:50%;top:-6px;width:16%;height:6px;transform:translateX(-50%);background:#1d2028}
+.md1gl{position:absolute;inset:0;pointer-events:none;background:linear-gradient(118deg,rgba(255,255,255,.1) 0%,rgba(255,255,255,.02) 34%,transparent 35%)}
+.md1sb{position:absolute;right:10px;bottom:8px;width:6px;height:6px;border-radius:50%;background:#ff453a;box-shadow:0 0 8px #ff453a}
+.md1sc>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.md1sn{display:flex;flex-direction:column;align-items:center;gap:4px;color:rgba(255,255,255,.82);padding:0 12px;text-align:center}
+.md1sn b{font-size:clamp(16px,2.6vw,26px);font-weight:700;letter-spacing:-.02em}.md1sn small{font-size:12px;color:rgba(255,255,255,.6)}
+.md1tv.un{opacity:.45}
+.md1tv.on .md1sc>:not(.md1gl){animation:md1on .55s cubic-bezier(.2,.8,.2,1)}
+@keyframes md1on{from{transform:scaleY(.02);opacity:.2;filter:brightness(2.2)}60%{transform:scaleY(1);filter:brightness(1.4)}to{opacity:1;filter:none}}
+.md1in{display:flex;flex-direction:column;gap:10px;min-width:0}
+.md1nm{min-width:0}.md1nm b{display:block;font-size:19px;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.md1nm small{display:block;font-size:12px;color:var(--tx2);margin-top:2px}
+.md1now{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.06)}.md1now b{font-size:15px}
+.md1pw{flex:none;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:20px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.1);color:var(--tx2);transition:background .2s,color .2s,transform .15s}
+.md1pw.on{background:rgba(255,69,58,.18);border-color:rgba(255,69,58,.45);color:var(--red);box-shadow:0 0 18px -6px rgba(255,69,58,.8)}
+.md1pw:active{transform:scale(.92)}.md1pw.sm{width:36px;height:36px;font-size:16px}
+/* il logo di testo delle app (disegnato per 'Nduja, non quello ufficiale) */
+.md1lg{display:grid;place-items:center;background:radial-gradient(130% 120% at 25% 15%,var(--a1),var(--a2));color:var(--fg);overflow:hidden;position:relative}
+.md1lg::after{content:"";position:absolute;inset:0;background:linear-gradient(160deg,rgba(255,255,255,.18),transparent 45%);pointer-events:none}
+.md1lg b{font-weight:800;letter-spacing:-.03em;line-height:1;white-space:nowrap;position:relative;z-index:1;text-shadow:0 2px 10px rgba(0,0,0,.25)}
+.md1lg.st-caps b{letter-spacing:.06em}.md1lg.st-it b{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-weight:700;letter-spacing:-.01em}.md1lg.st-low b{letter-spacing:-.04em}
+.md1lg.lib b{font-size:.78em;white-space:normal;text-align:center;padding:0 10px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.md1lg.full{position:absolute;inset:0;font-size:clamp(20px,4.4vw,40px)}
+.md1lg.pic{position:absolute;left:8px;top:8px;padding:4px 9px;border-radius:8px;font-size:11px}
+.md1aps{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px;position:relative;z-index:1}
+.md1ap{display:flex;flex-direction:column;gap:7px;text-align:left;min-width:0;transition:transform .15s}
+.md1ap .md1lg{aspect-ratio:16/9;border-radius:16px;font-size:21px;box-shadow:0 14px 26px -16px rgba(0,0,0,.9),inset 0 0 0 1px rgba(255,255,255,.1);transition:box-shadow .2s,transform .2s}
+.md1ap small{font-size:12px;font-weight:600;color:var(--tx2);padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.md1ap:hover .md1lg{transform:translateY(-2px)}.md1ap:active{transform:scale(.96)}
+.md1ap.ora .md1lg{box-shadow:0 0 0 3px var(--tx),0 14px 30px -14px rgba(0,0,0,.9)}
+.md1ap.ora small::before{content:"● ";color:var(--green)}
+@media (max-width:520px){.md1aps{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.md1ap .md1lg{font-size:18px;border-radius:14px}}
+.md1ats{display:flex;flex-wrap:wrap;gap:8px;position:relative;z-index:1}
+.md1at{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08);font-weight:600}
+.md1at span{font-size:11px;color:var(--tx3)}.md1at.ora{background:var(--blue);border-color:transparent;color:#fff}.md1at.ora span{color:#fff}
+/* telecomando virtuale */
+.md1rc{display:flex;flex-direction:column;align-items:center;gap:18px;position:relative;z-index:1;padding:4px 0 2px}
+.md1eh{font-size:12px;color:var(--tx2);text-align:center;max-width:300px}
+.md1k{display:grid;place-items:center;color:var(--tx);transition:transform .12s,background .15s,box-shadow .15s;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.md1k:active{transform:scale(.9)}
+.md1k.vuoto{visibility:hidden}
+.md1k svg{width:28px;height:28px}
+.md1pad{display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);width:224px;height:224px;border-radius:50%;
+  background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.13),rgba(255,255,255,.04) 70%);border:1px solid rgba(255,255,255,.1);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -10px 24px rgba(0,0,0,.25),0 24px 44px -24px rgba(0,0,0,.85)}
+.md1pad .md1k{width:100%;height:100%;border-radius:50%;color:var(--tx2)}
+.md1pad .md1k:hover{color:var(--tx)}.md1pad .md1k:active{background:rgba(255,255,255,.08)}
+.md1k.su{grid-area:1/2}.md1k.sx{grid-area:2/1}.md1k.dx{grid-area:2/3}.md1k.giu{grid-area:3/2}
+.md1pad .md1k.ok{grid-area:2/2;margin:4px;width:auto;height:auto;color:var(--tx);font-size:16px;font-weight:800;letter-spacing:.04em;
+  background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,.08));border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 10px 20px -10px rgba(0,0,0,.8)}
+.md1nv{display:flex;gap:20px}
+.md1k.tn{width:54px;height:54px;border-radius:50%;font-size:21px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.1)}
+.md1rks{display:flex;align-items:center;justify-content:center;gap:26px}
+.md1rk{position:relative;display:flex;flex-direction:column;width:60px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.1)}
+.md1rk .md1k.rk{width:100%;height:58px;border-radius:999px;font-size:24px;font-weight:600}
+.md1rk .md1k.rk:active{background:rgba(255,255,255,.1)}
+.md1rl{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font-size:9.5px;font-weight:800;letter-spacing:.14em;color:var(--tx3);pointer-events:none}
+.md1mm{display:flex;flex-direction:column;align-items:center;gap:5px}.md1mm small{font-size:10.5px;color:var(--tx3);font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.md1nt{padding:8px 18px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.09);font-weight:800;letter-spacing:.08em;font-size:13px}
+.md1nt span{color:var(--tx3);margin-left:4px}.md1nt.on{background:rgba(255,255,255,.16)}
+.md1np{display:grid;grid-template-rows:0fr;width:100%;transition:grid-template-rows .3s ease,opacity .3s;opacity:0;margin-top:-10px}
+.md1np.open{grid-template-rows:1fr;opacity:1;margin-top:0}
+.md1np>.md1ng{min-height:0;overflow:hidden}
+.md1ng{display:grid;grid-template-columns:repeat(3,64px);gap:10px;justify-content:center}
+.md1k.nu{height:50px;border-radius:16px;font-size:20px;font-weight:600;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08)}
+.md1k.nd{outline:1.5px dashed rgba(255,255,255,.4);outline-offset:-3px;opacity:.55}
+.md1k.mio{box-shadow:0 0 0 2px var(--blue)}
+@media (max-width:520px){.md1pad{width:204px;height:204px}}
+/* scheda della Home */
+.md1h{display:flex;align-items:center;gap:8px;padding:8px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06)}
+.md1hb{display:flex;align-items:center;gap:12px;flex:1;min-width:0;text-align:left}
+.md1hb .tx{display:flex;flex-direction:column;min-width:0}.md1hb .tx b,.md1hb .tx small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.md1hb .tx small{font-size:12px;color:var(--tx2)}
+.md1tv.sm{width:96px;flex:none;padding-bottom:7px}.md1tv.sm .md1sc{border-width:3px;border-radius:8px}.md1tv.sm .md1ft{height:6px}.md1tv.sm .md1ft::before{display:none}
+.md1tv.sm .md1lg.full{font-size:13px}.md1tv.sm .md1sn b{font-size:11px}.md1tv.sm .md1lg.pic{display:none}
+@media (prefers-reduced-motion:reduce){.md1tv.on .md1sc>*{animation:none}.md1np,.md1k,.md1ap,.md1ap .md1lg,.md1pw{transition:none}.md1k:active,.md1ap:active,.md1pw:active{transform:none}}
+/* senza la scheda del telecomando lo schermo non diventa enorme; il telecomando senza lettore (Harmony…) ha un disegno piccolo */
+.md1g:not(:has(>.md1a2)) .md1tc{grid-template-columns:minmax(0,440px) minmax(0,1fr)}
+.md1g .md1a1 .md1tc:has(.md1rmv){grid-template-columns:minmax(0,200px) minmax(0,1fr)}
+.md1rmv .md1sc{aspect-ratio:4/3}.md1rmv .md1sn b{font-size:30px}
+@media (max-width:640px){.md1g:not(:has(>.md1a2)) .md1tc{grid-template-columns:minmax(0,1fr)}.md1g .md1a1 .md1tc:has(.md1rmv){grid-template-columns:120px minmax(0,1fr)}}
+.md1h .mpc1{width:32px;height:32px;flex:none}.md1hb .tx b{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2}.md1h .md1tv.sm{width:80px}
