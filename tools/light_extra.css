@@ -130,3 +130,8 @@ body.light .ir1hr,body.light .ir1u,body.light .ir1fc div{background:rgba(0,0,0,.
 body.light .ir1fc div.wet{background:rgba(10,132,255,.1)!important;border-color:rgba(10,132,255,.3)!important}
 body.light .ir1dm input{background:#fff;border-color:rgba(0,0,0,.1);color:#1c1c1e}
 body.light .ir1s .colle{fill:#9fd2a6}body.light .ir1s .cespi{fill:#86c290}body.light .ir1s .velo{stroke:#2f9be6}
+/* La mia squadra (0.7.32): righe del campo scure, colori dei risultati più profondi */
+body.light .sq1cp path,body.light .sq1cp circle{stroke:#1c1c1e}body.light .sq1cp{opacity:.06}
+body.light .sq1min{color:#d70015}body.light .sq1hr .lv{color:#d70015}body.light .sq1hr strong{color:#1f9e45}
+body.light .sq1tr.noi{box-shadow:inset 0 0 0 1px rgba(10,132,255,.45)}
+body.light svg.sq1bd{filter:drop-shadow(0 3px 6px rgba(31,45,80,.25))}

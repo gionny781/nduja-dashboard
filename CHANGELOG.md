@@ -3,6 +3,23 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.32-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+- 🇮🇹 **⚽ La mia squadra**, pagina nuova: compare da sola se in Home Assistant c'è **Team Tracker** o **Calcio Live** (HACS); altrimenti in ⚙️ Impostazioni → Personalizza → «La mia squadra» (o con ✏️) scegli un loro sensore oppure un **calendario con le partite** («Inter - Milan», «Serie A: Inter - Milan», «Inter 2-1 Milan»). Si seguono **più squadre**: le scegli in alto. Lo stesso club da Team Tracker e da Calcio Live diventa una squadra sola.
+- 🇮🇹 **Prossima partita**: le due squadre, **conto alla rovescia** (ai secondi nell'ultima ora), giorno e ora (o «orario da definire»), competizione, stadio e canale TV quando ci sono.
+- 🇮🇹 **Partita in corso**: risultato grande, minuto (o «Intervallo»), gol, autogol, rigori e cartellini con il minuto e il giocatore, possesso palla e tiri in porta se l'integrazione li dà; quando qualcuno segna parte una piccola **animazione** disegnata per 'Nduja (la palla in rete e «GOL!»). Con «Riduci movimento» tutto resta fermo.
+- 🇮🇹 **Ultimi risultati** con V/N/P e **classifica** (da Calcio Live) con la tua squadra evidenziata.
+- 🇮🇹 **Loghi** solo dall'integrazione, niente immagini nel pacchetto: se mancano, uno **stemma** disegnato con la sigla e i colori; con ✏️ cambi nome, sigla e colori o togli la squadra.
+- 🇮🇹 **Scheda «La mia squadra» in Home**: prossima partita con il «tra quanto», oppure il risultato in diretta (con «GOL!» quando si segna).
+- 🇮🇹 **📱 Avvisi sul telefono** (facoltativi): su richiesta la plancia crea in Home Assistant l'automazione **«'Nduja · squadra»** con l'etichetta «'Nduja», che avvisa a ogni **gol** e a **fine partita** con il risultato (Team Tracker o Calcio Live), anche a plancia chiusa.
+- 🇬🇧 **⚽ My team**, a new page: shown by itself if Home Assistant has **Team Tracker** or **Calcio Live** (HACS); otherwise in ⚙️ Settings → Customize → «My team» (or with ✏️) pick one of their sensors or a **calendar with the matches** («Inter - Milan», «Serie A: Inter - Milan», «Inter 2-1 Milan»). You can follow **more than one team** and switch at the top. The same club from Team Tracker and Calcio Live becomes one team.
+- 🇬🇧 **Next match**: both teams, a **countdown** (to the second in the last hour), day and time (or «time to be confirmed»), competition, stadium and TV channel when available.
+- 🇬🇧 **Live match**: big score, minute (or «Half-time»), goals, own goals, penalties and cards with minute and player, possession and shots on target when the integration provides them; when someone scores a small **animation** drawn for 'Nduja plays (the ball in the net and «GOAL!»). With «Reduce motion» nothing moves.
+- 🇬🇧 **Recent results** with W/D/L and the **table** (from Calcio Live) with your team highlighted.
+- 🇬🇧 **Logos** only from the integration, no images in the package: when missing, a drawn **badge** with initials and colours; with ✏️ change name, initials and colours or remove the team.
+- 🇬🇧 **«My team» card on Home**: next match with the time left, or the live score (with «GOAL!» when someone scores).
+- 🇬🇧 **📱 Phone alerts** (optional): on request the dashboard creates the **«'Nduja · team»** automation in Home Assistant, with the «'Nduja» label, which alerts at every **goal** and at **full time** with the score (Team Tracker or Calcio Live), even with the dashboard closed.
+
 ## 0.7.31-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 - 🇮🇹 **💧 Irrigazione**, pagina nuova: compare solo se in Home Assistant c'è qualcosa per irrigare — valvole dell'acqua, switch con nomi come «irrigazione», «zona», «sprinkler», «gocciolatore», oppure **Rain Bird**, **Hydrawise**, **Rachio**, **b-hyve**, **OpenSprinkler**, **Gardena**, valvole Tuya/Zigbee. Valvole principali dell'acqua, pompe, programmi e luci «zona giorno» restano fuori. Con ✏️ Modifica aggiungi altri switch, valvole o script, cambi nome e aspetto o togli una zona.

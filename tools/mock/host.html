@@ -178,7 +178,37 @@ const ENT = {
   "automation.irrigazione_serale": st("on", { friendly_name: "Irrigazione serale", id: "irr1", last_triggered: new Date(Date.now()-3600e3*15).toISOString() }),
   "valve.acqua_principale": st("open", { friendly_name: "Valvola acqua principale", device_class: "water", supported_features: 3 }),
   "switch.luce_zona_giorno": st("off", { friendly_name: "Luce zona giorno" }),
+  /* La mia squadra (0.7.32), squadre inventate: Team Tracker in diretta (Real Borgo), Calcio Live con partite e classifica (Sporting Lago),
+     un calendario di partite (usato da solo solo se non c'è altro: provalo togliendo gli altri con mockEnt) */
+  "sensor.real_borgo": st("IN", { friendly_name: "Real Borgo", sport: "soccer", league: "DEMO", league_name: "Lega Demo", season: "2026-27", event_id: "9001", event_name: "ACO @ RBO",
+    date: new Date(Date.now() - 67 * 6e4).toISOString(), kickoff_in: "1 ora fa", venue: "Stadio del Borgo", location: "Borgo Alto, Italia", tv_network: "DAZN",
+    team_name: "Real Borgo", team_long_name: "Real Borgo", team_abbr: "RBO", team_id: "1", team_homeaway: "home", team_logo: "/tools/mock/nessun-logo.png", team_colors: ["#0b3d91", "#ffd200"], team_score: "2",
+    opponent_name: "Atletico Collina", opponent_long_name: "Atletico Collina", opponent_abbr: "ACO", opponent_id: "2", opponent_homeaway: "away", opponent_logo: null, opponent_colors: ["#c8102e", "#ffffff"], opponent_score: "1",
+    clock: "67'", quarter: 2, team_shots_on_target: "5", opponent_shots_on_target: "2",
+    last_play: "RBO 58%, ACO 42%;      12'  Goal: Marco Ventura (RBO)     31'  Yellow Card: Luca Sarti (ACO)          38'  Goal: Diego Ferri (ACO)          55'  Goal - Header: Paolo Neri (RBO)     61'  Substitution: Elia Conti (ACO)          " }, 60),
+  "sensor.calciolive_all_mixed_sporting_lago": st("✅ Sporting Lago 3 - 1 Union Mare", { friendly_name: "calciolive_all_mixed_sporting_lago", team_name: "Sporting Lago", team_logo: "N/A", matches: [] }),
+  "sensor.calciolive_classifica_lega_demo": st("Classifica", { friendly_name: "calciolive_classifica_lega_demo", season: "2026-27 Lega Demo", standings_groups: [{ name: "2026-2027 Lega Demo", full_table_link: "N/A",
+    standings: [["Real Borgo", 25, 8, 1, 0, 24, 8], ["Sporting Lago", 22, 7, 1, 1, 19, 9], ["Atletico Collina", 19, 6, 1, 2, 17, 10], ["Union Mare", 16, 5, 1, 3, 15, 12], ["Pro Valle", 14, 4, 2, 3, 12, 11],
+      ["Virtus Colle", 13, 4, 1, 4, 13, 14], ["Dinamo Fiume", 12, 3, 3, 3, 11, 11], ["Olimpia Piana", 11, 3, 2, 4, 10, 13], ["Audace Pineta", 9, 2, 3, 4, 9, 13], ["Libertas Monte", 8, 2, 2, 5, 8, 15],
+      ["Juvenilia Porto", 6, 1, 3, 5, 7, 16], ["Aurora Campi", 4, 1, 1, 7, 6, 19]].map(([n, pt, w, d, l, gf, ga], i) => ({ rank: i + 1, team_id: String(100 + i), team_name: n, team_logo: null,
+        points: String(pt), games_played: String(w + d + l), wins: String(w), draws: String(d), losses: String(l), goals_for: String(gf), goals_against: String(ga), goal_difference: (gf - ga > 0 ? "+" : "") + (gf - ga) })) }] }),
+  "calendar.partite_calcio_demo": st("off", { friendly_name: "Partite Pro Valle" }),
 };
+/* partite di Calcio Live (date come le scrive l'integrazione: «gg/mm/aaaa hh:mm») */
+{ const f = (o, h, m = 0) => { const d = new Date(); d.setDate(d.getDate() + o); d.setHours(h, m, 0, 0); const z = n => String(n).padStart(2, "0"); return `${z(d.getDate())}/${z(d.getMonth() + 1)}/${d.getFullYear()} ${z(h)}:${z(m)}`; };
+  const P = (id, o, h, c, hs, as, ospite, st, x = {}) => ({ event_id: id, date: f(o, h, x.min || 0), season_info: "2026-27 Lega Demo", league_name: "Lega Demo", home_team: c, home_abbrev: c.slice(0, 3).toUpperCase(), home_color: "N/A", home_logo: "N/A", home_form: "N/A", home_score: hs,
+    home_statistics: {}, home_record: "", away_team: ospite, away_abbrev: ospite.slice(0, 3).toUpperCase(), away_color: "N/A", away_logo: "N/A", away_form: "N/A", away_score: as, away_statistics: {}, away_record: "",
+    state: st, status: st === "pre" ? "Scheduled" : "Full Time", status_detail: st === "pre" ? (x.tbd ? "1/17 - TBD" : "Sun") : "FT", clock: st === "pre" ? "0'" : "90'+3'", period: st === "pre" ? 0 : 2,
+    venue: x.v || "N/A", venue_city: x.c || "N/A", venue_country: "Italy", broadcast: x.tv || "", attendance: 0, match_details: x.det || [] });
+  ENT["sensor.calciolive_all_mixed_sporting_lago"].a.matches = [
+    P("7001", -24, 15, "Sporting Lago", "2", "0", "Libertas Monte", "post", { v: "Stadio del Lago", c: "Lago" }),
+    P("7002", -17, 20, "Dinamo Fiume", "1", "1", "Sporting Lago", "post", { min: 45 }),
+    P("7003", -10, 18, "Sporting Lago", "0", "1", "Atletico Collina", "post", { v: "Stadio del Lago", c: "Lago" }),
+    P("7004", -6, 20, "Olimpia Piana", "0", "2", "Sporting Lago", "post", { min: 45 }),
+    P("7005", -3, 15, "Sporting Lago", "3", "1", "Union Mare", "post", { v: "Stadio del Lago", c: "Lago", det: ["Goal - 9': Tommaso Riva", "Yellow Card - 27'': Andrea Bassi", "Goal - 51': Tommaso Riva", "Goal - 63': Nicola Greco", "Goal - 88': Pietro Lodi"] }),
+    P("7006", 2, 20, "Sporting Lago", "0", "0", "Virtus Colle", "pre", { min: 45, v: "Stadio del Lago", c: "Lago", tv: "Sky Sport Calcio" }),
+    P("7007", 9, 15, "Pro Valle", "0", "0", "Sporting Lago", "pre", { tbd: true }),
+  ]; }
 /* sole finto: alba alle 7, tramonto alle 18 di oggi */
 { const d0 = new Date(); d0.setHours(0, 0, 0, 0); const al = d0.getTime() + 7*H*1e3, tr = d0.getTime() + 18*H*1e3, n = Date.now(), su = n >= al && n < tr, G = 864e5;
   const f = su ? (n - al) / (tr - al) : 0, el = su ? Math.round(Math.sin(Math.PI * f) * 38 * 10) / 10 : -Math.min(40, Math.round(Math.min(Math.abs(n - tr), Math.abs(n - al - G), Math.abs(n - al)) / 6e4 / 4));
@@ -198,6 +228,8 @@ const EV = {
   "calendar.f1_season_calendar": [{ start: day(4, 14), end: day(4, 16), summary: "GP del Messico" }],
   "calendar.rain_bird_controller_irrigation_schedule": [{ start: day(1, 6), end: day(1, 6, 40), summary: "Programma A" }, { start: day(3, 6), end: day(3, 6, 40), summary: "Programma A" }],
   "calendar.raccolta_differenziata": [{ start: dstr(2), end: dstr(3), summary: "Plastica e Metalli" }, { start: dstr(3), end: dstr(4), summary: "Indifferenziato" }],
+  "calendar.partite_calcio_demo": [{ start: day(-6, 15), end: day(-6, 17), summary: "Virtus Colle 1-2 Pro Valle" }, { start: day(-13, 15), end: day(-13, 17), summary: "Pro Valle 0-0 Aurora Campi" },
+    { start: day(4, 18, 30), end: day(4, 20, 30), summary: "Lega Demo: Pro Valle - Union Mare", location: "Campo di Valle", description: "Diretta su DAZN" }],
 };
 let LAYOUT = JSON.parse(localStorage.getItem("mockLayout") || '{"configured":true,"mode":"auto","energy":{"pv":["sensor.inverter_pv1_power","sensor.inverter_pv2_power","sensor.inverter_pv3_power"]}}');
 const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_sogg/.test(id) ? "soggiorno" : /echo_cucina/.test(id) ? "cucina" : /soggiorno/.test(id) ? "soggiorno" : /^(cover\.(cancello|garage|basculante)|switch\.cancellett|binary_sensor\.cancellett|button\.portone|camera\.(cortile|giardino|campanello)|light\.giardino)/.test(id) ? "esterno" : /corridoio|porta|ariston/.test(id) ? "corridoio" : /cucina/.test(id) ? "cucina" : /lavatric|asciugatric|lavanderia/.test(id) ? "lavanderia" : /forno|frigo|lavastov/.test(id) ? "cucina" : null,
@@ -210,6 +242,7 @@ for (const e of REG.entities) {
   if (/rain_bird|prato_|orto_|siepe|terreno/.test(e.ei)) e.ai = "esterno";
   if (e.ei.includes("rain_bird")) { e.pl = "rainbird"; e.di = "dev_rb"; } else if (e.ei.includes("prato_dietro")) { e.pl = "hydrawise"; e.di = "dev_hw"; }
   else if (e.ei === "valve.orto_gocciolatore") e.pl = "zha"; else if (e.ei === "switch.zona_siepe") e.pl = "mqtt";
+  if (e.ei === "sensor.real_borgo") e.pl = "teamtracker"; else if (e.ei.startsWith("sensor.calciolive_")) e.pl = "calcio_live";
 }
 /* telecamere: mockCam = "webrtc" (predefinito: diretta vera via WebRTC dentro il browser) | "webrtc_ko" (WebRTC fallisce, poi HLS)
    | "hls" (serve /mockhls/, vedi README) | "mjpeg" | "foto". mockCamLog conta gli stream aperti e chiusi. */
@@ -375,7 +408,7 @@ const conn = {
       case "config/floor_registry/list": return localStorage.getItem("mockPiani") ? [{ floor_id: "terra", name: "Piano terra", level: 0 }, { floor_id: "primo", name: "Primo piano", level: 1 }] : [];
       case "recorder/statistic_during_period": return { change: 1.23 };
       case "config/auth/list": return [{ id: "u1", name: "Mario", is_owner: true, is_active: true, group_ids: ["system-admin"] }, { id: "u2", name: "Anna", is_active: true, group_ids: ["system-users"] }];
-      case "get_services": return { dreame_vacuum: { vacuum_clean_segment: {} }, rainbird: { start_irrigation: {} }, hydrawise: { start_watering: {}, suspend: {}, resume: {} } };
+      case "get_services": return { notify: { mobile_app_telefono_demo: {}, persistent_notification: {} }, dreame_vacuum: { vacuum_clean_segment: {} }, rainbird: { start_irrigation: {} }, hydrawise: { start_watering: {}, suspend: {}, resume: {} } };
       case "energy/get_prefs": return { energy_sources: [{ type: "grid", stat_energy_from: "sensor.imp", stat_energy_to: "sensor.exp", number_energy_price: 0.35, number_energy_price_export: 0.044 }, { type: "solar", stat_energy_from: "sensor.prod" }], device_consumption: [] };
       case "recorder/statistics_during_period": { const out = {}; const st = new Date(m.start_time).getTime(), step = m.period === "hour" ? 3600e3 : m.period === "month" ? 30*864e5 : 864e5;
         for (const id of m.statistic_ids) { out[id] = []; for (let x = st, i = 0; x < Date.now(); x += step, i++) out[id].push({ start: x, change: id.includes("prod") ? 8 + 6*Math.sin(i) : id.includes("imp") ? 2 + Math.random()*3 : 3 + Math.random()*4, mean: 21 + 2*Math.sin(i/4), min: 19 + Math.sin(i/4), max: /pv\d?_power/.test(id) ? (ENT[id]?.a?.unit_of_measurement === "kW" ? 2.2 : 2200) : 23 + 2*Math.sin(i/4) }); }

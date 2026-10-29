@@ -69,3 +69,11 @@ Le chiamate REST `/api/config/script|automation/config/…` vengono intercettate
 ```bash
 LS='{"mockPioggiaDomani":"1"}' node tools/mock/shot.mjs irrigazione 1280 1100 irr.png
 ```
+
+**La mia squadra** (0.7.32), squadre inventate: `sensor.real_borgo` è di Team Tracker (`teamtracker`) e gioca **in diretta** (2-1 al 67', `last_play` con gol e cartellini,
+possesso e tiri; il logo punta a un file che non c'è, per provare lo stemma di riserva), `sensor.calciolive_all_mixed_sporting_lago` è di Calcio Live (5 risultati, la prossima tra due giorni,
+una «TBD»), `sensor.calciolive_classifica_lega_demo` è la classifica. `calendar.partite_calcio_demo` («Partite Pro Valle») si usa da solo solo se non c'è altro: provalo togliendo gli altri con `mockEnt`.
+`get_services` ha `notify.mobile_app_telefono_demo` per provare l'automazione «'Nduja · squadra». Per vedere l'animazione del gol cambia `team_score` con `mockStati` mentre la pagina è aperta.
+```bash
+LS='{"nduja_sq_sel":"sq:sporting lago"}' node tools/mock/shot.mjs squadra 1280 1100 squadra.png
+```
