@@ -159,6 +159,25 @@ const ENT = {
   "update.home_assistant_core_update": st("on", { title: "Home Assistant Core", friendly_name: "Core update" }),
   "switch.presa_studio": st("unavailable", { friendly_name: "Presa studio" }),
   "light.striscia_corridoio": st("unavailable", { friendly_name: "Striscia LED corridoio" }),
+  /* Irrigazione (0.7.31): Rain Bird (due zone, ritardo pioggia, calendario), Hydrawise (valvola, in funzione, prossimo ciclo, tempo che manca),
+     valvola Zigbee a goccia, switch Zigbee2MQTT «zona», sensori del terreno, un'automazione d'irrigazione; e due da NON prendere (valvola principale, luce «zona giorno») */
+  "switch.rain_bird_sprinkler_1": st("on", { friendly_name: "Prato davanti" }, 240),
+  "switch.rain_bird_sprinkler_2": st("off", { friendly_name: "Aiuole ingresso" }, 5*H),
+  "number.rain_bird_controller_rain_delay": st("0", { friendly_name: "Rain Bird Rain delay", min: 0, max: 14, step: 1, unit_of_measurement: "d" }),
+  "calendar.rain_bird_controller_irrigation_schedule": st("off", { friendly_name: "Rain Bird Irrigation schedule" }),
+  "valve.prato_dietro": st("closed", { friendly_name: "Prato dietro", device_class: "water", supported_features: 3 }, 20*H),
+  "binary_sensor.prato_dietro_watering": st("off", { friendly_name: "Prato dietro Watering", device_class: "running" }, 20*H),
+  "sensor.prato_dietro_next_cycle": st(new Date(Date.now() + 9.5*H*1e3).toISOString(), { friendly_name: "Prato dietro Next cycle", device_class: "timestamp" }),
+  "sensor.prato_dietro_watering_time": st("0", { friendly_name: "Prato dietro Watering time", unit_of_measurement: "min" }),
+  "switch.prato_dietro_automatic_watering": st("on", { friendly_name: "Prato dietro Automatic watering" }),
+  "switch.prato_dietro_manual_watering": st("off", { friendly_name: "Prato dietro Manual watering" }),
+  "valve.orto_gocciolatore": st("closed", { friendly_name: "Orto a goccia", device_class: "water", supported_features: 3 }, 26*H),
+  "switch.zona_siepe": st("off", { friendly_name: "Zona siepe" }, 30*H),
+  "sensor.umidita_terreno_prato": st("34", { device_class: "moisture", unit_of_measurement: "%", friendly_name: "Umidità terreno prato" }),
+  "sensor.umidita_terreno_orto": st("18", { device_class: "moisture", unit_of_measurement: "%", friendly_name: "Umidità terreno orto" }),
+  "automation.irrigazione_serale": st("on", { friendly_name: "Irrigazione serale", id: "irr1", last_triggered: new Date(Date.now()-3600e3*15).toISOString() }),
+  "valve.acqua_principale": st("open", { friendly_name: "Valvola acqua principale", device_class: "water", supported_features: 3 }),
+  "switch.luce_zona_giorno": st("off", { friendly_name: "Luce zona giorno" }),
 };
 /* sole finto: alba alle 7, tramonto alle 18 di oggi */
 { const d0 = new Date(); d0.setHours(0, 0, 0, 0); const al = d0.getTime() + 7*H*1e3, tr = d0.getTime() + 18*H*1e3, n = Date.now(), su = n >= al && n < tr, G = 864e5;
@@ -177,6 +196,7 @@ const dstr = o => { const d = new Date(); d.setDate(d.getDate()+o); return d.toI
 const EV = {
   "calendar.famiglia": [{ start: day(0, 18, 30), end: day(0, 19, 30), summary: "Calcetto Mario", location: "Campo comunale" }, { start: day(1, 10), end: day(1, 11), summary: "Dentista Anna" }, { start: dstr(3), end: dstr(4), summary: "Compleanno nonna" }],
   "calendar.f1_season_calendar": [{ start: day(4, 14), end: day(4, 16), summary: "GP del Messico" }],
+  "calendar.rain_bird_controller_irrigation_schedule": [{ start: day(1, 6), end: day(1, 6, 40), summary: "Programma A" }, { start: day(3, 6), end: day(3, 6, 40), summary: "Programma A" }],
   "calendar.raccolta_differenziata": [{ start: dstr(2), end: dstr(3), summary: "Plastica e Metalli" }, { start: dstr(3), end: dstr(4), summary: "Indifferenziato" }],
 };
 let LAYOUT = JSON.parse(localStorage.getItem("mockLayout") || '{"configured":true,"mode":"auto","energy":{"pv":["sensor.inverter_pv1_power","sensor.inverter_pv2_power","sensor.inverter_pv3_power"]}}');
@@ -185,6 +205,12 @@ const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_
   pl: /^(media_player|remote)\.tv_soggiorno$/.test(id) ? "samsungtv" : /apple_tv_/.test(id) ? "apple_tv" : /google_tv_/.test(id) ? "androidtv_remote" : id === "media_player.lg_camera" ? "webostv" : id === "remote.harmony_studio" ? "harmony" :
     id.startsWith("media_player.ma_") ? "music_assistant" : id.includes("model_3") ? "tesla_fleet" : id === "media_player.echo_cucina" ? "alexa_media" : id.startsWith("media_player.sonos") ? "sonos" : /^media_player\.(nest|casa_tutta)/.test(id) ? "cast" : undefined,
   di: /tv_soggiorno$/.test(id) && !/apple/.test(id) ? "dev_tv" : /apple_tv_/.test(id) ? "dev_atv" : /google_tv_/.test(id) ? "dev_gtv" : id === "media_player.lg_camera" ? "dev_lg" : id === "media_player.casa_tutta" ? "dev_cgrp" : id.includes("model_3") ? "dev_car" : id.startsWith("camera.campanello") ? "dev_bell" : id.startsWith("camera.giardino") ? "dev_reo" : id.startsWith("camera.cortile") ? "dev_cort" : id.includes("ambrogio") ? "dev_v" : id.includes("mario") ? "dev_g" : id.includes("anna") ? "dev_c" : id.includes("ariston") ? "dev_a" : null })) };
+/* irrigazione: stanza, integrazione e dispositivo */
+for (const e of REG.entities) {
+  if (/rain_bird|prato_|orto_|siepe|terreno/.test(e.ei)) e.ai = "esterno";
+  if (e.ei.includes("rain_bird")) { e.pl = "rainbird"; e.di = "dev_rb"; } else if (e.ei.includes("prato_dietro")) { e.pl = "hydrawise"; e.di = "dev_hw"; }
+  else if (e.ei === "valve.orto_gocciolatore") e.pl = "zha"; else if (e.ei === "switch.zona_siepe") e.pl = "mqtt";
+}
 /* telecamere: mockCam = "webrtc" (predefinito: diretta vera via WebRTC dentro il browser) | "webrtc_ko" (WebRTC fallisce, poi HLS)
    | "hls" (serve /mockhls/, vedi README) | "mjpeg" | "foto". mockCamLog conta gli stream aperti e chiusi. */
 const CAMM = () => localStorage.getItem("mockCam") || "webrtc";
@@ -289,6 +315,27 @@ function mockMA(m) {
     setTimeout(() => window.mockStati?.({ c: { [id]: { "+": { s: e.s, a: e.a } }, [da]: { "+": { s: s.s, a: s.a } } } }), 120); }
   return {};
 }
+function mockIrr(m) {
+  const d = m.service_data || {}, ids = [].concat(m.target?.entity_id || d.entity_id || []), ch = {};
+  const metti = (id, stato, a) => { const e = ENT[id]; if (!e) return; e.s = stato; if (a) e.a = { ...e.a, ...a }; e.lc = Date.now() / 1000; ch[id] = { "+": { s: e.s, a: e.a, lc: e.lc } }; };
+  if (m.domain === "rainbird" && m.service === "start_irrigation") ids.forEach(id => metti(id, "on"));
+  else if (m.domain === "hydrawise" && m.service === "start_watering") ids.forEach(id => { metti(id, "on"); metti(id.replace("binary_sensor.", "valve.").replace(/_watering$/, ""), "open"); metti("sensor.prato_dietro_watering_time", String(d.duration || 15)); });
+  else if (m.domain === "valve") ids.forEach(id => { metti(id, m.service === "open_valve" ? "open" : "closed"); if (id === "valve.prato_dietro") { metti("binary_sensor.prato_dietro_watering", m.service === "open_valve" ? "on" : "off"); if (m.service !== "open_valve") metti("sensor.prato_dietro_watering_time", "0"); } });
+  else if (m.domain === "script" && m.service === "turn_on" && ids.includes("script.nduja_irrigazione")) { const z = d.variables?.zona; if (z?.startsWith("valve.")) metti(z, "open"); else if (z) mockLuci({ service: "turn_on", target: { entity_id: z } }); metti("script.nduja_irrigazione", "on"); }
+  else if (m.domain === "number" && m.service === "set_value") ids.forEach(id => metti(id, String(d.value)));
+  else if (m.domain === "hydrawise") {}
+  else return false;
+  setTimeout(() => window.mockStati?.({ c: ch }), 120); return true;
+}
+/* api REST di Home Assistant (script e automazioni creati dalla plancia): li aggiungo agli stati finti */
+function mockApi(url, o) {
+  const mm = String(url).match(/\/api\/config\/(script|automation)\/config\/([\w-]+)/); if (!mm) return null;
+  const [, tipo, id] = mm, eid = tipo + "." + id, corpo = o?.body ? JSON.parse(o.body) : {};
+  console.log("API", o?.method || "GET", url, o?.body || "");
+  if (o?.method === "DELETE") { delete ENT[eid]; setTimeout(() => window.mockStati?.({ r: [eid] }), 100); }
+  else if (o?.method === "POST") { ENT[eid] = st(tipo === "script" ? "off" : "on", { friendly_name: corpo.alias, id }); setTimeout(() => window.mockStati?.({ a: { [eid]: ENT[eid] } }), 300); }
+  return Promise.resolve(new Response(JSON.stringify({ result: "ok" }), { status: 200, headers: { "Content-Type": "application/json" } }));
+}
 const conn = {
   addEventListener() {}, subscribeEvents() { return Promise.resolve(() => {}); },
   subscribeMessage(cb, m) {
@@ -321,14 +368,14 @@ const conn = {
       case "nduja_dashboard/save_layout": LAYOUT = m.layout; localStorage.setItem("mockLayout", JSON.stringify(LAYOUT)); return { ok: true };
       case "config/entity_registry/list_for_display": return REG;
       case "config/device_registry/list": return [{ id: "dev_cgrp", name: "Tutta la casa", manufacturer: "Google Inc.", model: "Google Cast Group" }, { id: "dev_g", name: "iPhone di Mario" }, { id: "dev_c", name: "iPhone di Anna" }, { id: "dev_a", name: "Ariston" }, { id: "dev_tv", name: "TV soggiorno", manufacturer: "Samsung", model: "QE55 demo" }, { id: "dev_atv", name: "Apple TV soggiorno", manufacturer: "Apple", model: "Apple TV 4K" },
-        { id: "dev_gtv", name: "Google TV cucina", manufacturer: "Google", model: "Chromecast with Google TV" }, { id: "dev_lg", name: "TV camera", manufacturer: "LG", model: "OLED demo" }, ...(localStorage.getItem("mockNoCar") ? [] : [{ id: "dev_car", name: "Model 3", manufacturer: "Tesla", model: "Model 3" }])];
+        { id: "dev_gtv", name: "Google TV cucina", manufacturer: "Google", model: "Chromecast with Google TV" }, { id: "dev_lg", name: "TV camera", manufacturer: "LG", model: "OLED demo" }, { id: "dev_rb", name: "Rain Bird", manufacturer: "Rain Bird", model: "ESP-ME demo" }, { id: "dev_hw", name: "Prato dietro", manufacturer: "Hunter", model: "Hydrawise zona" }, ...(localStorage.getItem("mockNoCar") ? [] : [{ id: "dev_car", name: "Model 3", manufacturer: "Tesla", model: "Model 3" }])];
       case "config/area_registry/list": { const P = localStorage.getItem("mockPiani"), F = { soggiorno: "terra", cucina: "terra", esterno: "terra", corridoio: "primo", lavanderia: "primo" };
         return [{ area_id: "soggiorno", name: "Soggiorno" }, { area_id: "corridoio", name: "Corridoio" }, { area_id: "cucina", name: "Cucina" }, { area_id: "lavanderia", name: "Lavanderia" }, { area_id: "esterno", name: "Esterno" }].map(a => P ? { ...a, floor_id: F[a.area_id] } : a); }
       /* mockPiani: due piani (prova delle stanze divise per piano) */
       case "config/floor_registry/list": return localStorage.getItem("mockPiani") ? [{ floor_id: "terra", name: "Piano terra", level: 0 }, { floor_id: "primo", name: "Primo piano", level: 1 }] : [];
       case "recorder/statistic_during_period": return { change: 1.23 };
       case "config/auth/list": return [{ id: "u1", name: "Mario", is_owner: true, is_active: true, group_ids: ["system-admin"] }, { id: "u2", name: "Anna", is_active: true, group_ids: ["system-users"] }];
-      case "get_services": return { dreame_vacuum: { vacuum_clean_segment: {} } };
+      case "get_services": return { dreame_vacuum: { vacuum_clean_segment: {} }, rainbird: { start_irrigation: {} }, hydrawise: { start_watering: {}, suspend: {}, resume: {} } };
       case "energy/get_prefs": return { energy_sources: [{ type: "grid", stat_energy_from: "sensor.imp", stat_energy_to: "sensor.exp", number_energy_price: 0.35, number_energy_price_export: 0.044 }, { type: "solar", stat_energy_from: "sensor.prod" }], device_consumption: [] };
       case "recorder/statistics_during_period": { const out = {}; const st = new Date(m.start_time).getTime(), step = m.period === "hour" ? 3600e3 : m.period === "month" ? 30*864e5 : 864e5;
         for (const id of m.statistic_ids) { out[id] = []; for (let x = st, i = 0; x < Date.now(); x += step, i++) out[id].push({ start: x, change: id.includes("prod") ? 8 + 6*Math.sin(i) : id.includes("imp") ? 2 + Math.random()*3 : 3 + Math.random()*4, mean: 21 + 2*Math.sin(i/4), min: 19 + Math.sin(i/4), max: /pv\d?_power/.test(id) ? (ENT[id]?.a?.unit_of_measurement === "kW" ? 2.2 : 2200) : 23 + 2*Math.sin(i/4) }); }
@@ -350,7 +397,12 @@ const conn = {
       case "call_service":
         if (m.domain === "calendar" && m.service === "get_events") { const ids = [].concat(m.target.entity_id); return { response: Object.fromEntries(ids.map(id => [id, { events: EV[id] || [] }])) }; }
         if (m.type === "recorder/statistic_during_period") return { change: 1.23 };
-        if (m.domain === "weather") return { response: { [m.target.entity_id]: { forecast: [0,1,2,3,4].map(i => ({ datetime: day(i, 12), condition: i ? "sunny" : "rainy", temperature: 20 + i, templow: 12, precipitation_probability: i ? 0 : 80 })) } } };
+        /* mockPioggiaDomani: domani piove (prova dell'avviso dell'irrigazione) */
+        if (m.domain === "weather") { const pd = localStorage.getItem("mockPioggiaDomani");
+          return { response: { [m.target.entity_id]: { forecast: [0,1,2,3,4].map(i => ({ datetime: day(i, 12), condition: i === 0 || (pd && i === 1) ? "rainy" : i === 3 && pd ? "partlycloudy" : "sunny", temperature: 20 + i, templow: 12,
+            precipitation_probability: i === 0 ? 80 : pd && i === 1 ? 85 : pd && i === 3 ? 20 : 0, precipitation: pd && i === 1 ? 6.5 : 0 })) } } }; }
+        /* irrigazione (0.7.31): Rain Bird, Hydrawise, valvole, script del timer e ritardo pioggia cambiano lo stato finto */
+        if (mockIrr(m)) { console.log("SVC", JSON.stringify(m)); return { response: {} }; }
         /* Music Assistant finta: ricerca in un piccolo catalogo inventato, coda, riproduzione e passaggio della coda */
         if (m.domain === "music_assistant") { const r = mockMA(m); console.log("SVC", JSON.stringify(m)); return { response: r }; }
         if (m.domain === "media_player" && ["media_pause", "media_stop"].includes(m.service)) for (const id of [].concat(m.target?.entity_id || [])) { const e = ENT[id]; if (!e) continue;
@@ -375,7 +427,10 @@ const conn = {
     throw { code: "unknown", message: m.type };
   }
 };
-window.hassConnection = Promise.resolve({ conn });
+window.hassConnection = Promise.resolve({ conn, auth: { accessToken: "finto", expired: false } });
+/* la plancia usa il fetch del suo iframe: intercetto le chiamate REST di Home Assistant */
+addEventListener("DOMContentLoaded", () => { const fr = document.getElementById("fr"); const aggancia = () => { const w = fr.contentWindow, f0 = w.fetch.bind(w); w.fetch = (u, o) => mockApi(u, o) || f0(u, o); };
+  fr.addEventListener("load", aggancia); try { if (fr.contentWindow?.fetch) aggancia(); } catch {} });
 document.querySelector("home-assistant").hass = { themes: { darkMode: (location.hash!="#light") } };
 </script>
 <iframe id="fr" src="/custom_components/nduja_dashboard/frontend/index.html"></iframe></body></html>

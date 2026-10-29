@@ -1,9 +1,13 @@
 /* Prese e dispositivi: prese e interruttori, tapparelle, ventilatori, TV, serrature, robot… divisi per stanza. */
-import { AREAS, t, esc, ents, isLightSwitch, areaOf, areasSorted, entityRow, card, empty, page, UI, isAdmin } from "../core.js";
+import { AREAS, PAGES, LAYOUT, VISTE, t, esc, ents, isLightSwitch, areaOf, areasSorted, entityRow, card, empty, page, UI, isAdmin, utenteCfg } from "../core.js";
 import { item, addBtn } from "../edit.js";
 
 const DOM = ["switch", "cover", "fan", "lock", "humidifier", "valve", "siren", "input_boolean"];
-const tutti = () => DOM.flatMap(d => ents(d)).filter(id => !isLightSwitch(id));   // gli interruttori scelti come luci stanno nella pagina Luci
+/* le zone dell'irrigazione (e gli switch delle sue integrazioni) stanno nella pagina Irrigazione, se c'è e non è spenta */
+function zoneIrrigazione() {
+  try { return PAGES.irrigazione?.show() && LAYOUT.pages?.irrigazione !== false && utenteCfg().pages?.irrigazione !== false ? new Set(VISTE.irrTutte()) : new Set(); } catch { return new Set(); }
+}
+const tutti = () => { const Z = zoneIrrigazione(); return DOM.flatMap(d => ents(d)).filter(id => !isLightSwitch(id) && !Z.has(id)); };   // gli interruttori scelti come luci stanno nella pagina Luci
 function pagina() {
   const L = tutti(), g = {};
   L.forEach(id => (g[areaOf(id) && AREAS[areaOf(id)] ? areaOf(id) : "_"] = g[areaOf(id) && AREAS[areaOf(id)] ? areaOf(id) : "_"] || []).push(id));

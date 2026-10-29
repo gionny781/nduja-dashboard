@@ -61,3 +61,11 @@ spenta (`webostv.button`) e `remote.harmony_studio` è un Harmony senza lettore,
 ```bash
 LS='{"nduja_md_tv":"media_player.tv_soggiorno"}' node tools/mock/shot.mjs media 1280 1000 media.png '[data-act="mdNum"]'
 ```
+
+**Irrigazione** (0.7.31): `switch.rain_bird_sprinkler_1` (Prato davanti, irriga) e `_2` sono di `rainbird` (con `rainbird.start_irrigation`, il ritardo pioggia `number.rain_bird_controller_rain_delay` e il calendario
+dei programmi), `valve.prato_dietro` è di `hydrawise` (sensore «in funzione», prossimo ciclo, tempo che manca; `hydrawise.start_watering`, `suspend`, `resume`), `valve.orto_gocciolatore` (Zigbee) e
+`switch.zona_siepe` (Zigbee2MQTT) usano il timer della plancia; `valve.acqua_principale` e `switch.luce_zona_giorno` NON devono comparire. Con `mockPioggiaDomani` in `LS` domani piove (avviso «vuoi saltare l'irrigazione?»).
+Le chiamate REST `/api/config/script|automation/config/…` vengono intercettate: lo script e l'automazione creati compaiono negli stati finti (`API` nella console).
+```bash
+LS='{"mockPioggiaDomani":"1"}' node tools/mock/shot.mjs irrigazione 1280 1100 irr.png
+```

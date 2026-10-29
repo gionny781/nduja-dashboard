@@ -55,7 +55,7 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.28-dev ✅ | lun 26 ott | Musica: ascolta su questo dispositivo, Alexa, Google, Sonos |
 | 0.7.29-dev ✅ | lun 26 ott | Musica: Music Assistant e «Sposta su…» |
 | 0.7.30-dev ✅ | gio 29 ott | Media: TV, telecomando virtuale, app di streaming |
-| 0.7.31-dev | ven 30 ott | Irrigazione animata |
+| 0.7.31-dev ✅ | gio 29 ott | Irrigazione animata |
 | 0.7.32-dev | dom 1 nov | La mia squadra (calcio) |
 | 0.7.33-dev | mar 3 nov | Formula 1 |
 | 0.7.34-dev | gio 5 nov | Salvaschermo nuovo (della plancia, tuo o automatico) |
