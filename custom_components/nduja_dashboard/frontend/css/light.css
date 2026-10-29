@@ -103,7 +103,9 @@ body.light .m3c{background:radial-gradient(ellipse at 50% 30%,rgba(0,0,0,0.030),
 body.light .m3p{background:rgba(0,0,0,0.015)!important}
 body.light .m3l{color:#1c1c1e!important}
 body.light .au2{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.049)!important}
-body.light .ssc1{color:#1c1c1e!important}
+body.light .sz1g button{background:rgba(0,0,0,0.030)!important;border:1px solid rgba(0,0,0,0.063)!important}
+body.light .sz1h select{background:rgba(0,0,0,0.040)!important}
+body.light .fld1 textarea{background:rgba(0,0,0,0.040)!important}
 body.light .gg1{stroke:rgba(0,0,0,0.056)!important}
 body.light .gl1{fill:rgba(28,28,30,.5)!important}
 body.light .mob1{background:rgba(0,0,0,0.035)!important;border:1px solid rgba(0,0,0,0.056)!important}
@@ -264,7 +266,6 @@ body.light .kpd1 button.ok{background:#0a84ff;color:#fff}
 body.light .mpr1{background:rgba(255,255,255,.75)}body.light .mpr1.lit{background:rgba(255,214,10,.35)}body.light .mpw1{background:rgba(0,0,0,.05)}body.light .mpm1 path{stroke:rgba(28,28,30,.8)}body.light .mpi1>*{background:rgba(0,0,0,.06)}
 body.light .apg1>*{background:rgba(0,0,0,.05)}
 body.light .mpd2{background:rgba(0,0,0,.07)}
-body.light .ss1{background:#000}body.light .ssc1{color:#fff}body.light .ssv1{background:linear-gradient(180deg,rgba(0,0,0,.05) 40%,rgba(0,0,0,.65))}
 body.light .gg1{stroke:rgba(0,0,0,.08)}body.light .gl1{fill:rgba(0,0,0,.5)}
 body.light .mob1{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08)}
 body.light .mpl1{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08)}body.light .mpc1{background:rgba(0,0,0,.07)}body.light .mpc1.big{background:#1c1c1e;color:#fff}body.light .mpa1{background-color:rgba(0,0,0,.05)}body.light .mpc1.on{background:rgba(10,132,255,.3)}

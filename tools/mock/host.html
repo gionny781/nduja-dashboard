@@ -374,9 +374,13 @@ const MS = {
     dir("media-source://media_source/local/Demo A", "Demo A", [], { media_class: "album", thumbnail: "/tools/mock/cover-a.svg" }),
     dir("media-source://media_source/local/Demo B", "Demo B - Onde", [], { media_class: "album", thumbnail: "/tools/mock/cover-b.svg" }),
     dir("media-source://media_source/local/Foto", "Foto", [], { children_media_class: "image" }),
+    dir("media-source://media_source/local/Salvaschermo", "Salvaschermo", [], { children_media_class: "image" }),
     brn("media-source://media_source/local/sigla_01.wav", "sigla_01.wav") ]),
   "media-source://media_source/local/Demo A": dir("media-source://media_source/local/Demo A", "Demo A", ["01 - Alba.wav", "02 - Mezzogiorno.wav", "03 - Sera.wav", "04 - Notte.wav"].map((n, i) => brn("media-source://media_source/local/Demo A/0" + (i + 1), n)), { media_class: "album", thumbnail: "/tools/mock/cover-a.svg" }),
   "media-source://media_source/local/Demo B": dir("media-source://media_source/local/Demo B", "Demo B - Onde", ["Onda lunga.wav", "Onda corta.wav", "Risacca.wav"].map((n, i) => brn("media-source://media_source/local/Demo B/0" + (i + 1), n)), { media_class: "album", thumbnail: "/tools/mock/cover-b.svg" }),
+  /* salvaschermo (0.7.34): foto inventate, disegnate in SVG (una verticale, per provare la foto intera con lo sfondo sfocato) */
+  "media-source://media_source/local/Salvaschermo": dir("media-source://media_source/local/Salvaschermo", "Salvaschermo", ["mare", "monti", "campi", "faro"].map(n => ({ title: n + ".svg", media_class: "image", media_content_type: "image/svg+xml",
+    media_content_id: "media-source://media_source/local/Salvaschermo/foto-" + n + ".svg", can_play: true, can_expand: false, thumbnail: null })), { children_media_class: "image" }),
   "media-source://radio_browser": dir("media-source://radio_browser", "Radio Browser", [
     brn("media-source://radio_browser/radio1", "Radio Demo Uno", { media_class: "channel", media_content_type: "audio/mpeg", thumbnail: "/tools/mock/cover-b.svg" }),
     brn("media-source://radio_browser/radio2", "Radio Demo Due", { media_class: "channel", media_content_type: "audio/mpeg" }) ], { media_class: "app" }),
@@ -489,7 +493,9 @@ const conn = {
       case "camera/stream": return { url: "/mockhls/index.m3u8" };
       case "media_source/browse_media": { const r = MS[m.media_content_id || ""]; if (!r) throw { code: "browse_media_failed", message: "Unknown source" }; return r; }
       case "media_player/browse_media": { if (!m.entity_id.includes("sonos")) return MS[m.media_content_id || ""] || MS[""]; const r = SONOS[m.media_content_id || ""]; if (!r) throw { code: "browse_media_failed", message: "?" }; return r; }
-      case "media_source/resolve_media": console.log("RESOLVE", JSON.stringify(m)); return { url: brano(m.media_content_id), mime_type: "audio/wav" };
+      case "media_source/resolve_media": console.log("RESOLVE", JSON.stringify(m));
+        if (/\/Salvaschermo\//.test(m.media_content_id)) return { url: "/tools/mock/" + m.media_content_id.split("/").pop(), mime_type: "image/svg+xml" };
+        return { url: brano(m.media_content_id), mime_type: "audio/wav" };
       case "auth/sign_path": return { path: m.path + "?authSig=finto" };
       case "get_config": return { version: "2026.10.1", location_name: "Casa" };
       case "config/label_registry/list": return JSON.parse(localStorage.getItem("mockLabels") || "[]");

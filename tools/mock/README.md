@@ -85,3 +85,11 @@ Con `mockF1Live` = `gara` (gara in corso con la Safety Car, ordine in pista, dir
 ```bash
 LS='{"mockF1Live":"gara"}' node tools/mock/shot.mjs formula1 1280 1500 f1.png
 ```
+
+**Salvaschermo** (0.7.34): nei Media c'è la cartella «Salvaschermo» con quattro foto inventate (`foto-*.svg`, una verticale). Le scelte sono in `localStorage`
+(`nduja_ssMin`, `nduja_ssStile` = `auto|orologio|cielo|casa|notte|foto`, `nduja_ssDir`, `nduja_ssFonte`, `nduja_ssCfg`…); «▶ Prova» lo apre subito. Con `ORA` l'ora resta ferma
+(il sole finto la segue): utile per il cielo all'alba, al tramonto e di notte. Il meteo si cambia con `mockEnt`.
+```bash
+ORA="2026-10-30T17:45" LS='{"nduja_ssMin":"5","nduja_ssStile":"cielo"}' node tools/mock/shot.mjs impostazioni 1280 800 cielo.png '[data-act="ssProva"]'
+LS='{"nduja_ssMin":"5","nduja_ssStile":"foto","nduja_ssDir":"media-source://media_source/local/Salvaschermo"}' node tools/mock/shot.mjs impostazioni 1280 800 foto.png '[data-act="ssProva"]'
+```

@@ -10,7 +10,7 @@ export const FLOORS = {};     // floor_id -> { name, level, icon }
 export const DEVICES = {};    // device_id -> { name, area, model, maker }
 export const ACT = {};        // azioni: data-act="nome"
 export const CHG = {};        // azioni su change (slider, select)
-export const UI = { page: null, sheet: null, user: null, opt: {}, version: "", edit: false };
+export const UI = { page: null, sheet: null, user: null, opt: {}, version: "", edit: false, ss: false };
 /* scelte dell'utente, salvate in Home Assistant e uguali su tutti i dispositivi:
    { configured, mode:"auto"|"manual", include:[] (manuale), exclude:[] (automatica), hiddenAreas:[], areaOrder:[],
      names:{id:nome}, rooms:{id:area}, sensors:{area:{temp,hum}}, weather, pages:{id:false}, customPages:[{id,title,icon,items}],
@@ -438,7 +438,7 @@ export function render(now) {
   if (pending && !now) return; pending = true;
   requestAnimationFrame(() => {
     pending = false;
-    if (!conn || !UI.page) return;
+    if (!conn || !UI.page || UI.ss) return;   // salvaschermo acceso: sotto non si vede niente (salvaschermo.js)
     HOOKS.forEach(f => { try { f(); } catch (e) { console.error(e); } });
     const P = PAGES[UI.page]; if (!P) return go("home");
     document.body.classList.toggle("editing", UI.edit); document.body.classList.toggle("nonav", !!P.noNav); applyTheme(); applyNav();

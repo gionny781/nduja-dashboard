@@ -3,6 +3,21 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.34-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+- 🇮🇹 **🌙 Salvaschermo nuovo** (⚙️ Impostazioni → Questo dispositivo → Salvaschermo → «Personalizza»), con stili disegnati per 'Nduja: **Orologio** rifinito (ora grande, data, un alone che segue il sole), **Cielo vivo** (i colori del cielo seguono il sole; nuvole, pioggia, neve, grandine, nebbia e lampi dal meteo di casa; di notte le stelle e la **luna con la sua fase vera**; sotto le colline con la casetta che accende la finestra al buio), **Casa** (pannelli che si alternano: meteo con le previsioni, temperatura delle stanze, persone, prossimi impegni e consumi), **Minimal notturno** (nero, ora grande in un arancio tenue, per la camera da letto) e **Foto**.
+- 🇮🇹 **Foto da dove vuoi**: una cartella dei Media di Home Assistant, **un indirizzo** di immagine o **GIF** (`/local/…`) o **un elenco di indirizzi**, con il controllo che i file esistano. Le foto molto più alte o più larghe dello schermo si vedono intere, con sotto la stessa foto sfocata.
+- 🇮🇹 **Per ogni stile**: velocità del cambio (foto, pannelli, nuvole, spostamento dell'ora), **dissolvenza o movimento lento** (effetto Ken Burns per le foto) e le **informazioni da mostrare sopra**: ora, meteo, temperatura di casa, persone in casa, prossimo impegno.
+- 🇮🇹 **✨ Automatico**: di giorno foto o cielo vivo, di notte il minimal scuro, con l'**orario della notte** regolabile; il cambio avviene in dissolvenza.
+- 🇮🇹 **Anteprima dal vivo** nelle Impostazioni e «Prova a tutto schermo»; **attenuazione notturna** degli stili chiari; si sveglia al primo tocco.
+- 🇮🇹 **Leggero**: si ridisegna al massimo ogni 20 secondi, solo animazioni CSS lente, tutto fermo quando la scheda non si vede e con «Riduci movimento»; mentre è acceso la plancia sotto non si ridisegna. Le scelte restano per dispositivo e quelle di prima (minuti, orologio, cartella delle foto) restano valide.
+- 🇬🇧 **🌙 New screensaver** (⚙️ Settings → This device → Screensaver → «Customize»), with styles drawn for 'Nduja: a refined **Clock** (big time, date, a glow that follows the sun), **Live sky** (sky colours follow the sun; clouds, rain, snow, hail, fog and lightning from your home weather; stars at night and the **moon with its real phase**; below, the hills with a little house whose window lights up after dark), **Home** (rotating panels: weather with the forecast, room temperatures, people, next events and energy), **Night minimal** (black, big time in a soft orange, for the bedroom) and **Photos**.
+- 🇬🇧 **Photos from wherever you like**: a Home Assistant Media folder, **one image or GIF address** (`/local/…`) or **a list of addresses**, checking that the files exist. Photos much taller or wider than the screen are shown whole, over a blurred copy.
+- 🇬🇧 **For each style**: change speed (photos, panels, clouds, how often the time moves), **fade or slow motion** (Ken Burns for photos) and the **information shown on top**: time, weather, home temperature, people home, next event.
+- 🇬🇧 **✨ Automatic**: photos or live sky by day, the dark minimal at night, with adjustable **night hours**; it switches with a fade.
+- 🇬🇧 **Live preview** in Settings and «Try full screen»; **night dimming** of the bright styles; wakes on the first touch.
+- 🇬🇧 **Light**: it redraws at most every 20 seconds, only slow CSS animations, everything stops when the tab is hidden and with «Reduce motion»; while it's on, the dashboard underneath doesn't redraw. Choices stay per device and the previous ones (minutes, clock, photo folder) keep working.
+
 ## 0.7.33-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 - 🇮🇹 **🏎️ Formula 1**, pagina nuova: compare da sola se in Home Assistant c'è **F1 Sensor** (HACS), un **calendario della Formula 1** («Gran Premio d'Italia - Qualifiche», «… - Gara») o **Team Tracker** con lo sport «racing». Altrimenti in ⚙️ Impostazioni → Personalizza → «Formula 1» (o con ✏️) scegli una fonte, con la spiegazione di cosa installare.

@@ -72,7 +72,7 @@ function stringhe(id) {
   const altre = potenze().filter(x => x !== id && REG[x]?.device === dev && /pv\s?_?[2-9]\b|pv[2-9]|string.?[2-9]|stringa.?[2-9]|mppt.?[2-9]/i.test(x + " " + nm(x)));
   return [id, ...altre];
 }
-function letture() {
+export function letture() {
   const s = sensori(), somma = (k, primo) => { const L = scelti(k).length ? scelti(k) : primo ? [primo] : []; const v = L.map(W).filter(x => x != null); return v.length ? v.reduce((a, x) => a + x, 0) : null; };
   const g = somma("grid", s.grid), b = somma("battery", s.battery);
   const pvL = s.pv ? stringhe(s.pv).map(W).filter(v => v != null) : [], pv = s.pv ? Math.max(0, pvL.reduce((a, v) => a + v, 0)) : null;
@@ -97,7 +97,7 @@ export const oggi = id => {
   const v = statOggi(id);
   return v != null ? v : null;
 };
-function totali() {
+export function totali() {
   const P = prefs(), src = P.energy_sources || [], sum = ids => { const v = ids.map(oggi).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) : null; };
   const grid = src.filter(s => s.type === "grid"), sol = src.filter(s => s.type === "solar"), bat = src.filter(s => s.type === "battery");
   const own = k => scelti(k).length ? sum(scelti(k)) : undefined;

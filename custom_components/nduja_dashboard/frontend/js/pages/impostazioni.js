@@ -2,7 +2,7 @@
    Si parte da tutto acceso e si toglie quello che non serve; le scelte si salvano in Home Assistant
    (valgono su tutti i dispositivi) e solo un amministratore può cambiarle. */
 import { scegli, isTemp, isHum, cambia } from "../edit.js";
-import { ssMin, ssStile, ssDir } from "../salvaschermo.js";
+import { ssMin, ssVoce } from "../salvaschermo.js";
 import { schedeHome } from "./home.js";
 import { controllaCard } from "../controlla.js";
 import { S, UI, AREAS, FLOORS, REG, ACT, CHG, LAYOUT, PAGES, t, LOC, esc, nm, ok, attr, allEnts, shortName, climateSensors,
@@ -149,9 +149,8 @@ function dispositivo() {
     <div><b>${t("Barra di navigazione", "Navigation bar")}</b>${seg("navMode", navMode(), [["fixed", t("Sempre visibile", "Always visible")], ["auto", t("A scomparsa", "Auto-hide")]])}
       <small class="muted">${t("A scomparsa: compare avvicinandoti al bordo, toccando la linguetta o scorrendo verso l'alto.", "Auto-hide: it appears when you move to the edge, tap the handle or scroll up.")}</small></div>
     <div><b>${t("Salvaschermo", "Screensaver")}</b>${seg("ssMin", String(ssMin()), [["0", t("Spento", "Off")], ["1", "1 min"], ["5", "5 min"], ["10", "10 min"], ["30", "30 min"]])}
-      ${ssMin() ? `<div style="margin-top:6px">${seg("ssStile", ssStile(), [["orologio", "🕐 " + t("Orologio", "Clock")], ["foto", "🖼️ " + t("Foto", "Photos")]])}</div>
-      <div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap">${ssStile() === "foto" ? `<button class="btn sm" data-act="ssDir">📁 ${ssDir() ? esc(decodeURIComponent(ssDir().split("/").pop() || "")) : t("Scegli la cartella", "Choose folder")}</button>` : ""}<button class="btn sm" data-act="ssProva">▶ ${t("Prova", "Try")}</button></div>` : ""}
-      <small class="muted">${t("Dopo qualche minuto senza tocchi: orologio grande, meteo e temperatura di casa, oppure le tue foto. Si sveglia al tocco.", "After a few minutes without touches: big clock, weather and home temperature, or your photos. Wakes on touch.")}</small></div>
+      ${ssMin() ? ssVoce() : ""}
+      <small class="muted">${t("Dopo qualche minuto senza tocchi: orologio, cielo vivo, la tua casa, un minimal per la notte o le tue foto, oppure «Automatico». Si sveglia al tocco.", "After a few minutes without touches: clock, live sky, your home, a night minimal or your photos, or «Automatic». Wakes on touch.")}</small></div>
     <div><b>${t("Modalità chiosco", "Kiosk mode")}</b>${seg("kioskSet", chiosco() ? "1" : "0", [["0", t("Spenta", "Off")], ["1", "🖥️ " + t("Attiva", "On")]])}
       <small class="muted">${t("Nasconde la barra laterale e l'intestazione di Home Assistant su questo dispositivo, a ogni apertura. Il pulsante ⛶ in alto mette a tutto schermo (dove il browser lo permette).", "Hides Home Assistant's sidebar and header on this device, every time. The ⛶ button at the top goes full screen (where the browser allows it).")}</small></div></div></section>`;
 }
