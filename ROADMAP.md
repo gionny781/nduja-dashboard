@@ -73,6 +73,9 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.46-dev | dom 15 nov | Piante e giardino |
 | 0.7.47-dev | mar 17 nov | Guida all'installazione illustrata e controllo finale |
 | 0.7.48-dev | gio 19 nov | In auto: comandi per CarPlay e Android Auto |
+| 0.7.49-dev | sab 21 nov | Autonomia (1): tutto regolabile dalla plancia — da Aggiornamenti a Energia |
+| 0.7.50-dev | lun 23 nov | Autonomia (2): tutto regolabile dalla plancia — da Faccende in poi |
+| 0.7.51-dev | mer 25 nov | «Cosa puoi aggiungere»: la plancia dice cosa manca e come attivarlo |
 
 ## Dopo
 - 0.8.0 — versione ufficiale con tutte le anteprime, guida COME_INSTALLARE con foto, ritocchi
