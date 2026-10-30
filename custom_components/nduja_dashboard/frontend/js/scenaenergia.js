@@ -4,7 +4,8 @@
    transform, opacity e stroke-dashoffset, pochi elementi, fermo con prefers-reduced-motion.
    I colori del cielo e della casa seguono il sole (sun.sun: elevation, rising, next_rising, next_setting);
    il meteo di casa (weatherEnt) aggiunge nuvole, pioggia, neve, grandine, nebbia, vento e lampi.
-   scena(d) riceve da energia.js i dati già letti e restituisce l'HTML: svg + etichette (sul telefono, tessere sotto). */
+   scena(d) riceve da energia.js i dati già letti e restituisce l'HTML: svg + etichette (sul telefono, tessere sotto).
+   La usa anche la pagina Meteo (d.meteo: solo cielo, colline e casa, senza il cerchio dei consumi; d.w: il meteo da mostrare). */
 import { S, t, esc, attr, hhmm, weatherEnt, WX } from "./core.js";
 
 /* ---------- geometrie: largo (tablet e PC) e stretto (telefono) ---------- */
@@ -60,8 +61,8 @@ export function sole() {
 
 /* ---------- meteo ---------- */
 /** com'è il cielo: nubi (quante), cop (copertura 0-1), grigio (quanto si spegne il cielo), cupo (nuvole scure), cosa cade, lampi, nebbia, vento */
-function meteo() {
-  const w = weatherEnt(), st = w && S[w] ? S[w].state : "";
+function meteo(w = weatherEnt()) {
+  const st = w && S[w] ? S[w].state : "";
   const M = {
     sunny: [0, 0, 0, 0], "clear-night": [0, 0, 0, 0], partlycloudy: [3, .3, .08, 0], cloudy: [5, .8, .42, .25], fog: [2, .75, .5, .15],
     rainy: [5, .9, .55, .6, "pioggia"], pouring: [6, 1, .66, .8, "rovesci"], lightning: [5, .9, .66, .85], "lightning-rainy": [6, 1, .72, .9, "pioggia"],
@@ -121,11 +122,12 @@ const traliccio = () => `<path class="tr" d="M-24 0L-7 -150M24 0L7 -150M-7 -150H
   <path class="tr is" d="M-28 -138v7M28 -138v7M-22 -116v7M22 -116v7"/>`;
 
 /* ---------- la scena ---------- */
-/** d = { stretto, pv, haPv, rete, haRete, bat, haBat, soc, casa, F (ripartizione, energia.js), auto (ricarica, auto.js), picco (W), titolo }
+/** d = { stretto, pv, haPv, rete, haRete, bat, haBat, soc, casa, F (ripartizione, energia.js), auto (ricarica, auto.js), picco (W), titolo,
+         meteo (pagina Meteo: niente cerchio dei consumi), w (entità meteo, se non è quella di casa) }
     → { html, sole, meteo, g (geometria) } */
 export function scena(d) {
   const g = d.stretto ? GEO.stretto : GEO.largo, { W, H, hz, k } = g, c = g.casa;
-  const sl = sole(), mt = meteo(), el = sl.el, F = d.F || {};
+  const sl = sole(), mt = meteo(d.w || weatherEnt()), el = sl.el, F = d.F || {};
   /* colori del cielo: notte → crepuscolo → alba o tramonto → giorno */
   const alto = scala([[-12, "#060d1f"], [-4, "#1d2a57"], [3, "#4a68b4"], [12, "#2f7ed8"]], el);
   const basso = scala([[-12, "#16223f"], [-4, sl.sale ? "#c98a73" : "#b8675d"], [3, sl.sale ? "#ffbf7d" : "#ff9563"], [12, "#a8dbff"]], el);
@@ -264,7 +266,7 @@ export function scena(d) {
     <g class="cvv">${cavi}</g>
     <g class="col">${colline}</g>
     <g class="ca">${casa}</g><g class="pa">${palo}</g><g class="ba">${batteria}</g><g class="au">${autoH}</g>
-    <g class="ln${d.stretto ? " tl" : ""}">${linee}</g><g class="hu">${hubH}</g>
+    <g class="ln${d.stretto ? " tl" : ""}">${linee}</g><g class="hu">${d.meteo ? "" : hubH}</g>
     <g class="mt">${nebbia}${vento}${cadute}${lampi}</g>
   </svg>`;
   return { html, sole: sl, meteo: mt, g };

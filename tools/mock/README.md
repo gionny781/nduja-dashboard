@@ -141,3 +141,12 @@ Con `mockNoScadenze` la lista non c'è (prova di «Crea la lista Scadenze»: il 
 node tools/mock/shot.mjs scadenze 1280 1000 scadenze.png
 LS='{"mockNoScadenze":"1"}' node tools/mock/shot.mjs scadenze 390 844 crea.png '[data-act="scCrea"]'
 ```
+
+**Meteo** (0.7.41), dati inventati: `weather.forecast_casa` ha tutti gli attributi (vento con direzione e raffiche, pressione, punto di rugiada, UV, visibilità; la percepita manca, così si vede quella calcolata)
+e risponde a `get_forecasts` con 48 ore (`hourly`) e 10 giorni (`daily`); `weather.f1_weather` non ha previsioni. Stazione Ecowitt finta in Esterno (`sensor.stazione_meteo_*`: temperatura, umidità, pioggia di oggi e della settimana,
+intensità, vento, raffica, direzione, pressione), `binary_sensor.meteoalarm` con un'allerta arancione per vento e `camera.radar_pioggia` (RainViewer) con `radar-demo.svg`.
+Con `mockAllerta` = `gialla`, `rossa` o `no`; `mockNoStazione` toglie la stazione (resta la sonda esterna della caldaia), `mockNoRadar` il radar. Il meteo guardato è in `nduja_meteoEnt`, 24/48 ore in `nduja_meteoOre`.
+```bash
+ORA="2026-10-30T15:20" node tools/mock/shot.mjs meteo 1280 2600 meteo.png
+LS='{"mockAllerta":"rossa","mockNoRadar":"1"}' node tools/mock/shot.mjs meteo 390 844 tel.png '[data-act="mtCfg"]'
+```

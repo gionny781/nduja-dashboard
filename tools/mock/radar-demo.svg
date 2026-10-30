@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <!-- radar inventato per le prove della pagina Meteo (0.7.41): costa, fiume e nuvole di pioggia disegnate a mano -->
+  <rect width="400" height="300" fill="#1d2a24"/>
+  <path d="M0 0H160C150 40 175 70 160 110C148 140 170 170 150 210C138 240 150 270 140 300H0Z" fill="#14324a"/>
+  <path d="M400 40C340 60 300 50 260 90C230 120 250 160 215 190C190 215 200 260 180 300" fill="none" stroke="#2e5d78" stroke-width="3"/>
+  <g fill="none" stroke="#3b4a41" stroke-width="1"><path d="M0 75H400M0 150H400M0 225H400M100 0V300M200 0V300M300 0V300"/></g>
+  <g opacity=".85">
+    <path d="M205 40C250 20 320 35 335 75C352 120 300 150 255 140C215 132 170 110 180 75C185 58 192 46 205 40Z" fill="#30d158" fill-opacity=".55"/>
+    <path d="M235 62C265 52 300 66 302 90C304 112 276 122 252 115C230 108 215 92 220 78C222 70 228 65 235 62Z" fill="#ffd60a" fill-opacity=".75"/>
+    <path d="M258 78C270 74 284 82 283 93C282 102 270 106 261 102C252 98 250 85 258 78Z" fill="#ff453a" fill-opacity=".85"/>
+    <path d="M60 190C95 170 150 185 160 215C170 245 130 262 95 255C62 248 40 230 45 210C47 200 52 194 60 190Z" fill="#30d158" fill-opacity=".45"/>
+    <path d="M92 205C110 198 132 208 132 222C132 236 115 241 100 238C86 235 80 221 84 213C86 209 88 207 92 205Z" fill="#64d2ff" fill-opacity=".7"/>
+  </g>
+  <g transform="translate(212 168)"><circle r="9" fill="none" stroke="#f5f7fb" stroke-width="2"/><circle r="3" fill="#f5f7fb"/></g>
+  <text x="226" y="186" fill="#f5f7fb" font-family="sans-serif" font-size="12" font-weight="700">Casa</text>
+  <text x="392" y="292" fill="#f5f7fb" fill-opacity=".7" font-family="sans-serif" font-size="10" text-anchor="end">radar di prova · 'Nduja</text>
+</svg>

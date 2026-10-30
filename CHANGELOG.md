@@ -3,6 +3,23 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.41-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+- 🇮🇹 **🌦️ Meteo**, pagina nuova con il meteo di casa (quello scelto in Home → ✏️). Con **📍** guardi un altro meteo su questo dispositivo.
+- 🇮🇹 **Adesso**: la scena animata dell'Energia (sole, luna, nuvole, pioggia, neve, temporale, giorno e notte) con temperatura, cielo, massima e minima; una riga dice quando arriva o smette la pioggia. Sotto le tessere **percepita** (calcolata se il meteo non la dà), **umidità** con il punto di rugiada, **vento** con la bussola, le raffiche e il nome del vento, **pressione**, **UV** con il livello, **visibilità**, **alba e tramonto** con l'arco del sole. Compare solo quello che il tuo meteo fornisce.
+- 🇮🇹 **Previsioni**: **ora per ora** per 24 o 48 ore con un grafico di temperatura e probabilità di pioggia (giorno e notte; sul PC passa sopra un'ora per i dettagli); **prossimi giorni** fino a 10 con le barre minima-massima colorate e la pioggia prevista.
+- 🇮🇹 **Sensori di casa**: la tua stazione meteo o i sensori esterni (temperatura, umidità, pluviometro, intensità della pioggia, anemometro, raffiche, direzione, pressione, UV) accanto al valore della previsione; toccane uno per il grafico. Li trova da sola; gli amministratori con ⚙️ li cambiano.
+- 🇮🇹 **Allerte**: Meteoalarm, Protezione Civile, DWD, Météo-France, NWS e simili in evidenza con il colore del livello (gialla, arancione, rossa) e fino a quando valgono. **Negli Avvisi della Home** da arancione in su: il livello (o «Mai») lo scelgono gli amministratori in ⚙️, dove si aggiungono o tolgono le fonti.
+- 🇮🇹 **Radar pioggia**: compare solo se c'è una telecamera radar in Home Assistant (per esempio RainViewer) o se un amministratore scrive l'indirizzo di un'immagine, con ogni quanti minuti ricaricarla. Nient'altro viene caricato da internet.
+- 🇮🇹 In Home la scheda Meteo ha **«Dettagli ›»** per aprire la pagina.
+- 🇬🇧 **🌦️ Weather**, a new page with your home weather (the one chosen in Home → ✏️). With **📍** you look at another weather source on this device.
+- 🇬🇧 **Now**: the Energy animated scene (sun, moon, clouds, rain, snow, storm, day and night) with temperature, sky, high and low; one line tells you when rain starts or stops. Below, tiles for **feels like** (estimated if the weather doesn't give it), **humidity** with dew point, **wind** with compass, gusts and the wind's name, **pressure**, **UV** with its level, **visibility**, **sunrise and sunset** with the sun's arc. Only what your weather provides is shown.
+- 🇬🇧 **Forecast**: **hour by hour** for 24 or 48 hours with a temperature and chance-of-rain chart (day and night; on a PC hover an hour for details); **next days** up to 10 with coloured min-max bars and expected rain.
+- 🇬🇧 **Home sensors**: your weather station or outdoor sensors (temperature, humidity, rain gauge, rain rate, anemometer, gusts, direction, pressure, UV) next to the forecast value; tap one for its chart. Found automatically; admins change them with ⚙️.
+- 🇬🇧 **Warnings**: Meteoalarm, Civil Protection, DWD, Météo-France, NWS and similar, highlighted in their level's colour (yellow, orange, red) with how long they last. **In Home Alerts** from orange up: admins choose the level (or «Never») in ⚙️, where sources are added or removed.
+- 🇬🇧 **Rain radar**: shown only if there's a radar camera in Home Assistant (for example RainViewer) or an admin enters an image address, with how often to reload it. Nothing else is loaded from the internet.
+- 🇬🇧 On Home the Weather card has **«Details ›»** to open the page.
+
 ## 0.7.40-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 - 🇮🇹 **⏰ Scadenze**, pagina nuova: bollette, tagliando e revisione, assicurazione, bollo, visite, compleanni, abbonamenti, garanzie… divise in **Scadute**, **Oggi**, **Prossimi 7 giorni** e **Più avanti** (e «Senza data»), ognuna con il foglietto del calendario, la categoria e l'importo.

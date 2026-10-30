@@ -191,3 +191,6 @@ body.light .sc1dt{background:#fff!important;box-shadow:0 1px 4px rgba(31,45,80,.
 body.light .sc1dt i{color:#fff!important;text-shadow:0 1px 1px rgba(0,0,0,.18)}
 body.light .sc1q.domani{color:#a57c00}body.light .sc1q.oggi{color:#d27400}body.light .sc1q.ritardo,body.light .sc1gh.scadute,body.light .sc1h .tx>span b.r{color:#d70015}
 body.light .sc1gh.oggi,body.light .sc1h .tx>span b.o{color:#d27400}
+/* meteo (0.7.41): numeri del grafico orario più scuri sul chiaro */
+body.light .mt1h .tv{filter:brightness(.78) saturate(1.3)}
+body.light .mt1d .db u,body.light .mt1uv i{border-color:#3a3a3c}

@@ -308,6 +308,19 @@ body.light .sc1zi{background:rgba(0,0,0,0.030)!important}
 body.light .sc1cb i{background:rgba(0,0,0,0.040)!important}
 body.light .sc1cats button{background:rgba(0,0,0,0.030)!important;border:1px solid rgba(0,0,0,0.056)!important}
 body.light .sc1cats button:hover{background:rgba(0,0,0,0.055)!important}
+body.light .mt1k{background:rgba(0,0,0,0.028)!important;border:1px solid rgba(0,0,0,0.042)!important}
+body.light .mt1bar{background:rgba(0,0,0,0.045)!important}
+body.light .mt1bs .o{fill:rgba(28,28,30,.05)!important;stroke:rgba(0,0,0,0.098)!important}
+body.light .mt1pg .tr{stroke:rgba(0,0,0,0.084)!important}
+body.light .mt1sa .or{stroke:rgba(0,0,0,0.126)!important}
+body.light .mt1h g:hover .hz{fill:rgba(28,28,30,.04)!important}
+body.light .mt1h .mz{stroke:rgba(0,0,0,0.112)!important}
+body.light .mt1h .bp{stroke:rgba(0,0,0,0.070)!important}
+body.light .mt1d{border-bottom:1px solid rgba(0,0,0,0.042)!important}
+body.light .mt1d .db{background:rgba(0,0,0,0.040)!important}
+body.light .mt1sr{background:rgba(0,0,0,0.028)!important;border:1px solid rgba(0,0,0,0.042)!important}
+body.light .mt1sr .tx b i{background:rgba(0,0,0,0.040)!important}
+body.light .mt1a{border:1px solid rgba(0,0,0,0.056)!important}
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
 body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
@@ -501,4 +514,7 @@ body.light .sc1dt{background:#fff!important;box-shadow:0 1px 4px rgba(31,45,80,.
 body.light .sc1dt i{color:#fff!important;text-shadow:0 1px 1px rgba(0,0,0,.18)}
 body.light .sc1q.domani{color:#a57c00}body.light .sc1q.oggi{color:#d27400}body.light .sc1q.ritardo,body.light .sc1gh.scadute,body.light .sc1h .tx>span b.r{color:#d70015}
 body.light .sc1gh.oggi,body.light .sc1h .tx>span b.o{color:#d27400}
+/* meteo (0.7.41): numeri del grafico orario più scuri sul chiaro */
+body.light .mt1h .tv{filter:brightness(.78) saturate(1.3)}
+body.light .mt1d .db u,body.light .mt1uv i{border-color:#3a3a3c}
 

@@ -46,7 +46,9 @@ const ENT = {
   "sensor.iphone_di_anna_battery_level": st("14", { device_class: "battery", unit_of_measurement: "%", friendly_name: "iPhone di Anna Battery Level" }),
   "sensor.iphone_di_anna_battery_state": st("Not Charging", { friendly_name: "iPhone di Anna Battery State" }),
   "weather.f1_weather": st("sunny", { friendly_name: "F1 Weather", temperature: 34, humidity: 30 }),
-  "weather.forecast_casa": st("rainy", { friendly_name: "Forecast Casa", temperature: 19, humidity: 80, wind_speed: 12, wind_speed_unit: "km/h" }),
+  "weather.forecast_casa": st("rainy", { friendly_name: "Forecast Casa", temperature: 19, humidity: 80, wind_speed: 12, wind_speed_unit: "km/h", wind_bearing: 315, wind_gust_speed: 27.4,
+    pressure: 1008.4, pressure_unit: "hPa", dew_point: 15.4, cloud_coverage: 92, uv_index: 1, visibility: 9.5, visibility_unit: "km", temperature_unit: "°C", precipitation_unit: "mm",
+    supported_features: 3, attribution: "Dati meteo inventati per le prove di 'Nduja" }),
   "light.soggiorno": st("on", { friendly_name: "Lampadario soggiorno", brightness: 200, color_mode: "color_temp", supported_color_modes: ["color_temp"], color_temp_kelvin: 2900, min_color_temp_kelvin: 2200, max_color_temp_kelvin: 6500, rgb_color: [255, 176, 102] }),
   "light.cucina": st("off", { friendly_name: "Luce cucina", supported_color_modes: ["onoff"] }),
   /* luci 0.7.27: colori, effetti, gruppo (giardino), interruttore che comanda una luce (cantina) */
@@ -427,6 +429,25 @@ const F1T = (() => { const q = Math.round((Date.now() + 2.25 * 3600e3) / 3e5) * 
   if (localStorage.getItem("mockF1Solo") === "cal") for (const id of Object.keys(ENT)) if (/^(sensor|binary_sensor)\.f1_/.test(id)) delete ENT[id];
 }
 if (localStorage.getItem("mockNoMA")) for (const id of Object.keys(ENT)) if (id.startsWith("media_player.ma_")) delete ENT[id];
+/* meteo (0.7.41), dati inventati: stazione meteo di casa (Ecowitt finta, in Esterno), allerta Meteoalarm arancione per vento e radar RainViewer (radar-demo.svg).
+   mockNoStazione = niente stazione; mockAllerta = "gialla" | "rossa" | "no"; mockNoRadar = niente telecamera radar */
+if (!localStorage.getItem("mockNoStazione")) Object.assign(ENT, {
+  "sensor.stazione_meteo_temperatura_esterna": st("17.6", { friendly_name: "Stazione meteo Temperatura esterna", device_class: "temperature", unit_of_measurement: "°C", state_class: "measurement" }),
+  "sensor.stazione_meteo_umidita_esterna": st("84", { friendly_name: "Stazione meteo Umidità esterna", device_class: "humidity", unit_of_measurement: "%" }),
+  "sensor.stazione_meteo_pioggia_giornaliera": st("3.2", { friendly_name: "Stazione meteo Pioggia giornaliera", device_class: "precipitation", unit_of_measurement: "mm" }),
+  "sensor.stazione_meteo_pioggia_settimanale": st("11.8", { friendly_name: "Stazione meteo Pioggia settimanale", device_class: "precipitation", unit_of_measurement: "mm" }),
+  "sensor.stazione_meteo_intensita_pioggia": st("1.4", { friendly_name: "Stazione meteo Intensità pioggia", device_class: "precipitation_intensity", unit_of_measurement: "mm/h" }),
+  "sensor.stazione_meteo_vento": st("9.4", { friendly_name: "Stazione meteo Vento", device_class: "wind_speed", unit_of_measurement: "km/h" }),
+  "sensor.stazione_meteo_raffica": st("22.3", { friendly_name: "Stazione meteo Raffica", device_class: "wind_speed", unit_of_measurement: "km/h" }),
+  "sensor.stazione_meteo_direzione_vento": st("302", { friendly_name: "Stazione meteo Direzione vento", device_class: "wind_direction", unit_of_measurement: "°" }),
+  "sensor.stazione_meteo_pressione_relativa": st("1009.2", { friendly_name: "Stazione meteo Pressione relativa", device_class: "atmospheric_pressure", unit_of_measurement: "hPa" }),
+});
+{ const al = localStorage.getItem("mockAllerta"), h = 3600e3, iso = ms => new Date(ms).toISOString();
+  const L = { gialla: ["2; yellow; Moderate", "10; Rain", "Allerta gialla per piogge", "Piogge sparse anche a carattere di rovescio."], rossa: ["4; red; Extreme", "3; Thunderstorm", "Allerta rossa per temporali", "Temporali forti con grandine e raffiche di vento. Evitare gli spostamenti non necessari."] }[al]
+    || ["3; orange; Severe", "1; Wind", "Allerta arancione per vento forte", "Venti forti da nord-ovest con raffiche fino a 80 km/h, mareggiate lungo le coste esposte. Fissare gli oggetti all'aperto, fare attenzione agli alberi e alle impalcature. Evitare di sostare sotto alberi e cartelloni e limitare gli spostamenti in auto."];
+  ENT["binary_sensor.meteoalarm"] = st(al === "no" ? "off" : "on", { friendly_name: "Meteoalarm", attribution: "Information provided by MeteoAlarm", ...(al === "no" ? {} : { awareness_level: L[0], awareness_type: L[1], headline: L[2], description: L[3],
+    event: L[2], severity: L[0].split("; ")[2], certainty: "Likely", onset: iso(Date.now() - 2 * h), effective: iso(Date.now() - 3 * h), expires: iso(Date.now() + 20 * h), sender_name: "Servizio meteo di prova" }) }); }
+if (!localStorage.getItem("mockNoRadar")) ENT["camera.radar_pioggia"] = st("idle", { friendly_name: "Radar pioggia", entity_picture: "/tools/mock/radar-demo.svg?token=finto", supported_features: 0 });
 /* LS mockEnt = { entity_id: [stato, {attributi}] | null (la toglie) } cambia gli stati finti; "@+5h" / "@-30m" negli attributi = adesso + 5 ore / − 30 minuti */
 for (const [id, v] of Object.entries(JSON.parse(localStorage.getItem("mockEnt") || "{}"))) {
   if (!v) { delete ENT[id]; continue; }
@@ -461,6 +482,8 @@ const RETE = [[/^(binary_sensor|sensor|button|switch|update)\.fritz_box_7590_/, 
   [/^sensor\.speedtest_/, "speedtestdotnet", "dev_speed"], [/^(sensor|button)\.nas_di_casa_/, "synology_dsm", "dev_nas"], [/^(binary_sensor|sensor|button)\.pve_/, "proxmoxve", "dev_pve"],
   [/^(binary_sensor|sensor|button)\.vm_media_/, "proxmoxve", "dev_vm"], [/^switch\.pc_studio$/, "wake_on_lan", null], [/^sensor\.system_monitor_/, "systemmonitor", "dev_sysmon"],
   [/^sensor\.stampante_ufficio/, "ipp", "dev_prn"], [/^sensor\.ups_studio_/, "nut", "dev_ups"]];
+/* meteo (0.7.41): stazione in Esterno, Meteoalarm, radar RainViewer */
+for (const e of REG.entities) { if (e.ei.includes("stazione_meteo_")) { e.ai = "esterno"; e.pl = "ecowitt"; e.di = "dev_ecowitt"; } if (e.ei === "binary_sensor.meteoalarm") e.pl = "meteoalarm"; if (e.ei === "camera.radar_pioggia") e.pl = "rainviewer"; }
 /* caldaia (0.7.37): integrazione, dispositivo e categoria «diagnostica» (OpenTherm Gateway) come in Home Assistant */
 for (const e of REG.entities) {
   if (/ariston|^climate\.caldaia_/.test(e.ei)) { e.di = "dev_a"; e.pl = "ariston"; if (e.ei === "climate.ariston_zona_1") e.ai = "soggiorno"; }
@@ -768,8 +791,17 @@ const conn = {
         if (m.type === "recorder/statistic_during_period") return { change: 1.23 };
         /* mockPioggiaDomani: domani piove (prova dell'avviso dell'irrigazione) */
         if (m.domain === "weather") { const pd = localStorage.getItem("mockPioggiaDomani");
-          return { response: { [m.target.entity_id]: { forecast: [0,1,2,3,4].map(i => ({ datetime: day(i, 12), condition: i === 0 || (pd && i === 1) ? "rainy" : i === 3 && pd ? "partlycloudy" : "sunny", temperature: 20 + i, templow: 12,
-            precipitation_probability: i === 0 ? 80 : pd && i === 1 ? 85 : pd && i === 3 ? 20 : 0, precipitation: pd && i === 1 ? 6.5 : 0 })) } } }; }
+          /* meteo (0.7.41): 48 ore inventate (pioggia adesso, poi schiarite, rovesci domani pomeriggio) */
+          if (m.service_data?.type === "hourly") { const h0 = new Date(); h0.setMinutes(0, 0, 0);
+            return { response: { [m.target.entity_id]: { forecast: Array.from({ length: 48 }, (_, i) => { const d = new Date(h0.getTime() + i * 3600e3), h = d.getHours(), notte = h < 7 || h >= 18;
+              const pr = i < 3 ? 75 - i * 15 : i >= 26 && i <= 30 ? 55 + (i - 26) * 8 : i > 30 && i < 34 ? 30 : i < 6 ? 25 : 5;
+              const cond = i < 3 ? "rainy" : i >= 27 && i <= 30 ? (i === 29 ? "lightning-rainy" : "pouring") : i < 8 ? "cloudy" : pr > 20 ? "cloudy" : notte ? (i % 5 ? "clear-night" : "partlycloudy") : i % 4 ? "sunny" : "partlycloudy";
+              return { datetime: d.toISOString(), condition: cond, temperature: Math.round((15.5 + 5 * Math.sin((h - 9) / 24 * 2 * Math.PI) - (i > 24 ? 1.5 : 0)) * 10) / 10, precipitation_probability: pr,
+                precipitation: pr >= 50 ? Math.round(pr / 25) / 2 : 0, wind_speed: 8 + (i % 7) * 2, wind_bearing: 290 + (i % 5) * 8, humidity: 70 + (pr > 40 ? 15 : 0), uv_index: notte ? 0 : 2 }; }) } } }; }
+          return { response: { [m.target.entity_id]: { forecast: [0,1,2,3,4,5,6,7,8,9].map(i => ({ datetime: day(i, 12), condition: i === 0 || (pd && i === 1) ? "rainy" : i === 3 && pd ? "partlycloudy" : i === 5 ? "cloudy" : i === 6 ? "lightning-rainy" : i === 8 ? "partlycloudy" : "sunny",
+            temperature: i < 5 ? 20 + i : [19, 15, 17, 18, 21][i - 5], templow: i < 5 ? 12 : [11, 9, 8, 10, 12][i - 5],
+            precipitation_probability: i === 0 ? 80 : pd && i === 1 ? 85 : pd && i === 3 ? 20 : i === 6 ? 70 : i === 5 ? 30 : 0, precipitation: pd && i === 1 ? 6.5 : i === 6 ? 9.2 : 0,
+            wind_speed: 10 + i * 2, wind_bearing: [315, 300, 270, 200, 180, 160, 225, 340, 0, 45][i], uv_index: [1, 5, 6, 6, 5, 3, 2, 4, 5, 6][i] })) } } }; }
         /* liste (0.7.39): le voci cambiano davvero e arrivano agli abbonati */
         if (mockTodo(m)) { console.log("SVC", JSON.stringify(m)); return { response: {} }; }
         /* irrigazione (0.7.31): Rain Bird, Hydrawise, valvole, script del timer e ritardo pioggia cambiano lo stato finto */

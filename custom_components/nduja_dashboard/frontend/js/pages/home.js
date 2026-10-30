@@ -1,6 +1,6 @@
 /* Home: saluto e riepilogo, meteo, stanze (per piano), persone, scene, cose da sistemare.
    Tutto viene dalle aree e dai dispositivi di Home Assistant: niente da configurare. */
-import { S, HOME_EXTRA, AREAS, FLOORS, UI, ACT, CHG, t, LOC, esc, fnum, attr, ok, val, nm, ents, inArea, areaOf, areasSorted, roomTemp, roomHum,
+import { S, HOME_EXTRA, PAGES, AREAS, FLOORS, UI, ACT, CHG, t, LOC, esc, fnum, attr, ok, val, nm, ents, inArea, areaOf, areasSorted, roomTemp, roomHum,
   openings, lightsOn, luci, isLightSwitch, isOn, card, empty, lightTile, climateCard, entityRow, openSheet, closeSheet, page, WX, HVAC, forecast, deviceClass, shortName, svc, toast, ago, weatherEnt, LAYOUT, isAdmin, saveLayout, utenteCfg } from "../core.js";
 import { item, addBtn, scegli, isTemp, isHum, cambia } from "../edit.js";
 import { personeCard } from "../people.js";
@@ -42,7 +42,7 @@ function meteo() {
   const fc = forecast(w).slice(0, 5);
   return card(`${ic} ${t("Meteo", "Weather")}`, `${UI.edit ? `<div class="small muted" style="margin:-4px 0 8px">${esc(nm(w))}</div>` : ""}<div class="row" style="gap:14px"><div class="wxbig1">${fnum(a.temperature, 0)}°</div>
       <div><b>${esc(txt)}</b><div class="small muted">${a.humidity != null ? t("Umidità ", "Humidity ") + Math.round(a.humidity) + "%" : ""}${a.wind_speed != null ? ` · ${t("vento", "wind")} ${fnum(a.wind_speed, 0)} ${esc(a.wind_speed_unit || "")}` : ""}</div></div></div>
-    ${fc.length ? `<div class="fc1">${fc.map(d => `<div><small>${new Date(d.datetime).toLocaleDateString(LOC, { weekday: "short" })}</small><span>${(WX()[d.condition] || ["·"])[0]}</span><b>${fnum(d.temperature, 0)}°</b><i>${d.templow != null ? fnum(d.templow, 0) + "°" : ""}</i></div>`).join("")}</div>` : ""}`, { right: UI.edit ? `<button class="btn sm" data-act="wxEdit">✏️</button>` : "" });
+    ${fc.length ? `<div class="fc1">${fc.map(d => `<div><small>${new Date(d.datetime).toLocaleDateString(LOC, { weekday: "short" })}</small><span>${(WX()[d.condition] || ["·"])[0]}</span><b>${fnum(d.temperature, 0)}°</b><i>${d.templow != null ? fnum(d.templow, 0) + "°" : ""}</i></div>`).join("")}</div>` : ""}`, UI.edit ? { right: `<button class="btn sm" data-act="wxEdit">✏️</button>` } : PAGES.meteo?.show() && LAYOUT.pages?.meteo !== false && utenteCfg().pages?.meteo !== false ? { link: [t("Dettagli", "Details"), "meteo"] } : {});
 }
 
 function stanza(a) {
