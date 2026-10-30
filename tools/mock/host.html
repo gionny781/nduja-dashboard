@@ -7,7 +7,9 @@ const ENT = {
   "zone.home": st("2", { friendly_name: "Casa", latitude: 41.89, longitude: 12.49 }),
   "person.mario": st("Lavoro", { friendly_name: "Mario", user_id: "u1", latitude: 41.95, longitude: 12.52, device_trackers: ["device_tracker.apple_watch", "device_tracker.iphone_di_mario"] }, 3.2*H),
   "person.anna": st("home", { friendly_name: "Anna", user_id: "u2", latitude: 41.89, longitude: 12.49, device_trackers: ["device_tracker.iphone_di_anna"] }, 5*H),
-  "person.marco": st("not_home", { friendly_name: "Marco", latitude: 41.9, longitude: 12.5, device_trackers: [] }, 26*H),
+  "person.marco": st("not_home", { friendly_name: "Marco", user_id: "u3", latitude: 41.9, longitude: 12.5, device_trackers: [] }, 26*H),
+  /* lista della spesa (chat 0.7.38: «condividi un elemento della lista») */
+  "todo.shopping_list": st("3", { friendly_name: "Lista della spesa" }),
   "zone.lavoro": st("1", { friendly_name: "Lavoro" }),
   "device_tracker.iphone_di_mario": st("Lavoro", { source_type: "gps", friendly_name: "iPhone di Mario" }),
   "device_tracker.apple_watch": st("Lavoro", { source_type: "gps", friendly_name: "Apple Watch" }),
@@ -571,6 +573,49 @@ function mockIrr(m) {
   else return false;
   setTimeout(() => window.mockStati?.({ c: ch }), 120); return true;
 }
+/* ---- chat di famiglia finta (0.7.38): come chat.py, ma in localStorage ---- */
+const CHAT_IO = () => localStorage.getItem("mockNoAdmin") ? "u2" : localStorage.getItem("mockNoPerson") ? "u9" : "u1";
+const CHAT_MEMBRI = () => Object.entries(ENT).filter(([id, e]) => id.startsWith("person.") && e.a.user_id).map(([id, e]) => ({ uid: e.a.user_id, nome: e.a.friendly_name, persona: id }));
+function chatDemo() {
+  const q = min => new Date(Date.now() - min * 6e4).toISOString().slice(0, 19) + "+00:00", ieri = new Date(); ieri.setDate(ieri.getDate() - 1); ieri.setHours(19, 42, 0, 0);
+  const qi = plus => new Date(ieri.getTime() + plus * 6e4).toISOString().slice(0, 19) + "+00:00";
+  const F = [["u2", qi(0), { testo: "Chi passa dal panificio domani mattina?" }], ["u3", qi(3), { testo: "Io! Esco alle 8" }], ["u2", qi(4), { testo: "👍" }],
+    ["u1", q(185), { testo: "Ho lasciato la lavatrice accesa, qualcuno la stende quando finisce?" }], ["u2", q(170), { testo: "Ci penso io" }], ["u2", q(169), { tipo: "spesa", dati: { voce: "Latte", lista: "Lista della spesa" } }],
+    ["u3", q(64), { tipo: "foto", dati: { f: "demo1", cam: "Cortile HD" } }], ["u3", q(63), { testo: "Il corriere ha lasciato il pacco qui 📦" }],
+    ["u1", q(41), { tipo: "pos", dati: { lat: 41.95, lon: 12.52, zona: "Lavoro", acc: 18 } }], ["u1", q(40), { testo: "Esco adesso, arrivo verso le 19" }], ["u2", q(6), { testo: "Stasera pizza? 🍕" }]];
+  const D = [["u2", q(242), { testo: "Ricordati il regalo per la nonna 🎁" }], ["u1", q(238), { testo: "Già preso! È nel cassetto dello studio" }], ["u2", q(9), { testo: "Perfetto ❤️ allora domenica lo portiamo insieme" }]];
+  const fa = L => L.map(([da, quando, x], i) => ({ n: i + 1, da, quando, tipo: "testo", ...x }));
+  return { conv: { famiglia: { n: F.length, msg: fa(F), letti: { u1: 10, u2: 11, u3: 9 } }, "d:u1+u2": { n: D.length, msg: fa(D), letti: { u1: 2, u2: 3 } } }, muti: [] };
+}
+function chatDati() { const s = localStorage.getItem("mockChat"); return s ? JSON.parse(s) : localStorage.getItem("mockChatDemo") ? chatDemo() : { conv: {}, muti: [] }; }
+function mockChat(m) {
+  if (localStorage.getItem("mockNoCasa")) throw { code: "unknown_command", message: "Unknown command." };
+  const D = chatDati(), io = CHAT_IO(), M = CHAT_MEMBRI(), membro = M.some(x => x.uid === io), salva = () => localStorage.setItem("mockChat", JSON.stringify(D));
+  const vede = id => id === "famiglia" ? membro : id.slice(2).split("+").includes(io);
+  const ev = e => setTimeout(() => window.mockChatEv?.(e), 20);
+  const nonLetti = (c) => c.msg.filter(x => x.n > (c.letti[io] || 0) && x.da !== io && x.tipo !== "cancellato").length;
+  if (m.type.endsWith("chat_presenza")) { console.log("CHAT presenza", m.visibile); return null; }
+  if (m.type.endsWith("chat_get")) return { io, membro, membri: M, notifiche: !D.muti.includes(io), telefoni: io === "u1" ? ["iPhone di Mario"] : [], limiti: { testo: 1000, msg: 500 },
+    conv: Object.entries(D.conv).filter(([id]) => vede(id)).map(([id, c]) => ({ id, n: c.n, ultimo: c.msg[c.msg.length - 1] || null, non_letti: nonLetti(c), letti: c.letti })) };
+  if (m.type.endsWith("chat_notifiche")) { D.muti = D.muti.filter(u => u !== io).concat(m.attive ? [] : [io]); salva(); return { notifiche: m.attive }; }
+  if (!vede(m.conv)) throw { code: "unauthorized", message: "non fai parte di questa conversazione" };
+  const c = D.conv[m.conv] || (D.conv[m.conv] = { n: 0, msg: [], letti: {} });
+  if (m.type.endsWith("chat_msg")) { const L = c.msg.filter(x => !m.prima || x.n < m.prima), P = L.slice(-(m.limite || 60)); return { conv: m.conv, n: c.n, msg: P, altri: L.length > P.length, letti: c.letti }; }
+  if (m.type.endsWith("chat_read")) { const n = Math.min(m.n, c.n); if (n > (c.letti[io] || 0)) { c.letti[io] = n; salva(); ev({ conv: m.conv, tipo: "letto", uid: io, n }); } return { n: c.letti[io] || 0 }; }
+  if (m.type.endsWith("chat_delete")) { const x = c.msg.find(y => y.n === m.n); if (!x) throw { code: "not_found", message: "?" }; if (x.da !== io) throw { code: "unauthorized", message: "solo i tuoi" };
+    delete x.testo; delete x.dati; x.tipo = "cancellato"; salva(); ev({ conv: m.conv, tipo: "cancellato", n: m.n }); return { n: m.n }; }
+  /* chat_send */
+  console.log("CHAT", JSON.stringify(m));
+  const x = { n: ++c.n, da: io, quando: new Date().toISOString().slice(0, 19) + "+00:00", tipo: m.tipo };
+  if (m.tipo === "testo") x.testo = String(m.testo).trim(); else if (m.tipo === "foto") x.dati = { f: Math.random().toString(16).slice(2).padEnd(32, "0").slice(0, 32), cam: ENT[m.camera]?.a.friendly_name || m.camera }; else x.dati = m.dati;
+  c.msg.push(x); c.letti[io] = x.n; salva(); ev({ conv: m.conv, tipo: "nuovo", msg: x });
+  return new Promise(r => setTimeout(() => r({ conv: m.conv, msg: x }), m.tipo === "foto" ? 600 : 60));
+}
+/** fa arrivare un messaggio da un'altra persona: mockChatArriva("famiglia", "u2", "Ciao!") */
+window.mockChatArriva = (conv, da, testo) => { const D = chatDati(), c = D.conv[conv] || (D.conv[conv] = { n: 0, msg: [], letti: {} });
+  const x = { n: ++c.n, da, quando: new Date().toISOString().slice(0, 19) + "+00:00", tipo: "testo", testo }; c.msg.push(x); c.letti[da] = x.n; localStorage.setItem("mockChat", JSON.stringify(D)); window.mockChatEv?.({ conv, tipo: "nuovo", msg: x }); };
+/** un'altra persona legge: mockChatLegge("famiglia", "u3") */
+window.mockChatLegge = (conv, uid) => { const D = chatDati(), c = D.conv[conv]; c.letti[uid] = c.n; localStorage.setItem("mockChat", JSON.stringify(D)); window.mockChatEv?.({ conv, tipo: "letto", uid, n: c.n }); };
 /* api REST di Home Assistant (script e automazioni creati dalla plancia): li aggiungo agli stati finti */
 function mockApi(url, o) {
   const mm = String(url).match(/\/api\/config\/(script|automation)\/config\/([\w-]+)/); if (!mm) return null;
@@ -584,6 +629,7 @@ const conn = {
   addEventListener() {}, subscribeEvents() { return Promise.resolve(() => {}); },
   subscribeMessage(cb, m) {
     if (m?.type === "camera/webrtc/offer") return offerta(cb, m);
+    if (m?.type === "nduja_dashboard/chat_subscribe") { if (localStorage.getItem("mockNoCasa")) return Promise.reject({ code: "unknown_command" }); window.mockChatEv = cb; return Promise.resolve(() => {}); }
     if (m?.type === "nduja_dashboard/casa_subscribe") { if (localStorage.getItem("mockNoCasa")) return Promise.reject({ code: "unknown_command" }); window.mockCasaEv = cb; return Promise.resolve(() => {}); }
     window.mockStati = cb; window.mockDati = () => cb({ a: ENT });
     window.mockStato = (id, s) => cb({ c: { [id]: { "+": { s } } } });   // mockStati({ a: { id: { s, a } } }) fa comparire entità nuove
@@ -600,6 +646,11 @@ const conn = {
         C[m.sezione] = { rev: x.rev + 1, dati: m.dati }; localStorage.setItem("mockCasa", JSON.stringify(C)); console.log("CASA", JSON.stringify(m));
         setTimeout(() => window.mockCasaEv?.({ sezione: m.sezione, rev: x.rev + 1 }), 30);
         return { sezione: m.sezione, rev: x.rev + 1 }; }
+      /* chat di famiglia (0.7.38): mockChat = { conv: { id: { n, msg, letti } }, muti: [] }; mockChatDemo = conversazioni d'esempio */
+      case "nduja_dashboard/chat_get": case "nduja_dashboard/chat_msg": case "nduja_dashboard/chat_send": case "nduja_dashboard/chat_read":
+      case "nduja_dashboard/chat_delete": case "nduja_dashboard/chat_notifiche": case "nduja_dashboard/chat_presenza": return mockChat(m);
+      case "todo/item/list": return { items: m.entity_id === "todo.shopping_list" ? [{ uid: "1", summary: "Latte", status: "needs_action" }, { uid: "2", summary: "Pane", status: "needs_action", description: "integrale" },
+        { uid: "3", summary: "Uova", status: "needs_action" }, { uid: "4", summary: "Caffè", status: "completed" }] : [] };
       /* pausa di un'automazione: spengo e salvo la scadenza nella sezione «pause» (il vero lo fa Home Assistant) */
       case "nduja_dashboard/pausa": {
         const C = JSON.parse(localStorage.getItem("mockCasa") || "{}"), x = C.pause || { rev: 0, dati: {} }, d = { ...x.dati };
@@ -641,7 +692,7 @@ const conn = {
       case "media_source/resolve_media": console.log("RESOLVE", JSON.stringify(m));
         if (/\/Salvaschermo\//.test(m.media_content_id)) return { url: "/tools/mock/" + m.media_content_id.split("/").pop(), mime_type: "image/svg+xml" };
         return { url: brano(m.media_content_id), mime_type: "audio/wav" };
-      case "auth/sign_path": return { path: m.path + "?authSig=finto" };
+      case "auth/sign_path": return { path: /\/chat_foto\//.test(m.path) ? "/tools/mock/cam-hd.svg?authSig=finto" : m.path + "?authSig=finto" };
       case "get_config": return { version: "2026.10.1", location_name: "Casa" };
       case "config/label_registry/list": return JSON.parse(localStorage.getItem("mockLabels") || "[]");
       case "config/label_registry/create": { const L = JSON.parse(localStorage.getItem("mockLabels") || "[]"), l = { label_id: "nduja", name: m.name, icon: m.icon }; L.push(l); localStorage.setItem("mockLabels", JSON.stringify(L)); console.log("WS", JSON.stringify(m)); return l; }

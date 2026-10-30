@@ -161,3 +161,14 @@ body.light .cd1pt .n{box-shadow:0 0 0 2px rgba(255,255,255,.9)}
 body.light .cd1cod{color:#d0302a}
 body.light .cd1g span,body.light .cd1g.eu b,body.light .cd1k.on b,body.light .cd1row .tx span.cd1hot,body.light .cd1mn.warn .tx span,body.light .cd1hb.on .tx b{color:#c26a00}
 body.light .cd1dot.on{background:var(--green)!important}
+/* chat di famiglia */
+body.light .ktd1 span{background:rgba(255,255,255,.88);color:rgba(28,28,30,.62);border-color:rgba(0,0,0,.08)}
+body.light .ktn1{color:hsl(var(--h),70%,36%)}
+body.light .ktv1d .ca{stroke:#1c1c1e}
+body.light .ktl1.nl .mt small,body.light .ktpl2,body.light .kthm2 .pillv b{color:#0a7fd1!important}
+body.light .ktb1{border-color:rgba(0,0,0,.06)!important}
+body.light .ktl1.act{background:rgba(255,255,255,.9)!important;box-shadow:0 2px 10px -4px rgba(31,45,80,.25)!important}
+body.light .ktf1{background:rgba(0,0,0,.08)}
+body.light .ktm1.me .ktb1{background:linear-gradient(165deg,#3393ff,#0a6cff)!important;color:#fff!important;border-color:transparent!important}
+body.light .ktm1 .ktb1.emo{background:none!important;box-shadow:none!important}
+body.light .ktm1.me .ktb1.emo{color:rgba(28,28,30,.46)!important}

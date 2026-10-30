@@ -11,6 +11,6 @@ import "./pages/home.js";
 import "./pages/custom.js";
 import "./pages/impostazioni.js";
 
-const DOPO = ["mappa", "luci", "clima", "caldaia", "energia", "dispositivi", "batterie", "elettrodomestici", "musica", "media", "robot", "irrigazione", "auto", "sicurezza", "telecamere", "calendario", "faccende", "bacheca", "squadra", "formula1", "automazioni", "rete", "aggiornamenti"];
+const DOPO = ["mappa", "luci", "clima", "caldaia", "energia", "dispositivi", "batterie", "elettrodomestici", "musica", "media", "robot", "irrigazione", "auto", "sicurezza", "telecamere", "calendario", "faccende", "bacheca", "chat", "squadra", "formula1", "automazioni", "rete", "aggiornamenti"];
 const carica = () => Promise.all(DOPO.map(p => import(`./pages/${p}.js`).catch(e => console.error("nduja", p, e)))).then(tuttePronte);
 (window.requestIdleCallback || (f => setTimeout(f, 200)))(carica, { timeout: 1200 });

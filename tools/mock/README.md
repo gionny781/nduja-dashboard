@@ -118,3 +118,10 @@ La manutenzione annotata sta in `caldaia.manut` dentro `mockLayout`.
 LS='{"mockCaldaia":"acs"}' node tools/mock/shot.mjs caldaia 1280 1300 caldaia.png
 LS='{"mockCaldaia":"otgw","mockCaldaiaErr":"1"}' node tools/mock/shot.mjs caldaia 1280 1300 errore.png
 ```
+
+**Chat** (0.7.38): i membri sono le persone con `user_id` (Mario `u1`, Anna `u2`, Marco `u3`); i messaggi stanno in `mockChat` (stessa forma dello Store di `chat.py`), con `mockChatDemo` partono due conversazioni d'esempio (foto, posizione, spesa, non letti).
+`mockChatArriva("famiglia", "u2", "Ciao!")` fa arrivare un messaggio, `mockChatLegge("famiglia", "u3")` lo fa leggere; `auth/sign_path` delle foto della chat risponde con `cam-hd.svg`; `todo.shopping_list` ha quattro voci. `mockNoCasa` = Home Assistant non riavviato, `mockNoPerson` = utente senza persona.
+```bash
+LS='{"mockChatDemo":"1"}' node tools/mock/shot.mjs chat 1280 900 chat.png
+LS='{"mockChatDemo":"1"}' node tools/mock/shot.mjs chat 390 844 tel.png '[data-act="ktApri"][data-id="famiglia"]'
+```

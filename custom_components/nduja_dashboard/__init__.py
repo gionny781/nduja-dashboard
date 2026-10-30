@@ -17,6 +17,7 @@ from homeassistant.helpers.event import async_track_point_in_utc_time
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
+from .chat import async_remove_chat, async_setup_chat
 from .const import (CONF_ADMIN, CONF_ICON, CONF_TITLE, DEFAULT_ICON, DEFAULT_TITLE,
                     DOMAIN, PANEL_URL, STATIC_URL, VERSION)
 
@@ -86,6 +87,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if "casa_store" not in data:
         data["casa_store"] = Store(hass, STORE_VERSION, STORE_CASA)
         data["casa"] = await data["casa_store"].async_load() or {}
+    await async_setup_chat(hass)   # chat di famiglia (chat.py)
     if not data.get("pause_avviate"):
         data["pause_avviate"] = True
         _pause_riprendi(hass)
@@ -132,6 +134,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     data.pop("pause_avviate", None)
     data.pop("casa_store", None)
     data.pop("casa", None)   # i file statici restano registrati fino al riavvio
+    await async_remove_chat(hass)
 
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/config"})

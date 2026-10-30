@@ -3,6 +3,22 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.38-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+> ⚠️ 🇮🇹 Dopo l'aggiornamento **riavvia Home Assistant**: cambia anche la parte in Python. · 🇬🇧 After updating **restart Home Assistant**: the Python part changes too.
+- 🇮🇹 **💬 Chat**, pagina nuova: i messaggi tra le persone di casa, cioè gli utenti di Home Assistant collegati a una persona. Il gruppo **«Famiglia»** e una **chat a due** con ogni persona, con le foto profilo delle persone di Home Assistant. Compare quando in casa ci sono almeno due persone con un utente.
+- 🇮🇹 **Stile messaggistica, in vetro**: bolle, giorno e ora, **✓ inviato / ✓✓ letto** (nel gruppo «Letto da Anna», «Letto da tutti»), **emoji rapide**, link cliccabili, «Messaggi precedenti». Tocca un tuo messaggio per **copiarlo o cancellarlo**. Sul telefono l'elenco e la conversazione a tutto schermo, su tablet e PC uno accanto all'altra.
+- 🇮🇹 **＋ Condividi in un tocco**: **la tua posizione** (disegnata con la casa al centro e la distanza), **una foto da una telecamera di casa** (scattata da Home Assistant in quel momento) e **una voce della lista della spesa**.
+- 🇮🇹 **Notifiche sul telefono** con l'app ufficiale di Home Assistant (il telefono collegato alla persona), solo quando non hai la plancia aperta; toccandola si apre la plancia su quella chat. Ognuno può **spegnerle per sé** (🔔).
+- 🇮🇹 **Tempo reale e privacy**: un messaggio arriva subito sugli altri dispositivi. I messaggi sono salvati **solo in Home Assistant** (al massimo 500 per conversazione, i più vecchi si cancellano da soli) e **ognuno vede solo le sue conversazioni**: lo controlla Home Assistant, non la plancia. Le foto non sono pubbliche. Nessun servizio esterno.
+- 🇮🇹 **In Home** l'indicatore dei messaggi non letti in alto e la scheda **«Chat»** con l'ultimo messaggio.
+- 🇬🇧 **💬 Chat**, a new page: messages between the people at home, i.e. the Home Assistant users linked to a person. The **«Family»** group and a **one-to-one chat** with each person, with the profile photos of the Home Assistant people. Shown when at least two people at home have a user.
+- 🇬🇧 **Messaging style, in glass**: bubbles, day and time, **✓ sent / ✓✓ read** (in the group «Read by Anna», «Read by everyone»), **quick emoji**, clickable links, «Earlier messages». Tap one of your messages to **copy or delete it**. On the phone the list and the conversation full screen, on tablets and PCs side by side.
+- 🇬🇧 **＋ Share in one tap**: **your location** (drawn with the home in the middle and the distance), **a photo from a home camera** (taken by Home Assistant right then) and **a shopping list item**.
+- 🇬🇧 **Phone notifications** through the official Home Assistant app (the phone linked to the person), only when the dashboard isn't open; tapping one opens the dashboard on that chat. Everyone can **turn them off for themselves** (🔔).
+- 🇬🇧 **Real time and privacy**: a message shows up right away on the other devices. Messages are stored **only in Home Assistant** (up to 500 per conversation, older ones are deleted automatically) and **everyone sees only their own conversations**: Home Assistant checks it, not the dashboard. Photos are not public. No outside services.
+- 🇬🇧 **On Home** the unread indicator at the top and the **«Chat»** card with the latest message.
+
 ## 0.7.37-dev2
 - 🇮🇹 **Elettrodomestici, soglie tue** (Elettrodomestici → ✏️ → «Quando è in funzione e quando ha finito»): per ogni elettrodomestico scegli sopra quanti W è in funzione, sotto quanti W e per quanti minuti ha finito, la durata minima di un ciclo e se avvisarti. Vale per la scheda, per gli avvisi della Home e per quelli sul telefono; se gli avvisi sul telefono sono attivi, l'automazione si aggiorna da sola al salvataggio. Frigo e congelatore partono con l'avviso spento.
 - 🇬🇧 **Appliances, your own thresholds** (Appliances → ✏️ → «When it's running and when it's done»): for each appliance choose above how many W it's running, below how many W and for how many minutes it's done, the shortest cycle and whether to alert you. Applies to the card, the Home alerts and the phone alerts; if phone alerts are on, the automation updates itself on save. Fridge and freezer start with the alert off.
