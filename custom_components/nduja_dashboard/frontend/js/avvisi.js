@@ -22,6 +22,16 @@ const nascosti = () => { try { return JSON.parse(sGet("dismiss") || "{}"); } cat
 const ELETTRO = /lavatric|asciugatric|lavastovigl|washer|washing|dryer|dishwasher|forno|oven/i;
 /** sensori di potenza da seguire in più (quelli scelti nella pagina Elettrodomestici) */
 export const POTENZE_EXTRA = [];
+/** soglie scelte da chi usa la plancia per ogni elettrodomestico (pagina Elettrodomestici → ✏️): ogni funzione riceve
+    il sensore di potenza e restituisce { threshold, fineW, fineMin, cicloMin, avviso } oppure niente */
+export const SOGLIE = [];
+/** soglie di un sensore di potenza: quelle scelte, altrimenti valori adatti alla maggior parte degli elettrodomestici */
+export function soglie(id) {
+  let s = null;
+  for (const f of SOGLIE) { try { s = f(id); } catch {} if (s) break; }
+  s = s || {};
+  return { on: +s.threshold || 15, off: +s.fineW || 5, min: +s.fineMin || 3, ciclo: s.cicloMin === 0 ? 0 : (+s.cicloMin || 10), avviso: s.avviso !== false };
+}
 const elettro = () => [...new Set([...allEnts("sensor", id => deviceClass(id) === "power" && ELETTRO.test(id + " " + nm(id)) && ok(id)), ...POTENZE_EXTRA.flatMap(f => { try { return f(); } catch { return []; } }).filter(id => S[id] && ok(id))])];
 /** stato del ciclo di un sensore di potenza: { on: inizio (ms) o 0, fine: fine dell'ultimo ciclo (ms) } */
 export const ciclo = id => EL[id] || { on: 0, fine: 0 };
@@ -29,11 +39,11 @@ let EL = {}; try { EL = JSON.parse(sGet("appl") || "{}"); } catch {}
 function seguiElettro() {
   let cambiato = false;
   for (const id of elettro()) {
-    const w = val(id) || 0, s = EL[id] || { on: 0, low: 0, fine: 0 }, now = Date.now();
-    if (w > 15) { if (!s.on) s.on = now; s.low = 0; }
-    else if (s.on && w < 5) {
+    const w = val(id) || 0, s = EL[id] || { on: 0, low: 0, fine: 0 }, now = Date.now(), g = soglie(id);
+    if (w > g.on) { if (!s.on) s.on = now; s.low = 0; }
+    else if (s.on && w < g.off) {
       if (!s.low) s.low = now;
-      if (now - s.low > 3 * MIN) { if (now - s.on > 10 * MIN) s.fine = now; s.on = 0; s.low = 0; }
+      if (now - s.low > g.min * MIN) { if (now - s.on > g.ciclo * MIN) s.fine = now; s.on = 0; s.low = 0; }
     }
     if (JSON.stringify(s) !== JSON.stringify(EL[id])) { EL[id] = s; cambiato = true; }
   }
@@ -64,7 +74,7 @@ export function avvisi() {
   }
   if (aperte.some(o => deviceClass(o) === "window") && pioggia())
     A.unshift({ k: "rain", ic: "🌧️", b: t("Sta arrivando la pioggia", "Rain is coming"), s: t("ci sono finestre aperte", "some windows are open"), cls: "alert" });
-  for (const id of elettro()) if (EL[id]?.fine && Date.now() - EL[id].fine < 6 * 3600e3)
+  for (const id of elettro()) if (soglie(id).avviso && EL[id]?.fine && Date.now() - EL[id].fine < 6 * 3600e3)
     A.push({ k: "el:" + id + EL[id].fine, ic: "🧺", b: `${esc(shortName(id).replace(/\s*(potenza|power|consumo)\s*/ig, " ").trim())} ${t("ha finito", "is done")}`, s: ago(new Date(EL[id].fine).toISOString()), id });
   const R = new Date().getHours() >= 17 ? ritiri().domani : [];
   if (R.length) A.push({ k: "rf:" + new Date().toDateString(), ic: "♻️", b: t("Stasera esponi", "Put out tonight"), s: R.map(chip).join(" "), raw: true });
@@ -107,6 +117,7 @@ function schedaNotifiche() {
   return `<div class="sh-head"><div><h3>📱 ${t("Avvisi sul telefono", "Alerts on the phone")}</h3><div class="small muted">${t("Creo in Home Assistant l'automazione «'Nduja · avvisi»: funziona anche a plancia chiusa.", "I create the «'Nduja · alerts» automation in Home Assistant: it works even with the dashboard closed.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
     <div class="fl1">${t("A chi", "To")}</div><div class="cks1">${sv.map(k => ck(c.servizi.includes(k), "avnS", k, esc(k.replace(/^mobile_app_/, "📱 ").replace(/_/g, " ")))).join("") || `<div class="small muted">${t("Nessun telefono: installa l'app Home Assistant sul telefono.", "No phone: install the Home Assistant app on the phone.")}</div>`}</div>
     <div class="fl1">${t("Cosa", "What")}</div><div class="cks1">${TIPI_N().map(([k, n]) => ck(c.tipi[k] !== false, "avnT", k, n)).join("")}</div>
+    <div class="small muted" style="margin-top:6px">🧺 ${t("Quando un elettrodomestico è in funzione o ha finito lo decidi tu, per ognuno: pagina Elettrodomestici → ✏️.", "When an appliance is running or done is up to you, for each one: Appliances page → ✏️.")}</div>
     <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn pri" data-act="avnSave">💾 ${t("Salva in Home Assistant", "Save to Home Assistant")}</button>${LAYOUT.notifiche?.servizi?.length ? `<button class="btn bad" data-act="avnOff">${t("Spegni gli avvisi sul telefono", "Turn off phone alerts")}</button>` : ""}</div>`;
 }
 function automazione(c) {
@@ -115,7 +126,11 @@ function automazione(c) {
   if (tipo("pericolo") && danger.length) T.push({ trigger: "state", entity_id: danger, to: "on", id: "pericolo" });
   const al = allEnts("alarm_control_panel"); if (tipo("allarme") && al.length) T.push({ trigger: "state", entity_id: al, to: "triggered", id: "allarme" });
   const op = ents("binary_sensor", id => ["door", "window", "garage_door", "opening"].includes(deviceClass(id))); if (tipo("porta") && op.length) T.push({ trigger: "state", entity_id: op, to: "on", for: { minutes: 10 }, id: "porta" });
-  const el = elettro(); if (tipo("elettro") && el.length) T.push({ trigger: "numeric_state", entity_id: el, below: 5, for: { minutes: 3 }, id: "elettro" });
+  /* elettrodomestici: ognuno con le sue soglie (pagina Elettrodomestici → ✏️); raggruppo quelli con le stesse */
+  const el = elettro().filter(id => soglie(id).avviso), gruppi = {};
+  for (const id of el) { const g = soglie(id), k = g.off + "/" + g.min; (gruppi[k] = gruppi[k] || { below: g.off, min: g.min, ids: [] }).ids.push(id); }
+  if (tipo("elettro")) for (const g of Object.values(gruppi)) T.push({ trigger: "numeric_state", entity_id: g.ids, below: g.below, for: { minutes: g.min }, id: "elettro" });
+  const sopra = Object.fromEntries(el.map(id => [id, soglie(id).on]));
   /* pile: con le soglie e senza le pile nascoste della pagina Batterie */
   if (tipo("batteria")) {
     const B = perAutomazione();
@@ -131,8 +146,15 @@ function automazione(c) {
     triggers: T, conditions: [
       /* elettrodomestico finito solo se prima stava davvero lavorando (sopra 10 W): così il consumo a riposo che oscilla
          intorno ai 5 W, o la presa che torna disponibile dopo un riavvio, non manda avvisi a caso */
-      ...(el.length && tipo("elettro") ? [{ condition: "template", value_template: "{{ trigger.id != 'elettro' or (trigger.from_state.state | float(0)) > 10 }}" }] : []),
+      ...(el.length && tipo("elettro") ? [{ condition: "template", value_template: "{{ trigger.id != 'elettro' or (trigger.from_state.state | float(0)) > " + JSON.stringify(sopra) + ".get(trigger.entity_id, 15) }}" }] : []),
       ...(fin.length && tipo("pioggia") ? [{ condition: "template", value_template: "{{ trigger.id != 'pioggia' or " + JSON.stringify(fin) + " | select('is_state', 'on') | list | count > 0 }}" }] : [])], actions: c.servizi.map(s => ({ action: "notify." + s, data: { title: "🌶️ 'Nduja", message: msg } })), mode: "queued", max: 20 };
+}
+/** dopo aver cambiato le soglie di un elettrodomestico: se gli avvisi sul telefono sono attivi, riscrivo l'automazione */
+export async function aggiornaAvvisiTelefono() {
+  if (!LAYOUT.notifiche?.servizi?.length) return false;
+  const c = { tipi: {}, ...LAYOUT.notifiche }, cfg = automazione(c);
+  if (!cfg.triggers.length) return false;
+  try { await api("POST", "/api/config/automation/config/nduja_avvisi", cfg); return true; } catch { return false; }
 }
 Object.assign(ACT, {
   avNotif: () => { NB = JSON.parse(JSON.stringify(LAYOUT.notifiche || { servizi: [], tipi: {} })); NB.tipi = NB.tipi || {}; openSheet(schedaNotifiche); },

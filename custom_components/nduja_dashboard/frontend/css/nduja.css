@@ -973,6 +973,7 @@ a.btn{color:var(--tx);text-decoration:none}.car-c.on{background:rgba(10,132,255,
 .apk1 button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border-radius:14px;background:rgba(255,255,255,.06);font-size:11.5px;font-weight:600;color:var(--tx)}
 .apk1 button.on{background:rgba(10,132,255,.28);outline:2px solid #0a84ff}
 .apk1 .apv1{--s:50px}
+.apn1{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 10px}.apn1 .fld1{margin:0}
 .apf1{display:flex;gap:10px;align-items:center;margin-top:12px}.apf1 .fld1{flex:1;margin:0;min-width:0}
 .apf1 .apv1{--s:52px;border-radius:12px;background:rgba(255,255,255,.05)}
 .apf1 .fld1 small{font-size:11.5px;color:var(--tx3)}.apf1 .fld1 small.ok{color:var(--green)}.apf1 .fld1 small.no{color:var(--orange)}

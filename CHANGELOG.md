@@ -3,6 +3,10 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.37-dev2
+- 🇮🇹 **Elettrodomestici, soglie tue** (Elettrodomestici → ✏️ → «Quando è in funzione e quando ha finito»): per ogni elettrodomestico scegli sopra quanti W è in funzione, sotto quanti W e per quanti minuti ha finito, la durata minima di un ciclo e se avvisarti. Vale per la scheda, per gli avvisi della Home e per quelli sul telefono; se gli avvisi sul telefono sono attivi, l'automazione si aggiorna da sola al salvataggio. Frigo e congelatore partono con l'avviso spento.
+- 🇬🇧 **Appliances, your own thresholds** (Appliances → ✏️ → «When it's running and when it's done»): for each appliance choose above how many W it's running, below how many W and for how many minutes it's done, the shortest cycle and whether to alert you. Applies to the card, the Home alerts and the phone alerts; if phone alerts are on, the automation updates itself on save. Fridge and freezer start with the alert off.
+
 ## 0.7.37-dev1
 - 🇮🇹 **Avvisi sul telefono**: «elettrodomestico finito» arrivava anche senza lavaggio, quando il consumo a riposo oscillava intorno ai 5 W o la presa tornava disponibile dopo un riavvio. Ora l'avviso parte solo se prima l'elettrodomestico stava davvero lavorando (sopra 10 W). Riapri 📱 e premi «Salva».
 - 🇬🇧 **Phone alerts**: «appliance done» also fired without a cycle, when standby power hovered around 5 W or the plug came back after a restart. Now it fires only if the appliance was really running before (above 10 W). Reopen 📱 and press «Save».

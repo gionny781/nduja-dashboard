@@ -9,7 +9,7 @@ import { S, REG, ACT, CHG, LAYOUT, UI, HOME_EXTRA, VISTE, t, esc, nm, ok, val, a
 import { scegli, cambia, fileEsiste, indirizzoLocale } from "../edit.js";
 import { disegno, DISEGNI, riconosci } from "../disegni.js";
 import { oggi } from "./energia.js";
-import { ciclo, POTENZE_EXTRA } from "../avvisi.js";
+import { ciclo, POTENZE_EXTRA, SOGLIE, soglie, aggiornaAvvisiTelefono } from "../avvisi.js";
 
 const TIPI = () => [
   ["lavatrice", /lavatric|washer|washing|lavabianch/i, "🧺", t("Lavatrice", "Washing machine")],
@@ -83,6 +83,9 @@ function automatici() {
 }
 const elenco = () => Array.isArray(LAYOUT.appliances) ? LAYOUT.appliances : automatici();
 POTENZE_EXTRA.push(() => elenco().map(a => a.power).filter(Boolean));
+/* «ha finito» non ha senso per frigo e congelatore (il compressore si accende e spegne da solo): lì l'avviso parte spento */
+const avvisoDi = a => a.avviso ?? !/frigo|fridge|freez|congel|refrigerat/i.test(a.id + " " + (a.nome || ""));
+SOGLIE.push(id => { const a = elenco().find(x => x.power === id); return a && { threshold: a.threshold || 10, fineW: a.fineW, fineMin: a.fineMin, cicloMin: a.cicloMin, avviso: avvisoDi(a) }; });
 
 /* stato: dal sensore di stato del produttore, altrimenti dal consumo */
 const ATTIVO = /run|running|on\b|wash|dry|rins|spin|cook|heat|bake|active|in.?corso|lavaggio|asciug|cottura|funzion/i;
@@ -166,7 +169,16 @@ function config() {
     ${parti[asp]}
     <div class="fl1">${t("Sensori", "Sensors")}</div>
     <div class="stack">${VOCI().map(riga).join("")}</div>
-    <label class="fld1"><span>${t("In funzione sopra (W)", "Running above (W)")}</span><input type="number" min="1" value="${a.threshold || 10}" data-chg="apF" data-k="threshold"></label>
+    <div class="fl1">${t("Quando è in funzione e quando ha finito", "When it's running and when it's done")}</div>
+    <p class="small muted" style="margin:0 0 6px;line-height:1.45">${t("Ogni elettrodomestico consuma a modo suo: guarda quanto segna a riposo e mentre lavora, e regola i numeri. Valgono per la scheda, per gli avvisi della Home e per quelli sul telefono.", "Every appliance draws power its own way: check what it reads at rest and while working, and adjust the numbers. They apply to the card, the Home alerts and the phone alerts.")}${a.power && ok(a.power) ? ` <b>${t("Adesso", "Now")}: ${watts(W(a.power))}</b>` : ""}</p>
+    <div class="apn1">
+      <label class="fld1"><span>${t("In funzione sopra (W)", "Running above (W)")}</span><input type="text" inputmode="decimal" value="${String(a.threshold || 10).replace(".", ",")}" data-chg="apN" data-k="threshold"></label>
+      <label class="fld1"><span>${t("Ha finito sotto (W)", "Done below (W)")}</span><input type="text" inputmode="decimal" value="${String(a.fineW || 5).replace(".", ",")}" data-chg="apN" data-k="fineW"></label>
+      <label class="fld1"><span>${t("…per almeno (minuti)", "…for at least (minutes)")}</span><input type="number" min="1" value="${a.fineMin || 3}" data-chg="apN" data-k="fineMin"></label>
+      <label class="fld1"><span>${t("Ciclo più breve (minuti)", "Shortest cycle (minutes)")}</span><input type="number" min="0" value="${a.cicloMin ?? 10}" data-chg="apN" data-k="cicloMin"></label>
+    </div>
+    ${(a.fineW || 5) >= (a.threshold || 10) ? `<div class="small" style="color:var(--orange);margin-top:6px">⚠️ ${t("«Ha finito sotto» deve essere più basso di «In funzione sopra».", "«Done below» must be lower than «Running above».")}</div>` : ""}
+    <label class="row" style="gap:8px;margin-top:10px"><input type="checkbox" data-chg="apAvviso" ${avvisoDi(a) ? "checked" : ""}> 🔔 ${t("Avvisami quando ha finito (Home e telefono)", "Tell me when it's done (Home and phone)")}</label>
     <label class="row" style="gap:8px;margin-top:12px"><input type="checkbox" data-chg="apMappa" ${a.mappa === false ? "" : "checked"}> ${t("Mostra nella mappa (nella stanza della presa o del sensore)", "Show on the map (in the plug's or sensor's room)")}</label>
     <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn pri" data-act="apSave">💾 ${t("Salva", "Save")}</button>${idx >= 0 ? `<button class="btn bad" data-act="apDel">🗑 ${t("Togli", "Remove")}</button>` : ""}</div>`;
 }
@@ -183,6 +195,10 @@ function immagineScritta(el, fine) {
 CHG.apImg = el => immagineScritta(el, true);
 let attesaImg = null;
 document.addEventListener("input", e => { if (e.target.dataset?.chg !== "apImg" || !bz) return; clearTimeout(attesaImg); const el = e.target; attesaImg = setTimeout(() => immagineScritta(el, false), 700); });
+CHG.apN = el => { const k = el.dataset.k, v = parseFloat(String(el.value).replace(",", "."));
+  const def = { threshold: 10, fineW: 5, fineMin: 3, cicloMin: 10 }[k];
+  bz[k] = isNaN(v) || v < 0 ? def : k === "cicloMin" ? Math.round(v) : Math.max(k === "fineMin" ? 1 : 0.1, v); render(); };
+CHG.apAvviso = el => { bz.avviso = el.checked; };
 CHG.apMappa = el => { if (el.checked) delete bz.mappa; else bz.mappa = false; };
 const salva = L => cambia(l => { l.appliances = L; });
 Object.assign(ACT, {
@@ -199,7 +215,7 @@ Object.assign(ACT, {
   apSave: () => { if (!bz.nome) return toast(t("Scrivi un nome", "Write a name"), true);
     const a = bz, I = Object.values(a.img || {}), manca = I.some(u => fileEsiste(u) === "no");
     const L = [...elenco()]; if (idx < 0) L.push(a); else L[idx] = a; closeSheet();
-    salva(L).then(() => toast(a.aspetto === "immagini" && !I.length ? "💾 " + t("Salvato: senza immagini uso l'animazione della plancia", "Saved: with no images I use the dashboard animation")
+    salva(L).then(() => aggiornaAvvisiTelefono()).then(() => toast(a.aspetto === "immagini" && !I.length ? "💾 " + t("Salvato: senza immagini uso l'animazione della plancia", "Saved: with no images I use the dashboard animation")
       : manca ? "💾 " + t("Salvato, ma un'immagine non si trova", "Saved, but an image can't be found") : "💾 " + a.nome, manca)); },
   apDel: () => { const L = elenco().filter((_, j) => j !== idx); closeSheet(); salva(L); },
   apAuto: () => cambia(l => { delete l.appliances; }),
