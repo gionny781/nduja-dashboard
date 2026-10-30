@@ -172,3 +172,15 @@ body.light .ktf1{background:rgba(0,0,0,.08)}
 body.light .ktm1.me .ktb1{background:linear-gradient(165deg,#3393ff,#0a6cff)!important;color:#fff!important;border-color:transparent!important}
 body.light .ktm1 .ktb1.emo{background:none!important;box-shadow:none!important}
 body.light .ktm1.me .ktb1.emo{color:rgba(28,28,30,.46)!important}
+/* liste (0.7.39): righe e suggerimenti più netti sul chiaro, stella e scadenze leggibili */
+body.light .ls1r{background:rgba(255,255,255,.62)!important;border-color:rgba(0,0,0,.07)!important}
+body.light .ls1r.s-ritardo{background:rgba(255,69,58,.07)!important;border-color:rgba(255,69,58,.4)!important}body.light .ls1r.s-oggi{border-color:rgba(230,130,0,.42)!important}
+body.light .ls1r.drag{background:#fff!important;box-shadow:0 14px 34px rgba(31,45,80,.25)}
+body.light .ls1sg button{background:rgba(255,255,255,.7)!important;border-color:rgba(0,0,0,.08)!important}
+body.light .ls1sg button:hover{background:rgba(48,209,88,.14)!important;border-color:rgba(31,158,69,.4)!important}
+body.light .ls1sb.act{background:rgba(255,255,255,.9)!important;border-color:rgba(0,0,0,.06)!important;box-shadow:0 2px 10px -4px rgba(31,45,80,.25)!important}
+body.light .ls1sb .n{background:rgba(10,132,255,.14);color:#0a6fd6}
+body.light .ls1st.on{background:rgba(255,190,0,.16)!important;border-color:rgba(200,150,0,.5)!important;color:#946c00}
+body.light .ls1d.domani{color:#a57c00}body.light .ls1d.oggi{color:#d27400}body.light .ls1d.ritardo{color:#d70015}
+body.light .ls1ck.on i::after{border-color:#fff!important}
+body.light .ls1ok span{color:#1f9e45}

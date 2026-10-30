@@ -125,3 +125,11 @@ LS='{"mockCaldaia":"otgw","mockCaldaiaErr":"1"}' node tools/mock/shot.mjs caldai
 LS='{"mockChatDemo":"1"}' node tools/mock/shot.mjs chat 1280 900 chat.png
 LS='{"mockChatDemo":"1"}' node tools/mock/shot.mjs chat 390 844 tel.png '[data-act="ktApri"][data-id="famiglia"]'
 ```
+
+**Liste** (0.7.39), dati inventati: `todo.shopping_list` (Lista della spesa, `shopping_list`: aggiungi, togli, cambia, riordina, note), `todo.cose_da_fare` (Local To-do, tutte le funzioni, scadenze ieri, oggi alle 18, domani e tra 12 giorni)
+e `todo.commissioni` (Google Tasks, solo il giorno della scadenza). I servizi `todo.*` e `todo/item/move` cambiano davvero le voci e `todo/item/subscribe` le manda in tempo reale; con `mockNoTodoSub` l'abbonamento non c'è e la pagina usa `todo/item/list`.
+Reparti ricordati e suggerimenti stanno nella sezione `liste` di `mockCasa`; la lista aperta in `nduja_listaSel`, quella della Home in `nduja_listaHome`.
+```bash
+LS='{"nduja_listaSel":"todo.cose_da_fare"}' node tools/mock/shot.mjs liste 1280 1000 liste.png
+LS='{"mockNoTodoSub":"1"}' node tools/mock/shot.mjs liste 390 844 tel.png '[data-act="lsRep"] >> nth=0'
+```

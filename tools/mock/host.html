@@ -3,13 +3,31 @@
 <script>
 const now = Date.now()/1000, H = 3600;
 const st = (s, a = {}, ago = 600) => ({ s, a, lc: now - ago });
+/* liste (0.7.39), dati inventati: tre liste todo.* con voci, scadenze e funzioni diverse (supported_features come in Home Assistant).
+   Le voci cambiano con i servizi todo.* e todo/item/move; todo/item/subscribe le manda in tempo reale. mockNoTodoSub: niente abbonamento (si usa todo/item/list). */
+const gg = n => { const d = new Date(); d.setDate(d.getDate() + n); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+const ggh = (n, h, m = 0) => { const d = new Date(); d.setDate(d.getDate() + n); d.setHours(h, m, 0, 0); return d.toISOString(); };
+let TODO_N = 100;
+const vt = (summary, x = {}) => ({ uid: String(++TODO_N), summary, status: "needs_action", ...x });
+const TODO = {
+  "todo.shopping_list": [vt("Latte"), vt("Pane", { description: "integrale" }), vt("Uova"), vt("Pomodorini"), vt("Banane"), vt("Mozzarella", { description: "2 da 125 g" }), vt("Petto di pollo"),
+    vt("Spaghetti"), vt("Acqua frizzante"), vt("Detersivo piatti"), vt("Carta igienica"), vt("Lettiera gatto"), vt("Caffè", { status: "completed" }), vt("Shampoo", { status: "completed" })],
+  "todo.cose_da_fare": [vt("Pagare la bolletta della luce", { due: gg(-1) }), vt("Prenotare il tagliando dell'auto", { due: ggh(0, 18) }), vt("Chiamare l'idraulico", { due: gg(1), description: "perdita sotto il lavello" }),
+    vt("Rinnovare l'assicurazione di casa", { due: gg(12) }), vt("Regalo per la nonna", { description: "domenica a pranzo" }), vt("Sistemare la cantina"), vt("Ritirare la raccomandata", { status: "completed", due: gg(-2) })],
+  "todo.commissioni": [vt("Restituire il libro in biblioteca", { due: gg(3) }), vt("Portare le scarpe dal calzolaio")],
+};
+const TODO_F = { "todo.shopping_list": 79, "todo.cose_da_fare": 127, "todo.commissioni": 95 };
+const TODO_SUB = {};
+const nTodo = id => String(TODO[id].filter(x => x.status !== "completed").length);
 const ENT = {
   "zone.home": st("2", { friendly_name: "Casa", latitude: 41.89, longitude: 12.49 }),
   "person.mario": st("Lavoro", { friendly_name: "Mario", user_id: "u1", latitude: 41.95, longitude: 12.52, device_trackers: ["device_tracker.apple_watch", "device_tracker.iphone_di_mario"] }, 3.2*H),
   "person.anna": st("home", { friendly_name: "Anna", user_id: "u2", latitude: 41.89, longitude: 12.49, device_trackers: ["device_tracker.iphone_di_anna"] }, 5*H),
   "person.marco": st("not_home", { friendly_name: "Marco", user_id: "u3", latitude: 41.9, longitude: 12.5, device_trackers: [] }, 26*H),
   /* lista della spesa (chat 0.7.38: «condividi un elemento della lista») */
-  "todo.shopping_list": st("3", { friendly_name: "Lista della spesa" }),
+  "todo.shopping_list": st(nTodo("todo.shopping_list"), { friendly_name: "Lista della spesa", supported_features: TODO_F["todo.shopping_list"] }),
+  "todo.cose_da_fare": st(nTodo("todo.cose_da_fare"), { friendly_name: "Cose da fare", supported_features: TODO_F["todo.cose_da_fare"] }),
+  "todo.commissioni": st(nTodo("todo.commissioni"), { friendly_name: "Commissioni", supported_features: TODO_F["todo.commissioni"] }),
   "zone.lavoro": st("1", { friendly_name: "Lavoro" }),
   "device_tracker.iphone_di_mario": st("Lavoro", { source_type: "gps", friendly_name: "iPhone di Mario" }),
   "device_tracker.apple_watch": st("Lavoro", { source_type: "gps", friendly_name: "Apple Watch" }),
@@ -445,6 +463,8 @@ for (const e of REG.entities) { const r = RETE.find(([re]) => re.test(e.ei)); if
 const REG_FULL = () => { const oggi = new Date(); oggi.setHours(0, 0, 0, 0); const prima = oggi.getTime() / 1000 - 40 * 86400;
   return [...REG.entities.map(e => ({ entity_id: e.ei, platform: e.pl || "demo", device_id: e.di, disabled_by: null, created_at: e.ei === "device_tracker.tablet_ospite" ? Date.now() / 1000 - 40 * 60 : prima })),
     { entity_id: "device_tracker.dispositivo_02_00_00_00_00_77", platform: "fritz", disabled_by: "integration", original_name: "ESP-7A11C3", created_at: Date.now() / 1000 - 3 * 3600 }]; };
+/* liste: integrazioni */
+for (const e of REG.entities) e.pl = { "todo.shopping_list": "shopping_list", "todo.cose_da_fare": "local_todo", "todo.commissioni": "google_tasks" }[e.ei] || e.pl;
 /* irrigazione: stanza, integrazione e dispositivo */
 for (const e of REG.entities) {
   if (/rain_bird|prato_|orto_|siepe|terreno/.test(e.ei)) e.ai = "esterno";
@@ -573,6 +593,27 @@ function mockIrr(m) {
   else return false;
   setTimeout(() => window.mockStati?.({ c: ch }), 120); return true;
 }
+/* ---- liste finte (0.7.39): servizi todo.*, spostamento e abbonamento ---- */
+function todoInvia(id) {
+  const items = TODO[id].map(x => ({ due: null, description: null, ...x }));
+  (TODO_SUB[id] || new Set()).forEach(cb => cb({ items: JSON.parse(JSON.stringify(items)) }));
+  const e = ENT[id]; if (e && e.s !== nTodo(id)) { e.s = nTodo(id); window.mockStati?.({ c: { [id]: { "+": { s: e.s, lu: Date.now() / 1000 } } } }); }
+}
+function mockTodo(m) {
+  if (m.domain !== "todo") return false;
+  const d = m.service_data || {}, f = n => (TODO_F[id] & n) === n;
+  const id = [].concat(m.target?.entity_id || d.entity_id || [])[0], L = TODO[id]; if (!L) throw { code: "not_found", message: id };
+  for (const [k, n] of [["due_date", 16], ["due_datetime", 32], ["description", 64]]) if (k in d && !f(n)) throw { code: "service_validation_error", message: "La lista non supporta " + k };
+  const trova = v => L.find(x => x.uid === v || x.summary === v);
+  const scad = x => { if ("due_date" in d) { if (d.due_date) x.due = d.due_date; else delete x.due; } if ("due_datetime" in d) { if (d.due_datetime) x.due = new Date(d.due_datetime.replace(" ", "T")).toISOString(); else delete x.due; }
+    if ("description" in d) { if (d.description) x.description = d.description; else delete x.description; } };
+  if (m.service === "add_item") { const x = vt(String(d.item).trim()); scad(x); L.push(x); }
+  else if (m.service === "update_item") { const x = trova(d.item); if (!x) throw { code: "service_validation_error", message: "Voce non trovata: " + d.item }; if (d.rename) x.summary = d.rename; if (d.status) x.status = d.status; scad(x); }
+  else if (m.service === "remove_item") { const U = [].concat(d.item).map(v => trova(v)?.uid); TODO[id] = L.filter(x => !U.includes(x.uid)); }
+  else if (m.service === "remove_completed_items") TODO[id] = L.filter(x => x.status !== "completed");
+  else return false;
+  setTimeout(() => todoInvia(id), 80); return true;
+}
 /* ---- chat di famiglia finta (0.7.38): come chat.py, ma in localStorage ---- */
 const CHAT_IO = () => localStorage.getItem("mockNoAdmin") ? "u2" : localStorage.getItem("mockNoPerson") ? "u9" : "u1";
 const CHAT_MEMBRI = () => Object.entries(ENT).filter(([id, e]) => id.startsWith("person.") && e.a.user_id).map(([id, e]) => ({ uid: e.a.user_id, nome: e.a.friendly_name, persona: id }));
@@ -629,6 +670,10 @@ const conn = {
   addEventListener() {}, subscribeEvents() { return Promise.resolve(() => {}); },
   subscribeMessage(cb, m) {
     if (m?.type === "camera/webrtc/offer") return offerta(cb, m);
+    if (m?.type === "todo/item/subscribe") { if (localStorage.getItem("mockNoTodoSub")) return Promise.reject({ code: "unknown_command", message: "Unknown command." });
+      if (!TODO[m.entity_id]) return Promise.reject({ code: "invalid_entity_id", message: m.entity_id });
+      (TODO_SUB[m.entity_id] = TODO_SUB[m.entity_id] || new Set()).add(cb); setTimeout(() => todoInvia(m.entity_id), 40); console.log("TODO sub", m.entity_id);
+      return Promise.resolve(() => { TODO_SUB[m.entity_id].delete(cb); console.log("TODO unsub", m.entity_id); }); }
     if (m?.type === "nduja_dashboard/chat_subscribe") { if (localStorage.getItem("mockNoCasa")) return Promise.reject({ code: "unknown_command" }); window.mockChatEv = cb; return Promise.resolve(() => {}); }
     if (m?.type === "nduja_dashboard/casa_subscribe") { if (localStorage.getItem("mockNoCasa")) return Promise.reject({ code: "unknown_command" }); window.mockCasaEv = cb; return Promise.resolve(() => {}); }
     window.mockStati = cb; window.mockDati = () => cb({ a: ENT });
@@ -649,8 +694,10 @@ const conn = {
       /* chat di famiglia (0.7.38): mockChat = { conv: { id: { n, msg, letti } }, muti: [] }; mockChatDemo = conversazioni d'esempio */
       case "nduja_dashboard/chat_get": case "nduja_dashboard/chat_msg": case "nduja_dashboard/chat_send": case "nduja_dashboard/chat_read":
       case "nduja_dashboard/chat_delete": case "nduja_dashboard/chat_notifiche": case "nduja_dashboard/chat_presenza": return mockChat(m);
-      case "todo/item/list": return { items: m.entity_id === "todo.shopping_list" ? [{ uid: "1", summary: "Latte", status: "needs_action" }, { uid: "2", summary: "Pane", status: "needs_action", description: "integrale" },
-        { uid: "3", summary: "Uova", status: "needs_action" }, { uid: "4", summary: "Caffè", status: "completed" }] : [] };
+      case "todo/item/list": return { items: JSON.parse(JSON.stringify(TODO[m.entity_id] || [])) };
+      case "todo/item/move": { const L = TODO[m.entity_id]; if (!(TODO_F[m.entity_id] & 8)) throw { code: "not_supported", message: "To-do list does not support To-do item reordering" };
+        const i = L.findIndex(x => x.uid === m.uid); if (i < 0) throw { code: "failed", message: "uid" }; const [x] = L.splice(i, 1);
+        L.splice(m.previous_uid ? L.findIndex(y => y.uid === m.previous_uid) + 1 : 0, 0, x); console.log("WS", JSON.stringify(m)); setTimeout(() => todoInvia(m.entity_id), 60); return null; }
       /* pausa di un'automazione: spengo e salvo la scadenza nella sezione «pause» (il vero lo fa Home Assistant) */
       case "nduja_dashboard/pausa": {
         const C = JSON.parse(localStorage.getItem("mockCasa") || "{}"), x = C.pause || { rev: 0, dati: {} }, d = { ...x.dati };
@@ -705,6 +752,8 @@ const conn = {
         if (m.domain === "weather") { const pd = localStorage.getItem("mockPioggiaDomani");
           return { response: { [m.target.entity_id]: { forecast: [0,1,2,3,4].map(i => ({ datetime: day(i, 12), condition: i === 0 || (pd && i === 1) ? "rainy" : i === 3 && pd ? "partlycloudy" : "sunny", temperature: 20 + i, templow: 12,
             precipitation_probability: i === 0 ? 80 : pd && i === 1 ? 85 : pd && i === 3 ? 20 : 0, precipitation: pd && i === 1 ? 6.5 : 0 })) } } }; }
+        /* liste (0.7.39): le voci cambiano davvero e arrivano agli abbonati */
+        if (mockTodo(m)) { console.log("SVC", JSON.stringify(m)); return { response: {} }; }
         /* irrigazione (0.7.31): Rain Bird, Hydrawise, valvole, script del timer e ritardo pioggia cambiano lo stato finto */
         if (mockIrr(m)) { console.log("SVC", JSON.stringify(m)); return { response: {} }; }
         /* caldaia (0.7.37): acqua calda, modalità e circuito cambiano lo stato finto */

@@ -63,7 +63,7 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.36-dev ✅ | ven 30 ott | Rete e server (modem, mini PC, NAS, UPS) |
 | 0.7.37-dev ✅ | ven 30 ott | Caldaia |
 | 0.7.38-dev ✅ | ven 30 ott | Chat di famiglia |
-| 0.7.39-dev | dom 1 nov | Liste: spesa e cose da fare |
+| 0.7.39-dev ✅ | ven 30 ott | Liste: spesa e cose da fare |
 | 0.7.40-dev | mar 3 nov | Scadenze e promemoria |
 | 0.7.41-dev | gio 5 nov | Meteo completo |
 | 0.7.42-dev | sab 7 nov | Tapparelle e tende |

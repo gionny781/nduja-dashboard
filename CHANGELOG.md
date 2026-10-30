@@ -3,6 +3,19 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.39-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+- 🇮🇹 **🛒 Liste**, pagina nuova: la spesa e le cose da fare sulle liste `todo` di Home Assistant (Lista della spesa, Local To-do, Google Tasks, Todoist, Bring!…). Compare solo se c'è almeno una lista. A sinistra (sul telefono in alto) le liste con il numero di voci da fare.
+- 🇮🇹 **In tempo reale**: una voce aggiunta o spuntata da Alexa, dall'app o da un altro telefono compare subito. Si usano solo le funzioni che la lista permette: scadenza (giorno, o giorno e ora), note, riordino.
+- 🇮🇹 **Comodità**: campo «Aggiungi…» sempre in alto con l'invio da tastiera; **suggerimenti** dalle voci usate più spesso (per la spesa si parte da latte, pane, uova…), da togliere con ⋯; **spunta grande** per «fatto»; le fatte vanno in fondo e si svuotano con un tocco (doppio, per sicurezza); se riaggiungi una voce già fatta torna da fare. **Trascina** ⠿ per riordinare (o ▲▼ nella voce); **scadenze colorate**: scaduto, oggi, domani. Tocca una voce per cambiare nome, note e scadenza o eliminarla.
+- 🇮🇹 **Spesa per reparto**: frutta e verdura, pane, latticini, carne e pesce, dispensa, colazione, surgelati, bevande, casa, igiene, animali, con un dizionario scritto per 'Nduja (italiano e inglese). Reparto sbagliato? Tocca l'icona accanto alla voce: la plancia se lo ricorda per tutta la casa. «Per reparto» o «In ordine» si sceglie su ogni dispositivo.
+- 🇮🇹 **In Home** la scheda **«Liste»** con la lista preferita (⭐ nella pagina) e un campo per aggiungere al volo. Gli amministratori con ⚙️ scelgono quali liste mostrare e quali sono della spesa.
+- 🇬🇧 **🛒 Lists**, a new page: shopping and to-dos on Home Assistant's `todo` lists (Shopping list, Local To-do, Google Tasks, Todoist, Bring!…). Shown only when there's at least one list. On the left (on top on phones) the lists with how many items are left.
+- 🇬🇧 **Live**: an item added or ticked from Alexa, the app or another phone shows up right away. Only the features the list supports are used: due date (day, or day and time), notes, reordering.
+- 🇬🇧 **Handy**: an «Add…» field always on top that submits with Enter; **suggestions** from the items you use most (shopping starts from milk, bread, eggs…), removable with ⋯; a **big tick** for «done»; done items go to the bottom and are cleared in one tap (two, to be safe); re-adding a done item puts it back on the list. **Drag** ⠿ to reorder (or ▲▼ in the item); **coloured due dates**: overdue, today, tomorrow. Tap an item to change its name, notes and due date or delete it.
+- 🇬🇧 **Shopping by aisle**: fruit and veg, bakery, dairy, meat and fish, pantry, breakfast, frozen, drinks, household, personal care, pets, with a dictionary written for 'Nduja (Italian and English). Wrong aisle? Tap the icon next to the item: the dashboard remembers it for the whole home. «By aisle» or «In order» is chosen on each device.
+- 🇬🇧 **On Home** the **«Lists»** card with your favourite list (⭐ on the page) and a field to add on the fly. Admins choose with ⚙️ which lists to show and which are for shopping.
+
 ## 0.7.38-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 > ⚠️ 🇮🇹 Dopo l'aggiornamento **riavvia Home Assistant**: cambia anche la parte in Python. · 🇬🇧 After updating **restart Home Assistant**: the Python part changes too.
