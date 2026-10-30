@@ -64,7 +64,7 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.37-dev ✅ | ven 30 ott | Caldaia |
 | 0.7.38-dev ✅ | ven 30 ott | Chat di famiglia |
 | 0.7.39-dev ✅ | ven 30 ott | Liste: spesa e cose da fare |
-| 0.7.40-dev | dom 1 nov | Scadenze e promemoria |
+| 0.7.40-dev ✅ | ven 30 ott | Scadenze e promemoria |
 | 0.7.41-dev | mar 3 nov | Meteo completo |
 | 0.7.42-dev | gio 5 nov | Tapparelle e tende |
 | 0.7.43-dev | sab 7 nov | Qualità dell'aria |

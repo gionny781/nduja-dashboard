@@ -184,3 +184,10 @@ body.light .ls1st.on{background:rgba(255,190,0,.16)!important;border-color:rgba(
 body.light .ls1d.domani{color:#a57c00}body.light .ls1d.oggi{color:#d27400}body.light .ls1d.ritardo{color:#d70015}
 body.light .ls1ck.on i::after{border-color:#fff!important}
 body.light .ls1ok span{color:#1f9e45}
+/* scadenze (0.7.40) */
+body.light .sc1r{background:rgba(255,255,255,.62)!important;border-color:rgba(0,0,0,.07)!important}
+body.light .sc1r.s-ritardo{background:rgba(255,69,58,.07)!important;border-color:rgba(255,69,58,.4)!important}body.light .sc1r.s-oggi{border-color:rgba(230,130,0,.42)!important}
+body.light .sc1dt{background:#fff!important;box-shadow:0 1px 4px rgba(31,45,80,.14),inset 0 0 0 1px rgba(0,0,0,.06)!important}
+body.light .sc1dt i{color:#fff!important;text-shadow:0 1px 1px rgba(0,0,0,.18)}
+body.light .sc1q.domani{color:#a57c00}body.light .sc1q.oggi{color:#d27400}body.light .sc1q.ritardo,body.light .sc1gh.scadute,body.light .sc1h .tx>span b.r{color:#d70015}
+body.light .sc1gh.oggi,body.light .sc1h .tx>span b.o{color:#d27400}

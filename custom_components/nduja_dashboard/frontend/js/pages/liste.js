@@ -26,7 +26,10 @@ const PIATT_SPESA = ["shopping_list", "bring", "ourgroceries", "anylist", "picni
 const spesaAuto = id => PIATT_SPESA.includes(REG[id]?.platform) || /spes|shopping|grocer|einkauf|courses|compra|supermerc|market|alimentari/i.test(id + " " + nm(id));
 /** lista della spesa: le voci si raggruppano per reparto e ci sono i suggerimenti della spesa (scelta dell'amministratore, altrimenti automatico) */
 const isSpesa = id => { const v = LAYOUT.liste?.spesa?.[id]; return v == null ? spesaAuto(id) : !!v; };
-const tutte = () => allEnts("todo").sort((a, b) => isSpesa(b) - isSpesa(a) || nm(a).localeCompare(nm(b), LOC));
+/** liste che hanno una pagina tutta loro (Scadenze): funzioni registrate dalle altre pagine */
+export const ESCLUSE = [];
+const esclusa = id => ESCLUSE.some(f => { try { return f(id); } catch { return false; } });
+const tutte = () => allEnts("todo", id => !esclusa(id)).sort((a, b) => isSpesa(b) - isSpesa(a) || nm(a).localeCompare(nm(b), LOC));
 /** le liste della plancia (senza quelle nascoste dall'amministratore) */
 export const liste = () => tutte().filter(id => !(LAYOUT.liste?.nascoste || []).includes(id));
 const aperta = () => { const L = liste(), s = sGet("listaSel"); return L.includes(s) ? s : L[0] || null; };
@@ -39,7 +42,7 @@ const PIATT = { shopping_list: t("Lista della spesa", "Shopping list"), local_to
 /* ---------- voci: in tempo reale ---------- */
 const V = {};   // todo.x -> { voci: [..] | null, err, unsub, modo: "sub" | "list", agg, usato }
 const pulisci = x => ({ uid: x.uid ?? x.summary, summary: String(x.summary ?? ""), status: x.status === "completed" ? "completed" : "needs_action", due: x.due || null, description: x.description || "" });
-async function leggi(id) {
+export async function leggi(id) {
   const v = V[id]; if (!v) return;
   v.agg = S[id]?.last_updated;
   try { const r = await ws({ type: "todo/item/list", entity_id: id }); v.voci = (r?.items || []).map(pulisci); v.err = false; }
@@ -56,7 +59,7 @@ function abbona(id) {
   setTimeout(() => { if (V[id] === v && !v.voci) leggi(id); }, 6000);
 }
 /** voci di una lista (le carica e le segue in tempo reale): null finché non arrivano */
-function voci(id) {
+export function voci(id) {
   if (!id || !conn) return null;
   if (!V[id]) { V[id] = { voci: null, err: false, unsub: null, modo: "sub" }; abbona(id); }
   V[id].usato = Date.now();
@@ -124,8 +127,11 @@ function suggerimenti(id, q) {
     .sort((a, b) => b.p - a.p).slice(0, qk ? 6 : 8);
 }
 
+/** la lista non si riesce a leggere (e non ci sono voci da mostrare) */
+export const listaKo = id => !!V[id]?.err && !V[id]?.voci;
+
 /* ---------- comandi ---------- */
-async function cmd(id, service, data) {
+export async function cmd(id, service, data) {
   try { await svc("todo", service, data, { entity_id: id }); }
   catch (e) { leggi(id); return false; }   // svc ha già avvisato: rileggo la lista com'è davvero
   finally { if (V[id]?.modo === "list") leggi(id); }

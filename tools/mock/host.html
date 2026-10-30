@@ -15,8 +15,16 @@ const TODO = {
   "todo.cose_da_fare": [vt("Pagare la bolletta della luce", { due: gg(-1) }), vt("Prenotare il tagliando dell'auto", { due: ggh(0, 18) }), vt("Chiamare l'idraulico", { due: gg(1), description: "perdita sotto il lavello" }),
     vt("Rinnovare l'assicurazione di casa", { due: gg(12) }), vt("Regalo per la nonna", { description: "domenica a pranzo" }), vt("Sistemare la cantina"), vt("Ritirare la raccomandata", { status: "completed", due: gg(-2) })],
   "todo.commissioni": [vt("Restituire il libro in biblioteca", { due: gg(3) }), vt("Portare le scarpe dal calzolaio")],
+  /* scadenze (0.7.40): categoria, ripetizione e importo nella descrizione, come le scrive la plancia */
+  "todo.scadenze": [vt("Bolletta della luce", { due: gg(-2), description: "🏷️ Bollette · 🔁 Ogni 2 mesi · 💰 82,40 €" }), vt("Revisione auto", { due: gg(0), description: "🏷️ Auto · 🔁 Ogni 2 anni\nofficina Rossi, via Roma 12" }),
+    vt("Dentista, controllo", { due: ggh(1, 16, 30), description: "🏷️ Salute\nportare la tessera sanitaria" }), vt("Rata del condominio", { due: gg(3), description: "🏷️ Casa · 🔁 Ogni 3 mesi · 💰 210,00 €" }),
+    vt("Netflix", { due: gg(5), description: "🏷️ Abbonamenti · 🔁 Ogni mese · 💰 13,99 €" }), vt("Compleanno di Anna", { due: gg(12), description: "🏷️ Altro · 🔁 Ogni anno" }),
+    vt("Bollo auto", { due: gg(20), description: "🏷️ Auto · 🔁 Ogni anno · 💰 247,00 €" }), vt("Rinnovo carta d'identità", { due: gg(150), description: "🏷️ Documenti" }),
+    vt("Garanzia della lavatrice", { description: "🏷️ Documenti\nscontrino nel cassetto dello studio" }), vt("Assicurazione casa", { status: "completed", due: gg(-6), description: "🏷️ Casa · 💰 186,00 €" })],
 };
-const TODO_F = { "todo.shopping_list": 79, "todo.cose_da_fare": 127, "todo.commissioni": 95 };
+const TODO_F = { "todo.shopping_list": 79, "todo.cose_da_fare": 127, "todo.commissioni": 95, "todo.scadenze": 127 };
+/* mockNoScadenze: niente lista delle scadenze (prova di «Crea la lista Scadenze»; mockNoFlow = Local To-do non si può creare da qui) */
+if (localStorage.getItem("mockNoScadenze")) delete TODO["todo.scadenze"];
 const TODO_SUB = {};
 const nTodo = id => String(TODO[id].filter(x => x.status !== "completed").length);
 const ENT = {
@@ -28,6 +36,7 @@ const ENT = {
   "todo.shopping_list": st(nTodo("todo.shopping_list"), { friendly_name: "Lista della spesa", supported_features: TODO_F["todo.shopping_list"] }),
   "todo.cose_da_fare": st(nTodo("todo.cose_da_fare"), { friendly_name: "Cose da fare", supported_features: TODO_F["todo.cose_da_fare"] }),
   "todo.commissioni": st(nTodo("todo.commissioni"), { friendly_name: "Commissioni", supported_features: TODO_F["todo.commissioni"] }),
+  ...(TODO["todo.scadenze"] ? { "todo.scadenze": st(nTodo("todo.scadenze"), { friendly_name: "Scadenze", supported_features: 127 }) } : {}),
   "zone.lavoro": st("1", { friendly_name: "Lavoro" }),
   "device_tracker.iphone_di_mario": st("Lavoro", { source_type: "gps", friendly_name: "iPhone di Mario" }),
   "device_tracker.apple_watch": st("Lavoro", { source_type: "gps", friendly_name: "Apple Watch" }),
@@ -464,7 +473,8 @@ const REG_FULL = () => { const oggi = new Date(); oggi.setHours(0, 0, 0, 0); con
   return [...REG.entities.map(e => ({ entity_id: e.ei, platform: e.pl || "demo", device_id: e.di, disabled_by: null, created_at: e.ei === "device_tracker.tablet_ospite" ? Date.now() / 1000 - 40 * 60 : prima })),
     { entity_id: "device_tracker.dispositivo_02_00_00_00_00_77", platform: "fritz", disabled_by: "integration", original_name: "ESP-7A11C3", created_at: Date.now() / 1000 - 3 * 3600 }]; };
 /* liste: integrazioni */
-for (const e of REG.entities) e.pl = { "todo.shopping_list": "shopping_list", "todo.cose_da_fare": "local_todo", "todo.commissioni": "google_tasks" }[e.ei] || e.pl;
+for (const e of REG.entities) e.pl = { "todo.shopping_list": "shopping_list", "todo.cose_da_fare": "local_todo", "todo.commissioni": "google_tasks", "todo.scadenze": "local_todo",
+  "device_tracker.iphone_di_mario": "mobile_app", "device_tracker.iphone_di_anna": "mobile_app" }[e.ei] || e.pl;
 /* irrigazione: stanza, integrazione e dispositivo */
 for (const e of REG.entities) {
   if (/rain_bird|prato_|orto_|siepe|terreno/.test(e.ei)) e.ai = "esterno";
@@ -659,6 +669,14 @@ window.mockChatArriva = (conv, da, testo) => { const D = chatDati(), c = D.conv[
 window.mockChatLegge = (conv, uid) => { const D = chatDati(), c = D.conv[conv]; c.letti[uid] = c.n; localStorage.setItem("mockChat", JSON.stringify(D)); window.mockChatEv?.({ conv, tipo: "letto", uid, n: c.n }); };
 /* api REST di Home Assistant (script e automazioni creati dalla plancia): li aggiungo agli stati finti */
 function mockApi(url, o) {
+  /* scadenze (0.7.40): flusso di configurazione di Local To-do («Crea la lista Scadenze») */
+  const fl = String(url).match(/\/api\/config\/config_entries\/flow(?:\/([\w-]+))?$/);
+  if (fl) { console.log("API", o?.method || "GET", url, o?.body || ""); const ris = x => Promise.resolve(new Response(JSON.stringify(x), { status: 200, headers: { "Content-Type": "application/json" } }));
+    if (localStorage.getItem("mockNoFlow")) return Promise.resolve(new Response(JSON.stringify({ message: "Invalid handler specified" }), { status: 400 }));
+    if (!fl[1]) return ris({ type: "form", flow_id: "flusso1", handler: "local_todo", step_id: "user", data_schema: [{ name: "todo_list_name", required: true, type: "string" }] });
+    const nome = JSON.parse(o.body).todo_list_name, id = "todo." + nome.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+    TODO[id] = []; TODO_F[id] = 127; ENT[id] = st("0", { friendly_name: nome, supported_features: 127 }); setTimeout(() => window.mockStati?.({ a: { [id]: ENT[id] } }), 700);
+    return ris({ type: "create_entry", title: nome, result: { entry_id: "finto" } }); }
   const mm = String(url).match(/\/api\/config\/(script|automation)\/config\/([\w-]+)/); if (!mm) return null;
   const [, tipo, id] = mm, eid = tipo + "." + id, corpo = o?.body ? JSON.parse(o.body) : {};
   console.log("API", o?.method || "GET", url, o?.body || "");
@@ -723,7 +741,7 @@ const conn = {
       case "config/floor_registry/list": return localStorage.getItem("mockPiani") ? [{ floor_id: "terra", name: "Piano terra", level: 0 }, { floor_id: "primo", name: "Primo piano", level: 1 }] : [];
       case "recorder/statistic_during_period": return { change: /gas/.test(m.statistic_id) ? (m.calendar?.period === "month" ? 61.3 : 2.84) : 1.23 };
       case "config/auth/list": return [{ id: "u1", name: "Mario", is_owner: true, is_active: true, group_ids: ["system-admin"] }, { id: "u2", name: "Anna", is_active: true, group_ids: ["system-users"] }];
-      case "get_services": return { notify: { mobile_app_telefono_demo: {}, persistent_notification: {} }, dreame_vacuum: { vacuum_clean_segment: {} }, rainbird: { start_irrigation: {} }, hydrawise: { start_watering: {}, suspend: {}, resume: {} } };
+      case "get_services": return { notify: { mobile_app_telefono_demo: {}, mobile_app_iphone_di_mario: {}, mobile_app_iphone_di_anna: {}, persistent_notification: {} }, todo: { get_items: {}, add_item: {}, update_item: {} }, dreame_vacuum: { vacuum_clean_segment: {} }, rainbird: { start_irrigation: {} }, hydrawise: { start_watering: {}, suspend: {}, resume: {} } };
       case "energy/get_prefs": return { energy_sources: [{ type: "grid", stat_energy_from: "sensor.imp", stat_energy_to: "sensor.exp", number_energy_price: 0.35, number_energy_price_export: 0.044 }, { type: "solar", stat_energy_from: "sensor.prod" },
         ...(localStorage.getItem("mockNoGas") ? [] : [{ type: "gas", stat_energy_from: "sensor.contatore_gas", number_energy_price: 1.05 }])], device_consumption: [] };
       case "recorder/statistics_during_period": { const out = {}; const st = new Date(m.start_time).getTime(), step = m.period === "hour" ? 3600e3 : m.period === "month" ? 30*864e5 : 864e5;

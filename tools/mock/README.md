@@ -133,3 +133,11 @@ Reparti ricordati e suggerimenti stanno nella sezione `liste` di `mockCasa`; la 
 LS='{"nduja_listaSel":"todo.cose_da_fare"}' node tools/mock/shot.mjs liste 1280 1000 liste.png
 LS='{"mockNoTodoSub":"1"}' node tools/mock/shot.mjs liste 390 844 tel.png '[data-act="lsRep"] >> nth=0'
 ```
+
+**Scadenze** (0.7.40), dati inventati: `todo.scadenze` (Local To-do «Scadenze», tutte le funzioni) con bollette, revisione, dentista (con l'ora), condominio, Netflix, compleanno, bollo, carta d'identità, una garanzia senza data e una fatta;
+categoria, ripetizione e importo sono nella descrizione come li scrive la plancia. `get_services` ha `notify.mobile_app_iphone_di_mario` e `_anna` (i telefoni di Mario e Anna) per provare 🔔: l'automazione creata compare come `API POST …/nduja_scadenze`.
+Con `mockNoScadenze` la lista non c'è (prova di «Crea la lista Scadenze»: il flusso di Local To-do `/api/config/config_entries/flow` è finto e crea la lista); con anche `mockNoFlow` Home Assistant rifiuta e compaiono le istruzioni.
+```bash
+node tools/mock/shot.mjs scadenze 1280 1000 scadenze.png
+LS='{"mockNoScadenze":"1"}' node tools/mock/shot.mjs scadenze 390 844 crea.png '[data-act="scCrea"]'
+```
