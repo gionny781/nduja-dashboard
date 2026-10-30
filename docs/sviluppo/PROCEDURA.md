@@ -18,6 +18,7 @@ Ogni sessione programmata realizza **una sola scheda** (`docs/sviluppo/<versione
    - se è già la versione di oggi o una successiva, fermati e scrivi a Giovanni.
 
 ## 2. Regole
+- **Autonomia (regola di Giovanni, la più importante):** ogni utente deve poter regolare tutto da solo dalla plancia, senza YAML e senza chiedere a nessuno. Niente soglie, tempi o scelte fissi nel codice quando dipendono dalla casa o dai dispositivi (consumi, minuti, temperature, orari…): metti un valore predefinito sensato e un campo per cambiarlo, e spiega in una riga a cosa serve. Se un avviso o un'automazione creata dalla plancia usa quei valori, deve aggiornarsi da sola quando l'utente li cambia.
 - **Stile del codice esistente:**
   - moduli ES;
   - testi sempre bilingue con `t("italiano", "english")`;
