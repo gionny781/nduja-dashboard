@@ -3,6 +3,10 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.37-dev1
+- 🇮🇹 **Avvisi sul telefono**: «elettrodomestico finito» arrivava anche senza lavaggio, quando il consumo a riposo oscillava intorno ai 5 W o la presa tornava disponibile dopo un riavvio. Ora l'avviso parte solo se prima l'elettrodomestico stava davvero lavorando (sopra 10 W). Riapri 📱 e premi «Salva».
+- 🇬🇧 **Phone alerts**: «appliance done» also fired without a cycle, when standby power hovered around 5 W or the plug came back after a restart. Now it fires only if the appliance was really running before (above 10 W). Reopen 📱 and press «Save».
+
 ## 0.7.37-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 - 🇮🇹 **🔥 Caldaia**, pagina nuova separata da Clima, che compare solo se trova la caldaia: la riconosce da sola con Ariston, myVAILLANT, ViCare, Bosch/Buderus, Remeha/Baxi/De Dietrich, Immergas, ebusd, OpenTherm Gateway, Plugwise, Netatmo e altre, o dai suoi sensori (fiamma, modulazione, mandata e ritorno, pressione, acqua calda), anche quelli «diagnostici».
