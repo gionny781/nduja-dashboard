@@ -194,3 +194,8 @@ body.light .sc1gh.oggi,body.light .sc1h .tx>span b.o{color:#d27400}
 /* meteo (0.7.41): numeri del grafico orario più scuri sul chiaro */
 body.light .mt1h .tv{filter:brightness(.78) saturate(1.3)}
 body.light .mt1d .db u,body.light .mt1uv i{border-color:#3a3a3c}
+/* tapparelle (0.7.42): telaio, cassonetto e lamelle chiari; il cielo resta quello vero */
+body.light .tp1d{--fr:#d2d8e2;--bx:#a2acbc;--sl:#f7f8fb;--sl2:#b3bbc8;--aw:#ffffff;--fb2:#cdb48a}
+body.light .tp1d .gap{fill:#3a4252}
+body.light .tp1sb i{background:#fff;border-color:rgba(0,0,0,.12)}
+body.light .tp1ps option{background:#fff;color:#1c1c1e}

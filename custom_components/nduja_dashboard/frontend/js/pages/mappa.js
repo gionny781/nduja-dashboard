@@ -2,7 +2,7 @@
    clima, movimento e temperatura. Si costruisce da sola dalle aree; con ✏️ Modifica sposti e ridimensioni
    le stanze (frecce e ＋/−) e puoi mettere sotto la piantina vera (un'immagine in /local/…). */
 import { S, AREAS, FLOORS, ACT, CHG, LAYOUT, UI, t, esc, fnum, ok, isOn, inArea, areaOf, areasSorted, roomTemp, roomHum, lightsOn, luciContate, luciComando, isLightSwitch,
-  deviceClass, svc, toast, card, empty, page, sGet, sSet, render, isAdmin, attr, openSheet, closeSheet, nm, moreInfo } from "../core.js";
+  deviceClass, svc, toast, card, empty, page, sGet, sSet, render, isAdmin, attr, openSheet, closeSheet, nm, moreInfo, VISTE } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 import { elettroMappa } from "./elettrodomestici.js";
 import { vistaClima, momentoClima } from "../climadisegni.js";
@@ -79,8 +79,10 @@ export function dispositivi(a, f) {
 }
 /* il clima con il suo aspetto (animazione, immagini o icona), come nella pagina Clima */
 const eLuce = id => id.startsWith("light.") || isLightSwitch(id);
-const chipD = (id, a, f) => `<span class="mpd2 ${id.startsWith("climate.") ? "cl2 m-" + momentoClima(id).k : eLuce(id) ? "lt4 " + (isOn(id) ? "on" : "") : isOn(id) || ["open", "playing", "cleaning", "unlocked"].includes(S[id]?.state) ? "on" : ""}">
-  <button data-act="mpDev" data-id="${id}" title="${esc(nm(id))}">${id.startsWith("climate.") ? vistaClima(id, "xs") : eLuce(id) ? iconaPiccola(id) : ICO_D(id)}</button>${UI.edit ? `<button class="dx" data-act="mpDevDel" data-id="${id}" data-a="${a}" data-f="${f}">✕</button>` : ""}</span>`;
+/* le tapparelle con il loro disegno (pagina Tapparelle), aperte quanto sono aperte */
+const tappMini = id => id.startsWith("cover.") ? VISTE.tapMini?.(id) || null : null;
+const chipD = (id, a, f) => { const tp = tappMini(id); return `<span class="mpd2 ${id.startsWith("climate.") ? "cl2 m-" + momentoClima(id).k : eLuce(id) ? "lt4 " + (isOn(id) ? "on" : "") : tp ? "tp2" : isOn(id) || ["open", "playing", "cleaning", "unlocked"].includes(S[id]?.state) ? "on" : ""}">
+  <button data-act="mpDev" data-id="${id}" title="${esc(nm(id))}">${id.startsWith("climate.") ? vistaClima(id, "xs") : eLuce(id) ? iconaPiccola(id) : tp || ICO_D(id)}</button>${UI.edit ? `<button class="dx" data-act="mpDevDel" data-id="${id}" data-a="${a}" data-f="${f}">✕</button>` : ""}</span>`; };
 /* elettrodomestici della stanza: con il loro aspetto (animazione, immagine o icona), si scelgono nella pagina Elettrodomestici */
 const rigaDev = (a, f) => { const D = dispositivi(a, f), E = AREAS[a] ? elettroMappa(a) : "";
   return D.length || E || UI.edit ? `<div class="mpd1">${E}${D.map(id => chipD(id, a, f)).join("")}${UI.edit ? `<button class="mpd2 add" data-act="mpDevAdd" data-a="${a}" data-f="${f}">＋</button>` : ""}</div>` : ""; };

@@ -1,7 +1,7 @@
 /* Home: saluto e riepilogo, meteo, stanze (per piano), persone, scene, cose da sistemare.
    Tutto viene dalle aree e dai dispositivi di Home Assistant: niente da configurare. */
 import { S, HOME_EXTRA, PAGES, AREAS, FLOORS, UI, ACT, CHG, t, LOC, esc, fnum, attr, ok, val, nm, ents, inArea, areaOf, areasSorted, roomTemp, roomHum,
-  openings, lightsOn, luci, isLightSwitch, isOn, card, empty, lightTile, climateCard, entityRow, openSheet, closeSheet, page, WX, HVAC, forecast, deviceClass, shortName, svc, toast, ago, weatherEnt, LAYOUT, isAdmin, saveLayout, utenteCfg } from "../core.js";
+  openings, lightsOn, luci, isLightSwitch, isOn, card, empty, lightTile, climateCard, entityRow, openSheet, closeSheet, page, WX, HVAC, forecast, deviceClass, shortName, svc, toast, ago, weatherEnt, LAYOUT, isAdmin, saveLayout, utenteCfg, VISTE } from "../core.js";
 import { item, addBtn, scegli, isTemp, isHum, cambia } from "../edit.js";
 import { personeCard } from "../people.js";
 import { avvisiCard } from "../avvisi.js";
@@ -97,7 +97,7 @@ function schedaStanza(a) {
   return `<div class="sh-head"><div><h3>${esc(ar.name)}</h3><div class="small muted">${T != null ? fnum(T) + "°" : ""}${H != null ? " · " + Math.round(H) + "%" : ""}${ar.floor && FLOORS[ar.floor] ? " · " + esc(FLOORS[ar.floor].name) : ""}</div></div>${isAdmin() ? `<button class="btn sm" data-act="rmEdit" data-id="${a}">✏️ ${t("Personalizza", "Customize")}</button>` : ""}<button class="x" data-act="sheetClose">×</button></div>
     ${L.length ? `<div class="row between" style="margin:6px 0 8px"><b>${t("Luci", "Lights")}</b>${lightsOn(a).length ? `<button class="btn sm" data-act="lightsOff" data-area="${a}">${t("Spegni", "Turn off")}</button>` : ""}</div><div class="tiles">${L.map(id => lightTile(id)).join("")}</div>` : ""}
     ${C.length ? `<div style="margin:14px 0 8px"><b>${t("Clima", "Climate")}</b></div><div class="stack">${C.map(id => climateCard(id)).join("")}</div>` : ""}
-    ${R.length ? `<div style="margin:14px 0 8px"><b>${t("Dispositivi", "Devices")}</b></div><div class="stack">${R.map(entityRow).join("")}</div>` : ""}
+    ${R.length ? `<div style="margin:14px 0 8px"><b>${t("Dispositivi", "Devices")}</b></div><div class="stack">${R.map(id => VISTE.tapRiga?.(id) || entityRow(id)).join("")}</div>` : ""}
     ${O.length ? `<div style="margin:14px 0 8px"><b>${t("Porte e finestre", "Doors and windows")}</b></div><div class="stack">${O.map(id => `<div class="li ${isOn(id) ? "alert" : ""}"><span class="ic">${isOn(id) ? "🔓" : "🔒"}</span><div class="tx"><b>${esc(shortName(id))}</b><span>${isOn(id) ? t("aperta", "open") : t("chiusa", "closed")} · ${ago(S[id].last_changed)}</span></div></div>`).join("")}</div>` : ""}
     ${SN.length ? `<div style="margin:14px 0 8px"><b>${t("Sensori", "Sensors")}</b></div><div class="sn1">${SN.map(id => `<button data-act="more" data-id="${id}"><small>${esc(shortName(id))}</small><b>${esc(S[id].state)} ${esc(attr(id, "unit_of_measurement") || "")}</b></button>`).join("")}</div>` : ""}`;
 }

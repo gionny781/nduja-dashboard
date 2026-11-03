@@ -1,4 +1,4 @@
-/* Prese e dispositivi: prese e interruttori, tapparelle, ventilatori, TV, serrature, robot… divisi per stanza. */
+/* Prese e dispositivi: prese e interruttori, tapparelle (se non c'è la pagina Tapparelle), ventilatori, TV, serrature, robot… divisi per stanza. */
 import { AREAS, PAGES, LAYOUT, VISTE, t, esc, ents, isLightSwitch, areaOf, areasSorted, entityRow, card, empty, page, UI, isAdmin, utenteCfg } from "../core.js";
 import { item, addBtn } from "../edit.js";
 
@@ -11,7 +11,11 @@ function zoneIrrigazione() {
 function comandiRete() {
   try { return PAGES.rete?.show() && LAYOUT.pages?.rete !== false && utenteCfg().pages?.rete !== false && VISTE.reteMostrati ? VISTE.reteMostrati() : new Set(); } catch { return new Set(); }
 }
-const tutti = () => { const Z = zoneIrrigazione(), R = comandiRete(); return DOM.flatMap(d => ents(d)).filter(id => !isLightSwitch(id) && !Z.has(id) && !R.has(id)); };   // gli interruttori scelti come luci stanno nella pagina Luci
+/* tapparelle e tende stanno nella pagina Tapparelle, se c'è e non è spenta */
+function tapparelle() {
+  try { return PAGES.tapparelle?.show() && LAYOUT.pages?.tapparelle !== false && utenteCfg().pages?.tapparelle !== false && VISTE.tapTutte ? new Set(VISTE.tapTutte()) : new Set(); } catch { return new Set(); }
+}
+const tutti = () => { const Z = zoneIrrigazione(), R = comandiRete(), T = tapparelle(); return DOM.flatMap(d => ents(d)).filter(id => !isLightSwitch(id) && !Z.has(id) && !R.has(id) && !T.has(id)); };   // gli interruttori scelti come luci stanno nella pagina Luci
 function pagina() {
   const L = tutti(), g = {};
   L.forEach(id => (g[areaOf(id) && AREAS[areaOf(id)] ? areaOf(id) : "_"] = g[areaOf(id) && AREAS[areaOf(id)] ? areaOf(id) : "_"] || []).push(id));

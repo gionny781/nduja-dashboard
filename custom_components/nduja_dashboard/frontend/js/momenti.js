@@ -1,7 +1,7 @@
 /* Momenti: pulsanti che fanno più cose insieme («Esco», «Notte», «Buongiorno»…).
    Si costruiscono come le azioni delle automazioni e si salvano in Home Assistant come script
    (così funzionano anche da Alexa, Google, automazioni). In Home c'è la scheda «Momenti». */
-import { S, ACT, CHG, LAYOUT, UI, t, esc, nm, card, svc, toast, openSheet, closeSheet, render, isAdmin, api, etichettaNduja } from "./core.js";
+import { S, ACT, CHG, LAYOUT, UI, VISTE, t, esc, nm, card, svc, toast, openSheet, closeSheet, render, isAdmin, api, etichettaNduja } from "./core.js";
 import { cambia } from "./edit.js";
 import { editorAzioni, azioniHA, usaModello } from "./pages/automazioni.js";
 
@@ -21,8 +21,15 @@ function scheda() {
     ${nuovo ? `<div class="vr1" style="margin-bottom:8px">${PRONTI().map((p, i) => `<button data-act="moPronto" data-i="${i}">${p.icona} ${esc(p.nome)}</button>`).join("")}</div>` : ""}
     <label class="fld1"><span>${t("Nome", "Name")}</span><input type="text" value="${esc(M.nome || "")}" data-chg="moF" data-k="nome" placeholder="${t("Esco di casa", "Leaving home")}"></label>
     <div class="ico1" style="margin-top:8px">${ICONE.map(ic => `<button class="${M.icona === ic ? "on" : ""}" data-act="moIco" data-v="${ic}">${ic}</button>`).join("")}</div>
-    <div class="fl1">${t("Cosa fa", "What it does")}</div>${editorAzioni(M)}
+    <div class="fl1">${t("Cosa fa", "What it does")}</div>${editorAzioni(M)}${scenariTapparelle()}
     <div class="row" style="gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn pri" data-act="moSave">💾 ${t("Salva", "Save")}</button>${!nuovo ? `<button class="btn bad" data-act="moDel">🗑 ${t("Elimina", "Delete")}</button>` : ""}</div>`;
+}
+/* gli scenari della pagina Tapparelle (script «'Nduja»): un tocco e diventano un'azione del momento */
+function scenariTapparelle() {
+  const L = VISTE.tapScenari?.() || []; if (!L.length) return "";
+  const usati = new Set(M.azioni.filter(a => a.tipo === "scena").flatMap(a => a.entita || []));
+  return `<div class="fl1">🪟 ${t("Scenari delle tapparelle", "Covers scenes")}</div><div class="vr1">${L.map(x => `<button class="${usati.has(x.id) ? "on" : ""}" data-act="moTapp" data-id="${x.id}" aria-pressed="${usati.has(x.id)}">${esc(x.icona || "🪟")} ${esc(x.nome)}</button>`).join("")}</div>
+    <div class="small muted" style="margin-top:6px">${t("Tocca per aggiungerlo (o toglierlo) dal momento.", "Tap to add it to (or remove it from) the moment.")}</div>`;
 }
 const apri = () => { usaModello(M, () => openSheet(scheda)); openSheet(scheda); };
 CHG.moF = el => { M[el.dataset.k] = el.value; };
@@ -43,6 +50,10 @@ Object.assign(ACT, {
   moNew: () => { M = { id: "nduja_" + Date.now().toString(36), nome: "", icona: "✨", azioni: [{ tipo: "off", entita: [] }] }; nuovo = true; apri(); },
   moPronto: el => { const p = PRONTI()[+el.dataset.i]; Object.assign(M, JSON.parse(JSON.stringify(p))); render(); },
   moIco: el => { M.icona = el.dataset.v; render(); },
+  moTapp: el => { const id = el.dataset.id, A = M.azioni, c = A.find(a => a.tipo === "scena" && (a.entita || []).includes(id));
+    if (c) { c.entita = c.entita.filter(x => x !== id); if (!c.entita.length) A.splice(A.indexOf(c), 1); if (!A.length) A.push({ tipo: "off", entita: [] }); }
+    else { const vuota = A.length === 1 && !(A[0].entita || []).length ? 0 : -1; const az = { tipo: "scena", entita: [id] }; if (vuota === 0) A[0] = az; else A.push(az); }
+    render(); },
   moSave: async () => {
     if (!M.nome?.trim()) return toast(t("Scrivi un nome", "Write a name"), true);
     const seq = azioniHA(M); if (!seq.length) return toast(t("Scegli almeno un'azione con i dispositivi", "Choose at least one action with devices"), true);

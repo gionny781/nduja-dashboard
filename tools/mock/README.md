@@ -150,3 +150,12 @@ Con `mockAllerta` = `gialla`, `rossa` o `no`; `mockNoStazione` toglie la stazion
 ORA="2026-10-30T15:20" node tools/mock/shot.mjs meteo 1280 2600 meteo.png
 LS='{"mockAllerta":"rossa","mockNoRadar":"1"}' node tools/mock/shot.mjs meteo 390 844 tel.png '[data-act="mtCfg"]'
 ```
+
+**Tapparelle** (0.7.42), dati inventati: `cover.tapparella_soggiorno` (senza tipo, con il sensore `binary_sensor.finestra_soggiorno` trovato da solo), `cover.tenda_soggiorno` (curtain), `cover.tapparella_cucina` (shutter al 40%),
+`cover.veneziana_cucina` (blind con le lamelle), `cover.tapparella_lavanderia` (senza posizione: solo su, giù, stop), `cover.lucernario_corridoio` (window), `cover.tenda_rullo_corridoio` (shade), `cover.tenda_sole_esterno` (awning) e
+`cover.tapparella_bagno` (non raggiungibile, senza stanza). Il cancello, i garage e le cover della Model 3 NON devono comparire. I comandi `cover.*` le muovono davvero (5% ogni 350 ms) e `sun.sun` ha l'azimut.
+Lati, aspetto, scenari e automatismi stanno in `tapparelle` dentro `mockLayout`; gli script e le automazioni creati compaiono come `API POST …/nduja_tapp_*`. Con `mockPiani` le stanze sono su due piani.
+```bash
+LS='{"mockLayout":"{\"configured\":true,\"tapparelle\":{\"lati\":{\"cover.tapparella_soggiorno\":\"s\",\"cover.tapparella_cucina\":\"o\"}}}"}' node tools/mock/shot.mjs tapparelle 1280 1700 tapparelle.png
+LS='{"mockPiani":"1"}' node tools/mock/shot.mjs tapparelle 390 844 tel.png '[data-act="tpScNew"] >> nth=0'
+```

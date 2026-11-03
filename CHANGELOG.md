@@ -3,6 +3,25 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.42-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+- 🇮🇹 **🪟 Tapparelle**, pagina nuova: tapparelle, veneziane, tende, tende a rullo, tende da sole e finestre motorizzate, divise per piano e stanza. Cancelli e garage restano negli **Accessi**; le tapparelle non si ripetono più nella pagina Prese.
+- 🇮🇹 **Disegnate per 'Nduja**: ogni tapparella sale e scende con la posizione vera, le veneziane girano le lamelle, le tende si aprono dal centro, la tenda da sole si allunga; dietro, il cielo di adesso (giorno, tramonto, notte). Mentre si muove compaiono la freccia e la linea di dove arriverà.
+- 🇮🇹 **Comandi**: ▲ ■ ▼, il cursore delle lamelle per le veneziane e la posizione **trascinando direttamente sulla finestra disegnata** (anche con le frecce della tastiera). Quelle senza posizione si muovono con su e giù.
+- 🇮🇹 **Gruppi rapidi**: «Tutte su», «Metà», «Tutte giù» e stop per tutta la casa, per piano, per stanza o per **lato della casa** (nord, sud, est, ovest), che si sceglie con ✏️. Dove si ferma «Metà» lo decidono gli amministratori in ⚙️.
+- 🇮🇹 **Scenari**: pulsanti come «Notte», «Mattina», «Sole forte (chiudi a sud a metà)», fatti di passi (dove e cosa). Si salvano come script di Home Assistant con l'etichetta «'Nduja» e si aggiungono ai **Momenti** con un tocco.
+- 🇮🇹 **Automatismi facoltativi**, creati solo quando li accendi, ognuno un'automazione con l'etichetta «'Nduja»: **chiudi al tramonto e apri all'alba** con il ritardo scelto e «non prima delle»; **mezze chiuse col sole e il caldo** sui lati scelti, con temperatura, posizione, altezza del sole e sensore modificabili; **non chiudere con la finestra aperta** per le tapparelle con il sensore della finestra (trovato da solo o scelto con ✏️). Scenari e automatismi **si aggiornano da soli** quando cambi scelte, stanze o lati.
+- 🇮🇹 Con ✏️ su una tapparella: nome, stanza, lato, aspetto e sensore della finestra; ＋ per aggiungere una cover non riconosciuta, ✕ se non è una tapparella.
+- 🇮🇹 **In Home** la scheda **«Tapparelle»** con quante sono aperte, i disegnini e i pulsanti rapidi; nella finestra di una stanza e nella **Mappa** le tapparelle hanno il loro disegno.
+- 🇬🇧 **🪟 Covers**, a new page: roller shutters, venetian blinds, curtains, roller shades, awnings and motorised windows, by floor and room. Gates and garages stay in **Access**; covers no longer repeat on the Plugs page.
+- 🇬🇧 **Drawn for 'Nduja**: each cover goes up and down with its real position, venetian blinds turn their slats, curtains open from the middle, awnings extend; behind them, today's sky (day, sunset, night). While moving, an arrow and a line show where it will stop.
+- 🇬🇧 **Controls**: ▲ ■ ▼, a slats slider for venetian blinds and the position by **dragging right on the drawn window** (keyboard arrows too). Covers without position move with up and down.
+- 🇬🇧 **Quick groups**: «All up», «Half», «All down» and stop for the whole house, by floor, by room or by **side of the house** (north, south, east, west), chosen with ✏️. Admins set where «Half» stops in ⚙️.
+- 🇬🇧 **Scenes**: buttons like «Night», «Morning», «Strong sun (south side halfway)», made of steps (where and what). Saved as Home Assistant scripts with the «'Nduja» label and added to **Moments** in one tap.
+- 🇬🇧 **Optional automations**, created only when you turn them on, each a Home Assistant automation with the «'Nduja» label: **close at sunset and open at sunrise** with your delay and «not before»; **half closed in sun and heat** on the chosen sides, with editable temperature, position, sun height and sensor; **don't close with the window open** for covers with a window sensor (found by itself or chosen with ✏️). Scenes and automations **update themselves** when you change choices, rooms or sides.
+- 🇬🇧 With ✏️ on a cover: name, room, side, look and window sensor; ＋ to add a cover that wasn't recognised, ✕ if it isn't a cover.
+- 🇬🇧 **On Home** the **«Covers»** card with how many are open, small drawings and the quick buttons; in a room's window and on the **Map** covers show their drawing.
+
 ## 0.7.41-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 - 🇮🇹 **🌦️ Meteo**, pagina nuova con il meteo di casa (quello scelto in Home → ✏️). Con **📍** guardi un altro meteo su questo dispositivo.

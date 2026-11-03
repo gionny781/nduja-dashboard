@@ -80,7 +80,7 @@ function dove(id) {
   if ((LAYOUT.hiddenAreas || []).includes(a)) return "🙈 " + t("in una stanza nascosta: non compare", "in a hidden room: not shown");
   if (d === "person") return "🏠 " + t("nella Home, tra le persone", "on Home, under People");
   if (d === "scene") return "🏠 " + t("nella Home, sotto il saluto", "on Home, under the greeting");
-  const P = (d === "remote" || (d === "media_player" && isTV(id) && tvInMedia()) ? ["media"] : (VISTE.irrZone?.() || []).includes(id) ? ["irrigazione"] : PAGINE[d] || []).filter(k => PAGES[k] && LAYOUT.pages?.[k] !== false);
+  const P = (d === "remote" || (d === "media_player" && isTV(id) && tvInMedia()) ? ["media"] : (VISTE.irrZone?.() || []).includes(id) ? ["irrigazione"] : (VISTE.tapTutte?.() || []).includes(id) ? ["tapparelle"] : PAGINE[d] || []).filter(k => PAGES[k] && LAYOUT.pages?.[k] !== false);
   if (!P.length) return t("la sua pagina è spenta in ⚙️ Impostazioni", "its page is turned off in ⚙️ Settings");
   return PAGES[P[0]].icon + " " + t("nella pagina ", "on the page ") + P.map(k => PAGES[k].title).join(t(" e ", " and "));
 }

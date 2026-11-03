@@ -302,7 +302,17 @@ const ENT = {
   "light.lampada_soggiorno": st("off", { friendly_name: "Lampada soggiorno", supported_color_modes: ["color_temp", "hs"], min_color_temp_kelvin: 2000, max_color_temp_kelvin: 6500 }),
   "light.faretti_cucina": st("on", { friendly_name: "Faretti cucina", brightness: 120, color_mode: "brightness", supported_color_modes: ["brightness"] }),
   "switch.presa_cucina": st("off", { friendly_name: "Presa cucina" }),
-  "cover.tapparella_soggiorno": st("open", { friendly_name: "Tapparella soggiorno", current_position: 100 }),
+  /* Tapparelle e tende (0.7.42): una senza tipo, tapparelle, veneziana con le lamelle, tenda, tenda a rullo, tenda da sole, lucernario,
+     una senza posizione (solo su/giù/stop) e una non raggiungibile; il cancello e i garage restano negli Accessi */
+  "cover.tapparella_soggiorno": st("open", { friendly_name: "Tapparella soggiorno", current_position: 100, supported_features: 15 }),
+  "cover.tenda_soggiorno": st("closed", { friendly_name: "Tenda soggiorno", device_class: "curtain", current_position: 0, supported_features: 15 }),
+  "cover.tapparella_cucina": st("open", { friendly_name: "Tapparella cucina", device_class: "shutter", current_position: 40, supported_features: 15 }),
+  "cover.veneziana_cucina": st("open", { friendly_name: "Veneziana cucina", device_class: "blind", current_position: 100, current_tilt_position: 45, supported_features: 255 }),
+  "cover.tapparella_lavanderia": st("closed", { friendly_name: "Tapparella lavanderia", device_class: "shutter", supported_features: 11 }),
+  "cover.lucernario_corridoio": st("closed", { friendly_name: "Lucernario corridoio", device_class: "window", current_position: 0, supported_features: 15 }),
+  "cover.tenda_rullo_corridoio": st("open", { friendly_name: "Tenda a rullo corridoio", device_class: "shade", current_position: 70, supported_features: 15 }),
+  "cover.tenda_sole_esterno": st("open", { friendly_name: "Tenda da sole", device_class: "awning", current_position: 60, supported_features: 15 }),
+  "cover.tapparella_bagno": st("unavailable", { friendly_name: "Tapparella bagno", device_class: "shutter", supported_features: 15 }),
   "update.home_assistant_core_update": st("on", { title: "Home Assistant Core", friendly_name: "Core update" }),
   "switch.presa_studio": st("unavailable", { friendly_name: "Presa studio" }),
   "light.striscia_corridoio": st("unavailable", { friendly_name: "Striscia LED corridoio" }),
@@ -359,7 +369,7 @@ const ENT = {
 /* sole finto: alba alle 7, tramonto alle 18 di oggi */
 { const d0 = new Date(); d0.setHours(0, 0, 0, 0); const al = d0.getTime() + 7*H*1e3, tr = d0.getTime() + 18*H*1e3, n = Date.now(), su = n >= al && n < tr, G = 864e5;
   const f = su ? (n - al) / (tr - al) : 0, el = su ? Math.round(Math.sin(Math.PI * f) * 38 * 10) / 10 : -Math.min(40, Math.round(Math.min(Math.abs(n - tr), Math.abs(n - al - G), Math.abs(n - al)) / 6e4 / 4));
-  ENT["sun.sun"] = st(su ? "above_horizon" : "below_horizon", { friendly_name: "Sun", elevation: el, rising: n < (al + tr) / 2,
+  ENT["sun.sun"] = st(su ? "above_horizon" : "below_horizon", { friendly_name: "Sun", elevation: el, rising: n < (al + tr) / 2, azimuth: Math.round((su ? 90 + 180 * f : f) * 10) / 10,
     next_rising: new Date(n < al ? al : al + G).toISOString(), next_setting: new Date(n < tr ? tr : tr + G).toISOString() }); }
 /* Formula 1 (0.7.33), campionato inventato con F1 Sensor: weekend del «Gran Premio di Valle Demo» in corso (libere finite, qualifiche tra ~2 ore,
    gara domani), classifiche, ultima gara. mockF1Live = "gara" (gara in corso con la safety car) | "quali" (Q2 in corso); mockF1Solo = "cal" (solo il calendario). */
@@ -466,7 +476,7 @@ const EV = {
     { start: day(4, 18, 30), end: day(4, 20, 30), summary: "Lega Demo: Pro Valle - Union Mare", location: "Campo di Valle", description: "Diretta su DAZN" }],
 };
 let LAYOUT = JSON.parse(localStorage.getItem("mockLayout") || '{"configured":true,"mode":"auto","energy":{"pv":["sensor.inverter_pv1_power","sensor.inverter_pv2_power","sensor.inverter_pv3_power"]}}');
-const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_sogg/.test(id) ? "soggiorno" : /echo_cucina/.test(id) ? "cucina" : /soggiorno/.test(id) ? "soggiorno" : /^(cover\.(cancello|garage|basculante)|switch\.cancellett|binary_sensor\.cancellett|button\.portone|camera\.(cortile|giardino|campanello)|light\.giardino)/.test(id) ? "esterno" : /corridoio|porta|ariston/.test(id) ? "corridoio" : /cucina/.test(id) ? "cucina" : /lavatric|asciugatric|lavanderia/.test(id) ? "lavanderia" : /forno|frigo|lavastov/.test(id) ? "cucina" : null,
+const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_sogg/.test(id) ? "soggiorno" : /echo_cucina/.test(id) ? "cucina" : /soggiorno/.test(id) ? "soggiorno" : /^(cover\.(cancello|garage|basculante|tenda_sole)|switch\.cancellett|binary_sensor\.cancellett|button\.portone|camera\.(cortile|giardino|campanello)|light\.giardino)/.test(id) ? "esterno" : /corridoio|porta|ariston/.test(id) ? "corridoio" : /cucina/.test(id) ? "cucina" : /lavatric|asciugatric|lavanderia/.test(id) ? "lavanderia" : /forno|frigo|lavastov/.test(id) ? "cucina" : null,
   hb: id === "camera.cantina" || undefined,
   pl: /^(media_player|remote)\.tv_soggiorno$/.test(id) ? "samsungtv" : /apple_tv_/.test(id) ? "apple_tv" : /google_tv_/.test(id) ? "androidtv_remote" : id === "media_player.lg_camera" ? "webostv" : id === "remote.harmony_studio" ? "harmony" :
     id.startsWith("media_player.ma_") ? "music_assistant" : id.includes("model_3") ? "tesla_fleet" : id === "media_player.echo_cucina" ? "alexa_media" : id.startsWith("media_player.sonos") ? "sonos" : /^media_player\.(nest|casa_tutta)/.test(id) ? "cast" : undefined,
@@ -613,6 +623,21 @@ function mockMA(m) {
     s.s = "idle"; s.a = { ...s.a, media_title: undefined, media_artist: undefined, media_content_id: undefined, entity_picture: undefined };
     setTimeout(() => window.mockStati?.({ c: { [id]: { "+": { s: e.s, a: e.a } }, [da]: { "+": { s: s.s, a: s.a } } } }), 120); }
   return {};
+}
+const MOV = {};
+function mockCover(m) {
+  const d = m.service_data || {}, ids = [].concat(m.target?.entity_id || []);
+  for (const id of ids) { const e = ENT[id]; if (!e || !id.startsWith("cover.") || e.s === "unavailable") continue;
+    const manda = () => { e.lc = Date.now() / 1000; window.mockStati?.({ c: { [id]: { "+": { s: e.s, a: e.a } } } }); }, conP = e.a.current_position != null;
+    if (m.service === "set_cover_tilt_position") { e.a = { ...e.a, current_tilt_position: d.tilt_position }; manda(); continue; }
+    if (m.service === "stop_cover") { clearInterval(MOV[id]); clearTimeout(MOV[id]); e.s = conP ? (e.a.current_position > 0 ? "open" : "closed") : "open"; manda(); continue; }
+    const fine = m.service === "open_cover" ? 100 : m.service === "close_cover" ? 0 : m.service === "set_cover_position" ? d.position : m.service === "toggle" ? (e.s === "closed" ? 100 : 0) : null;
+    if (fine == null) continue; clearInterval(MOV[id]); clearTimeout(MOV[id]);
+    if (!conP) { e.s = fine > 0 ? "opening" : "closing"; manda(); MOV[id] = setTimeout(() => { e.s = fine > 0 ? "open" : "closed"; manda(); }, 3000); continue; }
+    const passo = () => { const p = e.a.current_position;
+      if (p === fine) { clearInterval(MOV[id]); e.s = p > 0 ? "open" : "closed"; manda(); return; }
+      const np = p < fine ? Math.min(fine, p + 5) : Math.max(fine, p - 5); e.a = { ...e.a, current_position: np }; e.s = p < fine ? "opening" : "closing"; manda(); };
+    MOV[id] = setInterval(passo, 350); passo(); }
 }
 function mockIrr(m) {
   const d = m.service_data || {}, ids = [].concat(m.target?.entity_id || d.entity_id || []), ch = {};
@@ -815,6 +840,8 @@ const conn = {
         if (m.domain === "music_assistant") { const r = mockMA(m); console.log("SVC", JSON.stringify(m)); return { response: r }; }
         if (m.domain === "media_player" && ["media_pause", "media_stop"].includes(m.service)) for (const id of [].concat(m.target?.entity_id || [])) { const e = ENT[id]; if (!e) continue;
           e.s = m.service === "media_pause" ? "paused" : "idle"; setTimeout(() => window.mockStati?.({ c: { [id]: { "+": { s: e.s } } } }), 120); }
+        /* tapparelle (0.7.42): si muovono davvero, un 5% ogni 350 ms (quelle senza posizione in 3 secondi) */
+        if (m.domain === "cover") mockCover(m);
         /* luci e interruttori: lo stato cambia davvero, come in Home Assistant (anche i membri dei gruppi) */
         if (["light", "switch"].includes(m.domain) && ["turn_on", "turn_off", "toggle"].includes(m.service)) mockLuci(m);
         /* casse: play_media e play/pausa cambiano lo stato finto */
