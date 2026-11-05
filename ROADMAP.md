@@ -68,14 +68,14 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.41-dev ✅ | ven 30 ott | Meteo completo |
 | 0.7.42-dev ✅ | mar 3 nov | Tapparelle e tende |
 | 0.7.43-dev ✅ | gio 5 nov | Qualità dell'aria |
-| 0.7.44-dev ✅ | sab 7 nov | Acqua e gas |
-| 0.7.45-dev | lun 9 nov | Assistente vocale (Assist) |
-| 0.7.46-dev | mer 11 nov | Piante e giardino |
-| 0.7.47-dev | ven 13 nov | Guida all'installazione illustrata e controllo finale |
-| 0.7.48-dev | dom 15 nov | In auto: comandi per CarPlay e Android Auto |
-| 0.7.49-dev | mar 17 nov | Autonomia (1): tutto regolabile dalla plancia — da Aggiornamenti a Energia |
-| 0.7.50-dev | gio 19 nov | Autonomia (2): tutto regolabile dalla plancia — da Faccende in poi |
-| 0.7.51-dev | sab 21 nov | «Cosa puoi aggiungere»: la plancia dice cosa manca e come attivarlo |
+| 0.7.44-dev ✅ | gio 5 nov | Acqua e gas |
+| 0.7.45-dev | sab 7 nov | Assistente vocale (Assist) |
+| 0.7.46-dev | lun 9 nov | Piante e giardino |
+| 0.7.47-dev | mer 11 nov | Guida all'installazione illustrata e controllo finale |
+| 0.7.48-dev | ven 13 nov | In auto: comandi per CarPlay e Android Auto |
+| 0.7.49-dev | dom 15 nov | Autonomia (1): tutto regolabile dalla plancia — da Aggiornamenti a Energia |
+| 0.7.50-dev | mar 17 nov | Autonomia (2): tutto regolabile dalla plancia — da Faccende in poi |
+| 0.7.51-dev | gio 19 nov | «Cosa puoi aggiungere»: la plancia dice cosa manca e come attivarlo |
 
 ## Dopo
 - 0.8.0 — versione ufficiale con tutte le anteprime, guida COME_INSTALLARE con foto, ritocchi
