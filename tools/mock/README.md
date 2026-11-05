@@ -176,3 +176,14 @@ Con `mockAcqua` = `perdita` (predefinito: 0,6 L/min da 135 minuti, avviso «Poss
 node tools/mock/shot.mjs acqua 1280 1500 acqua.png
 LS='{"mockAcqua":"doccia"}' node tools/mock/shot.mjs acqua 390 844 tel.png '[data-act="aqCfg"]'
 ```
+
+**Assistente vocale** (0.7.45): `assist_pipeline/pipeline/list` ha tre pipeline inventate — «Home Assistant» (predefinita, con voce e risposta parlata), «Gemini» (la risposta arriva a pezzi con `intent-progress`) e «English (text)» (senza riconoscimento vocale).
+`conversation/process` e `assist_pipeline/run` usano un piccolo «cervello» di prova: «spegni tutte le luci» (le spegne davvero), «che temperatura c'è in soggiorno?», «aggiungi latte alla spesa» (finisce in `todo.shopping_list`), «che ore sono?».
+Il microfono è finto (Chromium suona un tono): l'audio arriva come messaggi binari su `conn.socket` (primo byte 7) e dopo 2,5 s di audio parte `stt-vad-end`; la frase «sentita» è `mockAssistFrase` (predefinita «spegni tutte le luci»).
+Con `mockAssist` = `muto` (non sente niente) o `domanda` (risponde con una domanda e riapre il microfono), `mockAssistLungo` (niente `stt-vad-end`: si chiude con ■), `mockAssistPref` (id della pipeline predefinita), `mockNoAssist` (Assist non c'è).
+`NOMIC=1` toglie il microfono come su una pagina http://. Le scelte sono in `localStorage`: `nduja_asPipe`, `nduja_asLang`, `nduja_asBtn` (`tutti|alto|no`), `nduja_asVoce`, `nduja_asFrasi`; la cronologia in `nduja_asStoria`. `window.mockAssistLog` conserva le corse con i byte ricevuti.
+```bash
+node tools/mock/shot.mjs home 390 844 tel.png '#vc1fab|[data-act="vcFrase"] >> nth=0'
+node tools/mock/shot.mjs home 1280 900 parla.png '[data-act="vcApri"]|[data-act="vcMic"]'
+NOMIC=1 node tools/mock/shot.mjs impostazioni 1280 1400 imp.png
+```

@@ -5,6 +5,7 @@ import { scegli, isTemp, isHum, cambia } from "../edit.js";
 import { ssMin, ssVoce } from "../salvaschermo.js";
 import { schedeHome } from "./home.js";
 import { controllaCard } from "../controlla.js";
+import { assistenteCard } from "../assistente.js";
 import { S, UI, AREAS, FLOORS, REG, ACT, CHG, LAYOUT, PAGES, t, LOC, esc, nm, ok, attr, allEnts, shortName, climateSensors,
   saveLayout, render, toast, go, page, ws, openSheet, isAdmin, deviceClass, HVAC, manualKind, excluded, tema, navMode, chiosco, sGet, sSet, grafica, leggera, applyTheme } from "../core.js";
 
@@ -162,9 +163,9 @@ ACT.themeSet = el => { try { localStorage.setItem("nduja_theme", el.dataset.v); 
 
 const inCorso = () => W.inCima && !!W.d;
 function pagina() {
-  if (!isAdmin()) return `<div class="g">${dispositivo()}<section class="card small muted">${t("Le altre impostazioni le può cambiare solo un amministratore.", "Other settings can only be changed by an administrator.")}</section></div>`;
+  if (!isAdmin()) return `<div class="g">${dispositivo()}${assistenteCard()}<section class="card small muted">${t("Le altre impostazioni le può cambiare solo un amministratore.", "Other settings can only be changed by an administrator.")}</section></div>`;
   const P = PASSI(), s = W.step, corpo = [passoInizio, passoStanze, passoLuci, passoClima, passoDispositivi, passoCasa, passoPagine, passoFine][s]();
-  const altre = `${dispositivo()}<section class="card rst1"><div class="row" style="gap:12px;flex-wrap:wrap"><span style="font-size:28px">🌶️</span>
+  const altre = `${dispositivo()}${assistenteCard()}<section class="card rst1"><div class="row" style="gap:12px;flex-wrap:wrap"><span style="font-size:28px">🌶️</span>
       <div style="flex:1;min-width:200px"><b>${t("Ricomincia dal benvenuto", "Restart from the welcome screen")}</b><div class="small muted">${t("Riparte la configurazione da zero: scegli di nuovo Automatica o Manuale. Le pagine create da te restano.", "Setup starts over: choose Automatic or Manual again. Pages you created are kept.")}</div></div>
       <button class="btn warm" data-act="wzRestart">🔄 ${t("Riavvia il wizard", "Restart the wizard")}</button></div></section>
     <section class="card"><div class="ch"><h2>👥 ${t("Plancia per persona", "Per-person dashboard")}</h2></div>

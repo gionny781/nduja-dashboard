@@ -69,7 +69,7 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.42-dev ✅ | mar 3 nov | Tapparelle e tende |
 | 0.7.43-dev ✅ | gio 5 nov | Qualità dell'aria |
 | 0.7.44-dev ✅ | gio 5 nov | Acqua e gas |
-| 0.7.45-dev | sab 7 nov | Assistente vocale (Assist) |
+| 0.7.45-dev ✅ | sab 7 nov | Assistente vocale (Assist) |
 | 0.7.46-dev | lun 9 nov | Piante e giardino |
 | 0.7.47-dev | mer 11 nov | Guida all'installazione illustrata e controllo finale |
 | 0.7.48-dev | ven 13 nov | In auto: comandi per CarPlay e Android Auto |

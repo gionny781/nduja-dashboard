@@ -350,6 +350,13 @@ body.light .aq1k{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,
 body.light .aq1ps{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.049)!important}
 body.light .aq1vv{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.049)!important}
 body.light .aq1hr{background:rgba(0,0,0,0.022)!important;border:1px solid rgba(0,0,0,0.042)!important}
+body.light .vc1b.casa{background:rgba(0,0,0,0.045)!important;border:1px solid rgba(0,0,0,0.049)!important}
+body.light .vc1sep::before,body.light .vc1sep::after{background:rgba(0,0,0,0.040)!important}
+body.light .vc1st{background:rgba(0,0,0,0.030)!important;border:1px solid rgba(0,0,0,0.049)!important}
+body.light .vc1c button{background:rgba(0,0,0,0.040)!important;border:1px solid rgba(0,0,0,0.070)!important}
+body.light .vc1c button:hover{background:rgba(0,0,0,0.070)!important}
+body.light .vc1in input{background:rgba(0,0,0,0.040)!important}
+body.light .vc1fr{background:rgba(0,0,0,0.040)!important}
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
 body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
@@ -576,4 +583,12 @@ body.light .aq1ps.ok{background:rgba(48,209,88,.1)!important;border-color:rgba(3
 body.light .aq1ps.on,body.light .aq1u.on.k-acqua{background:rgba(10,132,255,.06)!important;border-color:rgba(10,127,181,.35)!important}
 body.light .aq1sp.ko{background:rgba(255,69,58,.08)!important;border-color:rgba(215,0,21,.45)!important}body.light .aq1sp.ko .tx span{color:#d70015}
 body.light .aq1g.on .gw{opacity:.12}
+/* assistente vocale (0.7.45) */
+body.light .vc1b.casa{background:rgba(255,255,255,.75)!important;border-color:rgba(0,0,0,.06)!important;box-shadow:0 4px 14px -10px rgba(31,45,80,.35)}
+body.light .vc1b.casa.err{background:rgba(255,159,10,.12)!important;border-color:rgba(199,111,0,.35)!important}
+body.light .vc1st.on{background:rgba(255,69,58,.08)!important;border-color:rgba(215,0,21,.25)!important}
+body.light .vc1sep::before,body.light .vc1sep::after{background:rgba(0,0,0,.08)!important}
+body.light .vc1mic.no{background:rgba(118,118,128,.22);color:rgba(28,28,30,.6)}
+body.light .vc1mk.no .tx span{color:#b35f00}
+body.light .vc1d g path{stroke:#ff6a3d}
 

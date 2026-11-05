@@ -1,13 +1,16 @@
 // Screenshot di una pagina della plancia sul finto Home Assistant.
 // Uso (dalla radice del repo, con `python3 -m http.server 8765` acceso):
 //   node tools/mock/shot.mjs <pagina> [larghezza] [altezza] [file.png] ["selettore1|selettore2"]
-// Variabili: L=1 tema chiaro; ORA="2026-10-30T22:15" ora fissa; LAYOUT='{"configured":false}' per partire dal benvenuto;
+// Variabili: L=1 tema chiaro; NOMIC=1 niente microfono; ORA="2026-10-30T22:15" ora fissa; LAYOUT='{"configured":false}' per partire dal benvenuto;
 //   LS='{"mockCasa":"…","mockNoAdmin":"1"}' altre chiavi di localStorage per il finto Home Assistant.
 import { chromium } from "playwright-core";
 const [,, page = "home", w = "1280", h = "1100", out = "s.png", extra = ""] = process.argv;
-const b = await chromium.launch({ executablePath: process.env.CHROME || "/opt/pw-browsers/chromium" });
+/* microfono finto (assistente vocale): il browser lo concede da solo e suona un tono di prova */
+const b = await chromium.launch({ executablePath: process.env.CHROME || "/opt/pw-browsers/chromium", args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", "--autoplay-policy=no-user-gesture-required"] });
 const p = await b.newPage({ viewport: { width: +w, height: +h } });
 /* ORA="2026-10-30T22:15" ferma l'orologio a quell'ora (salvaschermo, sole finto, calendari) */
+/* NOMIC=1: come una pagina su http:// (niente microfono) */
+if (process.env.NOMIC) await p.addInitScript(() => { try { Object.defineProperty(navigator, "mediaDevices", { get: () => undefined }); } catch {} });
 if (process.env.ORA) await p.clock.setFixedTime(new Date(process.env.ORA));
 p.on("pageerror", e => console.log("PAGEERR", e.message));
 p.on("console", m => { if (m.type() === "error" && !/404/.test(m.text())) console.log("CONSOLE", m.text()); });

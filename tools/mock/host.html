@@ -787,7 +787,70 @@ function mockApi(url, o) {
   else if (o?.method === "POST") { ENT[eid] = st(tipo === "script" ? "off" : "on", { friendly_name: corpo.alias, id }); setTimeout(() => window.mockStati?.({ a: { [eid]: ENT[eid] } }), 300); }
   return Promise.resolve(new Response(JSON.stringify({ result: "ok" }), { status: 200, headers: { "Content-Type": "application/json" } }));
 }
+/* assistente vocale (0.7.45): pipeline finte, conversation/process con un «cervello» di prova e assist_pipeline/run con l'audio
+   che arriva come messaggi binari su conn.socket. mockNoAssist: Assist non c'è; mockAssistPref: id della pipeline predefinita;
+   mockAssist = "muto" (non sente niente), "domanda" (risponde con una domanda: il microfono si riapre); mockAssistFrase: cosa «sente». */
+const PIPE = () => ({ preferred_pipeline: localStorage.getItem("mockAssistPref") || "pl_ha", pipelines: [
+  { id: "pl_ha", name: "Home Assistant", language: "it", conversation_engine: "conversation.home_assistant", conversation_language: "it", stt_engine: "stt.faster_whisper", stt_language: "it", tts_engine: "tts.piper", tts_language: "it_IT", tts_voice: "it_IT-paola-medium", wake_word_entity: null },
+  { id: "pl_gemini", name: "Gemini", language: "it", conversation_engine: "conversation.google_generative_ai", conversation_language: "*", stt_engine: "stt.home_assistant_cloud", stt_language: "it-IT", tts_engine: "tts.home_assistant_cloud", tts_language: "it-IT", tts_voice: "ElsaNeural" },
+  { id: "pl_en", name: "English (text)", language: "en", conversation_engine: "conversation.home_assistant", conversation_language: "en", stt_engine: null, stt_language: null, tts_engine: null, tts_language: null, tts_voice: null }] });
+let CONV_N = 0;
+async function mockCervello(testo, lingua) {
+  const x = String(testo).toLowerCase(), it = !/^en/.test(lingua || "it"), r = (speech, tipo = "action_done") => ({ response_type: tipo, language: lingua, data: { targets: [], success: [], failed: [] }, speech: { plain: { speech, extra_data: null } } });
+  if (/(spegn|turn off).*(luc|light)/.test(x)) { const L = Object.keys(ENT).filter(id => id.startsWith("light.") && ENT[id].s === "on");
+    if (L.length) await conn.sendMessagePromise({ type: "call_service", domain: "light", service: "turn_off", service_data: {}, target: { entity_id: L } });
+    return r(it ? `Ho spento ${L.length} luci.` : `Turned off ${L.length} lights.`); }
+  const tm = x.match(/temperatur\w*.*?(?:in|nel|nella|the)\s+([a-zà-ù ]+?)\??$/);
+  if (tm) { const nome = tm[1].trim(), id = Object.keys(ENT).find(e => e.startsWith("sensor.temp_") && e.includes(nome.split(" ").pop()));
+    return id ? r((it ? `In ${nome} ci sono ${String(ENT[id].s).replace(".", ",")} °C.` : `It's ${ENT[id].s} °C in the ${nome}.`), "query_answer") : r(it ? `Non trovo la temperatura di ${nome}.` : `No temperature for ${nome}.`, "error"); }
+  const sp = x.match(/(?:aggiungi|add)\s+(.+?)\s+(?:alla|to)\s+(?:lista della |my )?(?:spesa|shopping list)/);
+  if (sp) { await conn.sendMessagePromise({ type: "call_service", domain: "todo", service: "add_item", service_data: { item: sp[1][0].toUpperCase() + sp[1].slice(1) }, target: { entity_id: "todo.shopping_list" } }).catch(() => {});
+    return r(it ? `Ho aggiunto ${sp[1]} alla lista della spesa.` : `Added ${sp[1]} to the shopping list.`); }
+  if (/ore sono|what time/.test(x)) return r(new Date().toLocaleTimeString(it ? "it-IT" : "en-US", { hour: "2-digit", minute: "2-digit" }), "query_answer");
+  return { ...r(it ? "Scusa, non ho capito." : "Sorry, I couldn't understand that.", "error"), data: { code: "no_intent_match" } };
+}
+/* voce finta della risposta: un breve suono generato qui (WAV) */
+const VOCE_FINTA = (() => { const sr = 16000, n = sr * 0.9, b = new ArrayBuffer(44 + n * 2), v = new DataView(b), w = (o, x) => [...x].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVEfmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++) v.setInt16(44 + i * 2, Math.sin(i / sr * 2 * Math.PI * (330 + 60 * Math.sin(i / sr * 9))) * 5000 * Math.min(1, i / 800, (n - i) / 800), true);
+  return URL.createObjectURL(new Blob([b], { type: "audio/wav" })); })();
+let RUN = null;
+window.mockAssistLog = [];
+function assistRun(cb, m) {
+  if (localStorage.getItem("mockNoAssist")) return Promise.reject({ code: "unknown_command", message: "Unknown command." });
+  const P = PIPE().pipelines.find(p => p.id === m.pipeline);
+  if (!P) return Promise.reject({ code: "pipeline-not-found", message: "Pipeline not found" });
+  const ev = (type, data = {}) => { if (RUN === run) cb({ type, data, timestamp: new Date().toISOString() }); };
+  const conv = m.conversation_id || "conv" + (++CONV_N), modo = localStorage.getItem("mockAssist") || "";
+  const run = RUN = { byte: 0, pezzi: 0, fine: false, vad: false, ev };
+  window.mockAssistLog.push({ msg: m, run });
+  console.log("ASSIST run", JSON.stringify(m));
+  run.dopoFine = async () => {
+    if (modo === "muto") return ev("error", { code: "stt-no-text-recognized", message: "No text recognized" });
+    const frase = localStorage.getItem("mockAssistFrase") || "spegni tutte le luci";
+    ev("stt-end", { stt_output: { text: frase } }); ev("intent-start", { engine: P.conversation_engine, language: P.language, intent_input: frase, conversation_id: conv });
+    let res = await mockCervello(frase, P.language), domanda = modo === "domanda";
+    if (domanda) res = { ...res, speech: { plain: { speech: "Fatto. Vuoi che spenga anche la TV?" } } };
+    if (P.id === "pl_gemini") for (const pz of res.speech.plain.speech.match(/.{1,6}/g)) { ev("intent-progress", { chat_log_delta: { content: pz } }); await new Promise(r => setTimeout(r, 120)); }
+    ev("intent-end", { intent_output: { response: res, conversation_id: conv, continue_conversation: domanda } });
+    if (m.end_stage === "tts") { ev("tts-start", { engine: P.tts_engine, language: P.tts_language, voice: P.tts_voice, tts_input: res.speech.plain.speech });
+      await new Promise(r => setTimeout(r, 300)); ev("tts-end", { tts_output: { media_id: "media-source://tts/finto", url: VOCE_FINTA, mime_type: "audio/wav" } }); }
+    ev("run-end");
+  };
+  setTimeout(() => { ev("run-start", { pipeline: P.id, language: P.language, conversation_id: conv, runner_data: { stt_binary_handler_id: 7, timeout: 300 } }); ev("stt-start", { engine: P.stt_engine, metadata: { language: P.stt_language, sample_rate: 16000, channel: 1, bit_rate: 16, codec: "pcm", format: "wav" } }); }, 80);
+  return Promise.resolve(() => { console.log("ASSIST unsub"); if (RUN === run) RUN = null; });
+}
+/* audio binario: [7, ...PCM 16 bit]; dopo circa 2,5 s di «voce» Home Assistant capirebbe che hai finito (stt-vad-end) */
+const SOCKET = { readyState: 1, send(b) {
+  const run = RUN; if (!run) return console.log("ASSIST audio senza corsa");
+  if (!ArrayBuffer.isView(b) || b.BYTES_PER_ELEMENT !== 1 || b[0] !== 7) return console.log("ASSIST audio sbagliato", b?.[0]);   // (Uint8Array di un altro frame: niente instanceof)
+  if (b.length === 1) { if (!run.fine) { run.fine = true; console.log("ASSIST fine audio", run.byte, "byte in", run.pezzi, "pezzi"); setTimeout(run.dopoFine, 250); } return; }
+  run.byte += b.length - 1; run.pezzi++;
+  if (!run.vad && run.byte > 16000 * 2 * 0.3) { run.vad = true; run.ev("stt-vad-start", { timestamp: 300 }); }
+  if (run.byte > 16000 * 2 * 2.5 && !run.vadFine && !localStorage.getItem("mockAssistLungo")) { run.vadFine = true; run.ev("stt-vad-end", { timestamp: 2500 }); }
+} };
 const conn = {
+  socket: SOCKET,
   addEventListener() {}, subscribeEvents() { return Promise.resolve(() => {}); },
   subscribeMessage(cb, m) {
     if (m?.type === "camera/webrtc/offer") return offerta(cb, m);
@@ -795,6 +858,7 @@ const conn = {
       if (!TODO[m.entity_id]) return Promise.reject({ code: "invalid_entity_id", message: m.entity_id });
       (TODO_SUB[m.entity_id] = TODO_SUB[m.entity_id] || new Set()).add(cb); setTimeout(() => todoInvia(m.entity_id), 40); console.log("TODO sub", m.entity_id);
       return Promise.resolve(() => { TODO_SUB[m.entity_id].delete(cb); console.log("TODO unsub", m.entity_id); }); }
+    if (m?.type === "assist_pipeline/run") return assistRun(cb, m);
     if (m?.type === "nduja_dashboard/chat_subscribe") { if (localStorage.getItem("mockNoCasa")) return Promise.reject({ code: "unknown_command" }); window.mockChatEv = cb; return Promise.resolve(() => {}); }
     if (m?.type === "nduja_dashboard/casa_subscribe") { if (localStorage.getItem("mockNoCasa")) return Promise.reject({ code: "unknown_command" }); window.mockCasaEv = cb; return Promise.resolve(() => {}); }
     window.mockStati = cb; window.mockDati = () => cb({ a: ENT });
@@ -815,6 +879,9 @@ const conn = {
       /* chat di famiglia (0.7.38): mockChat = { conv: { id: { n, msg, letti } }, muti: [] }; mockChatDemo = conversazioni d'esempio */
       case "nduja_dashboard/chat_get": case "nduja_dashboard/chat_msg": case "nduja_dashboard/chat_send": case "nduja_dashboard/chat_read":
       case "nduja_dashboard/chat_delete": case "nduja_dashboard/chat_notifiche": case "nduja_dashboard/chat_presenza": return mockChat(m);
+      case "assist_pipeline/pipeline/list": if (localStorage.getItem("mockNoAssist")) throw { code: "unknown_command", message: "Unknown command." }; return PIPE();
+      case "conversation/process": { console.log("ASSIST testo", JSON.stringify(m)); await new Promise(r => setTimeout(r, 450));
+        return { response: await mockCervello(m.text, m.language), conversation_id: m.conversation_id || "conv" + (++CONV_N), continue_conversation: false }; }
       case "todo/item/list": return { items: JSON.parse(JSON.stringify(TODO[m.entity_id] || [])) };
       case "todo/item/move": { const L = TODO[m.entity_id]; if (!(TODO_F[m.entity_id] & 8)) throw { code: "not_supported", message: "To-do list does not support To-do item reordering" };
         const i = L.findIndex(x => x.uid === m.uid); if (i < 0) throw { code: "failed", message: "uid" }; const [x] = L.splice(i, 1);
