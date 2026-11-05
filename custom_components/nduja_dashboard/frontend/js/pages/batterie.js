@@ -4,7 +4,8 @@
    La logica (trovarle, escludere telefoni, auto e batteria di casa) è in ../batterie.js. */
 import { S, AREAS, ACT, UI, t, LOC, esc, nm, attr, areasSorted, card, empty, page, render, openSheet, closeSheet, toast, isAdmin, sGet, sSet, ago, domain } from "../core.js";
 import { cambia, scegli } from "../edit.js";
-import { batterie, daCambiare, prontoBatt, ordine, spesa, sogliaGlobale, confDi, conf, MUTO_GG, SOGLIA, TIPI_PILA, tTipo, isSensBatt, isBinBatt, hasBattAttr } from "../batterie.js";
+import { batterie, daCambiare, prontoBatt, ordine, spesa, sogliaGlobale, confDi, conf, MUTO_GG, SOGLIA, SOGLIA_TEL, mutoGG, sogliaTel, batterieTelefoni, TIPI_PILA, tTipo, isSensBatt, isBinBatt, hasBattAttr } from "../batterie.js";
+import { aggiornaAvvisiTelefono } from "../avvisi.js";
 
 const vista = () => ["tutte", "cambiare", "stanza"].includes(sGet("btVista")) ? sGet("btVista") : "tutte";
 const GIORNO = 864e5;
@@ -38,7 +39,7 @@ function riga(b, senzaStanza = false) {
     b.agg ? t("notizie ", "seen ") + esc(ago(new Date(b.agg).toISOString())) : ""].filter(Boolean).join(" · ");
   const note = [];
   if (!b.on) note.push(`<span class="bt1n r">📡 ${t("non risponde", "not responding")}</span>`);
-  else if (b.muto != null && b.muto >= MUTO_GG) note.push(`<span class="bt1n o">📡 ${t(`nessuna notizia da ${b.muto} giorni: forse è scarica o scollegata`, `no news for ${b.muto} days: maybe flat or disconnected`)}</span>`);
+  else if (b.muto != null && b.muto >= mutoGG()) note.push(`<span class="bt1n o">📡 ${t(`nessuna notizia da ${b.muto} giorni: forse è scarica o scollegata`, `no news for ${b.muto} days: maybe flat or disconnected`)}</span>`);
   if (b.attesa) note.push(`<span class="bt1n">⏳ ${t("pila cambiata: aspetto la nuova lettura", "battery replaced: waiting for a new reading")}</span>`);
   else if (b.cambio) note.push(`<span class="bt1n">🔄 ${t("cambiata", "replaced")} ${esc(data(b.cambio))} · ${esc(fraGiorni(giorni(b.cambio)))}</span>`);
   const html = `<div class="li bt1 ${lv}${b.nascosta ? " hid" : ""}" data-act="more" data-id="${b.id}" role="button">
@@ -55,7 +56,7 @@ function riga(b, senzaStanza = false) {
 }
 
 function riepilogo(L, D) {
-  const { pile, senza } = spesa(D), mute = L.filter(b => !b.on || (b.muto != null && b.muto >= MUTO_GG)).length;
+  const { pile, senza } = spesa(D), mg = mutoGG(), mute = L.filter(b => !b.on || (b.muto != null && b.muto >= mg)).length;
   /* la più scarica: quella col livello in % più basso; se nessuna dice la percentuale, una «bassa» sì/no */
   const peggio = [...L].filter(b => b.pct != null).sort((a, b) => a.pct - b.pct)[0] || L.find(b => b.bassa === true);
   const box = (k, v, s, cls = "") => `<div class="bt1k ${cls}"><small>${k}</small><b>${v}</b>${s ? `<span>${s}</span>` : ""}</div>`;
@@ -64,7 +65,7 @@ function riepilogo(L, D) {
       ${box("🔋 " + t("Pile", "Batteries"), L.length, t("una per dispositivo", "one per device"))}
       ${box("🪫 " + t("Da cambiare", "To replace"), D.length, D.length ? esc(D.slice(0, 2).map(b => b.nome).join(", ")) + (D.length > 2 ? "…" : "") : t("tutto a posto", "all good"), D.length ? "r" : "g")}
       ${peggio ? box("📉 " + t("La più scarica", "Lowest"), peggio.pct != null ? Math.round(peggio.pct) + "%" : "🪫", esc(peggio.nome)) : ""}
-      ${box("📡 " + t("Mute", "Silent"), mute, mute ? t(`${MUTO_GG}+ giorni o spente`, `${MUTO_GG}+ days or offline`) : t("tutte si fanno sentire", "all reporting"), mute ? "o" : "")}
+      ${box("📡 " + t("Mute", "Silent"), mute, mute ? t(`${mg}+ giorni o spente`, `${mg}+ days or offline`) : t("tutte si fanno sentire", "all reporting"), mute ? "o" : "")}
     </div>
     <div class="bt1sp"><span class="bt1spk">🛒 ${t("Ti servono", "You need")}</span>${D.length
       ? (pile.length ? pile.map(([k, n]) => `<span class="bt1pl"><b>${n} ×</b> ${esc(k)}</span>`).join("") : "")
@@ -103,10 +104,21 @@ function pagina() {
   const modifica = UI.edit && isAdmin() ? `<section class="card span3 bt1e">
       <div class="ch"><h2>✏️ ${t("Scelte delle batterie", "Battery settings")}</h2></div>
       <div class="bt1er">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px 22px;align-items:start">
+        <div>
         <label class="fld1"><span>${t("Avvisami quando una pila scende sotto il", "Alert me when a battery drops below")}</span>
-          <span class="row" style="gap:8px"><input id="bt1sg" type="number" min="1" max="99" step="1" inputmode="numeric" value="${sogliaGlobale()}" style="width:96px"><b>%</b>
-          <button class="btn sm" data-act="btSoglia">💾 ${t("Salva", "Save")}</button></span></label>
+          <span class="row" style="gap:8px"><input id="bt1sg" type="number" min="1" max="99" step="1" inputmode="numeric" value="${sogliaGlobale()}" style="width:96px"><b>%</b></span></label>
         <p class="small muted">${t(`Vale per tutta la casa (predefinita: ${SOGLIA}%). Puoi cambiarla per un solo dispositivo con ✏️. La usano anche gli avvisi della Home e quelli sul telefono.`, `Applies to the whole home (default ${SOGLIA}%). Change it for a single device with ✏️. Home and phone alerts use it too.`)}</p>
+        </div><div>
+        <label class="fld1"><span>${t("Segnala «muta» una pila dopo", "Flag a battery as «silent» after")}</span>
+          <span class="row" style="gap:8px"><input id="bt1mg" type="number" min="1" max="365" step="1" inputmode="numeric" value="${mutoGG()}" style="width:96px"><b>${t("giorni senza notizie", "days with no news")}</b></span></label>
+        <p class="small muted">${t(`Un dispositivo che non manda niente da tanti giorni forse è scarico o scollegato (predefinito: ${MUTO_GG}). Alzalo se i tuoi sensori parlano di rado.`, `A device that sends nothing for many days may be flat or disconnected (default ${MUTO_GG}). Raise it if your sensors report rarely.`)}</p>
+        </div><div>
+        <label class="fld1"><span>${t("Telefoni: avvisami sul telefono sotto il", "Phones: alert me on the phone below")}</span>
+          <span class="row" style="gap:8px"><input id="bt1tel" type="number" min="0" max="99" step="1" inputmode="numeric" value="${sogliaTel()}" style="width:96px"><b>%</b></span></label>
+        <p class="small muted">${t(`I telefoni non sono in questa pagina (stanno in Persone), ma i loro avvisi sul telefono (Home → Avvisi → 📱) usano questa soglia (predefinita: ${SOGLIA_TEL}%; 0 = mai).`, `Phones aren't on this page (they're in People), but their phone alerts (Home → Alerts → 📱) use this threshold (default ${SOGLIA_TEL}%; 0 = never).`)} ${(n => n ? t(`Telefoni trovati: ${n}.`, `Phones found: ${n}.`) : "")(batterieTelefoni().length)}</p>
+        </div></div>
+        <div class="row" style="gap:8px;margin-top:12px"><button class="btn sm pri" data-act="btSoglia">💾 ${t("Salva", "Save")}</button></div>
       </div>
       <button class="add1 wide1" data-act="btAggiungi"><span>＋</span>${t("Aggiungi un sensore di batteria", "Add a battery sensor")}</button>
       ${N.length ? `<div class="fl1">👁 ${t("Nascoste", "Hidden")} (${N.length})</div><div class="bt1l">${N.sort((a, b) => a.nome.localeCompare(b.nome, LOC)).map(b => riga(b)).join("")}</div>` : ""}
@@ -139,7 +151,9 @@ function scheda(k) {
 }
 
 /* ---------- salvataggi (LAYOUT.batterie, solo admin) ---------- */
-const salvaB = (fn, msg) => cambia(l => { const B = l.batterie = JSON.parse(JSON.stringify(l.batterie || {})); B.d = B.d || {}; fn(B); for (const k of Object.keys(B.d)) if (!Object.keys(B.d[k]).length) delete B.d[k]; }, msg);
+/* dopo ogni salvataggio, se gli avvisi sul telefono sono attivi, l'automazione si riscrive da sola con le soglie nuove */
+const salvaB = (fn, msg) => cambia(l => { const B = l.batterie = JSON.parse(JSON.stringify(l.batterie || {})); B.d = B.d || {}; fn(B); for (const k of Object.keys(B.d)) if (!Object.keys(B.d[k]).length) delete B.d[k]; }, msg)
+  .then(() => aggiornaAvvisiTelefono()).catch(e => console.warn("nduja batterie avvisi", e));
 const pulisci = o => { for (const k of Object.keys(o)) if (o[k] == null || o[k] === "") delete o[k]; return o; };
 const nomeK = k => batterie({ tutte: true }).find(b => b.k === k)?.nome || k;
 const numero = (v, min, max) => { const n = Math.round(+v); return v !== "" && n >= min && n <= max ? n : null; };
@@ -179,7 +193,15 @@ Object.assign(ACT, {
   btSoglia: () => {
     const v = numero(document.getElementById("bt1sg").value.trim(), 1, 99);
     if (v == null) return toast(t("La soglia va da 1 a 99%", "The threshold goes from 1 to 99%"), true);
-    salvaB(B => { if (v === SOGLIA) delete B.soglia; else B.soglia = v; }, "💾 " + t(`Avviso sotto il ${v}%`, `Alert below ${v}%`));
+    const mg = numero(document.getElementById("bt1mg")?.value.trim() ?? String(mutoGG()), 1, 365);
+    if (mg == null) return toast(t("I giorni vanno da 1 a 365", "Days go from 1 to 365"), true);
+    const tl = numero(document.getElementById("bt1tel")?.value.trim() ?? String(sogliaTel()), 0, 99);
+    if (tl == null) return toast(t("La soglia dei telefoni va da 0 a 99%", "The phone threshold goes from 0 to 99%"), true);
+    salvaB(B => {
+      if (v === SOGLIA) delete B.soglia; else B.soglia = v;
+      if (mg === MUTO_GG) delete B.muto; else B.muto = mg;
+      if (tl === SOGLIA_TEL) delete B.telefoni; else B.telefoni = tl;
+    }, "💾 " + t(`Avviso sotto il ${v}%`, `Alert below ${v}%`));
   },
   btAggiungi: () => scegli({ titolo: "＋ " + t("Sensore di batteria", "Battery sensor"), sotto: t("Livello della pila in %, «batteria bassa» sì/no o un dispositivo con il livello della batteria.", "Battery level in %, «battery low» yes/no or a device with a battery level."),
     filtro: candidato, auto: false, onPick: id => { if (id && S[id]) salvaB(B => { B.extra = [...new Set([...(B.extra || []), id])]; B.nascosti = (B.nascosti || []).filter(x => x !== id); }, "＋ " + nm(id)); } }),

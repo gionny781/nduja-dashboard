@@ -26,7 +26,10 @@ const ICONE = [[/luc|light|lamp|neon|led/, "💡"], [/nott|night|dorm|sleep|buon
   [/clima|risc|termo|caldo|freddo|temp|heat|cool|condiz|aria/, "🌡️"], [/notif|avvis|messag|telegram|alert/, "🔔"], [/cancell|garage|gate|porta|door|serrat|lock/, "🚪"],
   [/arriv|casa|home|esco|uscit|leave|presen/, "🏠"], [/energ|solar|fotovolt|batter|consum|power|carica|charg/, "⚡"], [/lavatr|lavastov|forno|asciug|washer|dryer|oven/, "🧺"],
   [/aspirap|robot|vacuum|pulizi/, "🧹"], [/music|radio|tv|media|film|spotify|sonos/, "🎵"], [/\bauto\b|tesla|macchin/, "🚗"], [/telecam|camera|video/, "📷"], [/meteo|pioggia|vento|rain|wind/, "🌦️"]];
-const icona = id => { const n = (nm(id) + " " + id.split(".")[1]).toLowerCase(); return (ICONE.find(([r]) => r.test(n)) || [0, "⚡"])[1]; };
+const iconaAuto = id => { const n = (nm(id) + " " + id.split(".")[1]).toLowerCase(); return (ICONE.find(([r]) => r.test(n)) || [0, "⚡"])[1]; };
+/** l'icona scelta in ⋯ (se il nome trae in inganno), altrimenti quella trovata dal nome */
+const icona = id => scelte().icone?.[id] || iconaAuto(id);
+const SCELTA_ICONE = [...new Set([...ICONE.map(x => x[1]), "⚡", "🔁", "⏰", "🔊", "🐾", "🍳", "🛁", "🎉"])];
 
 /** un tasto: tocchi ovunque e cambia; ⋯ per le altre scelte */
 function tasto(id) {
@@ -60,7 +63,12 @@ function pagina() {
 }
 
 /* ⋯ : pausa, esegui, Home, nascondi, modifica */
-const minutiADomattina = () => { const d = new Date(); d.setDate(d.getDate() + (d.getHours() >= 7 ? 1 : 0)); d.setHours(7, 0, 0, 0); return Math.max(1, Math.round((d - Date.now()) / 6e4)); };
+/* «Fino a domattina»: alle 7, o all'ora scelta in ⋯ (vale per tutta la casa) */
+const oraMattina = () => /^\d{2}:\d{2}$/.test(scelte().mattina || "") ? scelte().mattina : "07:00";
+const minutiADomattina = () => { const [h, m] = oraMattina().split(":").map(Number), d = new Date(), dopo = d.getHours() * 60 + d.getMinutes() >= h * 60 + m;
+  d.setDate(d.getDate() + (dopo ? 1 : 0)); d.setHours(h, m, 0, 0); return Math.max(1, Math.round((d - Date.now()) / 6e4)); };
+/** «aaaa-mm-ggThh:mm» locale per il campo «Fino a…» */
+const locale = d => new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
 function menu() {
   const id = V.menu; if (!id || !S[id]) return "";
   const on = S[id].state === "on", pz = pausaFino(id), pref = preferite().includes(id), nas = nascosta(id);
@@ -69,8 +77,12 @@ function menu() {
     <div class="fl1">${t("Metti in pausa", "Pause")}</div>
     <div class="aut-op">
       ${op("auPausa", "⏸ " + t("1 ora", "1 hour"), 'data-m="60"')}${op("auPausa", "⏸ " + t("4 ore", "4 hours"), 'data-m="240"')}
-      ${op("auPausa", "🌙 " + t("Fino a domattina", "Until tomorrow morning"), `data-m="${minutiADomattina()}"`)}${op("auPausa", "📅 " + t("Una settimana", "One week"), 'data-m="10080"')}
+      ${op("auPausa", "🌙 " + t("Fino a domattina", "Until tomorrow morning") + ` <small>${oraMattina()}</small>`, `data-m="${minutiADomattina()}"`)}${op("auPausa", "📅 " + t("Una settimana", "One week"), 'data-m="10080"')}
     </div>
+    <div class="row" style="gap:8px;margin-top:8px;flex-wrap:wrap;align-items:flex-end">
+      <label class="fld1" style="flex:1;min-width:190px;margin:0"><span>${t("Fino a un giorno e un'ora a scelta", "Until a day and time of your choice")}</span><input id="au1pf" type="datetime-local" min="${locale(new Date())}" value="${locale(new Date(Date.now() + 2 * 36e5))}"></label>
+      ${op("auPausaFino", "⏸ " + t("Metti in pausa", "Pause"))}</div>
+    <label class="fld1" style="margin-top:8px"><span>${t("Ora di «domattina» (vale per tutte le automazioni)", "«Tomorrow morning» time (for all automations)")}</span><input type="time" value="${oraMattina()}" data-chg="auMattina"></label>
     <small class="muted">${t("Dopo la pausa Home Assistant la riaccende da solo, anche se la plancia è chiusa.", "After the pause Home Assistant turns it back on by itself, even with the dashboard closed.")}</small>
     <div class="fl1">${t("Altro", "More")}</div>
     <div class="aut-op">
@@ -79,7 +91,9 @@ function menu() {
       ${op("auPref", pref ? "⭐ " + t("Togli dalla Home", "Remove from Home") : "☆ " + t("Mostra in Home", "Show on Home"))}
       ${op("auNasc", nas ? "👁 " + t("Rimetti tra i tasti", "Show again") : "🙈 " + t("Nascondi da qui", "Hide from here"))}
       ${isAdmin() ? op("auEdit", "✏️ " + t("Modifica", "Edit")) : ""}
-    </div>`;
+    </div>
+    <div class="fl1">${t("Icona", "Icon")}</div>
+    <div class="vr1">${[["", "✨"], ...SCELTA_ICONE.map(x => [x, x])].map(([k, n]) => `<button class="${(scelte().icone?.[id] || "") === k ? "on" : ""}" data-act="auIcona" data-id="${id}" data-v="${k}" ${k ? "" : `title="${t("Automatica, dal nome", "Automatic, from the name")}"`}>${n}${k ? "" : " " + t("dal nome", "from name")}</button>`).join("")}</div>`;
 }
 async function pausa(id, minuti) {
   try {
@@ -173,6 +187,8 @@ export function azioniHA(m) {
   return act;
 }
 const set = (o, path, v) => { const k = path.split("."); let x = o; while (k.length > 1) x = x[k.shift()]; x[k[0]] = v; };
+CHG.auMattina = el => { const v = el.value; if (!/^\d{2}:\d{2}$/.test(v)) return;
+  casaCambia("automazioni", d => { if (v === "07:00") delete d.mattina; else d.mattina = v; }, "🌙 " + t("Domattina = alle ", "Tomorrow morning = ") + v); };
 CHG.auF = el => { set(M, el.dataset.k, el.value); if (el.tagName === "SELECT") render(); };
 CHG.auAz = el => { M.azioni[+el.dataset.i][el.dataset.k] = el.value; if (el.tagName === "SELECT") render(); };
 let riapri = () => openSheet(costruttore);
@@ -193,6 +209,11 @@ Object.assign(ACT, {
   auMenu: el => { V.menu = el.dataset.id; openSheet(menu); },
   auPausa: async el => { const id = el.dataset.id, m = +el.dataset.m;
     if (await pausa(id, m)) { closeSheet(); toast("⏸ " + nm(id) + " · " + t("in pausa fino a ", "paused until ") + quando(new Date(Date.now() + m * 6e4))); } },
+  auPausaFino: async el => { const id = el.dataset.id, v = document.getElementById("au1pf")?.value, f = v ? new Date(v) : null, m = f ? Math.round((f - Date.now()) / 6e4) : 0;
+    if (!f || isNaN(f) || m < 1) return toast(t("Scegli un momento nel futuro", "Choose a time in the future"), true);
+    if (await pausa(id, m)) { closeSheet(); toast("⏸ " + nm(id) + " · " + t("in pausa fino a ", "paused until ") + quando(f)); } },
+  auIcona: el => { const id = el.dataset.id, v = el.dataset.v;
+    casaCambia("automazioni", d => { const I = d.icone = { ...(d.icone || {}) }; if (v) I[id] = v; else delete I[id]; if (!Object.keys(I).length) delete d.icone; }, (v || iconaAuto(id)) + " " + nm(id)); },
   auRiprendi: async el => { const id = el.dataset.id; if (await pausa(id, 0)) { closeSheet(); toast("✅ " + nm(id) + " · " + t("riaccesa", "back on")); } },
   auPref: el => { const id = el.dataset.id;
     casaCambia("automazioni", d => { const p = d.preferite = (d.preferite || []).filter(x => x !== id); if (!preferite().includes(id)) p.push(id); },

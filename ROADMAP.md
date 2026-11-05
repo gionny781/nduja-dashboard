@@ -71,7 +71,7 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.44-dev ✅ | gio 5 nov | Acqua e gas |
 | 0.7.45-dev ✅ | gio 5 nov | Assistente vocale (Assist) |
 | 0.7.46-dev ✅ | gio 5 nov | Piante e giardino |
-| 0.7.47-dev | sab 7 nov | Autonomia (1): tutto regolabile dalla plancia — da Aggiornamenti a Energia |
+| 0.7.47-dev ✅ | gio 5 nov | Autonomia (1): tutto regolabile dalla plancia — da Aggiornamenti a Energia |
 | 0.7.48-dev | lun 9 nov | Autonomia (2): tutto regolabile dalla plancia — da Faccende in poi |
 | 0.7.49-dev | mer 11 nov | «Cosa puoi aggiungere»: la plancia dice cosa manca e come attivarlo |
 | 0.7.50-dev | ven 13 nov | Trascina e sposta (drag & drop): menu, Home, stanze, elementi |

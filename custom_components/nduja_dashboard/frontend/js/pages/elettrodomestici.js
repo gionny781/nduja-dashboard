@@ -95,7 +95,7 @@ function stato(a) {
   const s = a.status && ok(a.status) ? String(S[a.status].state) : null;
   const acceso = s ? ATTIVO.test(s) && !FERMO.test(s) || (w != null && w > soglia) : w != null && w > soglia;
   if (acceso) return { k: "on", n: t("In funzione", "Running"), w };
-  if (c?.fine && Date.now() - c.fine < 3 * 3600e3) return { k: "done", n: t("Finito", "Done") + " · " + ago(new Date(c.fine).toISOString()), w };
+  if (c?.fine && Date.now() - c.fine < (a.fineOre ?? 3) * 3600e3) return { k: "done", n: t("Finito", "Done") + " · " + ago(new Date(c.fine).toISOString()), w };
   if (a.switch && S[a.switch]?.state === "off") return { k: "off", n: t("Spento", "Off"), w };
   return { k: "idle", n: s && !/^none$/i.test(s) ? s.replace(/_/g, " ") : t("Fermo", "Idle"), w };
 }
@@ -176,7 +176,9 @@ function config() {
       <label class="fld1"><span>${t("Ha finito sotto (W)", "Done below (W)")}</span><input type="text" inputmode="decimal" value="${String(a.fineW || 5).replace(".", ",")}" data-chg="apN" data-k="fineW"></label>
       <label class="fld1"><span>${t("…per almeno (minuti)", "…for at least (minutes)")}</span><input type="number" min="1" value="${a.fineMin || 3}" data-chg="apN" data-k="fineMin"></label>
       <label class="fld1"><span>${t("Ciclo più breve (minuti)", "Shortest cycle (minutes)")}</span><input type="number" min="0" value="${a.cicloMin ?? 10}" data-chg="apN" data-k="cicloMin"></label>
+      <label class="fld1"><span>${t("«Finito» resta per (ore)", "«Done» stays for (hours)")}</span><input type="text" inputmode="decimal" value="${String(a.fineOre ?? 3).replace(".", ",")}" data-chg="apN" data-k="fineOre"></label>
     </div>
+    <p class="small muted" style="margin:6px 0 0;line-height:1.45">${t("«Ciclo più breve»: i cicli più corti non contano come «ha finito». «Finito» resta sulla scheda, nella scheda della Home e nella mappa per queste ore, poi torna «Fermo» (0 = non mostrarlo). L'avviso «ha finito» ha la sua durata in Home → Avvisi → ⚙️.", "«Shortest cycle»: shorter cycles don't count as «done». «Done» stays on the card, the Home card and the map for these hours, then goes back to «Idle» (0 = don't show it). The «is done» alert has its own duration in Home → Alerts → ⚙️.")}</p>
     ${(a.fineW || 5) >= (a.threshold || 10) ? `<div class="small" style="color:var(--orange);margin-top:6px">⚠️ ${t("«Ha finito sotto» deve essere più basso di «In funzione sopra».", "«Done below» must be lower than «Running above».")}</div>` : ""}
     <label class="row" style="gap:8px;margin-top:10px"><input type="checkbox" data-chg="apAvviso" ${avvisoDi(a) ? "checked" : ""}> 🔔 ${t("Avvisami quando ha finito (Home e telefono)", "Tell me when it's done (Home and phone)")}</label>
     <label class="row" style="gap:8px;margin-top:12px"><input type="checkbox" data-chg="apMappa" ${a.mappa === false ? "" : "checked"}> ${t("Mostra nella mappa (nella stanza della presa o del sensore)", "Show on the map (in the plug's or sensor's room)")}</label>
@@ -196,8 +198,8 @@ CHG.apImg = el => immagineScritta(el, true);
 let attesaImg = null;
 document.addEventListener("input", e => { if (e.target.dataset?.chg !== "apImg" || !bz) return; clearTimeout(attesaImg); const el = e.target; attesaImg = setTimeout(() => immagineScritta(el, false), 700); });
 CHG.apN = el => { const k = el.dataset.k, v = parseFloat(String(el.value).replace(",", "."));
-  const def = { threshold: 10, fineW: 5, fineMin: 3, cicloMin: 10 }[k];
-  bz[k] = isNaN(v) || v < 0 ? def : k === "cicloMin" ? Math.round(v) : Math.max(k === "fineMin" ? 1 : 0.1, v); render(); };
+  const def = { threshold: 10, fineW: 5, fineMin: 3, cicloMin: 10, fineOre: 3 }[k];
+  bz[k] = isNaN(v) || v < 0 ? def : k === "cicloMin" ? Math.round(v) : k === "fineOre" ? Math.round(v * 10) / 10 : Math.max(k === "fineMin" ? 1 : 0.1, v); render(); };
 CHG.apAvviso = el => { bz.avviso = el.checked; };
 CHG.apMappa = el => { if (el.checked) delete bz.mappa; else bz.mappa = false; };
 const salva = L => cambia(l => { l.appliances = L; });

@@ -3,7 +3,8 @@
    Compare solo se in casa ci sono questi sensori o questi dispositivi. I sensori di fuori (giardino, terrazzo, servizi come WAQI) non sono
    stanze: servono solo ai consigli («fuori l'aria è peggiore»).
    Scelte in LAYOUT.aria = { soglie:{ tipo:[a,b,c] } (umidità: [ottima da, a, buona da, a, discreta da, a]), avviso:{ on, min }, ricambio: minuti,
-   filtro: %, extra:[sensori aggiunti], tolti:[sensori tolti], tipi:{ id: tipo }, dispExtra:[], dispTolti:[] }
+   filtro: %, extra:[sensori aggiunti], tolti:[sensori tolti], tipi:{ id: tipo }, dispExtra:[], dispTolti:[],
+   consigliDa: 2 (Discreta) | 3 (solo Scarsa), fuori:{ area: true|false } (stanza di fuori o no, scelta a mano), dispTipi:{ id: purif|deum|umid } }
 
    Come giudico l'aria (valori predefiniti, scritti per 'Nduja partendo da riferimenti pubblici; gli amministratori li cambiano in ⚙️):
    tipo        unità    Ottima fino a   Buona fino a   Discreta fino a   oltre = Scarsa     riferimento
@@ -121,7 +122,9 @@ const valore = (id, k) => ok(id) ? conv(k, parseFloat(S[id].state), unit(id)) : 
 
 const FUORI = /estern|outdoor|outside|fuori|giardin|garden|terrazz|balcon|cortile|yard|patio|veranda|portico|porch|tetto|roof/i;
 const PIATT_FUORI = /^(waqi|airvisual|openaq|airly|luftdaten|sensor_community|google_air_quality|accuweather|openweathermap|ambee|iqair|airnow|purpleair|gios|nam|met|meteo_france|aemet|smhi|dwd_weather|open_meteo)$/;
-const stanzaFuori = a => !!a && FUORI.test((AREAS[a]?.nameHA || "") + " " + (AREAS[a]?.name || "") + " " + a);
+const stanzaFuoriAuto = a => !!a && FUORI.test((AREAS[a]?.nameHA || "") + " " + (AREAS[a]?.name || "") + " " + a);
+/** stanza di fuori: la scelta dell'amministratore (⚙️), altrimenti dal nome (giardino, terrazzo…) */
+const stanzaFuori = a => { const v = C().fuori?.[a]; return typeof v === "boolean" ? v : stanzaFuoriAuto(a); };
 /** è un sensore di fuori? (area esterna, oppure senza stanza scelta a mano e con un nome o un servizio di fuori) */
 function diFuori(id) {
   const a = areaOf(id); if (a) return stanzaFuori(a) || (!LAYOUT.rooms?.[id] && PIATT_FUORI.test(REG[id]?.platform || ""));
@@ -165,10 +168,13 @@ export function dispositivi() {
   return [...new Set([...L, ...(c.dispExtra || []).filter(id => S[id] && !tolti.has(id))])].sort((a, b) => pos(a) - pos(b) || nm(a).localeCompare(nm(b), LOC));
 }
 /** purif | deum | umid */
-function tipoDisp(id) {
+const TIPI_DISP = () => [["purif", "🌀 " + t("Purificatore", "Air purifier")], ["deum", "💧 " + t("Deumidificatore", "Dehumidifier")], ["umid", "💨 " + t("Umidificatore", "Humidifier")]];
+function tipoDispAuto(id) {
   if (!id.startsWith("humidifier.")) return "purif";
   return deviceClass(id) === "dehumidifier" || /deumid|dehumid|asciug/i.test(id + " " + nmHA(id)) ? "deum" : "umid";
 }
+/** scelto a mano in ✏️ del dispositivo, altrimenti riconosciuto da solo */
+function tipoDisp(id) { const v = C().dispTipi?.[id]; return ["purif", "deum", "umid"].includes(v) ? v : tipoDispAuto(id); }
 const acceso = id => ok(id) && S[id].state === "on";
 const stessoDisp = (id, pred) => { const dev = REG[id]?.device; return dev ? Object.keys(S).filter(x => x !== id && REG[x]?.device === dev && pred(x)) : []; };
 /** stato del filtro: { pct, testo, cambia, id } oppure null */
@@ -247,6 +253,8 @@ const ricambio = () => clamp(Math.round(+C().ricambio || 10), 1, 120);
 const filtroMin = () => clamp(Math.round(C().filtro ?? 10), 0, 50);
 const minAvviso = () => clamp(Math.round(+C().avviso?.min || 30), 5, 720);
 const avvisoOn = () => C().avviso?.on !== false;
+/** da che livello dare i consigli: 2 = Discreta o peggio (predefinito), 3 = solo Scarsa */
+const consigliDa = () => C().consigliDa === 3 ? 3 : 2;
 const finestraAperta = a => a !== "_" && openings().some(id => areaOf(id) === a && isOn(id) && ["window", "opening"].includes(deviceClass(id)));
 const dispStanza = (a, k) => dispositivi().filter(id => (areaOf(id) || "_") === a && ok(id) && (!k || tipoDisp(id) === k));
 const climaDeumidifica = a => a === "_" ? null : ents("climate", id => areaOf(id) === a && ok(id) && (attr(id, "hvac_modes") || []).includes("dry"))[0] || null;
@@ -257,7 +265,7 @@ function consigli(g = perStanza()) {
     const R = esc(nomeStanza(a)), fin = finestraAperta(a), visti = new Set();
     for (const x of g[a]) {
       const gruppo = { vocp: "voc", voci: "voc", hcho: "voc", pm10: "pm", pm25: "pm" }[x.k] || x.k;   // un consiglio solo per polveri e per sostanze
-      if (x.lv == null || x.lv < 2 || visti.has(gruppo)) continue;
+      if (x.lv == null || x.lv < consigliDa() || visti.has(gruppo)) continue;
       visti.add(gruppo);
       const V = `<b>${esc(valTxt(x.id))}</b>`, apri = fin ? t(" La finestra è già aperta: lasciala ancora un po'.", " The window is already open: leave it a bit longer.") : "";
       const Fk = fuori(x.k), fuoriPeggio = !!Fk && Fk.lv >= 2 && Fk.v >= x.v, fuoriMeglio = !!Fk && Fk.v < x.v * .7;
@@ -469,13 +477,24 @@ function impostazioni() {
     <div class="li"><div class="tx"><b>${t("Quando una stanza resta «Scarsa»", "When a room stays «Poor»")}</b><span>${t("L'avviso compare negli Avvisi della Home.", "The alert shows in Home Alerts.")}</span></div><button class="sw ${avvisoOn() ? "on" : ""}" data-act="arAvOn" aria-pressed="${avvisoOn()}" aria-label="${t("Avviso in Home", "Alert on Home")}"><i></i></button></div>
     ${avvisoOn() ? `<label class="fld1"><span>${t("Dopo quanti minuti di aria scarsa", "After how many minutes of poor air")}</span><span class="ar1in"><input type="number" min="5" max="720" step="5" value="${minAvviso()}" data-chg="arCfgN" data-f="avviso"><em>min</em></span></label>` : ""}
     <div class="fl1">💡 ${t("Consigli", "Tips")}</div>
+    <div class="fld1"><span>${t("Dai consigli quando l'aria è", "Give tips when the air is")}</span>
+      <div class="seg" style="align-self:flex-start">${[[2, LIV()[2][0] + t(" o peggio", " or worse")], [3, t("Solo ", "Only ") + LIV()[3][0].toLowerCase()]].map(([v, n]) => `<button class="${consigliDa() === v ? "act" : ""}" data-act="arConsDa" data-v="${v}" aria-pressed="${consigliDa() === v}">${esc(n)}</button>`).join("")}</div></div>
+    <p class="small muted" style="margin:6px 2px 0">${t("«Discreta» ti avvisa prima; «Scarsa» solo quando serve davvero.", "«Fair» warns you earlier; «Poor» only when it really matters.")}</p>
     <label class="fld1"><span>${t("Per quanti minuti consigliare di aprire la finestra", "How many minutes to suggest opening the window")}</span><span class="ar1in"><input type="number" min="1" max="120" step="1" value="${ricambio()}" data-chg="arCfgN" data-f="ricambio"><em>min</em></span></label>
     <label class="fld1"><span>${t("Filtro da cambiare sotto il", "Filter to replace below")}</span><span class="ar1in"><input type="number" min="0" max="50" step="1" value="${filtroMin()}" data-chg="arCfgN" data-f="filtro"><em>%</em></span></label>
     <p class="small muted" style="margin:6px 2px 0">${t("Il filtro si controlla solo se il purificatore dice quanto ne resta.", "The filter is checked only if the purifier reports how much is left.")}</p>
+    ${stanzeSensori().length ? `<div class="fl1">🌳 ${t("Stanze di fuori", "Outdoor rooms")}</div>
+    <p class="small muted" style="margin:0 2px 8px">${t("I sensori di una stanza di fuori non hanno un giudizio: servono solo ai consigli («fuori l'aria è peggiore»). Le riconosco dal nome (giardino, terrazzo…): se sbaglio, correggi qui.", "Sensors in an outdoor room get no rating: they're only used for tips («the air outside is worse»). I detect them by name (garden, terrace…): if I get it wrong, fix it here.")}</p>
+    <div class="stack">${stanzeSensori().map(a => { const f = stanzaFuori(a), mio = typeof c.fuori?.[a] === "boolean";
+      return `<div class="li"><div class="tx"><b>${esc(nomeStanza(a))}</b><span>${f ? t("di fuori", "outdoor") : t("in casa", "indoor")}${mio ? " · " + t("scelto da te", "your choice") : " · " + t("riconosciuto da solo", "detected")}</span></div>
+        ${mio ? `<button class="btn sm" data-act="arFuori" data-id="${esc(a)}" data-v="" aria-label="${t("Riconosci da solo", "Detect automatically")}">✨</button>` : ""}<button class="sw ${f ? "on" : ""}" data-act="arFuori" data-id="${esc(a)}" data-v="${f ? "0" : "1"}" aria-pressed="${f}" aria-label="${t("Di fuori", "Outdoor")} · ${esc(nomeStanza(a))}"><i></i></button></div>`; }).join("")}</div>` : ""}
     <div class="fl1">📏 ${t("Soglie", "Thresholds")}</div>
     <p class="small muted" style="margin:0 2px 8px">${t("Quando una misura è Ottima, Buona o Discreta. Compaiono solo le misure che hai in casa; i valori predefiniti e da dove vengono sono in ℹ️.", "When a reading is Excellent, Good or Fair. Only the readings you have at home are listed; defaults and their sources are in ℹ️.")}</p>
     <div class="stack">${K.map(riga).join("") || `<div class="small muted">${t("Nessun sensore.", "No sensors.")}</div>`}</div>`;
 }
+
+/** stanze che hanno sensori dell'aria (di casa o di fuori): quelle che si possono segnare «di fuori» */
+const stanzeSensori = () => { const o = areasSorted(true); return [...new Set([...sensori().map(s => s.a), ...Object.keys(C().fuori || {})].filter(a => a !== "_" && AREAS[a]))].sort((x, y) => o.indexOf(x) - o.indexOf(y)); };
 
 /* ---------- ✏️ un sensore ---------- */
 let ED = null;
@@ -495,8 +514,11 @@ function foglioSensore() {
 /* ✏️ un dispositivo */
 function foglioDisp() {
   const id = ED; if (!S[id]) return "";
-  const r = LAYOUT.rooms?.[id] || "", haA = REG[id]?.area;
+  const r = LAYOUT.rooms?.[id] || "", haA = REG[id]?.area, mio = C().dispTipi?.[id] || "", k = tipoDisp(id);
   return `<div class="sh-head"><div><h3>✏️ ${esc(nm(id))}</h3><div class="small muted mono">${esc(id)}</div></div><button class="x" data-act="sheetClose">×</button></div>
+    <div class="fl1">${t("Che cos'è", "What it is")}</div>
+    <div class="seg" style="flex-wrap:wrap">${TIPI_DISP().map(([v, n]) => `<button class="${k === v ? "act" : ""}" data-act="arDTipo" data-v="${v}" aria-pressed="${k === v}">${esc(n)}</button>`).join("")}</div>
+    <p class="small muted" style="margin:6px 2px 0">${mio ? `<button class="lnk" data-act="arDTipo" data-v="" style="background:none;border:0;padding:0">✨ ${t("Riconosci da solo", "Detect automatically")} (${esc(TIPI_DISP().find(x => x[0] === tipoDispAuto(id))[1])})</button>` : t("Riconosciuto da solo: se sbaglio, scegli tu. Serve ai consigli («accendi il deumidificatore»).", "Detected automatically: if I'm wrong, pick it. It's used for tips («turn on the dehumidifier»).")}</p>
     <label class="fld1"><span>${t("Nome nella plancia", "Name in the dashboard")}</span><input id="ar1nn" type="text" value="${esc(LAYOUT.names?.[id] || "")}" placeholder="${esc(nmHA(id))}"></label>
     <label class="fld1"><span>${t("Stanza", "Room")}</span><select id="ar1rr"><option value="">${haA && AREAS[haA] ? t("Come in Home Assistant", "As in Home Assistant") + ` (${esc(AREAS[haA].name)})` : t("Nessuna stanza", "No room")}</option>
       ${areasSorted(true).map(a => `<option value="${a}" ${r === a ? "selected" : ""}>${esc(AREAS[a].name)}</option>`).join("")}</select></label>
@@ -539,6 +561,7 @@ Object.assign(ACT, {
       onPick: id => { if (!id || id === "none") return; arCambia(c => { c.tolti = (c.tolti || []).filter(x => x !== id); c.extra = [...new Set([...(c.extra || []), id])]; }, "＋ " + nm(id))
         .then(() => { ED = id; openSheet(foglioSensore); }); } }); },
   arDEd: el => { ED = el.dataset.id; openSheet(foglioDisp); },
+  arDTipo: el => { const id = ED, v = el.dataset.v; arCambia(c => { c.dispTipi = { ...(c.dispTipi || {}) }; if (v) c.dispTipi[id] = v; else delete c.dispTipi[id]; }, v ? TIPI_DISP().find(x => x[0] === v)[1] : "✨"); },
   arDSalva: () => salvaStanza(ED, (document.getElementById("ar1nn")?.value || "").trim()),
   arDTogli: el => { const id = el.dataset.id || ED; if (UI.sheet) closeSheet();
     arCambia(c => { c.dispExtra = (c.dispExtra || []).filter(x => x !== id); c.dispTolti = [...new Set([...(c.dispTolti || []), id])]; }, "✕ " + nm(id)); },
@@ -548,6 +571,8 @@ Object.assign(ACT, {
       onPick: id => id && id !== "none" && arCambia(c => { c.dispTolti = (c.dispTolti || []).filter(x => x !== id); c.dispExtra = [...new Set([...(c.dispExtra || []), id])]; }, "＋ " + nm(id)) }); },
   /* impostazioni */
   arAvOn: () => arCambia(c => { c.avviso = { ...(c.avviso || {}), on: !avvisoOn() }; }, avvisoOn() ? t("Avviso spento", "Alert off") : "🔔 " + t("Avviso acceso", "Alert on")),
+  arConsDa: el => arCambia(c => { if (+el.dataset.v === 3) c.consigliDa = 3; else delete c.consigliDa; }, "💡"),
+  arFuori: el => { const a = el.dataset.id, v = el.dataset.v; arCambia(c => { c.fuori = { ...(c.fuori || {}) }; if (v === "") delete c.fuori[a]; else c.fuori[a] = v === "1"; }, "🌳 " + nomeStanza(a)); },
   arSgReset: el => { const k = el.dataset.k; arCambia(c => { if (c.soglie) delete c.soglie[k]; }, "↺ " + nomeTipo(k)); },
 });
 CHG.arVel = el => svc("fan", "set_percentage", { percentage: +el.value }, { entity_id: el.dataset.id }).catch(() => {});

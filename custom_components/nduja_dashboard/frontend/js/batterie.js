@@ -1,18 +1,24 @@
 /* Batterie: trova da sola le pile dei dispositivi (sensori % di batteria, «batteria bassa» sì/no, attributo battery_level),
    una per dispositivo, senza telefoni (sono in Persone), auto (pagina Auto) e batteria di casa del fotovoltaico.
    Le scelte sono in LAYOUT.batterie (per tutta la casa, solo admin):
-   { soglia: 20, extra: [entity_id aggiunti a mano], nascosti: [chiavi], d: { chiave: { soglia, tipo, qta, nome, cambio: ISO } } }
+   { soglia: 20, muto: 7 (giorni senza notizie), telefoni: 15 (% per gli avvisi sul telefono, 0 = mai),
+     extra: [entity_id aggiunti a mano], nascosti: [chiavi], d: { chiave: { soglia, tipo, qta, nome, cambio: ISO } } }
    La chiave è il dispositivo di Home Assistant; per un'entità senza dispositivo è l'entity_id.
    Qui c'è solo la logica: la pagina è pages/batterie.js, gli avvisi «pila scarica» sono in avvisi.js. */
 import { S, REG, DEVICES, AREAS, LAYOUT, UI, nm, nmHA, ok, attr, unit, deviceClass, areaOf, pronto, render } from "./core.js";
 
 export const SOGLIA = 20;          // avviso sotto il 20% se l'utente non sceglie altro
-export const MUTO_GG = 7;          // nessuna notizia dal dispositivo da tanti giorni: forse è scarico o scollegato
+export const MUTO_GG = 7;          // nessuna notizia dal dispositivo da tanti giorni: forse è scarico o scollegato (predefinito)
+export const SOGLIA_TEL = 15;      // telefoni: avviso sul telefono sotto il 15% (predefinito)
 const GIORNO = 864e5;
 export const conf = () => LAYOUT.batterie || {};
 export const confDi = k => conf().d?.[k] || {};
 export const sogliaGlobale = () => { const v = +conf().soglia; return v > 0 && v < 100 ? v : SOGLIA; };
 export const sogliaDi = k => { const v = +confDi(k).soglia; return v > 0 && v < 100 ? v : sogliaGlobale(); };
+/** dopo quanti giorni senza notizie una pila è «muta» (scelto in ✏️, 1-365) */
+export const mutoGG = () => { const v = Math.round(+conf().muto); return v >= 1 && v <= 365 ? v : MUTO_GG; };
+/** sotto quale % avvisare sul telefono per le pile dei telefoni (0 = mai) */
+export const sogliaTel = () => { const v = conf().telefoni; if (v === 0) return 0; const n = Math.round(+v); return n >= 1 && n <= 99 ? n : SOGLIA_TEL; };
 const nascosti = () => new Set(conf().nascosti || []);
 const extra = () => (conf().extra || []).filter(id => S[id]);
 
@@ -38,7 +44,7 @@ function moduli() {
 export const prontoBatt = () => !!moduli();
 let memoEs = { k: "", v: new Set() };
 function esclusi() {
-  const M = moduli() || {}, k = Object.keys(S).length + ":" + Object.keys(DEVICES).length + ":" + JSON.stringify(LAYOUT.people || {}) + JSON.stringify(LAYOUT.energy || {}) + JSON.stringify(LAYOUT.cars?._hide || []) + !!MOD;
+  const M = moduli() || {}, k = Object.keys(S).length + ":" + Object.keys(DEVICES).length + ":" + JSON.stringify(LAYOUT.people || {}) + JSON.stringify(LAYOUT.energy || {}) + JSON.stringify([LAYOUT.cars?._hide || [], LAYOUT.cars?._add || []]) + !!MOD;
   if (memoEs.k === k) return memoEs.v;
   const E = new Set(), TEL = new Set();
   /* telefoni: i dispositivi seguiti dalle persone, l'app di Home Assistant e le batterie scelte in Persone */
@@ -126,13 +132,15 @@ export function spesa(L = daCambiare()) {
   return { pile: Object.entries(P).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])), senza };
 }
 
-/** entità per l'automazione degli avvisi sul telefono, con le soglie e senza le nascoste (più i telefoni, al 15%):
+/** entità per l'automazione degli avvisi sul telefono, con le soglie e senza le nascoste (più i telefoni, alla loro soglia):
     { soglie: { 20: [sensori %] }, attributi: { 20: [entità con battery_level] }, basse: [binary_sensor sì/no] } */
+/** sensori % delle pile dei telefoni (non sono nella pagina, ma negli avvisi sul telefono) */
+export const batterieTelefoni = () => { const TEL = esclusi().tel || new Set(); return Object.keys(S).filter(id => isSensBatt(id) && (TEL.has(chiave(id)) || TEL.has(id))); };
 export function perAutomazione() {
   const soglie = {}, attributi = {}, basse = [], add = (o, s, id) => (o[s] = o[s] || []).push(id);
-  /* i telefoni non sono nella pagina ma restano negli avvisi sul telefono, sotto il 15% come prima */
-  const TEL = esclusi().tel || new Set();
-  for (const id of Object.keys(S)) if (isSensBatt(id) && (TEL.has(chiave(id)) || TEL.has(id))) add(soglie, 15, id);
+  /* i telefoni non sono nella pagina ma restano negli avvisi sul telefono, sotto la loro soglia (15% se non scelta; 0 = mai) */
+  const st = sogliaTel();
+  if (st) for (const id of batterieTelefoni()) add(soglie, st, id);
   for (const b of batterie()) {
     if (b.id.startsWith("sensor.")) add(soglie, b.soglia, b.id);
     else if (b.id.startsWith("binary_sensor.")) basse.push(b.id);

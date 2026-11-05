@@ -18,7 +18,7 @@ function pagina() {
       const w = r.T == null || tmax === tmin ? 0 : (r.T - tmin) / (tmax - tmin);
       return `<${adm ? `button data-act="rmEdit" data-id="${r.a}"` : "div"} class="row between tr1 ${adm ? "tap1" : ""}"><span>${esc(AREAS[r.a].name)}${UI.edit ? " ✏️" : ""}</span><span class="bar1"><i style="width:${(15 + w * 85).toFixed(0)}%;background:${w > .66 ? "var(--orange)" : w < .33 ? "var(--teal)" : "var(--green)"}"></i></span>
         <b>${r.T != null ? fnum(r.T) + "°" : "—"}</b><small class="muted">${r.H != null ? Math.round(r.H) + "%" : ""}</small></${adm ? "button" : "div"}>`; }).join("")}</div>${adm ? `<div class="small muted" style="margin-top:10px">${t("Tocca una stanza per cambiarle nome o scegliere i sensori di temperatura e umidità.", "Tap a room to rename it or choose its temperature and humidity sensors.")}</div>` : ""}`, { cls: zone.length % 3 === 2 ? "" : "span2" }) : ""}
-    ${F.length ? card("🌀 " + t("Ventilatori e umidificatori", "Fans and humidifiers"), `<div class="stack">${F.map(id => item(id, entityRow(id))).join("")}</div>`) : ""}
+    ${F.length || UI.edit ? card("🌀 " + t("Ventilatori e umidificatori", "Fans and humidifiers"), `<div class="stack">${F.map(id => item(id, entityRow(id))).join("")}${addBtn(["fan", "humidifier"], { label: t("Aggiungi ventilatore o umidificatore", "Add fan or humidifier") })}</div>`) : ""}
   </div>`;
 }
 const attivi = () => ents("climate", id => ok(id) && S[id].state !== "off").length;

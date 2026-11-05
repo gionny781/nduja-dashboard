@@ -4,11 +4,14 @@
    un messaggio nuovo arriva subito sugli altri dispositivi grazie all'avviso di casa.js.
    Sezione «bacheca» = { messaggi: [{ id, testo, colore, quando, fisso, scade, autore: { uid, nome, p } }] }
    In Home la scheda «Bacheca» con gli ultimi messaggi (HOME_EXTRA), nascondibile come le altre. */
-import { S, ACT, CHG, UI, HOME_EXTRA, t, LOC, esc, nm, attr, allEnts, card, page, toast, openSheet, closeSheet, render, sGet, sSet, sicuro, isAdmin, ago } from "../core.js";
+import { S, ACT, CHG, UI, LAYOUT, HOME_EXTRA, t, LOC, esc, nm, attr, allEnts, card, page, toast, openSheet, closeSheet, render, sGet, sSet, sicuro, isAdmin, ago } from "../core.js";
 import { casa, casaCambia, casaErrore } from "../casa.js";
+import { cambia } from "../edit.js";
 
 const SEZ = "bacheca";
-const MAX_TESTO = 280, MAX_MSG = 80, IN_HOME = 4;
+const MAX_TESTO = 280, MAX_MSG = 80;
+/** quanti messaggi nella scheda della Home: 4, o quelli scelti dall'amministratore in ⚙️ */
+const inHome = () => { const v = +LAYOUT.bacheca?.inHome; return v >= 1 && v <= 12 ? v : 4; };
 const COLORI = () => [["giallo", t("Giallo", "Yellow")], ["arancio", t("Arancio", "Orange")], ["rosa", t("Rosa", "Pink")], ["verde", t("Verde", "Green")], ["azzurro", t("Azzurro", "Blue")], ["viola", t("Viola", "Purple")]];
 const COL = new Set(["giallo", "arancio", "rosa", "verde", "azzurro", "viola"]);
 const colore = c => COL.has(c) ? c : "giallo";
@@ -99,7 +102,7 @@ function pagina() {
   if (s?.stato !== "ok") return `<div class="g g3"><section class="card span3"><div class="small muted">${t("Carico la bacheca…", "Loading the notice board…")}</div></section></div>`;
   const M = messaggi();
   const testa = `<section class="card span3 bch1"><div class="ch"><h2>📌 ${t("Bacheca", "Notice board")}${M.length ? ` <span class="tag info">${M.length}</span>` : ""}${M.some(m => m.fisso) ? ` <span class="tag warn">📌 ${M.filter(m => m.fisso).length}</span>` : ""}</h2>
-      <button class="btn pri sm" data-act="bcNuovo">✍️ ${t("Nuovo messaggio", "New message")}</button></div>
+      <div class="row" style="gap:8px"><button class="btn pri sm" data-act="bcNuovo">✍️ ${t("Nuovo messaggio", "New message")}</button>${isAdmin() ? `<button class="btn sm" data-act="bcCfg" title="${t("Impostazioni", "Settings")}" aria-label="${t("Impostazioni", "Settings")}">⚙️</button>` : ""}</div></div>
     <p class="small muted" style="margin:0">${t("I messaggi di famiglia, uguali su tutti i dispositivi. Chiunque in casa può scrivere; cancella chi l'ha scritto oppure un amministratore.", "Family messages, the same on every device. Anyone at home can write; the author or an admin can delete them.")}</p></section>`;
   if (!M.length) return `<div class="g g3">${testa}<section class="card span3 bcz1"><span class="bcz1i">${disegno()}</span><div><h3>${t("La bacheca è vuota", "The board is empty")}</h3>
       <p class="small muted">${t("Lascia un messaggio a tutta la casa: «Torno tardi», «Il pane è nel forno», «Domani passa il tecnico». Lo vedono subito tutti, su ogni telefono e tablet.", "Leave a message for the whole home: «Back late», «Bread is in the oven», «The technician comes tomorrow». Everyone sees it right away, on every phone and tablet.")}</p>
@@ -109,7 +112,7 @@ function pagina() {
 
 /* ---------- Home: gli ultimi messaggi ---------- */
 function homeCard() {
-  const M = messaggi(), V = M.slice(0, IN_HOME);
+  const M = messaggi(), IN_HOME = inHome(), V = M.slice(0, IN_HOME);
   return card("📌 " + t("Bacheca", "Notice board"), `<div class="bchl1">${V.map(m => `<div class="bch2 c-${colore(m.colore)} ${m.fisso ? "fisso" : ""} ${nuovo(m) ? "nw" : ""}">
       <p>${m.fisso ? puntina() : ""}${esc(m.testo)}</p><span>${avatar(m.autore)}<b>${esc(nomeA(m.autore))}</b> · ${esc(ago(m.quando))}${m.scade ? " · ⏳ " + esc(scadeTesto(m.scade)) : ""}</span></div>`).join("")}</div>
     <div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn sm" data-act="bcNuovo">✍️ ${t("Scrivi", "Write")}</button>${M.length > IN_HOME ? `<button class="btn sm" data-act="go" data-id="bacheca">${M.length - IN_HOME === 1 ? t("e un altro", "and 1 more") : t(`e altri ${M.length - IN_HOME}`, `and ${M.length - IN_HOME} more`)} ›</button>` : ""}</div>`,
@@ -149,7 +152,14 @@ document.addEventListener("input", e => {
 CHG.bcData = el => { if (!F) return; F.data = el.value && el.value >= oggiISO() ? el.value : oggiISO(); if (el.value !== F.data) el.value = F.data; render(); };
 CHG.bcFissoF = el => { if (F) F.fisso = el.checked; };
 
+/* ⚙️ (amministratori): quanti messaggi nella Home */
+const cfg = () => `<div class="sh-head"><div><h3>⚙️ ${t("Bacheca", "Notice board")}</h3><div class="small muted">${t("Vale per tutta la casa.", "It applies to the whole home.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
+    <label class="fld1"><span>${t("Messaggi nella scheda della Home", "Messages on the Home card")}</span><select data-chg="bcInHome">${[1, 2, 3, 4, 5, 6, 8, 10, 12].map(n => `<option value="${n}" ${inHome() === n ? "selected" : ""}>${n}</option>`).join("")}</select></label>
+    <p class="small muted" style="margin:6px 0 0">${t("Gli altri restano qui nella Bacheca: in Home compare «e altri…». Gli appuntati vengono sempre per primi.", "The others stay here on the board: Home shows «and more…». Pinned ones always come first.")}</p>`;
+CHG.bcInHome = el => { const n = +el.value; cambia(l => { l.bacheca = { ...(l.bacheca || {}) }; if (n === 4) delete l.bacheca.inHome; else l.bacheca.inHome = n; if (!Object.keys(l.bacheca).length) delete l.bacheca; }, "📌 " + t("In Home: ", "On Home: ") + n); };
+
 Object.assign(ACT, {
+  bcCfg: () => openSheet(cfg),
   bcNuovo: () => apri(),
   bcCol: el => { leggiTesto(); F.colore = colore(el.dataset.v); sSet("bachecaColore", F.colore); render(); },
   bcScade: el => { leggiTesto(); F.scade = el.dataset.v; if (F.scade === "data" && !F.data) F.data = oggiISO(); render(); },

@@ -1,8 +1,11 @@
 /* Calendario: gli eventi di oggi e dei prossimi giorni dai calendari di Home Assistant, con «＋ Evento». */
-import { S, ACT, CHG, LAYOUT, UI, t, LOC, esc, nm, ents, card, empty, page, svc, toast, openSheet, closeSheet, saveLayout, uncache, isAdmin, render } from "../core.js";
-import { calendari, colore, puoScrivere, eventi, nelGiorno, ora, nomeGiorno, allDay, inizio } from "../agenda.js";
+import { S, ACT, CHG, LAYOUT, UI, t, LOC, esc, nm, ents, card, empty, page, svc, toast, openSheet, closeSheet, saveLayout, uncache, isAdmin, render, sGet, sSet } from "../core.js";
+import { calendari, colore, COLORI, puoScrivere, eventi, nelGiorno, ora, nomeGiorno, allDay, inizio } from "../agenda.js";
 
-const V = { giorni: 7 };
+/* giorni mostrati: scelta di questo dispositivo (oggi, settimana, mese) */
+const V = { giorni: [1, 7, 30].includes(+sGet("calGiorni")) ? +sGet("calGiorni") : 7 };
+/** agenda della Home: quanti giorni (2 = oggi e domani) e quanti eventi al massimo; scelte di tutta la casa (✏️ Calendari) */
+const agendaCfg = () => ({ giorni: [2, 3, 7].includes(+LAYOUT.agenda?.giorni) ? +LAYOUT.agenda.giorni : 2, max: [3, 5, 8, 12].includes(+LAYOUT.agenda?.max) ? +LAYOUT.agenda.max : 5 });
 const evRiga = ev => `<div class="ev1" style="--c:${colore(ev.cal)}"><span class="eh1">${esc(ora(ev))}</span><div class="tx"><b>${esc(ev.summary || t("(senza titolo)", "(untitled)"))}</b>
   <span>${esc(nm(ev.cal))}${ev.location ? " · 📍 " + esc(ev.location) : ""}</span>${ev.description ? `<small>${esc(String(ev.description).slice(0, 140))}</small>` : ""}</div></div>`;
 
@@ -22,11 +25,13 @@ function elenco(giorni) {
 /** agenda breve per la Home: oggi e domani */
 export function agendaCard() {
   const C = calendari(); if (!C.length) return "";
-  const E = eventi(C, 2) || [], ora0 = new Date();
-  const dom = new Date(Date.now() + 864e5);
-  const L = E.filter(e => (nelGiorno(e, ora0) || nelGiorno(e, dom)) && (allDay(e) || new Date(e.end) > ora0)).slice(0, 5);
-  return card("📅 " + t("Agenda", "Agenda"), L.length ? `<div class="stack">${L.map(e => evRiga(e).replace('class="eh1">', `class="eh1">${nelGiorno(e, ora0) ? "" : t("dom ", "tmrw ")}`)).join("")}</div>`
-    : `<div class="small muted">${t("Niente in programma oggi e domani.", "Nothing planned today or tomorrow.")}</div>`, { link: [t("Calendario", "Calendar"), "calendario"] });
+  const A = agendaCfg(), E = eventi(C, A.giorni) || [], ora0 = new Date();
+  const giorni = Array.from({ length: A.giorni }, (_, i) => new Date(Date.now() + i * 864e5));
+  const L = E.filter(e => giorni.some(d => nelGiorno(e, d)) && (allDay(e) || new Date(e.end) > ora0)).slice(0, A.max);
+  /* davanti all'ora: niente per oggi, «dom» (o «domani» se guardo più giorni, per non confonderlo con domenica) per domani, giorno e data per i giorni dopo */
+  const quando = e => nelGiorno(e, ora0) ? "" : nelGiorno(e, giorni[1]) ? (A.giorni === 2 ? t("dom ", "tmrw ") : t("domani ", "tomorrow ")) : inizio(e).toLocaleDateString(LOC, { weekday: "short", day: "numeric" }) + " ";
+  return card("📅 " + t("Agenda", "Agenda"), L.length ? `<div class="stack">${L.map(e => evRiga(e).replace('class="eh1">', `class="eh1">${esc(quando(e))}`)).join("")}</div>`
+    : `<div class="small muted">${A.giorni === 2 ? t("Niente in programma oggi e domani.", "Nothing planned today or tomorrow.") : t(`Niente in programma nei prossimi ${A.giorni} giorni.`, `Nothing planned in the next ${A.giorni} days.`)}</div>`, { link: [t("Calendario", "Calendar"), "calendario"] });
 }
 
 /* ---------- ＋ Evento ---------- */
@@ -49,21 +54,31 @@ CHG.evF = el => { F[el.dataset.k] = el.value; };
 CHG.evAll = el => { F.tutto = el.checked; };
 
 /* ---------- ✏️ calendari da mostrare ---------- */
-let scelti = null;
+let scelti = null, colori = null, ag = null, aperto = null;
 function scelta() {
-  scelti = scelti || calendari();
-  return `<div class="sh-head"><div><h3>📅 ${t("Calendari", "Calendars")}</h3><div class="small muted">${t("Scegli quali mostrare.", "Choose which to show.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
-    <div class="stack">${ents("calendar").map(id => `<label class="li rfc1"><input type="checkbox" data-chg="calPick" data-id="${id}" ${scelti.includes(id) ? "checked" : ""}><span class="dot1" style="background:${colore(id)}"></span><div class="tx"><b>${esc(nm(id))}</b><span>${esc(id)}${puoScrivere(id) ? " · ✍️" : ""}</span></div></label>`).join("")}</div>
-    <div class="row" style="gap:8px;margin-top:14px"><button class="btn pri" data-act="calSave">💾 ${t("Salva", "Save")}</button><button class="btn" data-act="calAuto">${t("Automatico", "Automatic")}</button></div>`;
+  scelti = scelti || calendari(); colori = colori || { ...(LAYOUT.calColors || {}) }; ag = ag || agendaCfg();
+  const col = id => colori[id] || colore(id);
+  return `<div class="sh-head"><div><h3>📅 ${t("Calendari", "Calendars")}</h3><div class="small muted">${t("Scegli quali mostrare e il loro colore (tocca il pallino).", "Choose which to show and their colour (tap the dot).")}</div></div><button class="x" data-act="sheetClose">×</button></div>
+    <div class="stack">${ents("calendar").map(id => `<div><label class="li rfc1"><input type="checkbox" data-chg="calPick" data-id="${id}" ${scelti.includes(id) ? "checked" : ""}><button class="dot1" data-act="calCol" data-id="${id}" style="background:${col(id)};width:22px;height:22px;border:2px solid var(--line);padding:0;cursor:pointer" aria-label="${t("Colore", "Colour")}" title="${t("Colore", "Colour")}"></button><div class="tx"><b>${esc(nm(id))}</b><span>${esc(id)}${puoScrivere(id) ? " · ✍️" : ""}</span></div></label>
+      ${aperto === id ? `<div class="row" style="gap:8px;flex-wrap:wrap;margin:6px 0 4px 34px">${COLORI.map(c => `<button data-act="calColV" data-id="${id}" data-v="${c}" aria-label="${c}" style="width:30px;height:30px;border-radius:50%;background:${c};border:3px solid ${col(id) === c ? "var(--tx)" : "transparent"};cursor:pointer"></button>`).join("")}</div>` : ""}</div>`).join("")}</div>
+    <div class="fl1">🏠 ${t("Agenda nella Home", "Agenda on Home")}</div>
+    <p class="small muted" style="margin:0 0 6px">${t("Quanti giorni guarda la scheda «Agenda» della Home e quanti eventi mostra al massimo.", "How many days the Home «Agenda» card looks ahead and how many events it shows at most.")}</p>
+    <div class="seg" style="flex-wrap:wrap">${[[2, t("Oggi e domani", "Today and tomorrow")], [3, t("3 giorni", "3 days")], [7, t("Settimana", "Week")]].map(([v, n]) => `<button class="${ag.giorni === v ? "act" : ""}" data-act="calAg" data-k="giorni" data-v="${v}">${n}</button>`).join("")}</div>
+    <div class="seg" style="flex-wrap:wrap;margin-top:8px">${[3, 5, 8, 12].map(v => `<button class="${ag.max === v ? "act" : ""}" data-act="calAg" data-k="max" data-v="${v}">${v} ${t("eventi", "events")}</button>`).join("")}</div>
+    <div class="row" style="gap:8px;margin-top:14px"><button class="btn pri" data-act="calSave">💾 ${t("Salva", "Save")}</button><button class="btn" data-act="calAuto">${t("Automatico", "Automatic")}</button></div>
+    <p class="small muted" style="margin-top:10px">${t("«Automatico» mostra tutti i calendari tranne la raccolta differenziata.", "«Automatic» shows all calendars except waste collection.")}</p>`;
 }
 CHG.calPick = el => { scelti = el.checked ? [...new Set([...scelti, el.dataset.id])] : scelti.filter(x => x !== el.dataset.id); };
+/** salva calendari (null = automatico), colori e agenda della Home */
 async function salvaCal(v) {
   const l = JSON.parse(JSON.stringify(LAYOUT)); if (v) l.calendars = v; else delete l.calendars;
+  if (colori && Object.keys(colori).length) l.calColors = colori; else delete l.calColors;
+  if (ag && (ag.giorni !== 2 || ag.max !== 5)) l.agenda = { giorni: ag.giorni, max: ag.max }; else delete l.agenda;
   try { await saveLayout(l); closeSheet(); uncache("ev:"); toast("📅 " + t("Salvato", "Saved")); } catch (e) { toast(t("Non salvato: ", "Not saved: ") + (e.message || e.code), true); }
 }
 
 Object.assign(ACT, {
-  calDays: el => { V.giorni = +el.dataset.v; render(true); },
+  calDays: el => { V.giorni = +el.dataset.v; sSet("calGiorni", V.giorni); render(true); },
   evNew: () => { F = null; openSheet(nuovo); },
   evSave: async () => {
     if (!F.titolo.trim()) return toast(t("Scrivi un titolo", "Write a title"), true);
@@ -73,7 +88,10 @@ Object.assign(ACT, {
     else { d.start_date_time = `${F.data} ${F.da}:00`; d.end_date_time = `${F.data} ${F.a > F.da ? F.a : F.da}:00`; }
     try { await svc("calendar", "create_event", d, { entity_id: F.cal }); closeSheet(); uncache("ev:"); toast("📅 " + d.summary); } catch {}
   },
-  calEdit: () => { scelti = null; openSheet(scelta); },
+  calEdit: () => { scelti = colori = ag = aperto = null; openSheet(scelta); },
+  calCol: el => { aperto = aperto === el.dataset.id ? null : el.dataset.id; render(); },
+  calColV: el => { colori[el.dataset.id] = el.dataset.v; render(); },
+  calAg: el => { ag = { ...ag, [el.dataset.k]: +el.dataset.v }; render(); },
   calSave: () => salvaCal(scelti),
   calAuto: () => salvaCal(null),
 });

@@ -2,7 +2,7 @@
 import { S, LAYOUT, t, LOC, ents, nm, cached, svcResp } from "./core.js";
 
 export const RIFIUTI = /raccolta|rifiut|differenziat|spazzatura|waste|garbage|trash|recycl|abfall|m[üu]ll/i;
-const COLORI = ["#ff8a3d", "#4fb3ff", "#7bd88f", "#c792ea", "#ffd166", "#ff6b9a", "#5ee0d0", "#b0b8c8"];
+export const COLORI = ["#ff8a3d", "#4fb3ff", "#7bd88f", "#c792ea", "#ffd166", "#ff6b9a", "#5ee0d0", "#b0b8c8"];
 
 /** calendari da mostrare: quelli scelti, altrimenti tutti tranne la raccolta differenziata */
 export function calendari() {

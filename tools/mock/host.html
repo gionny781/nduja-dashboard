@@ -966,7 +966,7 @@ const conn = {
       case "config/auth/list": return [{ id: "u1", name: "Mario", is_owner: true, is_active: true, group_ids: ["system-admin"] }, { id: "u2", name: "Anna", is_active: true, group_ids: ["system-users"] }];
       case "get_services": return { ...(localStorage.getItem("mockNoServPiante") ? {} : { nduja_dashboard: { leggi_casa: {} } }), notify: { mobile_app_telefono_demo: {}, mobile_app_iphone_di_mario: {}, mobile_app_iphone_di_anna: {}, persistent_notification: {} }, todo: { get_items: {}, add_item: {}, update_item: {} }, dreame_vacuum: { vacuum_clean_segment: {} }, rainbird: { start_irrigation: {} }, hydrawise: { start_watering: {}, suspend: {}, resume: {} } };
       case "energy/get_prefs": return { energy_sources: [{ type: "grid", stat_energy_from: "sensor.imp", stat_energy_to: "sensor.exp", number_energy_price: 0.35, number_energy_price_export: 0.044 }, { type: "solar", stat_energy_from: "sensor.prod" },
-        ...(localStorage.getItem("mockNoGas") ? [] : [{ type: "gas", stat_energy_from: "sensor.contatore_gas", number_energy_price: 1.05 }]),
+        ...(localStorage.getItem("mockNoGas") ? [] : [{ type: "gas", stat_energy_from: "sensor.contatore_gas", ...(localStorage.getItem("mockGasNoPrezzo") ? {} : { number_energy_price: 1.05 }) }]),
         ...(localStorage.getItem("mockNoAcqua") || localStorage.getItem("mockAcquaNoPrefs") ? [] : [{ type: "water", stat_energy_from: "sensor.contatore_acqua", number_energy_price: 2.1 }])], device_consumption: [] };
       case "recorder/statistics_during_period": { const out = {}; const st = new Date(m.start_time).getTime(), step = m.period === "hour" ? 3600e3 : m.period === "month" ? 30*864e5 : 864e5;
         for (const id of m.statistic_ids) { out[id] = [];
@@ -990,7 +990,7 @@ const conn = {
         if (/\/Salvaschermo\//.test(m.media_content_id)) return { url: "/tools/mock/" + m.media_content_id.split("/").pop(), mime_type: "image/svg+xml" };
         return { url: brano(m.media_content_id), mime_type: "audio/wav" };
       case "auth/sign_path": return { path: /\/chat_foto\//.test(m.path) ? "/tools/mock/cam-hd.svg?authSig=finto" : m.path + "?authSig=finto" };
-      case "get_config": return { version: "2026.10.1", location_name: "Casa" };
+      case "get_config": return { version: "2026.10.1", location_name: "Casa", currency: localStorage.getItem("mockValuta") || "EUR" };
       case "config/label_registry/list": return JSON.parse(localStorage.getItem("mockLabels") || "[]");
       case "config/label_registry/create": { const L = JSON.parse(localStorage.getItem("mockLabels") || "[]"), l = { label_id: "nduja", name: m.name, icon: m.icon }; L.push(l); localStorage.setItem("mockLabels", JSON.stringify(L)); console.log("WS", JSON.stringify(m)); return l; }
       case "config/entity_registry/get": return { entity_id: m.entity_id, labels: ["casa"], ...(m.entity_id.startsWith("media_player.ma_") ? { config_entry_id: "ma_finta", platform: "music_assistant" } : {}) };

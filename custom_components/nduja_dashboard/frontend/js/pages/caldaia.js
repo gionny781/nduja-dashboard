@@ -7,8 +7,8 @@
    OpenTherm Gateway, Plugwise, Netatmo…); con ✏️ (solo admin) si scelgono dispositivi e sensori: LAYOUT.caldaia.
    I circuiti della caldaia (clima che non sono il termostato di una stanza) escono dalla pagina Clima finché questa pagina
    è accesa; i termostati veri restano dove sono. In Home la scheda «Caldaia» (HOME_EXTRA). */
-import { S, REG, DEVICES, ACT, CHG, UI, LAYOUT, HOME_EXTRA, DEFAULT_OFF, VISTE, t, LOC, esc, fnum, nm, nmHA, ok, val, attr, unit, card, page, svc, ws, cached,
-  toast, openSheet, closeSheet, render, isAdmin, deviceClass, domain, utenteCfg } from "../core.js";
+import { S, REG, DEVICES, ACT, CHG, UI, LAYOUT, HOME_EXTRA, DEFAULT_OFF, VISTE, t, IT, LOC, esc, fnum, nm, nmHA, ok, val, attr, unit, card, page, svc, ws, cached,
+  toast, openSheet, closeSheet, render, isAdmin, deviceClass, domain, utenteCfg, sGet, sSet } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 import { statistiche, barre } from "../grafici.js";
 
@@ -140,7 +140,10 @@ const ruoli = ogni(() => {
   };
   for (const r of Object.keys(R)) { const s = sc[r]; if (s === "none") R[r] = null; else if (s && S[s]) R[r] = s; }
   R.termostati = clima.filter(x => termostatoVero(x) && x !== R.circuito);
-  R.allarmi = bin.filter(x => (deviceClass(x) === "problem" || deviceClass(x) === "safety" || R_ALLARME.test(testo(x))) && !R_MANUT.test(testo(x)) && !R_NO_FLAG.test(testo(x)) && x !== R.fiamma);
+  /* allarmi: trovati da soli, meno quelli che l'utente ignora, più quelli che aggiunge (✏️ → Sensori e comandi) */
+  const no = new Set(conf().noAllarmi || []);
+  R.allarmiTrovati = bin.filter(x => (deviceClass(x) === "problem" || deviceClass(x) === "safety" || R_ALLARME.test(testo(x))) && !R_MANUT.test(testo(x)) && !R_NO_FLAG.test(testo(x)) && x !== R.fiamma);
+  R.allarmi = [...new Set([...R.allarmiTrovati, ...(conf().allarmi || []).filter(x => S[x])])].filter(x => !no.has(x));
   return R;
 });
 
@@ -210,6 +213,8 @@ function manutenzione(R = ruoli()) {
   const giorni = data ? Math.round((data.getTime() - oggi0().getTime()) / giorno) : null;
   return { giorni, data, fonte, ultima, ogni, nota: m.nota || "", chiede: acceso(R.servizio), testoInt: R.manut && ok(R.manut) && giorniIntegrazione(R.manut) == null ? S[R.manut].state : null };
 }
+/** quanti giorni prima della manutenzione avvisare (✏️ → Manutenzione): 30 di partenza */
+const preavviso = () => { const v = +conf().preavviso; return v > 0 ? Math.round(v) : 30; };
 const traGiorni = g => g === 0 ? t("oggi", "today") : g === 1 ? t("domani", "tomorrow") : g > 0 ? t(`tra ${g} giorni`, `in ${g} days`) : g === -1 ? t("da ieri", "since yesterday") : t(`scaduta da ${-g} giorni`, `overdue by ${-g} days`);
 
 /* ---------- gas ---------- */
@@ -227,14 +232,20 @@ function gas(R = ruoli()) {
   /* il prezzo vale solo per i contatori della configurazione Energia (è per la loro unità: €/m³ o €/kWh) */
   const g = G.find(s => ids.includes(s.stat_energy_from));
   if (g) prezzo = g.number_energy_price != null ? +g.number_energy_price : g.entity_energy_price && S[g.entity_energy_price] ? val(g.entity_energy_price) : null;
+  /* prezzo scritto a mano (✏️ → Sensori e comandi): vale solo se la configurazione Energia non ne ha uno */
+  let aMano = false;
+  if (prezzo == null && ids.length && +conf().prezzoGas > 0) { prezzo = +conf().prezzoGas; aMano = true; }
   let u = ids.map(id => S[id] && unit(id)).find(Boolean);
   if (!u && ids.length) { const M = meta(ids); u = Array.isArray(M) ? M.map(x => x.statistics_unit_of_measurement || x.display_unit_of_measurement).find(Boolean) : null; }
-  return { ids, prezzo, daEnergia, u: UNITA(u) || "m³" };
+  return { ids, prezzo, daEnergia, aMano, u: UNITA(u) || "m³" };
 }
 const cambioIn = (id, periodo) => cached("cd:per:" + id + ":" + periodo + ":" + dataISO(oggi0()), 5 * 60000, () =>
   ws({ type: "recorder/statistic_during_period", statistic_id: id, calendar: { period: periodo }, types: ["change"] }).then(r => r?.change ?? null).catch(() => null));
 const somma = (ids, periodo) => { const v = ids.map(id => cambioIn(id, periodo)); if (v.some(x => x === undefined)) return undefined; const n = v.filter(x => x != null); return n.length ? n.reduce((a, b) => a + b, 0) : null; };
-const euro = v => v == null || isNaN(v) ? "—" : v.toLocaleString(LOC, { style: "currency", currency: "EUR" });
+/** valuta di Home Assistant (Impostazioni → Sistema → Generali), euro se non c'è */
+const valuta = () => (cached("haConfig", 3600e3, () => ws({ type: "get_config" }).catch(() => ({}))) || {}).currency || "EUR";
+const simbolo = () => { try { return (0).toLocaleString(LOC, { style: "currency", currency: valuta() }).replace(/[\d.,\s\u00a0]/g, "") || valuta(); } catch { return valuta(); } };
+const euro = v => { if (v == null || isNaN(v)) return "—"; try { return v.toLocaleString(LOC, { style: "currency", currency: valuta() }); } catch { return v.toLocaleString(LOC, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } };
 const qta = (v, u) => v == null ? "—" : fnum(v, v < 10 ? 2 : v < 100 ? 1 : 0) + " " + u;
 
 /* ---------- disegno: caldaia, termosifone e rubinetto (viewBox 320×200) ---------- */
@@ -412,7 +423,7 @@ function cardErrori() {
   const errHtml = s.err.length ? `<div class="stack">${s.err.map(e => `<button class="li cd1er" data-act="more" data-id="${e.id}"><span class="ic">${e.allarme ? "🚨" : "⚠️"}</span><div class="tx"><b>${e.cod ? `<span class="cd1cod">${esc(e.cod)}</span>` : ""}${esc(e.txt || t("Errore della caldaia", "Boiler error"))}</b><span>${e.extra ? esc(e.extra) + " · " : ""}${esc(new Date(S[e.id].last_changed).toLocaleString(LOC, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }))}</span></div></button>`).join("")}</div>
       <p class="small muted" style="margin-top:8px">${t("Il significato preciso di ogni codice è nel libretto della caldaia.", "The exact meaning of each code is in the boiler manual.")}</p>`
     : `<div class="cd1ok">✅ ${R.errore || R.allarmi.length ? t("Nessun errore", "No errors") : t("L'integrazione non segnala errori", "The integration reports no error codes")}</div>`;
-  const mcls = M.giorni == null ? "" : M.giorni < 0 ? "bad" : M.giorni <= 30 ? "warn" : "";
+  const mcls = M.giorni == null ? "" : M.giorni < 0 ? "bad" : M.giorni <= preavviso() ? "warn" : "";
   const manut = `<div class="cd1mn ${mcls}">
       <span class="ic">🔧</span><div class="tx"><b>${M.data ? t("Prossima manutenzione", "Next service") + ": " + esc(dataTesto(M.data)) : M.testoInt ? esc(M.testoInt) : t("Manutenzione non annotata", "Service not recorded")}</b>
       <span>${M.giorni != null ? traGiorni(M.giorni) + (M.fonte === "int" ? " · " + t("dalla caldaia", "from the boiler") : "") : t("Annota l'ultima: ti ricordo la prossima negli Avvisi.", "Record the last one: I'll remind you of the next in Alerts.")}${M.ultima ? " · " + t("ultima", "last") + " " + esc(dataTesto(M.ultima)) : ""}</span>
@@ -421,7 +432,8 @@ function cardErrori() {
     ${isAdmin() ? `<div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn sm" data-act="cdManut">✏️ ${t("Annota", "Record")}</button>${M.fonte === "mano" || !M.data ? `<button class="btn sm" data-act="cdFatta">✅ ${t("Fatta oggi", "Done today")}</button>` : ""}</div>` : ""}`;
   return card("⚠️ " + t("Errori e manutenzione", "Errors and service"), `${errHtml}<div class="fl1">🔧 ${t("Manutenzione", "Service")}</div>${manut}`, { cls: s.err.length ? "cd1ers ko" : "cd1ers" });
 }
-let VS = "mese";
+/* 30 giorni o 12 mesi: scelta di questo dispositivo */
+let VS = sGet("cdStor") === "anno" ? "anno" : "mese";
 function cardGas() {
   const g = gas();
   if (!g.ids.length) return card("🔥 " + t("Consumi del gas", "Gas use"), `<p class="small muted" style="line-height:1.5">${t("Per vedere quanto gas usi aggiungi il contatore del gas nella configurazione Energia di Home Assistant (Impostazioni → Dashboard → Energia)", "To see your gas use add the gas meter to Home Assistant's Energy configuration (Settings → Dashboards → Energy)")}${isAdmin() ? t(", oppure scegline uno con ✏️ Modifica → Sensori.", ", or pick one with ✏️ Edit → Sensors.") : "."}</p>`, { cls: "span3" });
@@ -438,9 +450,9 @@ function cardGas() {
       ${g.prezzo != null ? `<div class="cd1g eu"><small>${VS === "anno" ? t("Ultimi 12 mesi", "Last 12 months") : t("Ultimi 30 giorni", "Last 30 days")}</small><b>${r === undefined ? "…" : euro(tot * g.prezzo)}</b><span>${r === undefined ? "" : qta(tot, g.u)}</span></div>` : ""}</div>
     <div class="cd1gc"><div class="seg" style="margin-bottom:10px">${[["mese", t("30 giorni", "30 days")], ["anno", t("12 mesi", "12 months")]].map(([x, n]) => `<button class="${VS === x ? "act" : ""}" data-act="cdStor" data-v="${x}">${n}</button>`).join("")}</div>
     ${r === undefined ? `<div class="small muted">${t("Carico…", "Loading…")}</div>` : barre([{ nome: t("Gas", "Gas"), colore: "#ff9f0a", valori: punti }], { u: g.u, periodo })}
-    <div class="small muted" style="margin-top:8px">${g.prezzo != null ? t("Prezzo", "Price") + ": " + euro(g.prezzo) + "/" + esc(g.u) + " · " + t("dalla configurazione Energia", "from the Energy configuration") : g.daEnergia ? t("Per il costo imposta il prezzo del gas nella configurazione Energia di Home Assistant.", "For the cost set the gas price in Home Assistant's Energy configuration.") : t("Dalle statistiche di Home Assistant.", "From Home Assistant's statistics.")}</div></div></div>`, { cls: "span3 cd1gas" });
+    <div class="small muted" style="margin-top:8px">${g.prezzo != null ? t("Prezzo", "Price") + ": " + euro(g.prezzo) + "/" + esc(g.u) + " · " + (g.aMano ? t("scritto in ✏️ Sensori e comandi", "set in ✏️ Sensors and controls") : t("dalla configurazione Energia", "from the Energy configuration")) : (g.daEnergia ? t("Per il costo imposta il prezzo del gas nella configurazione Energia di Home Assistant", "For the cost set the gas price in Home Assistant's Energy configuration") : t("Dalle statistiche di Home Assistant", "From Home Assistant's statistics")) + (isAdmin() ? t(", oppure scrivilo in ✏️ Modifica → Sensori e comandi.", ", or enter it in ✏️ Edit → Sensors and controls.") : ".")}</div></div></div>`, { cls: "span3 cd1gas" });
 }
-ACT.cdStor = el => { VS = el.dataset.v; render(); };
+ACT.cdStor = el => { VS = el.dataset.v; sSet("cdStor", VS); render(); };
 
 function pagina() {
   const { D, nascosti } = trovaTutto(), ed = UI.edit && isAdmin();
@@ -480,20 +492,30 @@ function schedaSensori() {
   return `<div class="sh-head"><div><h3>🎛️ ${t("Sensori e comandi", "Sensors and controls")}</h3><div class="small muted">${t("Lascia «automatico» se va bene così.", "Leave «automatic» if it's fine.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
     <label class="fld1"><span>${t("Nome della caldaia", "Boiler name")}</span><input id="cd1n" type="text" value="${esc(BZ.cd1n ?? conf().nome ?? "")}" placeholder="${esc(trovaTutto().D.length === 1 ? nomeDev(trovaTutto().D[0]) : t("Caldaia", "Boiler"))}"></label>
     ${RUOLI().map(([tit, L]) => `<div class="fl1">${tit}</div><div class="pkl1">${L.map(([r, n]) => riga(r, n)).join("")}</div>`).join("")}
+    <div class="fl1">🚨 ${t("Allarmi", "Alarms")}</div>
+    <p class="small muted" style="margin:0 0 6px;line-height:1.45">${t("Sensori sì/no che segnalano un problema della caldaia. Togli la spunta a quelli che danno falsi allarmi; con ＋ ne aggiungi altri.", "Yes/no sensors that report a boiler problem. Untick the ones giving false alarms; add more with ＋.")}</p>
+    <div class="stack">${[...new Set([...R.allarmiTrovati, ...(conf().allarmi || []).filter(x => S[x])])].map(x => `<label class="li"><input type="checkbox" data-chg="cdAll" data-id="${x}" ${(conf().noAllarmi || []).includes(x) ? "" : "checked"}><div class="tx"><b>${esc(pulisci(x))}</b><span>${valoreDi(x)}${(conf().allarmi || []).includes(x) ? " · " + t("aggiunto da te", "added by you") : ""}</span></div></label>`).join("") || `<div class="small muted">${t("Nessun allarme trovato.", "No alarm found.")}</div>`}
+      <button class="add1" data-act="cdAllAdd"><span>＋</span>${t("Aggiungi un allarme", "Add an alarm")}</button></div>
     <div class="fl1">⏲ ${t("Avviso della pressione (bar)", "Pressure alert (bar)")}</div>
+    <p class="small muted" style="margin:0 0 6px;line-height:1.45">${t("Fuori da questi valori la pagina e la Home ti avvisano. Il giusto per il tuo impianto è scritto sul libretto della caldaia.", "Outside these values the page and Home warn you. The right range for your system is in the boiler manual.")}${R.press && bar(R.press) != null ? ` <b>${t("Adesso", "Now")}: ${fnum(bar(R.press), 1)} bar</b>` : ""}</p>
     <div class="row" style="gap:10px"><label class="fld1" style="flex:1;margin-top:0"><span>${t("Sotto", "Below")}</span><input id="cd1pmin" type="number" step="0.1" min="0" max="6" value="${esc(BZ.cd1pmin ?? conf().pmin ?? "")}" placeholder="${fnum(s.min, 1)}"></label>
       <label class="fld1" style="flex:1;margin-top:0"><span>${t("Sopra", "Above")}</span><input id="cd1pmax" type="number" step="0.1" min="0" max="6" value="${esc(BZ.cd1pmax ?? conf().pmax ?? "")}" placeholder="${fnum(s.max, 1)}"></label></div>
+    ${g.ids.length && !(g.prezzo != null && !g.aMano) ? `<div class="fl1">💶 ${t("Prezzo del gas", "Gas price")}</div>
+    <p class="small muted" style="margin:0 0 6px;line-height:1.45">${t("Per vedere quanto spendi. Se lo metti nella configurazione Energia di Home Assistant vale quello e questo campo sparisce.", "To see what you spend. If you set it in Home Assistant's Energy configuration, that one is used and this field disappears.")}</p>
+    <label class="fld1" style="margin-top:0"><span>${esc(simbolo())}/${esc(g.u)}</span><input id="cd1pg" type="text" inputmode="decimal" value="${esc(BZ.cd1pg ?? (conf().prezzoGas != null ? String(conf().prezzoGas).replace(".", IT ? "," : ".") : ""))}" placeholder="${t("es. 1,05", "e.g. 1.05")}"></label>` : ""}
     <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn pri" data-act="cdSalva">💾 ${t("Salva", "Save")}</button></div>
     <p class="small muted" style="margin-top:12px">${t("Le scelte valgono per tutta la casa e solo nella plancia.", "Choices apply to the whole home and only in the dashboard.")}</p>`;
 }
 function schedaManut() {
   const m = conf().manut || {}, ogni = +(BZ.ogni ?? m.ogni ?? 12);
   const ult = BZ.cd1u ?? m.ultima ?? "", calc = daISO(ult) ? dataISO(piuMesi(daISO(ult), ogni)) : "";
-  return `<div class="sh-head"><div><h3>🔧 ${t("Manutenzione della caldaia", "Boiler service")}</h3><div class="small muted">${t("Ti ricordo la prossima negli Avvisi della Home, un mese prima.", "I'll remind you of the next one in the Home Alerts, a month ahead.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
+  return `<div class="sh-head"><div><h3>🔧 ${t("Manutenzione della caldaia", "Boiler service")}</h3><div class="small muted">${t("Ti ricordo la prossima negli Avvisi della Home, qualche giorno prima (lo scegli qui sotto).", "I'll remind you of the next one in the Home Alerts, a few days ahead (choose below).")}</div></div><button class="x" data-act="sheetClose">×</button></div>
     <label class="fld1"><span>${t("Ultima manutenzione", "Last service")}</span><input id="cd1u" type="date" value="${esc(ult)}" max="${dataISO(oggi0())}"></label>
     <div class="fl1">${t("Ogni quanto", "How often")}</div>
-    <div class="seg">${[[12, t("Ogni anno", "Every year")], [24, t("Ogni 2 anni", "Every 2 years")]].map(([k, n]) => `<button class="${ogni === k ? "act" : ""}" data-act="cdOgni" data-v="${k}">${n}</button>`).join("")}</div>
+    <div class="row" style="gap:10px;align-items:flex-end;flex-wrap:wrap"><div class="seg">${[[12, t("Ogni anno", "Every year")], [24, t("Ogni 2 anni", "Every 2 years")]].map(([k, n]) => `<button class="${ogni === k ? "act" : ""}" data-act="cdOgni" data-v="${k}">${n}</button>`).join("")}</div>
+      <label class="fld1" style="margin-top:0;width:130px"><span>${t("Mesi", "Months")}</span><input id="cd1og" type="number" min="1" max="120" step="1" value="${ogni}"></label></div>
     <label class="fld1"><span>${t("Prossima (vuota: la calcolo io)", "Next (empty: I work it out)")}</span><input id="cd1p" type="date" value="${esc(BZ.cd1p ?? m.prossima ?? "")}" placeholder="${esc(calc)}">${calc && !(BZ.cd1p ?? m.prossima) ? `<small>${t("Calcolata", "Worked out")}: ${esc(dataTesto(daISO(calc)))}</small>` : ""}</label>
+    <label class="fld1"><span>${t("Avvisami quanti giorni prima", "Remind me how many days before")}</span><input id="cd1pv" type="number" min="1" max="365" step="1" value="${esc(BZ.cd1pv ?? preavviso())}"><small>${t("Da quel giorno il promemoria compare negli Avvisi e nella scheda della Home.", "From that day the reminder shows in Alerts and on the Home card.")}</small></label>
     <label class="fld1"><span>${t("Nota", "Note")}</span><input id="cd1nt" type="text" maxlength="120" value="${esc(BZ.cd1nt ?? m.nota ?? "")}" placeholder="${t("es. ditta della manutenzione, analisi dei fumi", "e.g. service company, flue gas test")}"></label>
     <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn pri" data-act="cdManSalva">💾 ${t("Salva", "Save")}</button><button class="btn" data-act="cdFatta">✅ ${t("Fatta oggi", "Done today")}</button>
       ${conf().manut ? `<button class="btn bad" data-act="cdManVia">🗑 ${t("Cancella", "Clear")}</button>` : ""}</div>`;
@@ -501,7 +523,11 @@ function schedaManut() {
 
 /* ---------- azioni ---------- */
 let BZ = {};
-document.addEventListener("input", e => { if (["cd1n", "cd1pmin", "cd1pmax", "cd1u", "cd1p", "cd1nt"].includes(e.target.id)) { BZ[e.target.id] = e.target.value; if (e.target.id === "cd1u") render(); } });
+document.addEventListener("input", e => {
+  if (["cd1n", "cd1pmin", "cd1pmax", "cd1u", "cd1p", "cd1nt", "cd1pg", "cd1pv"].includes(e.target.id)) { BZ[e.target.id] = e.target.value; if (e.target.id === "cd1u") render(); }
+  if (e.target.id === "cd1og") { const v = Math.round(+e.target.value); if (v >= 1 && v <= 120) { BZ.ogni = v; render(); } }
+});
+const mesiTesto = n => n % 12 === 0 ? (n === 12 ? t("un anno", "a year") : t(`${n / 12} anni`, `${n / 12} years`)) : n === 1 ? t("un mese", "a month") : t(`${n} mesi`, `${n} months`);
 const svcNum = (id, v) => svc(domain(id), "set_value", { value: v }, { entity_id: id });
 Object.assign(ACT, {
   cdNum: el => {
@@ -539,9 +565,12 @@ Object.assign(ACT, {
   cdSalva: () => {
     const n = document.getElementById("cd1n")?.value.trim(), pmin = document.getElementById("cd1pmin")?.value, pmax = document.getElementById("cd1pmax")?.value;
     const num = v => v === "" || v == null || isNaN(+v) ? null : Math.round(+v * 10) / 10;
+    const pgEl = document.getElementById("cd1pg"), pg = pgEl ? parseFloat(String(pgEl.value).replace(",", ".")) : undefined;
+    if (pgEl && pgEl.value.trim() && !(pg > 0)) return toast(t("Il prezzo del gas non è un numero valido", "The gas price isn't a valid number"), true);
     if (num(pmin) != null && num(pmax) != null && num(pmin) >= num(pmax)) return toast(t("La soglia bassa deve essere sotto quella alta", "The low threshold must be below the high one"), true);
     closeSheet();
-    salvaC(C => { if (n) C.nome = n; else delete C.nome; if (num(pmin) != null) C.pmin = num(pmin); else delete C.pmin; if (num(pmax) != null) C.pmax = num(pmax); else delete C.pmax; }, "💾 " + (n || nomeCaldaia()));
+    salvaC(C => { if (n) C.nome = n; else delete C.nome; if (num(pmin) != null) C.pmin = num(pmin); else delete C.pmin; if (num(pmax) != null) C.pmax = num(pmax); else delete C.pmax;
+      if (pgEl) { if (pg > 0) C.prezzoGas = Math.round(pg * 10000) / 10000; else delete C.prezzoGas; } }, "💾 " + (n || nomeCaldaia()));
   },
   cdAggiungi: () => scegli({ titolo: "＋ " + t("Dispositivo della caldaia", "Boiler device"), sotto: t("Scegli una sua entità qualsiasi: aggiungo tutto il dispositivo.", "Pick any of its entities: I add the whole device."),
     filtro: id => /^(sensor|binary_sensor|water_heater|climate|switch|select|number)\./.test(id) && !REG[id]?.hidden && !trovaTutto().E.includes(id), auto: false,
@@ -549,20 +578,27 @@ Object.assign(ACT, {
   cdTogli: el => { const k = el.dataset.k; salvaC(C => { C.tolti = [...new Set([...(C.tolti || []), k])]; C.extra = (C.extra || []).filter(id => (REG[id]?.device || id) !== k); if (!C.extra.length) delete C.extra; }, "✕ " + nomeDev(k)); },
   cdRimetti: el => { const k = el.dataset.k; salvaC(C => { C.tolti = (C.tolti || []).filter(x => x !== k); if (!C.tolti.length) delete C.tolti; }, "👁 " + nomeDev(k)); },
   cdManut: () => { BZ = {}; openSheet(schedaManut); },
-  cdOgni: el => { BZ.ogni = +el.dataset.v; render(); },
+  cdAllAdd: () => scegli({ titolo: "＋ " + t("Allarme della caldaia", "Boiler alarm"), sotto: t("Un sensore sì/no che si accende quando c'è un problema.", "A yes/no sensor that turns on when there's a problem."),
+    filtro: id => id.startsWith("binary_sensor.") && !ruoli().allarmi.includes(id), auto: false,
+    onPick: id => { if (id && S[id]) salvaC(C => { C.allarmi = [...new Set([...(C.allarmi || []), id])]; C.noAllarmi = (C.noAllarmi || []).filter(x => x !== id); if (!C.noAllarmi.length) delete C.noAllarmi; }, "＋ " + nm(id)); setTimeout(() => openSheet(schedaSensori), 60); } }),
+  cdOgni: el => { BZ.ogni = +el.dataset.v; const f = document.getElementById("cd1og"); if (f) f.value = BZ.ogni; render(); },
   cdManSalva: () => {
     const u = document.getElementById("cd1u")?.value || "", p = document.getElementById("cd1p")?.value || "", nota = (document.getElementById("cd1nt")?.value || "").trim(), ogni = +(BZ.ogni ?? conf().manut?.ogni ?? 12);
+    const pv = Math.round(+(document.getElementById("cd1pv")?.value ?? preavviso()));
     if (!u && !p) return toast(t("Scrivi almeno una data", "Enter at least one date"), true);
     closeSheet();
-    salvaC(C => { C.manut = { ...(u ? { ultima: u } : {}), ...(p ? { prossima: p } : {}), ogni, ...(nota ? { nota } : {}) }; }, "🔧 " + t("Manutenzione annotata", "Service recorded"));
+    salvaC(C => { C.manut = { ...(u ? { ultima: u } : {}), ...(p ? { prossima: p } : {}), ogni, ...(nota ? { nota } : {}) }; if (pv > 0 && pv !== 30) C.preavviso = pv; else delete C.preavviso; }, "🔧 " + t("Manutenzione annotata", "Service recorded"));
   },
   cdFatta: () => {
     const nota = (document.getElementById("cd1nt")?.value ?? conf().manut?.nota ?? "").trim(), ogni = +(BZ.ogni ?? conf().manut?.ogni ?? 12);
+    const pvEl = document.getElementById("cd1pv"), pv = pvEl ? Math.round(+pvEl.value) : null;
     if (UI.sheet) closeSheet();
-    salvaC(C => { C.manut = { ultima: dataISO(oggi0()), ogni, ...(nota ? { nota } : {}) }; }, "✅ " + t("Manutenzione fatta oggi: la prossima tra ", "Service done today: next one in ") + (ogni === 24 ? t("2 anni", "2 years") : t("un anno", "a year")));
+    salvaC(C => { C.manut = { ultima: dataISO(oggi0()), ogni, ...(nota ? { nota } : {}) }; if (pv != null) { if (pv > 0 && pv !== 30) C.preavviso = pv; else delete C.preavviso; } }, "✅ " + t("Manutenzione fatta oggi: la prossima tra ", "Service done today: next one in ") + mesiTesto(ogni));
   },
   cdManVia: () => { closeSheet(); salvaC(C => { delete C.manut; }, "🗑 " + t("Manutenzione cancellata", "Service cleared")); },
 });
+/* allarme spuntato o no: si salva subito */
+CHG.cdAll = el => { const id = el.dataset.id, on = el.checked; salvaC(C => { const L = new Set(C.noAllarmi || []); if (on) L.delete(id); else L.add(id); if (L.size) C.noAllarmi = [...L]; else delete C.noAllarmi; }); };
 CHG.cdSelC = el => svc(domain(el.dataset.id), "select_option", { option: el.value }, { entity_id: el.dataset.id });
 CHG.cdWhMC = el => svc("water_heater", "set_operation_mode", { operation_mode: el.value }, { entity_id: el.dataset.id });
 CHG.cdPresetC = el => svc("climate", "set_preset_mode", { preset_mode: el.value }, { entity_id: el.dataset.id });
@@ -573,7 +609,7 @@ const accesa = () => LAYOUT.pages?.caldaia !== false && utenteCfg().pages?.calda
 /** problemi da segnalare: errori, pressione fuori range, manutenzione scaduta o vicina */
 function problemi() {
   const R = ruoli(), s = stato(R), M = manutenzione(R);
-  return { s, M, err: s.err, press: s.P.k === "bassa" || s.P.k === "alta", manut: M.giorni != null && M.giorni <= 30, scaduta: (M.giorni != null && M.giorni < 0) || M.chiede };
+  return { s, M, err: s.err, press: s.P.k === "bassa" || s.P.k === "alta", manut: M.giorni != null && M.giorni <= preavviso(), scaduta: (M.giorni != null && M.giorni < 0) || M.chiede };
 }
 function homeCard() {
   const R = ruoli(), { s, M, err, press, manut, scaduta } = problemi();

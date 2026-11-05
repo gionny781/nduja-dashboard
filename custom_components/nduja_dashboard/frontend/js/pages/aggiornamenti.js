@@ -1,6 +1,7 @@
 /* Aggiornamenti: installa dalla plancia quello che Home Assistant propone (Home Assistant, componenti aggiuntivi,
    HACS, firmware). Novità, backup prima di installare, avanzamento, «Installa tutti» (Home Assistant per ultimo), versioni saltate. */
-import { S, ACT, VISTE, esc, card, svc, ws, toast, render, openSheet, page, t } from "../core.js";
+import { S, ACT, CHG, VISTE, LAYOUT, esc, card, svc, ws, toast, render, openSheet, page, t, isAdmin } from "../core.js";
+import { cambia } from "../edit.js";
 
 const F = { INSTALL: 1, VERSION: 2, PROGRESS: 4, BACKUP: 8, NOTES: 16 };
 const has = (id, f) => ((S[id]?.attributes?.supported_features || 0) & f) === f;
@@ -9,7 +10,10 @@ const tutte = () => Object.keys(S).filter(id => id.startsWith("update."));
 const disponibili = () => tutte().filter(id => S[id].state === "on");
 const saltati = () => tutte().filter(id => S[id].state === "off" && A(id).skipped_version && A(id).skipped_version === A(id).latest_version && A(id).installed_version !== A(id).latest_version);
 const installando = id => A(id).in_progress === true || typeof A(id).in_progress === "number";
-const NOCHK = new Set(); /* backup disattivati a mano */
+/* backup prima di installare: di base sì; l'amministratore può cambiarlo per tutta la casa (Riepilogo) e ognuno per il singolo aggiornamento */
+const backupBase = () => LAYOUT.aggiornamenti?.backup !== false;
+const BK = new Map(); /* scelte a mano sul singolo aggiornamento: id → true/false */
+const conBackup = id => BK.has(id) ? BK.get(id) : backupBase();
 const busy = new Set();
 
 function tipo(id) {
@@ -38,7 +42,7 @@ function riga(id) {
       ${run ? `<div class="pb69"><i style="width:${pct == null ? 35 : Math.max(4, pct)}%" class="${pct == null ? "ind" : ""}"></i></div><span class="sm">${t("Installazione in corso", "Installing")}${pct != null ? " · " + Math.round(pct) + "%" : "…"}</span>` : ""}</div>
     <div class="ac">
       ${has(id, F.NOTES) ? `<button class="btn sm" data-act="upNote" data-id="${id}">📄 ${t("Novità", "Notes")}</button>` : a.release_url ? `<a class="btn sm" href="${esc(a.release_url)}" target="_blank" rel="noopener">📄 ${t("Novità", "Notes")}</a>` : ""}
-      ${has(id, F.INSTALL) ? `${bk && !run ? `<label class="bk69"><input type="checkbox" data-upbk="${id}" ${NOCHK.has(id) ? "" : "checked"}> ${t("backup", "backup")}</label>` : ""}
+      ${has(id, F.INSTALL) ? `${bk && !run ? `<label class="bk69"><input type="checkbox" data-upbk="${id}" ${conBackup(id) ? "checked" : ""}> ${t("backup", "backup")}</label>` : ""}
         <button class="btn sm pri" data-act="upGo" data-id="${id}" ${run ? "disabled" : ""}>${run ? "⏳" : "⬆️ " + t("Installa", "Install")}</button>` : `<span class="sm muted">${t("da aggiornare sul dispositivo", "update on the device")}</span>`}
       ${!run ? `<button class="btn sm" data-act="upSkip" data-id="${id}" title="${t("Salta questa versione", "Skip this version")}">${t("Salta", "Skip")}</button>` : ""}
     </div></div>`;
@@ -58,7 +62,9 @@ function pagina() {
       </div>
       ${L.length ? `<div class="stack">${L.map(riga).join("")}</div>` : `<div class="small muted">${t("Nessun aggiornamento in attesa.", "No pending updates.")}</div>`}`, { cls: "span2" })}
     ${card("📋 " + t("Riepilogo", "Summary"), `<div class="stack">${Object.entries(gruppi).sort((a, b) => a[1].o - b[1].o).map(([g, x]) => `<div class="row between small"><span>${x.ic} ${esc(g)}</span><b>${x.on ? `<span class="tag warn">${x.on} ${t("da fare", "to do")}</span> ` : ""}<span class="muted">${x.n}</span></b></div>`).join("")}
-      <div class="small muted" style="margin-top:6px">${tot} ${t("elementi controllati.", "items checked.")}</div></div>`)}
+      <div class="small muted" style="margin-top:6px">${tot} ${t("elementi controllati.", "items checked.")}</div></div>
+      ${isAdmin() && tutte().some(id => has(id, F.BACKUP)) ? `<label class="row" style="gap:8px;margin-top:12px"><input type="checkbox" data-chg="upBkBase" ${backupBase() ? "checked" : ""}> 💾 ${t("Backup prima di installare", "Backup before installing")}</label>
+        <p class="small muted" style="margin:4px 0 0">${t("Più sicuro ma più lento. È la scelta di partenza: per un singolo aggiornamento la cambi con la casella «backup».", "Safer but slower. It's the starting choice: for a single update change it with the «backup» box.")}</p>` : ""}`)}
     ${sk.length ? card(`⏭️ ${t("Versioni saltate", "Skipped versions")} <span class="tag">${sk.length}</span>`, `<div class="stack">${sk.map(id => `<div class="up69 sk"><span class="ic">${tipo(id)[0]}</span>
       <div class="tx"><b>${esc(nome(id))}</b><span class="v">${esc(A(id).installed_version || "—")} <i>→</i> <em>${esc(A(id).latest_version || "—")}</em> ${t("saltata", "skipped")}</span></div>
       <div class="ac"><button class="btn sm" data-act="upUnskip" data-id="${id}">↩︎ ${t("Ripristina", "Restore")}</button></div></div>`).join("")}</div>`, { cls: "span3" }) : ""}
@@ -73,7 +79,7 @@ const conferma = (el, testo) => {
   return false;
 };
 async function installa(id) {
-  const data = has(id, F.BACKUP) ? { backup: !NOCHK.has(id) } : {};
+  const data = has(id, F.BACKUP) ? { backup: conBackup(id) } : {};
   busy.add(id); render();
   try { await svc("update", "install", data, { entity_id: id }); toast("⬆️ " + nome(id) + ": " + t("installazione avviata", "install started")); }
   catch { busy.delete(id); render(); return false; }
@@ -101,7 +107,9 @@ Object.assign(ACT, {
       ${url ? `<a class="btn sm" href="${esc(url)}" target="_blank" rel="noopener" style="margin-top:10px">${t("Apri la pagina completa", "Open full page")} ›</a>` : ""}`);
   }
 });
-document.addEventListener("change", e => { const t = e.target; if (t.matches?.("[data-upbk]")) { t.checked ? NOCHK.delete(t.dataset.upbk) : NOCHK.add(t.dataset.upbk); } });
+document.addEventListener("change", e => { const t = e.target; if (t.matches?.("[data-upbk]")) BK.set(t.dataset.upbk, t.checked); });
+CHG.upBkBase = el => { BK.clear(); cambia(l => { l.aggiornamenti = { ...(l.aggiornamenti || {}) }; if (el.checked) delete l.aggiornamenti.backup; else l.aggiornamenti.backup = false; if (!Object.keys(l.aggiornamenti).length) delete l.aggiornamenti; },
+  el.checked ? "💾 " + t("Backup prima di installare", "Backup before installing") : t("Niente backup prima di installare", "No backup before installing")); };
 
 /* markdown essenziale per le note di rilascio */
 function markdown(md) {

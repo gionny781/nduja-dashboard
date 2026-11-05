@@ -112,7 +112,7 @@ LS='{"mockNoInternet":"1","mockUpsBatt":"1"}' node tools/mock/shot.mjs rete 1280
 **Caldaia** (0.7.37), dati inventati: una caldaia «Ariston» finta (`platform: ariston`) con fiamma, modulazione al 64%, mandata e ritorno, pressione 1,4 bar, esterna, modalità estate/inverno (`select`),
 mandata impostata (`number`), un circuito `climate.caldaia_circuito` (deve uscire dalla pagina Clima), `climate.ariston_zona_1` che è un termostato vero (resta nel Clima, in Soggiorno), acqua calda `water_heater.ariston`
 (comfort/eco/boost) e la pompa; il contatore del gas `sensor.contatore_gas` è nella configurazione Energia con 1,05 €/m³. Con `mockCaldaia` = `off` (ferma), `acs` (acqua calda in uso) o `otgw` (al posto della Ariston
-un OpenTherm Gateway con i sensori «diagnostici»); `mockCaldaiaErr` porta un errore e la pressione bassa, `mockNoCaldaia` toglie la caldaia (in ✏️ del Clima compare «aggiungila a mano»), `mockNoGas` toglie il gas.
+un OpenTherm Gateway con i sensori «diagnostici»); `mockCaldaiaErr` porta un errore e la pressione bassa, `mockNoCaldaia` toglie la caldaia (in ✏️ del Clima compare «aggiungila a mano»), `mockNoGas` toglie il gas, `mockGasNoPrezzo` lascia il gas nella configurazione Energia ma senza prezzo (si prova «Prezzo del gas» in ✏️).
 La manutenzione annotata sta in `caldaia.manut` dentro `mockLayout`.
 ```bash
 LS='{"mockCaldaia":"acs"}' node tools/mock/shot.mjs caldaia 1280 1300 caldaia.png
@@ -196,4 +196,10 @@ compare il disegno), con `mockNoUpload` rifiuta. `get_services` ha `nduja_dashbo
 ```bash
 LS='{"mockPianteDemo":"1"}' node tools/mock/shot.mjs piante 1280 3000 piante.png
 LS='{"mockPianteDemo":"1","mockPioggiaDomani":"1"}' node tools/mock/shot.mjs piante 390 1400 tel.png '[data-act="piEd"][data-id="m_orchidea"]'
+```
+
+**Autonomia** (0.7.47): `get_config` dice anche la valuta (`currency`, EUR; un'altra con `mockValuta`, es. `USD`). Le scelte nuove stanno in `mockLayout`: `avvisi` (`portaMin`, `pioggiaOre`, `pioggiaPr`, `finitoOre`, `telBatt`, `raccoltaOra`, `off`), `cars.<dispositivo>` (`sensori`, `basso`, `pillola`, `nascondi`; `cars._add`), `aggiornamenti.backup`, `bacheca.inHome`, `aria` (`consigliDa`, `fuori`, `dispTipi`), `batterie` (`muto`, `telefoni`), `caldaia` (`noAllarmi`, `allarmi`, `preavviso`, `prezzoGas`), `agenda` (`giorni`, `max`), `calColors`, `energy` (`devW`, `devKwh`, `righe`, `minW`, `nascosti`, `noAuto`).
+```bash
+LS='{"mockLayout":"{\"configured\":true,\"avvisi\":{\"portaMin\":60,\"off\":[\"aggiornamenti\"]}}"}' node tools/mock/shot.mjs home 1280 1100 avvisi.png '[data-act="avRegole"]'
+LS='{"mockValuta":"USD"}' node tools/mock/shot.mjs energia 1280 1100 usd.png
 ```
