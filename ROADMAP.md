@@ -71,11 +71,12 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.44-dev ✅ | gio 5 nov | Acqua e gas |
 | 0.7.45-dev ✅ | gio 5 nov | Assistente vocale (Assist) |
 | 0.7.46-dev | sab 7 nov | Piante e giardino |
-| 0.7.47-dev | lun 9 nov | Guida all'installazione illustrata e controllo finale |
-| 0.7.48-dev | mer 11 nov | In auto: comandi per CarPlay e Android Auto |
-| 0.7.49-dev | ven 13 nov | Autonomia (1): tutto regolabile dalla plancia — da Aggiornamenti a Energia |
-| 0.7.50-dev | dom 15 nov | Autonomia (2): tutto regolabile dalla plancia — da Faccende in poi |
-| 0.7.51-dev | mar 17 nov | «Cosa puoi aggiungere»: la plancia dice cosa manca e come attivarlo |
+| 0.7.47-dev | lun 9 nov | Autonomia (1): tutto regolabile dalla plancia — da Aggiornamenti a Energia |
+| 0.7.48-dev | mer 11 nov | Autonomia (2): tutto regolabile dalla plancia — da Faccende in poi |
+| 0.7.49-dev | ven 13 nov | «Cosa puoi aggiungere»: la plancia dice cosa manca e come attivarlo |
+| 0.7.50-dev | dom 15 nov | Guida all'installazione illustrata e controllo finale |
+
+⏸️ **In standby:** «In auto: comandi per CarPlay e Android Auto» — si farà ufficialmente con l'app 'Nduja; la scheda è in `docs/sviluppo/standby/in-auto-carplay.md`.
 
 ## Dopo
 - 0.8.0 — versione ufficiale con tutte le anteprime, guida COME_INSTALLARE con foto, ritocchi
