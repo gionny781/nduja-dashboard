@@ -366,6 +366,29 @@ const ENT = {
   "switch.zona_siepe": st("off", { friendly_name: "Zona siepe" }, 30*H),
   "sensor.umidita_terreno_prato": st("34", { device_class: "moisture", unit_of_measurement: "%", friendly_name: "Umidità terreno prato" }),
   "sensor.umidita_terreno_orto": st("18", { device_class: "moisture", unit_of_measurement: "%", friendly_name: "Umidità terreno orto" }),
+  /* Piante (0.7.46), dati inventati: «plant» di Home Assistant (Basilico, con l'attributo sensors e problem), Plant Monitor da HACS (Monstera: sensori e soglie
+     number sullo stesso dispositivo, *_status; l'immagine punta a internet e NON va usata), un Mi Flora senza plant (Limone, fuori, pila al 9% «diagnostica»). */
+  "plant.basilico": st("problem", { friendly_name: "Basilico", problem: "moisture low", moisture: 12, battery: 78, temperature: 22.4, conductivity: 420, brightness: 1800,
+    sensors: { moisture: "sensor.basilico_umidita", battery: "sensor.basilico_batteria", temperature: "sensor.basilico_temperatura", conductivity: "sensor.basilico_fertilita", brightness: "sensor.basilico_luce" } }),
+  "sensor.basilico_umidita": st("12", { device_class: "moisture", unit_of_measurement: "%", friendly_name: "Basilico umidità" }),
+  "sensor.basilico_luce": st("1800", { device_class: "illuminance", unit_of_measurement: "lx", friendly_name: "Basilico luce" }),
+  "sensor.basilico_temperatura": st("22.4", { device_class: "temperature", unit_of_measurement: "°C", friendly_name: "Basilico temperatura" }),
+  "sensor.basilico_fertilita": st("420", { device_class: "conductivity", unit_of_measurement: "µS/cm", friendly_name: "Basilico fertilità" }),
+  "sensor.basilico_batteria": st("78", { device_class: "battery", unit_of_measurement: "%", friendly_name: "Basilico batteria" }),
+  "plant.monstera": st("ok", { friendly_name: "Monstera", species: "Monstera deliciosa", moisture_status: "ok", temperature_status: "ok", illuminance_status: "ok", conductivity_status: "ok", image: "https://example.invalid/monstera.jpg" }),
+  "sensor.monstera_soil_moisture": st("46", { device_class: "moisture", unit_of_measurement: "%", friendly_name: "Monstera Soil moisture" }),
+  "sensor.monstera_illuminance": st("2100", { device_class: "illuminance", unit_of_measurement: "lx", friendly_name: "Monstera Illuminance" }),
+  "sensor.monstera_temperature": st("21.3", { device_class: "temperature", unit_of_measurement: "°C", friendly_name: "Monstera Temperature" }),
+  "sensor.monstera_conductivity": st("930", { device_class: "conductivity", unit_of_measurement: "µS/cm", friendly_name: "Monstera Conductivity" }),
+  "number.monstera_min_soil_moisture": st("25", { friendly_name: "Monstera Min soil moisture", unit_of_measurement: "%" }),
+  "number.monstera_max_soil_moisture": st("65", { friendly_name: "Monstera Max soil moisture", unit_of_measurement: "%" }),
+  "number.monstera_min_illuminance": st("800", { friendly_name: "Monstera Min illuminance", unit_of_measurement: "lx" }),
+  "number.monstera_max_illuminance": st("25000", { friendly_name: "Monstera Max illuminance", unit_of_measurement: "lx" }),
+  "sensor.flower_care_moisture": st("31", { device_class: "moisture", unit_of_measurement: "%", friendly_name: "Flower Care Moisture" }),
+  "sensor.flower_care_conductivity": st("210", { device_class: "conductivity", unit_of_measurement: "µS/cm", friendly_name: "Flower Care Conductivity" }),
+  "sensor.flower_care_illuminance": st("52000", { device_class: "illuminance", unit_of_measurement: "lx", friendly_name: "Flower Care Illuminance" }),
+  "sensor.flower_care_temperature": st("14.5", { device_class: "temperature", unit_of_measurement: "°C", friendly_name: "Flower Care Temperature" }),
+  "sensor.flower_care_battery": st("9", { device_class: "battery", unit_of_measurement: "%", friendly_name: "Flower Care Battery" }),
   "automation.irrigazione_serale": st("on", { friendly_name: "Irrigazione serale", id: "irr1", last_triggered: new Date(Date.now()-3600e3*15).toISOString() }),
   "valve.acqua_principale": st("open", { friendly_name: "Valvola acqua principale", device_class: "water", supported_features: 3 }),
   "switch.luce_zona_giorno": st("off", { friendly_name: "Luce zona giorno" }),
@@ -546,6 +569,12 @@ for (const e of REG.entities) {
 }
 for (const e of REG.entities) { const r = RETE.find(([re]) => re.test(e.ei)); if (!r) continue; e.pl = r[1]; e.di = r[2] || (e.ei.startsWith("device_tracker.") ? "dev_cl_" + e.ei.split(".")[1] : null); e.ai = null;
   if (/^(sensor|binary_sensor|button)\./.test(e.ei) && /fritz|nas_di_casa|system_monitor|pve_|ups_studio_(status_data|input)/.test(e.ei) && !/connection$|download|upload|external_ip/.test(e.ei)) e.ec = 1; if (e.ei.startsWith("switch.pixel")) e.ec = 2; }
+/* piante (0.7.46): stanza, dispositivo e integrazione; la pila del Mi Flora è «diagnostica» */
+for (const e of REG.entities) {
+  if (/^(plant|sensor)\.basilico/.test(e.ei)) { e.ai = "cucina"; if (e.ei.startsWith("plant.")) e.pl = "plant"; }
+  if (/^(plant|sensor|number)\.monstera/.test(e.ei)) { e.ai = "soggiorno"; e.di = "dev_pl_monstera"; e.pl = "plant"; }
+  if (e.ei.startsWith("sensor.flower_care_")) { e.ai = "esterno"; e.di = "dev_flora"; e.pl = "xiaomi_ble"; if (e.ei.endsWith("_battery")) e.ec = 1; }
+}
 /* registro completo (data di creazione delle entità): il tablet ospite e un dispositivo disattivato sono nuovi di oggi */
 const REG_FULL = () => { const oggi = new Date(); oggi.setHours(0, 0, 0, 0); const prima = oggi.getTime() / 1000 - 40 * 86400;
   return [...REG.entities.map(e => ({ entity_id: e.ei, platform: e.pl || "demo", device_id: e.di, disabled_by: null, created_at: e.ei === "device_tracker.tablet_ospite" ? Date.now() / 1000 - 40 * 60 : prima })),
@@ -699,8 +728,8 @@ function mockIrr(m) {
   const metti = (id, stato, a) => { const e = ENT[id]; if (!e) return; e.s = stato; if (a) e.a = { ...e.a, ...a }; e.lc = Date.now() / 1000; ch[id] = { "+": { s: e.s, a: e.a, lc: e.lc } }; };
   if (m.domain === "rainbird" && m.service === "start_irrigation") ids.forEach(id => metti(id, "on"));
   else if (m.domain === "hydrawise" && m.service === "start_watering") ids.forEach(id => { metti(id, "on"); metti(id.replace("binary_sensor.", "valve.").replace(/_watering$/, ""), "open"); metti("sensor.prato_dietro_watering_time", String(d.duration || 15)); });
-  else if (m.domain === "valve") ids.forEach(id => { metti(id, m.service === "open_valve" ? "open" : "closed"); if (id === "valve.prato_dietro") { metti("binary_sensor.prato_dietro_watering", m.service === "open_valve" ? "on" : "off"); if (m.service !== "open_valve") metti("sensor.prato_dietro_watering_time", "0"); } });
-  else if (m.domain === "script" && m.service === "turn_on" && ids.includes("script.nduja_irrigazione")) { const z = d.variables?.zona; if (z?.startsWith("valve.")) metti(z, "open"); else if (z) mockLuci({ service: "turn_on", target: { entity_id: z } }); metti("script.nduja_irrigazione", "on"); }
+  else if (m.domain === "valve") ids.forEach(id => { if (m.service === "open_valve" && ENT[id]?.s !== "open") mockPianteZona(id); metti(id, m.service === "open_valve" ? "open" : "closed"); if (id === "valve.prato_dietro") { metti("binary_sensor.prato_dietro_watering", m.service === "open_valve" ? "on" : "off"); if (m.service !== "open_valve") metti("sensor.prato_dietro_watering_time", "0"); } });
+  else if (m.domain === "script" && m.service === "turn_on" && ids.includes("script.nduja_irrigazione")) { const z = d.variables?.zona; if (z && !["on", "open"].includes(ENT[z]?.s)) mockPianteZona(z); if (z?.startsWith("valve.")) metti(z, "open"); else if (z) mockLuci({ service: "turn_on", target: { entity_id: z } }); metti("script.nduja_irrigazione", "on"); }
   else if (m.domain === "number" && m.service === "set_value") ids.forEach(id => metti(id, String(d.value)));
   else if (m.domain === "hydrawise") {}
   else return false;
@@ -771,6 +800,21 @@ window.mockChatArriva = (conv, da, testo) => { const D = chatDati(), c = D.conv[
 /** un'altra persona legge: mockChatLegge("famiglia", "u3") */
 window.mockChatLegge = (conv, uid) => { const D = chatDati(), c = D.conv[conv]; c.letti[uid] = c.n; localStorage.setItem("mockChat", JSON.stringify(D)); window.mockChatEv?.({ conv, tipo: "letto", uid, n: c.n }); };
 /* api REST di Home Assistant (script e automazioni creati dalla plancia): li aggiungo agli stati finti */
+/* piante (0.7.46): mockPianteDemo = piante aggiunte a mano d'esempio (felce in ritardo, rosmarino fuori da annaffiare domani, orchidea da concimare,
+   pomodori collegati all'orto a goccia, aloe); la foto della felce è foto-felce.svg (come un'immagine in /local/) */
+const PIANTE_DEMO = () => { const fa = g => new Date(Date.now() - g * 864e5).toISOString();
+  return { piante: {
+    m_felce: { man: true, nome: "Felce", area: "soggiorno", tipo: "verde", foto: "/tools/mock/foto-felce.svg", acqua: { ogni: 4, ultima: fa(5), chi: "person.anna" }, concime: { ogni: 4, ultima: fa(9) }, nt: "Felce", fz: false },
+    m_rosmarino: { man: true, nome: "Rosmarino", area: "esterno", tipo: "aromatica", acqua: { ogni: 3, ultima: fa(2), chi: "person.mario" }, concime: { ogni: 0 }, nt: "Rosmarino", fz: true },
+    m_orchidea: { man: true, nome: "Orchidea", area: "soggiorno", tipo: "fiorita", acqua: { ogni: 7, ultima: fa(0.05), chi: "person.anna" }, concime: { ogni: 2, ultima: fa(15) }, nt: "Orchidea", fz: false,
+      storia: [{ c: "acqua", q: fa(0.05), chi: "person.anna", prima: fa(7) }] },
+    m_pomodori: { man: true, nome: "Pomodori", area: "esterno", tipo: "orto", zona: "valve.orto_gocciolatore", acqua: { ogni: 2, ultima: fa(26 / 24), via: "irr" }, concime: { ogni: 2, ultima: fa(6) }, nt: "Pomodori", fz: true },
+    m_aloe: { man: true, nome: "Aloe", area: "cucina", tipo: "grassa", acqua: { ogni: 14, ultima: fa(3) }, concime: { ogni: 0 }, nt: "Aloe", fz: false },
+    "plant.basilico": { concime: { ogni: 4, ultima: fa(10) }, acqua: { ogni: 0 }, nt: "Basilico", fz: false } } }; };
+/* come piante.py in Home Assistant: quando parte una zona collegata a una pianta, la pianta è annaffiata */
+function mockPianteZona(id) { const C = JSON.parse(localStorage.getItem("mockCasa") || "{}"), x = C.piante; if (!x) return; let n = 0; const q = new Date().toISOString().replace(/\.\d+Z$/, "+00:00");
+  for (const p of Object.values(x.dati.piante || {})) if (p.zona === id && !p.tolta) { p.storia = [{ c: "acqua", q, via: "irr", z: id, prima: p.acqua?.ultima || null }, ...(p.storia || [])].slice(0, 12); p.acqua = { ...(p.acqua || {}), ultima: q, via: "irr", chi: null }; n++; }
+  if (!n) return; x.rev++; localStorage.setItem("mockCasa", JSON.stringify(C)); console.log("PIANTE irrigate", id); setTimeout(() => window.mockCasaEv?.({ sezione: "piante", rev: x.rev }), 30); }
 function mockApi(url, o) {
   /* scadenze (0.7.40): flusso di configurazione di Local To-do («Crea la lista Scadenze») */
   const fl = String(url).match(/\/api\/config\/config_entries\/flow(?:\/([\w-]+))?$/);
@@ -780,6 +824,10 @@ function mockApi(url, o) {
     const nome = JSON.parse(o.body).todo_list_name, id = "todo." + nome.toLowerCase().replace(/[^a-z0-9]+/g, "_");
     TODO[id] = []; TODO_F[id] = 127; ENT[id] = st("0", { friendly_name: nome, supported_features: 127 }); setTimeout(() => window.mockStati?.({ a: { [id]: ENT[id] } }), 700);
     return ris({ type: "create_entry", title: nome, result: { entry_id: "finto" } }); }
+  /* piante (0.7.46): foto caricata con Image Upload (in prova l'indirizzo che torna non esiste: compare il disegno) */
+  if (/\/api\/image\/upload$/.test(String(url))) { const f = o?.body?.get?.("file"); console.log("API UPLOAD", f?.type, f?.size, o?.headers?.Authorization ? "con token" : "SENZA TOKEN");
+    if (localStorage.getItem("mockNoUpload")) return Promise.resolve(new Response("Only jpeg, png, and gif images are allowed", { status: 400 }));
+    return Promise.resolve(new Response(JSON.stringify({ id: "f1nt0a5b6c7d8e9f", filesize: f?.size || 0, name: f?.name, content_type: f?.type, uploaded_at: new Date().toISOString() }), { status: 200, headers: { "Content-Type": "application/json" } })); }
   const mm = String(url).match(/\/api\/config\/(script|automation)\/config\/([\w-]+)/); if (!mm) return null;
   const [, tipo, id] = mm, eid = tipo + "." + id, corpo = o?.body ? JSON.parse(o.body) : {};
   console.log("API", o?.method || "GET", url, o?.body || "");
@@ -870,7 +918,9 @@ const conn = {
       /* dati della casa (Faccende…): mockCasa = { sezione: { rev, dati } }; mockNoCasa = Home Assistant non ancora riavviato */
       case "nduja_dashboard/casa_get": case "nduja_dashboard/casa_save": {
         if (localStorage.getItem("mockNoCasa")) throw { code: "unknown_command", message: "Unknown command." };
-        const C = JSON.parse(localStorage.getItem("mockCasa") || "{}"), x = C[m.sezione] || { rev: 0, dati: {} };
+        const C = JSON.parse(localStorage.getItem("mockCasa") || "{}");
+        if (m.sezione === "piante" && !C.piante && localStorage.getItem("mockPianteDemo")) { C.piante = { rev: 1, dati: PIANTE_DEMO() }; localStorage.setItem("mockCasa", JSON.stringify(C)); }
+        const x = C[m.sezione] || { rev: 0, dati: {} };
         if (m.type.endsWith("get")) return { sezione: m.sezione, rev: x.rev, dati: x.dati };
         if (m.rev != null && m.rev !== x.rev) throw { code: "conflict", message: "rev " + x.rev };
         C[m.sezione] = { rev: x.rev + 1, dati: m.dati }; localStorage.setItem("mockCasa", JSON.stringify(C)); console.log("CASA", JSON.stringify(m));
@@ -906,14 +956,15 @@ const conn = {
         { id: "dev_speed", name: "SpeedTest", manufacturer: "Ookla" }, { id: "dev_nas", name: "NAS di casa", manufacturer: "Synology", model: "DS220+" }, { id: "dev_pve", name: "Node pve", manufacturer: "Proxmox VE", model: "Node" },
         { id: "dev_vm", name: "VM media", manufacturer: "Proxmox VE", model: "QEMU" }, { id: "dev_sysmon", name: "System Monitor" }, { id: "dev_prn", name: "Stampante ufficio", manufacturer: "Demo", model: "InkJet demo" }, { id: "dev_ups", name: "UPS studio", manufacturer: "Demo", model: "UPS 1000" },
         { id: "dev_purif", name: "Purificatore soggiorno", manufacturer: "Demo", model: "Air purifier demo" }, { id: "dev_deum", name: "Deumidificatore portatile", manufacturer: "Demo", model: "Dehumidifier demo" },
-        ...["soggiorno", "cucina", "corridoio", "lavanderia"].map(k => ({ id: "dev_aria_" + k, name: "Sensore aria " + k, manufacturer: "Demo", model: "Air monitor demo" }))];
+        ...["soggiorno", "cucina", "corridoio", "lavanderia"].map(k => ({ id: "dev_aria_" + k, name: "Sensore aria " + k, manufacturer: "Demo", model: "Air monitor demo" })),
+        { id: "dev_pl_monstera", name: "Monstera", manufacturer: "Plant Monitor", model: "Monstera deliciosa" }, { id: "dev_flora", name: "Flower Care", name_by_user: "Limone", manufacturer: "Xiaomi", model: "HHCCJCY01" }];
       case "config/area_registry/list": { const P = localStorage.getItem("mockPiani"), F = { soggiorno: "terra", cucina: "terra", esterno: "terra", corridoio: "primo", lavanderia: "primo" };
         return [{ area_id: "soggiorno", name: "Soggiorno" }, { area_id: "corridoio", name: "Corridoio" }, { area_id: "cucina", name: "Cucina" }, { area_id: "lavanderia", name: "Lavanderia" }, { area_id: "esterno", name: "Esterno" }].map(a => P ? { ...a, floor_id: F[a.area_id] } : a); }
       /* mockPiani: due piani (prova delle stanze divise per piano) */
       case "config/floor_registry/list": return localStorage.getItem("mockPiani") ? [{ floor_id: "terra", name: "Piano terra", level: 0 }, { floor_id: "primo", name: "Primo piano", level: 1 }] : [];
       case "recorder/statistic_during_period": return { change: /gas/.test(m.statistic_id) ? (m.calendar?.period === "month" ? 61.3 : 2.84) : /acqua/.test(m.statistic_id) ? (m.calendar?.period === "month" ? 1.482 : 0.214) : 1.23 };
       case "config/auth/list": return [{ id: "u1", name: "Mario", is_owner: true, is_active: true, group_ids: ["system-admin"] }, { id: "u2", name: "Anna", is_active: true, group_ids: ["system-users"] }];
-      case "get_services": return { notify: { mobile_app_telefono_demo: {}, mobile_app_iphone_di_mario: {}, mobile_app_iphone_di_anna: {}, persistent_notification: {} }, todo: { get_items: {}, add_item: {}, update_item: {} }, dreame_vacuum: { vacuum_clean_segment: {} }, rainbird: { start_irrigation: {} }, hydrawise: { start_watering: {}, suspend: {}, resume: {} } };
+      case "get_services": return { ...(localStorage.getItem("mockNoServPiante") ? {} : { nduja_dashboard: { leggi_casa: {} } }), notify: { mobile_app_telefono_demo: {}, mobile_app_iphone_di_mario: {}, mobile_app_iphone_di_anna: {}, persistent_notification: {} }, todo: { get_items: {}, add_item: {}, update_item: {} }, dreame_vacuum: { vacuum_clean_segment: {} }, rainbird: { start_irrigation: {} }, hydrawise: { start_watering: {}, suspend: {}, resume: {} } };
       case "energy/get_prefs": return { energy_sources: [{ type: "grid", stat_energy_from: "sensor.imp", stat_energy_to: "sensor.exp", number_energy_price: 0.35, number_energy_price_export: 0.044 }, { type: "solar", stat_energy_from: "sensor.prod" },
         ...(localStorage.getItem("mockNoGas") ? [] : [{ type: "gas", stat_energy_from: "sensor.contatore_gas", number_energy_price: 1.05 }]),
         ...(localStorage.getItem("mockNoAcqua") || localStorage.getItem("mockAcquaNoPrefs") ? [] : [{ type: "water", stat_energy_from: "sensor.contatore_acqua", number_energy_price: 2.1 }])], device_consumption: [] };

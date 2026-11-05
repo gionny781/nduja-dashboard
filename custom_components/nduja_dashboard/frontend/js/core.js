@@ -527,15 +527,16 @@ async function getConn() {
   return null;
 }
 /** chiamata REST a Home Assistant con il token della sessione (serve per salvare le automazioni) */
+/** token della sessione di Home Assistant (per le chiamate REST e per caricare le foto) */
+export async function tokenHA() {
+  if (window.NDUJA_APP && !(window.parent !== window && window.parent.hassConnection)) return (await import("./appconn.js")).accessToken();
+  const r = await window.parent.hassConnection, auth = r?.auth;
+  if (!auth) throw new Error("no auth");
+  if (auth.expired) await auth.refreshAccessToken();
+  return auth.accessToken;
+}
 export async function api(method, path, body) {
-  let token;
-  if (window.NDUJA_APP && !(window.parent !== window && window.parent.hassConnection)) token = await (await import("./appconn.js")).accessToken();
-  else {
-    const r = await window.parent.hassConnection, auth = r?.auth;
-    if (!auth) throw new Error("no auth");
-    if (auth.expired) await auth.refreshAccessToken();
-    token = auth.accessToken;
-  }
+  const token = await tokenHA();
   const res = await fetch(path, { method, headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
   if (!res.ok) throw new Error(res.status + " " + (await res.text().catch(() => "")));
   const tx = await res.text(); try { return JSON.parse(tx); } catch { return tx; }

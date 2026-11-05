@@ -357,6 +357,22 @@ body.light .vc1c button{background:rgba(0,0,0,0.040)!important;border:1px solid 
 body.light .vc1c button:hover{background:rgba(0,0,0,0.070)!important}
 body.light .vc1in input{background:rgba(0,0,0,0.040)!important}
 body.light .vc1fr{background:rgba(0,0,0,0.040)!important}
+body.light .pi1t{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.063)!important}
+body.light .pi1f{background:rgba(0,0,0,0.020)!important;background:radial-gradient(90% 80% at 50% 70%,color-mix(in srgb,var(--pc) 22%,transparent),transparent 70%),rgba(0,0,0,0.020)!important}
+body.light .pi1e{background:rgba(0,0,0,0.040)!important}
+body.light .pi1m:hover{background:rgba(0,0,0,0.025)!important}
+body.light .pi1m .br{background:rgba(0,0,0,0.050)!important}
+body.light .pi1r{background:rgba(0,0,0,0.020)!important;border:1px solid rgba(0,0,0,0.042)!important}
+body.light .pi1x{background:rgba(0,0,0,0.035)!important}
+body.light .pi1u{background:rgba(0,0,0,0.040)!important}
+body.light .pi1tp button{background:rgba(0,0,0,0.020)!important;border:1.5px solid rgba(0,0,0,0.056)!important}
+body.light .pi1st input{background:rgba(0,0,0,0.040)!important}
+body.light .pi1sz{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.049)!important}
+body.light .pi1sr input{background:rgba(0,0,0,0.040)!important}
+body.light .pi1up .ic{background:rgba(0,0,0,0.045)!important}
+body.light .pi1in{background:rgba(0,0,0,0.040)!important}
+body.light .pi1mb button{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.056)!important}
+body.light .pi1mb .th{background:rgba(0,0,0,0.030)!important}
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
 body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
@@ -591,4 +607,7 @@ body.light .vc1sep::before,body.light .vc1sep::after{background:rgba(0,0,0,.08)!
 body.light .vc1mic.no{background:rgba(118,118,128,.22);color:rgba(28,28,30,.6)}
 body.light .vc1mk.no .tx span{color:#b35f00}
 body.light .vc1d g path{stroke:#ff6a3d}
+/* piante (0.7.46): testi azzurri più scuri sul chiaro */
+body.light .pi1r .tx .pi1rn,body.light .pi1ht .pi1pd{color:#0a7fb5}
+body.light .pi1s .om{opacity:.1}
 

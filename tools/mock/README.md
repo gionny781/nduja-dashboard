@@ -187,3 +187,13 @@ node tools/mock/shot.mjs home 390 844 tel.png '#vc1fab|[data-act="vcFrase"] >> n
 node tools/mock/shot.mjs home 1280 900 parla.png '[data-act="vcApri"]|[data-act="vcMic"]'
 NOMIC=1 node tools/mock/shot.mjs impostazioni 1280 1400 imp.png
 ```
+
+**Piante** (0.7.46), dati inventati: `plant.basilico` (integrazione «plant» con `sensors` e `problem`: ha sete), `plant.monstera` (Plant Monitor: sensori e soglie `number.monstera_min_*`/`max_*` sullo stesso dispositivo, `*_status`;
+la sua `image` punta a internet e NON deve comparire), un Mi Flora senza plant (`dev_flora`, «Limone» in Esterno: fertilità bassa e pila al 9%) e i due sensori del terreno dell'irrigazione (Prato, Orto). Con `mockPianteDemo`
+la sezione `piante` di `mockCasa` parte con cinque piante aggiunte a mano (Felce con la foto `foto-felce.svg`, in ritardo; Rosmarino fuori, da annaffiare domani: con `mockPioggiaDomani` slitta; Orchidea da concimare;
+Pomodori collegati a `valve.orto_gocciolatore`: avviando la zona dall'Irrigazione si segnano annaffiati, come fa `piante.py`; Aloe). `/api/image/upload` risponde con un id finto (l'indirizzo che torna non esiste:
+compare il disegno), con `mockNoUpload` rifiuta. `get_services` ha `nduja_dashboard.leggi_casa`; con `mockNoServPiante` no (Home Assistant non riavviato: il 🔔 chiede di riavviare).
+```bash
+LS='{"mockPianteDemo":"1"}' node tools/mock/shot.mjs piante 1280 3000 piante.png
+LS='{"mockPianteDemo":"1","mockPioggiaDomani":"1"}' node tools/mock/shot.mjs piante 390 1400 tel.png '[data-act="piEd"][data-id="m_orchidea"]'
+```

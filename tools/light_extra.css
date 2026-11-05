@@ -232,3 +232,6 @@ body.light .vc1sep::before,body.light .vc1sep::after{background:rgba(0,0,0,.08)!
 body.light .vc1mic.no{background:rgba(118,118,128,.22);color:rgba(28,28,30,.6)}
 body.light .vc1mk.no .tx span{color:#b35f00}
 body.light .vc1d g path{stroke:#ff6a3d}
+/* piante (0.7.46): testi azzurri più scuri sul chiaro */
+body.light .pi1r .tx .pi1rn,body.light .pi1ht .pi1pd{color:#0a7fb5}
+body.light .pi1s .om{opacity:.1}

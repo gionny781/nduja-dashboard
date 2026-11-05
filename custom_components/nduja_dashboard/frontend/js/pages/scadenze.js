@@ -394,9 +394,9 @@ async function salva() {
 
 /* ---------- 🔔 promemoria sul telefono: automazione «'Nduja · scadenze» ---------- */
 const slug = s => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
-const serviziNotify = () => { const s = cached("services", 3600e3, () => ws({ type: "get_services" })) || {}; return Object.keys(s.notify || {}).filter(k => k.startsWith("mobile_app_")).sort(); };
+export const serviziNotify = () => { const s = cached("services", 3600e3, () => ws({ type: "get_services" })) || {}; return Object.keys(s.notify || {}).filter(k => k.startsWith("mobile_app_")).sort(); };
 /** i telefoni (servizi notify.mobile_app_*) di una persona: dai suoi device_tracker dell'app di Home Assistant */
-function telefoniDi(pid) {
+export function telefoniDi(pid) {
   const sv = new Set(serviziNotify()), out = [];
   for (const tr of attr(pid, "device_trackers") || []) {
     const s = ["mobile_app_" + slug(tr.split(".")[1]), "mobile_app_" + slug(DEVICES[REG[tr]?.device]?.name)].find(x => sv.has(x));
@@ -404,7 +404,7 @@ function telefoniDi(pid) {
   }
   return out;
 }
-const nomeServizio = s => String(s).replace(/^mobile_app_/, "").replace(/_/g, " ");
+export const nomeServizio = s => String(s).replace(/^mobile_app_/, "").replace(/_/g, " ");
 const ANTICIPI = () => [[0, t("Il giorno stesso", "On the day")], [1, t("1 giorno prima", "1 day before")], [3, t("3 giorni prima", "3 days before")], [7, t("7 giorni prima", "7 days before")]];
 function anticipiTesto(A) {
   const L = [...(A || [1])].sort((a, b) => b - a);

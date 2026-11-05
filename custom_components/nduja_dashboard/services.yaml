@@ -1,0 +1,13 @@
+leggi_casa:
+  name: Leggi i dati della casa
+  description: >-
+    Restituisce una sezione dei dati della casa di 'Nduja Dashboard (per esempio «piante»).
+    La usa l'automazione «'Nduja · piante» creata dalla plancia per i promemoria sul telefono.
+  fields:
+    sezione:
+      name: Sezione
+      description: Nome della sezione, per esempio «piante».
+      required: true
+      example: piante
+      selector:
+        text:

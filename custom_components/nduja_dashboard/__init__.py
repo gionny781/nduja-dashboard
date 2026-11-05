@@ -20,6 +20,7 @@ from homeassistant.util import dt as dt_util
 from .chat import async_remove_chat, async_setup_chat
 from .const import (CONF_ADMIN, CONF_ICON, CONF_TITLE, DEFAULT_ICON, DEFAULT_TITLE,
                     DOMAIN, PANEL_URL, STATIC_URL, VERSION)
+from .piante import async_remove_piante, async_setup_piante
 
 FRONTEND_DIR = Path(__file__).parent / "frontend"
 
@@ -88,6 +89,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         data["casa_store"] = Store(hass, STORE_VERSION, STORE_CASA)
         data["casa"] = await data["casa_store"].async_load() or {}
     await async_setup_chat(hass)   # chat di famiglia (chat.py)
+    async_setup_piante(hass, _casa_leggi, _casa_scrivi, EVENT_CASA, SEZIONE)   # piante: promemoria e irrigazione (piante.py)
     if not data.get("pause_avviate"):
         data["pause_avviate"] = True
         _pause_riprendi(hass)
@@ -134,6 +136,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     data.pop("pause_avviate", None)
     data.pop("casa_store", None)
     data.pop("casa", None)   # i file statici restano registrati fino al riavvio
+    async_remove_piante(hass)
     await async_remove_chat(hass)
 
 
@@ -164,6 +167,22 @@ async def ws_save_layout(hass: HomeAssistant, connection, msg) -> None:
 def _sezione(casa: dict[str, Any], nome: str) -> dict[str, Any]:
     s = casa.get(nome) or {}
     return {"rev": s.get("rev", 0), "dati": s.get("dati", {})}
+
+
+def _casa_leggi(hass: HomeAssistant, nome: str) -> dict[str, Any]:
+    """Una sezione dei dati della casa (vuota se non c'è)."""
+    return _sezione(hass.data.get(DOMAIN, {}).get("casa", {}), nome)
+
+
+async def _casa_scrivi(hass: HomeAssistant, nome: str, dati: dict[str, Any]) -> int:
+    """Salva una sezione dalla parte di Home Assistant (piante.py) e avvisa le plance aperte."""
+    data = hass.data[DOMAIN]
+    casa = data["casa"]
+    rev = _sezione(casa, nome)["rev"] + 1
+    casa[nome] = {"rev": rev, "dati": dati}
+    await data["casa_store"].async_save(casa)
+    hass.bus.async_fire(EVENT_CASA, {"sezione": nome, "rev": rev})
+    return rev
 
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/casa_get", vol.Optional("sezione"): SEZIONE})
