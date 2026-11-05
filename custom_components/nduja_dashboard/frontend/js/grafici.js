@@ -15,8 +15,8 @@ const storia = (id, start) => cached("hi:" + id + start.toISOString().slice(0, 1
 const W = 640, H = 220, PL = 40, PB = 22, PT = 10;
 function asse(min, max) { if (min === max) { min -= 1; max += 1; } const p = (max - min) * .08; return [min - p, max + p]; }
 const fmtX = (ms, periodo) => { const d = new Date(ms); return periodo === "hour" ? d.toLocaleTimeString(LOC, { hour: "2-digit" }) : d.toLocaleDateString(LOC, { day: "numeric", month: "short" }); };
-/** linea con banda min-max: P = [{x(ms), y, lo?, hi?}] */
-export function linea(P, { colore = "#64d2ff", u = "", periodo = "hour" } = {}) {
+/** linea con banda min-max: P = [{x(ms), y, lo?, hi?}]; fasce = [[da, a, colore]] zone colorate dietro (per esempio i livelli della qualità dell'aria) */
+export function linea(P, { colore = "#64d2ff", u = "", periodo = "hour", fasce = [] } = {}) {
   if (!P.length) return `<div class="small muted">${t("Nessun dato per questo periodo.", "No data for this period.")}</div>`;
   const xs = P.map(p => p.x), ys = P.flatMap(p => [p.y, p.lo, p.hi]).filter(v => v != null && !isNaN(v));
   const [x0, x1] = [Math.min(...xs), Math.max(...xs) || 1], [y0, y1] = asse(Math.min(...ys), Math.max(...ys));
@@ -25,8 +25,10 @@ export function linea(P, { colore = "#64d2ff", u = "", periodo = "hour" } = {}) 
   const banda = P.some(p => p.lo != null) ? `<path d="${P.map((p, i) => `${i ? "L" : "M"}${X(p.x).toFixed(1)} ${Y(p.hi ?? p.y).toFixed(1)}`).join("")}${[...P].reverse().map(p => `L${X(p.x).toFixed(1)} ${Y(p.lo ?? p.y).toFixed(1)}`).join("")}Z" fill="${colore}" opacity=".16"/>` : "";
   const griglia = [0, .25, .5, .75, 1].map(f => { const v = y0 + (y1 - y0) * f; return `<line x1="${PL}" x2="${W}" y1="${Y(v)}" y2="${Y(v)}" class="gg1"/><text x="${PL - 6}" y="${Y(v) + 4}" class="gl1" text-anchor="end">${fnum(v, Math.abs(y1 - y0) < 10 ? 1 : 0)}</text>`; }).join("");
   const tick = [0, .25, .5, .75, 1].map(f => { const x = x0 + (x1 - x0) * f; return `<text x="${X(x)}" y="${H - 4}" class="gl1" text-anchor="middle">${fmtX(x, periodo)}</text>`; }).join("");
+  const zone = (fasce || []).map(([a, b, c]) => { const ya = Y(Math.min(Math.max(a ?? y0, y0), y1)), yb = Y(Math.min(Math.max(b ?? y1, y0), y1));
+    return Math.abs(ya - yb) < .5 ? "" : `<rect x="${PL}" y="${Math.min(ya, yb).toFixed(1)}" width="${W - PL}" height="${Math.abs(ya - yb).toFixed(1)}" fill="${c}" opacity=".13"/>`; }).join("");
   const ult = P[P.length - 1], mn = Math.min(...P.map(p => p.lo ?? p.y)), mx = Math.max(...P.map(p => p.hi ?? p.y));
-  return `<svg viewBox="0 0 ${W} ${H}" class="gr1">${griglia}${tick}${banda}<path d="${path}" fill="none" stroke="${colore}" stroke-width="2.4" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+  return `<svg viewBox="0 0 ${W} ${H}" class="gr1">${zone}${griglia}${tick}${banda}<path d="${path}" fill="none" stroke="${colore}" stroke-width="2.4" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
     <circle cx="${X(ult.x)}" cy="${Y(ult.y)}" r="4" fill="${colore}"/></svg>
     <div class="grs1"><span>${t("min", "min")} <b>${fnum(mn, 1)}${esc(u)}</b></span><span>${t("max", "max")} <b>${fnum(mx, 1)}${esc(u)}</b></span><span>${t("ultimo", "last")} <b>${fnum(ult.y, 1)}${esc(u)}</b></span></div>`;
 }
@@ -48,8 +50,8 @@ export function barre(serie, { u = "", periodo = "day" } = {}) {
 const PER = () => [["24h", t("24 ore", "24 h"), 1, "hour"], ["7g", t("7 giorni", "7 days"), 7, "hour"], ["30g", t("30 giorni", "30 days"), 30, "day"]];
 let G = { id: null, p: "24h" };
 const COL = id => ({ temperature: "#ff9f0a", humidity: "#64d2ff", power: "#ffd60a", energy: "#30d158", battery: "#30d158", illuminance: "#ffd60a", carbon_dioxide: "#bf5af2" }[deviceClass(id)] || "#64d2ff");
-function dati(id) {
-  const [, , giorni, periodo] = PER().find(x => x[0] === G.p), start = new Date(Date.now() - giorni * 864e5);
+function dati(id, p = G.p) {
+  const [, , giorni, periodo] = PER().find(x => x[0] === p) || PER()[0], start = new Date(Date.now() - giorni * 864e5);
   const sc = attr(id, "state_class");
   if (sc === "total_increasing" || sc === "total") {
     const r = statistiche([id], start, giorni > 1 ? "day" : "hour", ["change"]); if (r === undefined) return null;
@@ -63,11 +65,22 @@ function dati(id) {
   const h = storia(id, start); if (h === undefined) return null;
   return { tipo: "linea", P: h.map(s => ({ x: (s.lu || s.lc) * 1000, y: parseFloat(s.s) })).filter(p => !isNaN(p.y)), periodo };
 }
+/** zone colorate per il grafico di un sensore: funzioni registrate dalle pagine (id → [[da, a, colore]] oppure niente) */
+export const FASCE = [];
+const fasceDi = id => { for (const f of FASCE) { try { const r = f(id); if (r?.length) return r; } catch {} } return []; };
+/** il grafico di un sensore per un periodo ("24h", "7g", "30g"), da mettere dentro altre schede */
+export function grafico(id, p = "24h", { colore } = {}) {
+  const d = dati(id, p), u = unit(id), c = colore || COL(id);
+  if (d == null) return `<div class="small muted">${t("Carico…", "Loading…")}</div>`;
+  return d.tipo === "barre" ? barre([{ nome: nm(id), colore: c, valori: d.P }], { u, periodo: d.periodo }) : linea(d.P, { colore: c, u, periodo: d.periodo, fasce: fasceDi(id) });
+}
+/** i periodi dei grafici: [chiave, nome] */
+export const periodi = () => PER().map(([k, n]) => [k, n]);
 function scheda() {
   const id = G.id, d = dati(id), u = unit(id);
   return `<div class="sh-head"><div><h3>📈 ${esc(nm(id))}</h3><div class="small muted">${t("Adesso", "Now")}: <b>${esc(S[id]?.state || "—")} ${esc(u)}</b></div></div><button class="btn sm" data-act="grHA" data-id="${id}">⤢ ${t("Apri in HA", "Open in HA")}</button><button class="x" data-act="sheetClose">×</button></div>
     <div class="seg" style="margin-bottom:10px">${PER().map(([k, n]) => `<button class="${G.p === k ? "act" : ""}" data-act="grPer" data-v="${k}">${n}</button>`).join("")}</div>
-    ${d == null ? `<div class="small muted">${t("Carico…", "Loading…")}</div>` : d.tipo === "barre" ? barre([{ nome: nm(id), colore: COL(id), valori: d.P }], { u, periodo: d.periodo }) : linea(d.P, { colore: COL(id), u, periodo: d.periodo })}`;
+    ${d == null ? `<div class="small muted">${t("Carico…", "Loading…")}</div>` : d.tipo === "barre" ? barre([{ nome: nm(id), colore: COL(id), valori: d.P }], { u, periodo: d.periodo }) : linea(d.P, { colore: COL(id), u, periodo: d.periodo, fasce: fasceDi(id) })}`;
 }
 /** sensori con un numero: si aprono nel grafico della plancia */
 export const conGrafico = id => /^(sensor|input_number|number)\./.test(id) && S[id] && !isNaN(parseFloat(S[id].state)) && deviceClass(id) !== "timestamp";

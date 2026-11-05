@@ -11,11 +11,13 @@ function zoneIrrigazione() {
 function comandiRete() {
   try { return PAGES.rete?.show() && LAYOUT.pages?.rete !== false && utenteCfg().pages?.rete !== false && VISTE.reteMostrati ? VISTE.reteMostrati() : new Set(); } catch { return new Set(); }
 }
+/* purificatori e umidificatori stanno nella pagina Aria, se c'è e non è spenta */
+function aria() { try { return VISTE.ariaDisp ? VISTE.ariaDisp() : new Set(); } catch { return new Set(); } }
 /* tapparelle e tende stanno nella pagina Tapparelle, se c'è e non è spenta */
 function tapparelle() {
   try { return PAGES.tapparelle?.show() && LAYOUT.pages?.tapparelle !== false && utenteCfg().pages?.tapparelle !== false && VISTE.tapTutte ? new Set(VISTE.tapTutte()) : new Set(); } catch { return new Set(); }
 }
-const tutti = () => { const Z = zoneIrrigazione(), R = comandiRete(), T = tapparelle(); return DOM.flatMap(d => ents(d)).filter(id => !isLightSwitch(id) && !Z.has(id) && !R.has(id) && !T.has(id)); };   // gli interruttori scelti come luci stanno nella pagina Luci
+const tutti = () => { const Z = zoneIrrigazione(), R = comandiRete(), T = tapparelle(), A = aria(); return DOM.flatMap(d => ents(d)).filter(id => !isLightSwitch(id) && !Z.has(id) && !R.has(id) && !T.has(id) && !A.has(id)); };   // gli interruttori scelti come luci stanno nella pagina Luci
 function pagina() {
   const L = tutti(), g = {};
   L.forEach(id => (g[areaOf(id) && AREAS[areaOf(id)] ? areaOf(id) : "_"] = g[areaOf(id) && AREAS[areaOf(id)] ? areaOf(id) : "_"] || []).push(id));

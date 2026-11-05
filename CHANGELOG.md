@@ -3,6 +3,25 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.43-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+- 🇮🇹 **🍃 Qualità dell'aria**, pagina nuova: compare solo se in casa ci sono sensori di CO₂, PM2.5, PM10, VOC, NO₂, formaldeide, radon o umidità, purificatori, deumidificatori o umidificatori. I sensori di giardini, terrazzi e servizi online (WAQI e simili) non sono stanze: servono ai consigli.
+- 🇮🇹 **Per stanza** un giudizio semplice e colorato: **Ottima, Buona, Discreta, Scarsa** (quello della misura peggiore), con particelle disegnate per 'Nduja che si muovono più fitte quando l'aria è peggiore (ferme con «riduci movimento» e in modalità leggera). Toccando la stanza si apre il pannello con ogni valore sulla sua scala colorata.
+- 🇮🇹 **Soglie chiare e documentate**: CO₂ 800/1000/1400 ppm, PM2.5 e PM10 dalle linee guida OMS 2021, VOC dalla guida tedesca UBA, NO₂ e formaldeide OMS, radon (OMS 100, Italia 300 Bq/m³), umidità 40–60%. Le spiega ℹ️; gli amministratori le cambiano in ⚙️.
+- 🇮🇹 **Consigli** in parole semplici, con il pulsante per agire: «In Corridoio la CO₂ è alta: apri la finestra 10 minuti», «Umidità 74% in Lavanderia: accendi il deumidificatore», purificatore da accendere o da mettere al massimo, aria secca, cappa dopo il gas. Tengono conto delle finestre già aperte, dei dispositivi già accesi e dell'aria di fuori. I minuti di ricambio si scelgono in ⚙️.
+- 🇮🇹 **Grafici** di 24 ore, 7 e 30 giorni per ogni sensore con le fasce dei livelli colorate (anche toccando un valore).
+- 🇮🇹 **Purificatori, deumidificatori e umidificatori**: acceso/spento, modalità, velocità, umidità da raggiungere, livello preferito e **stato del filtro** (da cambiare sotto la soglia scelta). Non si ripetono più in Clima e nelle Prese.
+- 🇮🇹 **In Home** la scheda **«Aria»** con le stanze peggiori e il primo consiglio, il segno 🍃 sulle stanze con aria discreta o scarsa, la riga «Aria» nella finestra della stanza e negli **Avvisi** «Aria scarsa in …» quando una stanza resta Scarsa per più di **30 minuti** (dalla cronologia di Home Assistant; minuti e acceso/spento in ⚙️).
+- 🇮🇹 Con ✏️: ＋ per aggiungere un sensore o un dispositivo non riconosciuto, ✏️ per cambiare stanza o tipo di misura, ✕ per toglierlo.
+- 🇬🇧 **🍃 Air quality**, a new page: shown only if you have CO₂, PM2.5, PM10, VOC, NO₂, formaldehyde, radon or humidity sensors, purifiers, dehumidifiers or humidifiers. Sensors in gardens, terraces and online services (WAQI and similar) aren't rooms: they're used for tips.
+- 🇬🇧 **Per room** a simple coloured rating: **Excellent, Good, Fair, Poor** (the worst reading's), with particles drawn for 'Nduja moving denser when the air is worse (still with «reduce motion» and in light mode). Tap the room for the panel with each value on its coloured scale.
+- 🇬🇧 **Clear, documented thresholds**: CO₂ 800/1000/1400 ppm, PM2.5 and PM10 from the WHO 2021 guidelines, VOC from the German UBA guide, WHO NO₂ and formaldehyde, radon (WHO 100, Italy 300 Bq/m³), humidity 40–60%. ℹ️ explains them; admins change them in ⚙️.
+- 🇬🇧 **Tips** in plain words, with a button to act: «CO₂ is high in the Hallway: open the window for 10 minutes», «Humidity 74% in the Laundry: turn on the dehumidifier», a purifier to turn on or set to maximum, dry air, the hood after cooking on gas. They consider windows already open, devices already on and the air outside. Airing minutes are set in ⚙️.
+- 🇬🇧 **Charts** for 24 hours, 7 and 30 days for each sensor with the levels as coloured bands (also when you tap a value).
+- 🇬🇧 **Purifiers, dehumidifiers and humidifiers**: on/off, mode, speed, target humidity, favourite level and **filter status** (to replace below the chosen threshold). They no longer repeat on Climate and Plugs.
+- 🇬🇧 **On Home** the **«Air»** card with the worst rooms and the first tip, the 🍃 mark on rooms with fair or poor air, the «Air» row in the room window and in **Alerts** «Poor air in …» when a room stays Poor for more than **30 minutes** (from Home Assistant's history; minutes and on/off in ⚙️).
+- 🇬🇧 With ✏️: ＋ to add a sensor or device that wasn't recognised, ✏️ to change room or reading type, ✕ to remove it.
+
 ## 0.7.42-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 - 🇮🇹 **🪟 Tapparelle**, pagina nuova: tapparelle, veneziane, tende, tende a rullo, tende da sole e finestre motorizzate, divise per piano e stanza. Cancelli e garage restano negli **Accessi**; le tapparelle non si ripetono più nella pagina Prese.

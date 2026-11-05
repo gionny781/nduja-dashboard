@@ -159,3 +159,12 @@ Lati, aspetto, scenari e automatismi stanno in `tapparelle` dentro `mockLayout`;
 LS='{"mockLayout":"{\"configured\":true,\"tapparelle\":{\"lati\":{\"cover.tapparella_soggiorno\":\"s\",\"cover.tapparella_cucina\":\"o\"}}}"}' node tools/mock/shot.mjs tapparelle 1280 1700 tapparelle.png
 LS='{"mockPiani":"1"}' node tools/mock/shot.mjs tapparelle 390 844 tel.png '[data-act="tpScNew"] >> nth=0'
 ```
+
+**Qualità dell'aria** (0.7.43), dati inventati: sensori `sensor.aria_<stanza>_*` (CO₂, PM2.5, PM10, NO₂, VOC in ppb, formaldeide in mg/m³, umidità) e `sensor.radon_lavanderia`;
+`fan.purificatore_soggiorno` con i suoi sensori (PM2.5, filtro all'8%, livello preferito), `humidifier.umidificatore_corridoio` e `humidifier.deumidificatore_mobile_lavanderia` spenti
+(i comandi li cambiano davvero), `sensor.waqi_pm25` di fuori. `ARIA_STORIA` dice da quanti minuti c'è il valore di adesso: la CO₂ del corridoio (45 min) e l'umidità della lavanderia
+(3 ore) fanno l'avviso in Home, le PM2.5 della cucina (20 min) non ancora. Le scelte stanno in `aria` dentro `mockLayout`; `mockNoAria` toglie tutto.
+```bash
+node tools/mock/shot.mjs aria 1280 1800 aria.png
+node tools/mock/shot.mjs aria 390 844 tel.png '[data-act="arSt"][data-id="corridoio"] >> nth=0'
+```

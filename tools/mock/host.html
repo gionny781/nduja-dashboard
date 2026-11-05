@@ -313,6 +313,34 @@ const ENT = {
   "cover.tenda_rullo_corridoio": st("open", { friendly_name: "Tenda a rullo corridoio", device_class: "shade", current_position: 70, supported_features: 15 }),
   "cover.tenda_sole_esterno": st("open", { friendly_name: "Tenda da sole", device_class: "awning", current_position: 60, supported_features: 15 }),
   "cover.tapparella_bagno": st("unavailable", { friendly_name: "Tapparella bagno", device_class: "shutter", supported_features: 15 }),
+  /* qualità dell'aria (0.7.43), dati inventati (vedi ARIA_STORIA più sotto per da quanto valgono così): soggiorno con CO₂ discreta, PM2.5, formaldeide in mg/m³
+     e il purificatore acceso (filtro quasi finito, modalità, velocità, livello preferito); cucina con PM2.5 alte da 20 minuti, NO₂ e VOC in ppb; corridoio con la CO₂
+     scarsa da 45 minuti (avviso in Home) e un umidificatore spento; lavanderia umida da ore con il deumidificatore spento, e il radon; PM2.5 di fuori (WAQI). mockNoAria = niente */
+  ...(localStorage.getItem("mockNoAria") ? {} : (() => { const Q = (v, dc, u, n, x = {}) => st(String(v), { ...(dc ? { device_class: dc } : {}), unit_of_measurement: u, state_class: "measurement", friendly_name: n, ...x }, 300);
+    return {
+      "sensor.aria_soggiorno_co2": Q(1150, "carbon_dioxide", "ppm", "Sensore aria soggiorno CO2"),
+      "sensor.aria_soggiorno_pm25": Q(8, "pm25", "µg/m³", "Sensore aria soggiorno PM2.5"),
+      "sensor.aria_soggiorno_umidita": Q(48, "humidity", "%", "Sensore aria soggiorno Umidità"),
+      "sensor.aria_soggiorno_formaldeide": Q(0.04, null, "mg/m³", "Sensore aria soggiorno Formaldeide"),
+      "fan.purificatore_soggiorno": st("on", { friendly_name: "Purificatore soggiorno", percentage: 40, percentage_step: 10, preset_mode: "auto", preset_modes: ["auto", "sleep", "favorite"], supported_features: 57 }),
+      "sensor.purificatore_soggiorno_pm25": Q(6, "pm25", "µg/m³", "Purificatore soggiorno PM2.5"),
+      "sensor.purificatore_soggiorno_filter_life": st("8", { unit_of_measurement: "%", friendly_name: "Purificatore soggiorno Filter life remaining" }),
+      "sensor.purificatore_soggiorno_filter_time_left": st("14", { unit_of_measurement: "d", friendly_name: "Purificatore soggiorno Filter time left" }),
+      "number.purificatore_soggiorno_favorite_level": st("6", { min: 0, max: 14, step: 1, friendly_name: "Purificatore soggiorno Favorite level" }),
+      "sensor.aria_cucina_co2": Q(720, "carbon_dioxide", "ppm", "Sensore aria cucina CO2"),
+      "sensor.aria_cucina_pm25": Q(41, "pm25", "µg/m³", "Sensore aria cucina PM2.5"),
+      "sensor.aria_cucina_pm10": Q(52, "pm10", "µg/m³", "Sensore aria cucina PM10"),
+      "sensor.aria_cucina_no2": Q(38, "nitrogen_dioxide", "µg/m³", "Sensore aria cucina NO2"),
+      "sensor.aria_cucina_voc": Q(140, "volatile_organic_compounds_parts", "ppb", "Sensore aria cucina VOC"),
+      "sensor.aria_cucina_umidita": Q(55, "humidity", "%", "Sensore aria cucina Umidità"),
+      "sensor.aria_corridoio_co2": Q(1650, "carbon_dioxide", "ppm", "Sensore aria corridoio CO2"),
+      "sensor.aria_corridoio_umidita": Q(44, "humidity", "%", "Sensore aria corridoio Umidità"),
+      "humidifier.umidificatore_corridoio": st("off", { friendly_name: "Umidificatore corridoio", device_class: "humidifier", humidity: 45, min_humidity: 30, max_humidity: 80, current_humidity: 44, available_modes: ["normal", "eco", "sleep"], mode: "normal", supported_features: 1 }),
+      "sensor.aria_lavanderia_umidita": Q(74, "humidity", "%", "Sensore aria lavanderia Umidità"),
+      "sensor.radon_lavanderia": Q(180, null, "Bq/m³", "Radon lavanderia"),
+      "humidifier.deumidificatore_mobile_lavanderia": st("off", { friendly_name: "Deumidificatore portatile", device_class: "dehumidifier", humidity: 50, min_humidity: 35, max_humidity: 80, current_humidity: 74, available_modes: ["normal", "laundry", "auto"], mode: "laundry", supported_features: 1 }),
+      "sensor.waqi_pm25": Q(22, "pm25", "µg/m³", "Qualità dell'aria fuori PM2.5"),
+    }; })()),
   "update.home_assistant_core_update": st("on", { title: "Home Assistant Core", friendly_name: "Core update" }),
   "switch.presa_studio": st("unavailable", { friendly_name: "Presa studio" }),
   "light.striscia_corridoio": st("unavailable", { friendly_name: "Striscia LED corridoio" }),
@@ -476,6 +504,9 @@ const EV = {
     { start: day(4, 18, 30), end: day(4, 20, 30), summary: "Lega Demo: Pro Valle - Union Mare", location: "Campo di Valle", description: "Diretta su DAZN" }],
 };
 let LAYOUT = JSON.parse(localStorage.getItem("mockLayout") || '{"configured":true,"mode":"auto","energy":{"pv":["sensor.inverter_pv1_power","sensor.inverter_pv2_power","sensor.inverter_pv3_power"]}}');
+/* aria (0.7.43): [valore di prima, da quanti minuti c'è quello di adesso] */
+const ARIA_STORIA = { "sensor.aria_corridoio_co2": [880, 45], "sensor.aria_cucina_pm25": [7, 20], "sensor.aria_cucina_pm10": [14, 20], "sensor.aria_cucina_no2": [12, 25],
+  "sensor.aria_lavanderia_umidita": [58, 190], "sensor.aria_soggiorno_co2": [700, 35], "sensor.radon_lavanderia": [170, 600] };
 const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_sogg/.test(id) ? "soggiorno" : /echo_cucina/.test(id) ? "cucina" : /soggiorno/.test(id) ? "soggiorno" : /^(cover\.(cancello|garage|basculante|tenda_sole)|switch\.cancellett|binary_sensor\.cancellett|button\.portone|camera\.(cortile|giardino|campanello)|light\.giardino)/.test(id) ? "esterno" : /corridoio|porta|ariston/.test(id) ? "corridoio" : /cucina/.test(id) ? "cucina" : /lavatric|asciugatric|lavanderia/.test(id) ? "lavanderia" : /forno|frigo|lavastov/.test(id) ? "cucina" : null,
   hb: id === "camera.cantina" || undefined,
   pl: /^(media_player|remote)\.tv_soggiorno$/.test(id) ? "samsungtv" : /apple_tv_/.test(id) ? "apple_tv" : /google_tv_/.test(id) ? "androidtv_remote" : id === "media_player.lg_camera" ? "webostv" : id === "remote.harmony_studio" ? "harmony" :
@@ -486,6 +517,12 @@ for (const e of REG.entities) {
   const m = e.ei.match(/^(?:sensor|binary_sensor|lock)\.(trv_soggiorno|movimento_corridoio|fumo_cucina|telecomando_ikea|serratura_ingresso|allagamento_lavanderia|valvola_bagno)/);
   if (m) e.di = "dev_b_" + m[1]; if (e.ei === "binary_sensor.finestra_soggiorno" || e.ei === "sensor.finestra_soggiorno_battery") e.di = "dev_b_finestra";
   if (/_battery(_low)?$/.test(e.ei) && !/iphone|model_3/.test(e.ei)) e.ec = 1;
+}
+/* qualità dell'aria (0.7.43): dispositivi (il purificatore ha i suoi sensori) e il servizio di fuori */
+for (const e of REG.entities) {
+  if (e.ei.includes("purificatore_soggiorno")) e.di = "dev_purif"; else { const m = e.ei.match(/^sensor\.aria_(soggiorno|cucina|corridoio|lavanderia)_/); if (m) e.di = "dev_aria_" + m[1]; }
+  if (e.ei === "sensor.waqi_pm25") { e.pl = "waqi"; e.ai = null; }
+  if (e.ei === "humidifier.deumidificatore_mobile_lavanderia") e.di = "dev_deum";
 }
 /* rete e server (0.7.36): integrazione e dispositivo */
 const RETE = [[/^(binary_sensor|sensor|button|switch|update)\.fritz_box_7590_/, "fritz", "dev_fritz"], [/^(device_tracker|switch)\.(pixel_demo)/, "fritz", "dev_cl_pixel"], [/^device_tracker\.(portatile_lavoro|tv_cameretta|tablet_ospite|presa_smart_salotto)$/, "fritz", null],
@@ -623,6 +660,16 @@ function mockMA(m) {
     s.s = "idle"; s.a = { ...s.a, media_title: undefined, media_artist: undefined, media_content_id: undefined, entity_picture: undefined };
     setTimeout(() => window.mockStati?.({ c: { [id]: { "+": { s: e.s, a: e.a } }, [da]: { "+": { s: s.s, a: s.a } } } }), 120); }
   return {};
+}
+function mockAria(m) {
+  const d = m.service_data || {}, ids = [].concat(m.target?.entity_id || d.entity_id || []);
+  for (const id of ids) { const e = ENT[id]; if (!e || !/^(fan|humidifier|number)\./.test(id) || e.s === "unavailable") continue;
+    if (m.service === "turn_on") e.s = "on"; else if (m.service === "turn_off") e.s = "off"; else if (m.service === "toggle") e.s = e.s === "on" ? "off" : "on";
+    else if (m.service === "set_percentage") e.a = { ...e.a, percentage: d.percentage }; else if (m.service === "set_preset_mode") e.a = { ...e.a, preset_mode: d.preset_mode };
+    else if (m.service === "set_mode") e.a = { ...e.a, mode: d.mode }; else if (m.service === "set_humidity") e.a = { ...e.a, humidity: d.humidity };
+    else if (m.service === "set_value") e.s = String(d.value); else continue;
+    if (id.startsWith("humidifier.")) e.a = { ...e.a, action: e.s === "on" ? (e.a.device_class === "dehumidifier" ? "drying" : "humidifying") : "off" };
+    e.lc = Date.now() / 1000; window.mockStati?.({ c: { [id]: { "+": { s: e.s, a: e.a, lc: e.lc } } } }); }
 }
 const MOV = {};
 function mockCover(m) {
@@ -782,7 +829,9 @@ const conn = {
           ["serratura_ingresso", "Serratura ingresso"], ["allagamento_lavanderia", "Sensore allagamento lavanderia"], ["valvola_bagno", "Valvola termostatica bagno"], ["finestra", "Sensore finestra soggiorno"]].map(([k, name]) => ({ id: "dev_b_" + k, name })),
         { id: "dev_fritz", name: "FRITZ!Box 7590", manufacturer: "AVM", model: "FRITZ!Box 7590" }, { id: "dev_cl_pixel", name: "Pixel demo" }, ...["portatile_lavoro", "tv_cameretta", "tablet_ospite", "presa_smart_salotto"].map(k => ({ id: "dev_cl_" + k, name: k.replace(/_/g, " ") })),
         { id: "dev_speed", name: "SpeedTest", manufacturer: "Ookla" }, { id: "dev_nas", name: "NAS di casa", manufacturer: "Synology", model: "DS220+" }, { id: "dev_pve", name: "Node pve", manufacturer: "Proxmox VE", model: "Node" },
-        { id: "dev_vm", name: "VM media", manufacturer: "Proxmox VE", model: "QEMU" }, { id: "dev_sysmon", name: "System Monitor" }, { id: "dev_prn", name: "Stampante ufficio", manufacturer: "Demo", model: "InkJet demo" }, { id: "dev_ups", name: "UPS studio", manufacturer: "Demo", model: "UPS 1000" }];
+        { id: "dev_vm", name: "VM media", manufacturer: "Proxmox VE", model: "QEMU" }, { id: "dev_sysmon", name: "System Monitor" }, { id: "dev_prn", name: "Stampante ufficio", manufacturer: "Demo", model: "InkJet demo" }, { id: "dev_ups", name: "UPS studio", manufacturer: "Demo", model: "UPS 1000" },
+        { id: "dev_purif", name: "Purificatore soggiorno", manufacturer: "Demo", model: "Air purifier demo" }, { id: "dev_deum", name: "Deumidificatore portatile", manufacturer: "Demo", model: "Dehumidifier demo" },
+        ...["soggiorno", "cucina", "corridoio", "lavanderia"].map(k => ({ id: "dev_aria_" + k, name: "Sensore aria " + k, manufacturer: "Demo", model: "Air monitor demo" }))];
       case "config/area_registry/list": { const P = localStorage.getItem("mockPiani"), F = { soggiorno: "terra", cucina: "terra", esterno: "terra", corridoio: "primo", lavanderia: "primo" };
         return [{ area_id: "soggiorno", name: "Soggiorno" }, { area_id: "corridoio", name: "Corridoio" }, { area_id: "cucina", name: "Cucina" }, { area_id: "lavanderia", name: "Lavanderia" }, { area_id: "esterno", name: "Esterno" }].map(a => P ? { ...a, floor_id: F[a.area_id] } : a); }
       /* mockPiani: due piani (prova delle stanze divise per piano) */
@@ -793,9 +842,16 @@ const conn = {
       case "energy/get_prefs": return { energy_sources: [{ type: "grid", stat_energy_from: "sensor.imp", stat_energy_to: "sensor.exp", number_energy_price: 0.35, number_energy_price_export: 0.044 }, { type: "solar", stat_energy_from: "sensor.prod" },
         ...(localStorage.getItem("mockNoGas") ? [] : [{ type: "gas", stat_energy_from: "sensor.contatore_gas", number_energy_price: 1.05 }])], device_consumption: [] };
       case "recorder/statistics_during_period": { const out = {}; const st = new Date(m.start_time).getTime(), step = m.period === "hour" ? 3600e3 : m.period === "month" ? 30*864e5 : 864e5;
-        for (const id of m.statistic_ids) { out[id] = []; for (let x = st, i = 0; x < Date.now(); x += step, i++) out[id].push({ start: x, change: id.includes("gas") ? (m.period === "month" ? 18 + 140 * Math.max(0, Math.cos((new Date(x).getMonth() + .5) / 12 * 2 * Math.PI)) : 1.4 + 1.6 * Math.abs(Math.sin(i / 3)) + .4 * (i % 2)) : id.includes("prod") ? 8 + 6*Math.sin(i) : id.includes("imp") ? 2 + Math.random()*3 : 3 + Math.random()*4, mean: 21 + 2*Math.sin(i/4), min: 19 + Math.sin(i/4), max: /pv\d?_power/.test(id) ? (ENT[id]?.a?.unit_of_measurement === "kW" ? 2.2 : 2200) : 23 + 2*Math.sin(i/4) }); }
+        for (const id of m.statistic_ids) { out[id] = [];
+          /* aria (0.7.43): andamento intorno al valore di adesso, con il giorno e la notte */
+          if (ARIA_STORIA[id] || /^sensor\.(aria_|purificatore_|radon_|waqi_)/.test(id)) { const b = parseFloat(ENT[id]?.s) || 1; for (let x = st, i = 0; x < Date.now(); x += step, i++) { const h = new Date(x).getHours(), f = .72 + .22 * Math.sin((h - 14) / 24 * 2 * Math.PI) + .08 * Math.sin(i * 1.7);
+            out[id].push({ start: x, mean: +(b * f).toFixed(3), min: +(b * f * .86).toFixed(3), max: +(b * f * 1.14).toFixed(3) }); } continue; } for (let x = st, i = 0; x < Date.now(); x += step, i++) out[id].push({ start: x, change: id.includes("gas") ? (m.period === "month" ? 18 + 140 * Math.max(0, Math.cos((new Date(x).getMonth() + .5) / 12 * 2 * Math.PI)) : 1.4 + 1.6 * Math.abs(Math.sin(i / 3)) + .4 * (i % 2)) : id.includes("prod") ? 8 + 6*Math.sin(i) : id.includes("imp") ? 2 + Math.random()*3 : 3 + Math.random()*4, mean: 21 + 2*Math.sin(i/4), min: 19 + Math.sin(i/4), max: /pv\d?_power/.test(id) ? (ENT[id]?.a?.unit_of_measurement === "kW" ? 2.2 : 2200) : 23 + 2*Math.sin(i/4) }); }
         return out; }
-      case "history/history_during_period": return {};
+      /* aria (0.7.43): da quanto i sensori dell'aria hanno il valore di adesso (prima un valore normale) */
+      case "history/history_during_period": { const out = {}, t0 = new Date(m.start_time).getTime() / 1000;
+        for (const id of m.entity_ids || []) { const q = ARIA_STORIA[id], e = ENT[id]; if (!q || !e) continue; const da = Date.now() / 1000 - q[1] * 60;
+          out[id] = da > t0 ? [{ s: String(q[0]), lu: t0 }, { s: e.s, lu: da }] : [{ s: e.s, lu: t0 }]; }
+        return out; }
       case "camera/capabilities": return { frontend_stream_types: { webrtc: ["hls", "web_rtc"], webrtc_ko: ["hls", "web_rtc"], hls: ["hls"] }[CAMM()] || [] };
       case "camera/webrtc/get_client_config": return { configuration: { iceServers: [] }, getCandidatesUpfront: false };
       case "camera/webrtc/candidate": { const pc = PCS[m.session_id]; if (!pc) throw { code: "not_found", message: "session" }; if (typeof m.candidate !== "object") throw { code: "invalid_format" }; await pc.addIceCandidate(m.candidate); return null; }
@@ -842,6 +898,8 @@ const conn = {
           e.s = m.service === "media_pause" ? "paused" : "idle"; setTimeout(() => window.mockStati?.({ c: { [id]: { "+": { s: e.s } } } }), 120); }
         /* tapparelle (0.7.42): si muovono davvero, un 5% ogni 350 ms (quelle senza posizione in 3 secondi) */
         if (m.domain === "cover") mockCover(m);
+        /* aria (0.7.43): purificatori, umidificatori e deumidificatori cambiano davvero */
+        if (["fan", "humidifier", "homeassistant", "number"].includes(m.domain)) mockAria(m);
         /* luci e interruttori: lo stato cambia davvero, come in Home Assistant (anche i membri dei gruppi) */
         if (["light", "switch"].includes(m.domain) && ["turn_on", "turn_off", "toggle"].includes(m.service)) mockLuci(m);
         /* casse: play_media e play/pausa cambiano lo stato finto */

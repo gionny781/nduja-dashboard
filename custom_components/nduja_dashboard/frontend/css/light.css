@@ -332,6 +332,18 @@ body.light .tp1ls button{background:rgba(0,0,0,0.035)!important;border:1px solid
 body.light .tp1ak button{background:rgba(0,0,0,0.030)!important}
 body.light .mpd2.tp2.on{background:rgba(0,0,0,0.065)!important}
 body.light .tp1au .tag.off{background:rgba(0,0,0,0.050)!important}
+body.light .ar1me{border:1px dashed rgba(0,0,0,0.154)!important}
+body.light .ar1me>button:not(.ar1m){background:rgba(0,0,0,0.050)!important}
+body.light .ar1m{background:rgba(0,0,0,0.030)!important;border:1px solid rgba(0,0,0,0.056)!important}
+body.light .ar1c{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.042)!important}
+body.light .ar1dx{background:rgba(0,0,0,0.030)!important;border:1px solid rgba(0,0,0,0.056)!important}
+body.light .ar1dt{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.063)!important}
+body.light .ar1fl{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.049)!important}
+body.light .ar1fl .br{background:rgba(0,0,0,0.050)!important}
+body.light .ar1v,body.light .ar1if,body.light .ar1sz{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.049)!important}
+body.light .ar1gr{background:rgba(0,0,0,0.020)!important;border:1px solid rgba(0,0,0,0.042)!important}
+body.light .ar1in input{background:rgba(0,0,0,0.040)!important}
+body.light .ar1hl button{background:rgba(0,0,0,0.022)!important;border:1px solid rgba(0,0,0,0.042)!important}
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
 body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
@@ -533,4 +545,19 @@ body.light .tp1d{--fr:#d2d8e2;--bx:#a2acbc;--sl:#f7f8fb;--sl2:#b3bbc8;--aw:#ffff
 body.light .tp1d .gap{fill:#3a4252}
 body.light .tp1sb i{background:#fff;border-color:rgba(0,0,0,.12)}
 body.light .tp1ps option{background:#fff;color:#1c1c1e}
+/* aria (0.7.43): testi dei livelli più scuri, scena e disegnini dei purificatori chiari */
+body.light :is(.ar1l,.ar1m,.ar1c,.ar1r,.ar1h,.ar1v,.ar1s,.ar1hc,.ar1hl>button,.ar1hm,.ar1sr2,.ar1cn>span,.ar1sr span).l0{--lvt:#1f9a44}
+body.light :is(.ar1l,.ar1m,.ar1c,.ar1r,.ar1h,.ar1v,.ar1s,.ar1hc,.ar1hl>button,.ar1hm,.ar1sr2,.ar1cn>span,.ar1sr span).l1{--lvt:#5f8f1c}
+body.light :is(.ar1l,.ar1m,.ar1c,.ar1r,.ar1h,.ar1v,.ar1s,.ar1hc,.ar1hl>button,.ar1hm,.ar1sr2,.ar1cn>span,.ar1sr span).l2{--lvt:#c76f00}
+body.light :is(.ar1l,.ar1m,.ar1c,.ar1r,.ar1h,.ar1v,.ar1s,.ar1hc,.ar1hl>button,.ar1hm,.ar1sr2,.ar1cn>span,.ar1sr span).l3{--lvt:#d70015}
+body.light .ar1sv b,body.light .ar1hv>b{text-shadow:none}
+body.light .ar1s .bg{fill-opacity:.16}
+body.light .ar1s .sf{stroke:#1c1c1e;stroke-opacity:.12}
+body.light .ar1s .pt1{fill:#1c1c1e;fill-opacity:.22}
+body.light .ar1s.l2 .pt1,body.light .ar1s.l3 .pt1{fill:#8a7356;fill-opacity:.55}body.light .ar1s.l3 .pt2{fill:#6e5a45}
+body.light .ar1go{background:rgba(255,255,255,.7);color:rgba(28,28,30,.7)}
+body.light .ar1d .cp{fill:#ffffff;stroke:#b8c1ce}
+body.light .ar1d .ns circle{fill:#9fd6f5}
+body.light .ar1sc u{background:#1c1c1e;box-shadow:0 0 0 1.5px #fff}
+body.light .ar1c{border-left:3px solid var(--lv)!important}body.light .ar1sr2{border-left:3px solid var(--lv)!important}
 

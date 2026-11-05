@@ -1,11 +1,12 @@
-/* Clima: termostati e condizionatori per stanza (animati o con le tue immagini, vedi climadisegni.js), più temperatura e umidità di ogni stanza. */
+/* Clima: termostati e condizionatori per stanza (animati o con le tue immagini, vedi climadisegni.js), più temperatura e umidità di ogni stanza.
+   Purificatori, deumidificatori e umidificatori stanno nella pagina Aria, se c'è. */
 import { S, AREAS, UI, VISTE, t, esc, fnum, ok, ents, areaOf, areasSorted, roomTemp, roomHum, climateCard, entityRow, card, empty, page, isAdmin } from "../core.js";
 import { item, addBtn } from "../edit.js";
 
 /* la caldaia ha la sua pagina (pages/caldaia.js): se non la trovo da sola, in ✏️ la si aggiunge da qui */
 const caldaiaManca = () => isAdmin() && !!VISTE.caldaiaTrovata && !VISTE.caldaiaTrovata();
 function pagina() {
-  const C = ents("climate"), F = [...ents("fan"), ...ents("humidifier")];
+  const AR = VISTE.ariaDisp?.() || new Set(), C = ents("climate"), F = [...ents("fan"), ...ents("humidifier")].filter(id => !AR.has(id));
   const zone = [...new Set(C.map(id => areaOf(id) || "_"))].sort((a, b) => areasSorted().indexOf(a) - areasSorted().indexOf(b));
   const stanze = areasSorted(UI.edit).map(a => ({ a, T: roomTemp(a), H: roomHum(a) })).filter(r => UI.edit || r.T != null || r.H != null);
   const TT = stanze.filter(r => r.T != null), tmin = Math.min(...TT.map(r => r.T)), tmax = Math.max(...TT.map(r => r.T));

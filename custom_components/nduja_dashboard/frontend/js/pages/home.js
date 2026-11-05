@@ -52,7 +52,7 @@ function stanza(a) {
   return `<button class="rm1 ${L ? "lit" : ""} ${O ? "open" : ""} ${(LAYOUT.hiddenAreas || []).includes(a) ? "off1" : ""}" data-act="room" data-id="${a}">
     <span class="rn">${esc(AREAS[a].name)}</span>
     <span class="rt">${T != null ? fnum(T) + "°" : "—"}${H != null ? `<small>${Math.round(H)}%</small>` : ""}</span>
-    <span class="ri">${nLuci ? `<i class="${L ? "on" : ""}">💡${L ? " " + L : ""}</i>` : ""}${O ? `<i class="al">🪟 ${O}</i>` : ""}${C ? `<i class="clr1 ${mc === "heat" ? "heat" : mc === "fan" ? "" : "cool"}">${vistaClima(C, "xs")}</i>` : ""}</span>
+    <span class="ri">${nLuci ? `<i class="${L ? "on" : ""}">💡${L ? " " + L : ""}</i>` : ""}${O ? `<i class="al">🪟 ${O}</i>` : ""}${C ? `<i class="clr1 ${mc === "heat" ? "heat" : mc === "fan" ? "" : "cool"}">${vistaClima(C, "xs")}</i>` : ""}${VISTE.ariaChip?.(a) || ""}</span>
   </button>`;
 }
 function stanze() {
@@ -95,6 +95,7 @@ function schedaStanza(a) {
   const O = inArea(a, "binary_sensor", id => ["door", "window", "opening", "garage_door"].includes(deviceClass(id)));
   const SN = inArea(a, "sensor", id => ["temperature", "humidity", "illuminance", "carbon_dioxide", "pm25", "power", "energy"].includes(deviceClass(id)) && ok(id)).slice(0, 12);
   return `<div class="sh-head"><div><h3>${esc(ar.name)}</h3><div class="small muted">${T != null ? fnum(T) + "°" : ""}${H != null ? " · " + Math.round(H) + "%" : ""}${ar.floor && FLOORS[ar.floor] ? " · " + esc(FLOORS[ar.floor].name) : ""}</div></div>${isAdmin() ? `<button class="btn sm" data-act="rmEdit" data-id="${a}">✏️ ${t("Personalizza", "Customize")}</button>` : ""}<button class="x" data-act="sheetClose">×</button></div>
+    ${VISTE.ariaStanza?.(a) ? `<div class="stack" style="margin:4px 0 10px">${VISTE.ariaStanza(a)}</div>` : ""}
     ${L.length ? `<div class="row between" style="margin:6px 0 8px"><b>${t("Luci", "Lights")}</b>${lightsOn(a).length ? `<button class="btn sm" data-act="lightsOff" data-area="${a}">${t("Spegni", "Turn off")}</button>` : ""}</div><div class="tiles">${L.map(id => lightTile(id)).join("")}</div>` : ""}
     ${C.length ? `<div style="margin:14px 0 8px"><b>${t("Clima", "Climate")}</b></div><div class="stack">${C.map(id => climateCard(id)).join("")}</div>` : ""}
     ${R.length ? `<div style="margin:14px 0 8px"><b>${t("Dispositivi", "Devices")}</b></div><div class="stack">${R.map(id => VISTE.tapRiga?.(id) || entityRow(id)).join("")}</div>` : ""}

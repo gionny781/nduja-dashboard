@@ -199,3 +199,18 @@ body.light .tp1d{--fr:#d2d8e2;--bx:#a2acbc;--sl:#f7f8fb;--sl2:#b3bbc8;--aw:#ffff
 body.light .tp1d .gap{fill:#3a4252}
 body.light .tp1sb i{background:#fff;border-color:rgba(0,0,0,.12)}
 body.light .tp1ps option{background:#fff;color:#1c1c1e}
+/* aria (0.7.43): testi dei livelli più scuri, scena e disegnini dei purificatori chiari */
+body.light :is(.ar1l,.ar1m,.ar1c,.ar1r,.ar1h,.ar1v,.ar1s,.ar1hc,.ar1hl>button,.ar1hm,.ar1sr2,.ar1cn>span,.ar1sr span).l0{--lvt:#1f9a44}
+body.light :is(.ar1l,.ar1m,.ar1c,.ar1r,.ar1h,.ar1v,.ar1s,.ar1hc,.ar1hl>button,.ar1hm,.ar1sr2,.ar1cn>span,.ar1sr span).l1{--lvt:#5f8f1c}
+body.light :is(.ar1l,.ar1m,.ar1c,.ar1r,.ar1h,.ar1v,.ar1s,.ar1hc,.ar1hl>button,.ar1hm,.ar1sr2,.ar1cn>span,.ar1sr span).l2{--lvt:#c76f00}
+body.light :is(.ar1l,.ar1m,.ar1c,.ar1r,.ar1h,.ar1v,.ar1s,.ar1hc,.ar1hl>button,.ar1hm,.ar1sr2,.ar1cn>span,.ar1sr span).l3{--lvt:#d70015}
+body.light .ar1sv b,body.light .ar1hv>b{text-shadow:none}
+body.light .ar1s .bg{fill-opacity:.16}
+body.light .ar1s .sf{stroke:#1c1c1e;stroke-opacity:.12}
+body.light .ar1s .pt1{fill:#1c1c1e;fill-opacity:.22}
+body.light .ar1s.l2 .pt1,body.light .ar1s.l3 .pt1{fill:#8a7356;fill-opacity:.55}body.light .ar1s.l3 .pt2{fill:#6e5a45}
+body.light .ar1go{background:rgba(255,255,255,.7);color:rgba(28,28,30,.7)}
+body.light .ar1d .cp{fill:#ffffff;stroke:#b8c1ce}
+body.light .ar1d .ns circle{fill:#9fd6f5}
+body.light .ar1sc u{background:#1c1c1e;box-shadow:0 0 0 1.5px #fff}
+body.light .ar1c{border-left:3px solid var(--lv)!important}body.light .ar1sr2{border-left:3px solid var(--lv)!important}

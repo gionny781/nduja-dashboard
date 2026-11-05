@@ -6,6 +6,7 @@
    - pile scariche, telefoni scarichi, aggiornamenti, raccolta da esporre stasera
    - scadenze di oggi e scadute (pagina Scadenze)
    - allerte meteo da arancione in su, o dal livello scelto (pagina Meteo)
+   - una stanza con l'aria «Scarsa» da più dei minuti scelti (pagina Aria, 30 se non scegli)
    Ogni avviso si può nascondere con ✕ (torna se la situazione cambia). */
 import { S, ACT, CHG, LAYOUT, PAGES, VISTE, utenteCfg, t, esc, nm, ok, val, attr, ents, allEnts, isOn, ago, deviceClass, areaOf, openings, shortName, card, render, sGet, sSet, weatherEnt, forecast,
   ws, cached, api, toast, openSheet, closeSheet, isAdmin, etichettaNduja } from "./core.js";
@@ -67,6 +68,7 @@ export function avvisi() {
   ents("alarm_control_panel", id => S[id].state === "triggered").forEach(id => A.push({ k: "al:" + id + S[id].last_changed, ic: "🚨", b: esc(nm(id)) + " — " + t("ALLARME!", "TRIGGERED!"), s: ago(S[id].last_changed), go: "sicurezza", cls: "alert" }));
   pericoli().forEach(id => A.push({ k: "pe:" + id + S[id].last_changed, ic: { smoke: "🔥", gas: "💨", carbon_monoxide: "☠️", moisture: "💧" }[deviceClass(id)] || "⚠️", b: esc(nm(id)), s: t("rilevato", "detected") + " · " + ago(S[id].last_changed), id, cls: "alert" }));
   try { A.push(...(VISTE.meteoAvvisi?.() || [])); } catch {}   // allerte meteo da arancione in su (pages/meteo.js)
+  try { A.push(...(VISTE.ariaAvvisi?.() || [])); } catch {}   // aria scarsa da più di 30 minuti, o dei minuti scelti (pages/aria.js)
   const clima = ents("climate", id => ok(id) && S[id].state !== "off");
   for (const o of aperte) {
     const conClima = clima.find(c => areaOf(c) && areaOf(c) === areaOf(o));
