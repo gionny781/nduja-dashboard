@@ -344,6 +344,12 @@ body.light .ar1v,body.light .ar1if,body.light .ar1sz{background:rgba(0,0,0,0.025
 body.light .ar1gr{background:rgba(0,0,0,0.020)!important;border:1px solid rgba(0,0,0,0.042)!important}
 body.light .ar1in input{background:rgba(0,0,0,0.040)!important}
 body.light .ar1hl button{background:rgba(0,0,0,0.022)!important;border:1px solid rgba(0,0,0,0.042)!important}
+body.light .aq1u{background:rgba(0,0,0,0.020)!important;border:1px solid rgba(0,0,0,0.049)!important}
+body.light .aq1br{background:rgba(0,0,0,0.045)!important}
+body.light .aq1k{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.042)!important}
+body.light .aq1ps{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.049)!important}
+body.light .aq1vv{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.049)!important}
+body.light .aq1hr{background:rgba(0,0,0,0.022)!important;border:1px solid rgba(0,0,0,0.042)!important}
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
 body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
@@ -560,4 +566,14 @@ body.light .ar1d .cp{fill:#ffffff;stroke:#b8c1ce}
 body.light .ar1d .ns circle{fill:#9fd6f5}
 body.light .ar1sc u{background:#1c1c1e;box-shadow:0 0 0 1.5px #fff}
 body.light .ar1c{border-left:3px solid var(--lv)!important}body.light .ar1sr2{border-left:3px solid var(--lv)!important}
+/* acqua e gas (0.7.44): numeri più scuri sul chiaro */
+body.light .aq1u.k-acqua .aq1v b,body.light .aq1hr.k-acqua .tx b em,body.light .aq1k.on b,body.light .aq1hr.on .aq1hf{color:#0a7fb5}
+body.light .aq1u.k-gas .aq1v b,body.light .aq1hr.k-gas .tx b em{color:#c76f00}
+body.light .aq1br u{background:#1c1c1e}
+body.light .aq1u.ko,body.light .aq1u.ko.on.k-acqua,body.light .aq1ps.ko,body.light .aq1hr.ko,body.light .aq1vv.chiusa{background:rgba(255,159,10,.1)!important;border-color:rgba(199,111,0,.5)!important}
+body.light .aq1ps.ko b,body.light .aq1vv.chiusa .tx span{color:#b35f00}
+body.light .aq1ps.ok{background:rgba(48,209,88,.1)!important;border-color:rgba(31,154,68,.35)!important}body.light .aq1ps.ok b{color:#1f9a44}
+body.light .aq1ps.on,body.light .aq1u.on.k-acqua{background:rgba(10,132,255,.06)!important;border-color:rgba(10,127,181,.35)!important}
+body.light .aq1sp.ko{background:rgba(255,69,58,.08)!important;border-color:rgba(215,0,21,.45)!important}body.light .aq1sp.ko .tx span{color:#d70015}
+body.light .aq1g.on .gw{opacity:.12}
 

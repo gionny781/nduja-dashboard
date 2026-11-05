@@ -3,6 +3,19 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.44-dev
+> 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
+- 🇮🇹 **🚰 Acqua e gas**, pagina nuova gemella di Energia: i contatori dell'acqua e del gas della configurazione Energia di Home Assistant, altrimenti i sensori adatti (water/gas che crescono; niente contatori di oggi o del mese, niente irrigazione). Con ✏️ (o ⚙️) gli amministratori scelgono contatori (anche più di uno, si sommano), portata, valvola e sensori di perdita, oppure «Non usare».
+- 🇮🇹 **Oggi**: consumo da mezzanotte con la barra rispetto a un giorno medio (media degli ultimi 30 giorni), questo mese e costo di oggi; la **portata in tempo reale** se c'è un sensore di portata. Disegni fatti per 'Nduja: il **contatore dell'acqua** con i rulli delle cifre, la stellina e l'acqua che scorre nel tubo; il **contatore del gas** con il fornello e la **fiamma** che si accende quando il gas è in uso (fermi con «riduci movimento» e in modalità leggera).
+- 🇮🇹 **Storico e costi**: settimana, mese e anno dalle statistiche, nello stile dello storico Energia, con totale, costo, media e prezzo (quello della configurazione Energia oppure scritto in ⚙️, per m³ o per l'unità del contatore).
+- 🇮🇹 **Perdite**: con un sensore di portata, l'avviso **«Possibile perdita: l'acqua scorre da 2 ore»** negli Avvisi della Home (minuti, portata sotto cui l'acqua è ferma e acceso/spento in ⚙️); i sensori di perdita con «asciutto» o «Acqua rilevata!»; con una **valvola dell'acqua** il pulsante **«Chiudi l'acqua»** a doppia conferma (e «Riapri l'acqua»). La valvola non si ripete più nelle Prese.
+- 🇮🇹 **In Home** la scheda **«Acqua e gas»** con i consumi di oggi, la portata e gli allarmi.
+- 🇬🇧 **🚰 Water and gas**, a new page, the twin of Energy: the water and gas meters from Home Assistant's Energy configuration, otherwise suitable sensors (growing water/gas; no today/month counters, no irrigation). With ✏️ (or ⚙️) admins choose meters (more than one adds up), flow, valve and leak sensors, or «Don't use».
+- 🇬🇧 **Today**: use since midnight with a bar against an average day (average of the last 30 days), this month and today's cost; the **live flow** if there's a flow sensor. Drawings made for 'Nduja: the **water meter** with rolling digit wheels, the little star and water flowing in the pipe; the **gas meter** with the burner and the **flame** lighting up when gas is in use (still with «reduce motion» and in light mode).
+- 🇬🇧 **History and costs**: week, month and year from statistics, in the style of the Energy history, with total, cost, average and price (from the Energy configuration or entered in ⚙️, per m³ or per the meter's unit).
+- 🇬🇧 **Leaks**: with a flow sensor, the **«Possible leak: water has been flowing for 2 hours»** alert in Home Alerts (minutes, the flow below which water counts as still, and on/off in ⚙️); leak sensors with «dry» or «Water detected!»; with a **water valve** the **«Shut off water»** button with double confirmation (and «Turn water back on»). The valve no longer repeats on Plugs.
+- 🇬🇧 **On Home** the **«Water and gas»** card with today's use, the flow and alarms.
+
 ## 0.7.43-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 - 🇮🇹 **🍃 Qualità dell'aria**, pagina nuova: compare solo se in casa ci sono sensori di CO₂, PM2.5, PM10, VOC, NO₂, formaldeide, radon o umidità, purificatori, deumidificatori o umidificatori. I sensori di giardini, terrazzi e servizi online (WAQI e simili) non sono stanze: servono ai consigli.

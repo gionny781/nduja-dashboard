@@ -168,3 +168,11 @@ LS='{"mockPiani":"1"}' node tools/mock/shot.mjs tapparelle 390 844 tel.png '[dat
 node tools/mock/shot.mjs aria 1280 1800 aria.png
 node tools/mock/shot.mjs aria 390 844 tel.png '[data-act="arSt"][data-id="corridoio"] >> nth=0'
 ```
+
+**Acqua e gas** (0.7.44), dati inventati: `sensor.contatore_acqua` (m³, nella configurazione Energia con 2,10 €/m³), `sensor.portata_acqua` (L/min), `sensor.contatore_gas` (cambiato da 3 minuti: la fiamma è accesa),
+`valve.acqua_principale` (chiuderla ferma la portata), i sensori di perdita `binary_sensor.allagamento_lavanderia_moisture` (asciutto) e `binary_sensor.perdita_lavatrice` (bagnato). `sensor.acqua_oggi` (contatore di oggi) NON deve essere scelto da solo.
+Con `mockAcqua` = `perdita` (predefinito: 0,6 L/min da 135 minuti, avviso «Possibile perdita»), `doccia` (8,4 L/min da 6 minuti) o `ferma`; `mockAcquaNoPrefs` toglie l'acqua dalla configurazione Energia (si prova la scelta automatica), `mockNoAcqua` toglie contatore e portata. Le scelte stanno in `acqua` dentro `mockLayout`.
+```bash
+node tools/mock/shot.mjs acqua 1280 1500 acqua.png
+LS='{"mockAcqua":"doccia"}' node tools/mock/shot.mjs acqua 390 844 tel.png '[data-act="aqCfg"]'
+```
