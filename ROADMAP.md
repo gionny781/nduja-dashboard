@@ -74,7 +74,10 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.47-dev | lun 9 nov | Autonomia (1): tutto regolabile dalla plancia — da Aggiornamenti a Energia |
 | 0.7.48-dev | mer 11 nov | Autonomia (2): tutto regolabile dalla plancia — da Faccende in poi |
 | 0.7.49-dev | ven 13 nov | «Cosa puoi aggiungere»: la plancia dice cosa manca e come attivarlo |
-| 0.7.50-dev | dom 15 nov | Guida all'installazione illustrata e controllo finale |
+| 0.7.50-dev | dom 15 nov | Trascina e sposta (drag & drop): menu, Home, stanze, elementi |
+| 0.7.51-dev | mar 17 nov | Colpo d'occhio: la tua vista con le cose più importanti |
+| 0.7.52-dev | gio 19 nov | La tua casa in 3D: piani, tetto, porte, finestre, luci e arredo |
+| 0.7.53-dev | sab 21 nov | Guida all'installazione illustrata e controllo finale |
 
 ⏸️ **In standby:** «In auto: comandi per CarPlay e Android Auto» — si farà ufficialmente con l'app 'Nduja; la scheda è in `docs/sviluppo/standby/in-auto-carplay.md`.
 
