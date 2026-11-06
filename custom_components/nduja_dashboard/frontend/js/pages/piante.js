@@ -1,6 +1,6 @@
 /* Piante e giardino: una scheda per pianta con nome, stanza, foto (scattata o caricata da chi usa la plancia) oppure un disegno
    fatto per 'Nduja secondo il tipo (verde, grassa, fiorita, aromatica, orto, albero).
-   Piante trovate da sole: entità plant.* (integrazione «plant» di Home Assistant e Plant Monitor da HACS) e dispositivi con un sensore
+   Piante trovate da sole: entità plant.* (integrazione «plant» di Home Assistant e Plant Monitor dal Marketplace) e dispositivi con un sensore
    di umidità del terreno (Xiaomi Mi Flora / Flower Care, sensori del terreno Zigbee…); le altre si aggiungono a mano.
    Sensori: umidità del terreno, luce, temperatura, fertilità (conducibilità) e pila del sensore, con barre e soglie (quelle dell'entità
    plant se le dà, altrimenti valori indicativi per tipo; si cambiano per ogni pianta con ✏️) e lo stato in parole semplici.

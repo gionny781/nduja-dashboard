@@ -1,7 +1,7 @@
 /* Formula 1: il prossimo Gran Premio (circuito, conto alla rovescia, orari di tutte le sessioni nell'ora di casa), il weekend
    in corso (sessione, bandiere e safety car, ordine in pista, direzione gara), le classifiche piloti e costruttori con il pilota
    e il team preferiti evidenziati, l'ultima gara con il podio.
-   I dati vengono solo da Home Assistant: F1 Sensor (HACS), un calendario della F1 oppure Team Tracker (racing).
+   I dati vengono solo da Home Assistant: F1 Sensor (Marketplace), un calendario della F1 oppure Team Tracker (racing).
    Si trova tutto da solo; in ⚙️ Impostazioni (e con ✏️) si aggiungono fonti, si scelgono pilota e team preferiti.
    Il tracciato è l'immagine dell'integrazione; se manca, un circuito astratto disegnato per 'Nduja.
    In Home la scheda «Formula 1» (HOME_EXTRA). Facoltativa l'automazione «'Nduja · Formula 1»: «Tra 15 minuti partono…». */
@@ -353,9 +353,9 @@ function pagina() {
 /* spiegazione quando non c'è niente */
 const DOC = "https://github.com/Nicxe/f1_sensor";
 function spiegazione(bottone = true) {
-  return `<div class="fo1no"><span class="fo1noi">🏎️</span><div><b>${t("Installa F1 Sensor da HACS", "Install F1 Sensor from HACS")}</b>
-    <p>${t("La plancia mostra il prossimo Gran Premio con gli orari di tutte le sessioni, la sessione in corso con bandiere e ordine in pista, le classifiche e l'ultima gara. F1 Sensor è gratuito: in HACS cercalo, scaricalo, riavvia Home Assistant e aggiungi l'integrazione «F1 Sensor» (per la diretta attiva anche i dati live). Va bene anche un calendario con le gare (per esempio quello di F1 Sensor o uno di Google) o Team Tracker con lo sport «racing» e il campionato F1.",
-      "The dashboard shows the next Grand Prix with every session time, the live session with flags and running order, the standings and the last race. F1 Sensor is free: search it in HACS, download it, restart Home Assistant and add the «F1 Sensor» integration (turn on live data for the live part). A calendar with the races (for example F1 Sensor's or a Google one) or Team Tracker with the «racing» sport and the F1 league work too.")}</p>
+  return `<div class="fo1no"><span class="fo1noi">🏎️</span><div><b>${t("Installa F1 Sensor dal Marketplace", "Install F1 Sensor from the Marketplace")}</b>
+    <p>${t("La plancia mostra il prossimo Gran Premio con gli orari di tutte le sessioni, la sessione in corso con bandiere e ordine in pista, le classifiche e l'ultima gara. F1 Sensor è gratuito: in Impostazioni → Marketplace cercalo (con Home Assistant 2026.10 o precedente: in HACS), scaricalo, riavvia Home Assistant e aggiungi l'integrazione «F1 Sensor» (per la diretta attiva anche i dati live). Va bene anche un calendario con le gare (per esempio quello di F1 Sensor o uno di Google) o Team Tracker con lo sport «racing» e il campionato F1.",
+      "The dashboard shows the next Grand Prix with every session time, the live session with flags and running order, the standings and the last race. F1 Sensor is free: search it in Settings → Marketplace (on Home Assistant 2026.10 or older: in HACS), download it, restart Home Assistant and add the «F1 Sensor» integration (turn on live data for the live part). A calendar with the races (for example F1 Sensor's or a Google one) or Team Tracker with the «racing» sport and the F1 league work too.")}</p>
     <div class="row" style="gap:8px;flex-wrap:wrap"><a class="btn sm pri" href="${DOC}" target="_blank" rel="noopener">📖 ${t("Guida di F1 Sensor", "F1 Sensor guide")}</a>${isAdmin() && bottone ? `<button class="btn sm" data-act="f1Add">📅 ${t("Scegli un calendario o un sensore", "Pick a calendar or a sensor")}</button>` : ""}</div></div></div>`;
 }
 

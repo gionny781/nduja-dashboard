@@ -3,6 +3,10 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.47-dev1
+- 🇮🇹 **Pronta per il Marketplace di Home Assistant 2026.11** (che sostituisce HACS): istruzioni di installazione con «Aggiungi da link» e l'interruttore Pre-release per le anteprime; nella plancia i suggerimenti per F1 Sensor, Team Tracker e Plant Monitor parlano del Marketplace (con i passi di HACS per chi ha la 2026.10 o precedente) e in Aggiornamenti il gruppo «HACS» si chiama «Marketplace».
+- 🇬🇧 **Ready for the Home Assistant 2026.11 Marketplace** (which replaces HACS): install steps with «Add from link» and the Pre-release switch for previews; in the dashboard the hints for F1 Sensor, Team Tracker and Plant Monitor mention the Marketplace (with HACS steps for 2026.10 or older) and in Updates the «HACS» group is called «Marketplace».
+
 ## 0.7.47-dev
 > 🧪 Anteprima / preview: HACS la mostra solo con «Mostra versioni beta» · shown by HACS only with «Show beta versions».
 - 🇮🇹 **Autonomia, parte 1**: ho riletto le pagine da Aggiornamenti a Energia (più Avvisi, Salvaschermo e Novità) e quello che dipende dalla tua casa ora si cambia dalla plancia, con una riga che spiega a cosa serve. Se non tocchi niente, resta tutto come prima. L'elenco completo è in `docs/sviluppo/AUTONOMIA.md`.

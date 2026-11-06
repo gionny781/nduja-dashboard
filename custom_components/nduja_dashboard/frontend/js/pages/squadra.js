@@ -1,6 +1,6 @@
 /* La mia squadra (calcio): la prossima partita con il conto alla rovescia, la partita in corso (risultato grande, minuto,
    gol e cartellini, con un'animazione al gol disegnata per 'Nduja), gli ultimi risultati e la classifica.
-   I dati vengono solo da Home Assistant: Team Tracker (HACS), Calcio Live (HACS) oppure un calendario con le partite.
+   I dati vengono solo da Home Assistant: Team Tracker (Marketplace), Calcio Live (Marketplace) oppure un calendario con le partite.
    Le squadre si trovano da sole; in ⚙️ Impostazioni (e con ✏️) se ne aggiungono altre, si tolgono, si cambiano nome,
    sigla e colori. I loghi sono solo quelli dell'integrazione: se mancano, uno stemma con le iniziali e i colori scelti.
    In Home la scheda «La mia squadra» (HOME_EXTRA). Facoltativa l'automazione «'Nduja · squadra»: avviso sul telefono
@@ -380,8 +380,8 @@ function pagina() {
 const DOC_TT = "https://github.com/vasqued2/ha-teamtracker";
 const haIntegrazione = () => Object.keys(S).some(id => isTT(id) || isCL(id));
 function spiegazione(bottone = true) {
-  return `<div class="sq1no"><span class="sq1noi">⚽</span><div><b>${t("Installa Team Tracker da HACS e scegli la tua squadra", "Install Team Tracker from HACS and choose your team")}</b>
-    <p>${t("La plancia mostra la prossima partita, la diretta con i gol e gli ultimi risultati. Team Tracker è gratuito: in HACS cercalo, scaricalo, riavvia Home Assistant e aggiungi l'integrazione «Team Tracker» con il campionato e la squadra. Va bene anche Calcio Live (con la classifica) o un calendario con le partite.", "The dashboard shows the next match, the live score with goals and the latest results. Team Tracker is free: search it in HACS, download it, restart Home Assistant and add the «Team Tracker» integration with your league and team. Calcio Live (with the table) or a calendar with the matches work too.")}</p>
+  return `<div class="sq1no"><span class="sq1noi">⚽</span><div><b>${t("Installa Team Tracker dal Marketplace e scegli la tua squadra", "Install Team Tracker from the Marketplace and choose your team")}</b>
+    <p>${t("La plancia mostra la prossima partita, la diretta con i gol e gli ultimi risultati. Team Tracker è gratuito: in Impostazioni → Marketplace cercalo (con Home Assistant 2026.10 o precedente: in HACS), scaricalo, riavvia Home Assistant e aggiungi l'integrazione «Team Tracker» con il campionato e la squadra. Va bene anche Calcio Live (con la classifica) o un calendario con le partite.", "The dashboard shows the next match, the live score with goals and the latest results. Team Tracker is free: search it in Settings → Marketplace (on Home Assistant 2026.10 or older: in HACS), download it, restart Home Assistant and add the «Team Tracker» integration with your league and team. Calcio Live (with the table) or a calendar with the matches work too.")}</p>
     <div class="row" style="gap:8px;flex-wrap:wrap"><a class="btn sm pri" href="${DOC_TT}" target="_blank" rel="noopener">📖 ${t("Guida di Team Tracker", "Team Tracker guide")}</a>${isAdmin() && bottone ? `<button class="btn sm" data-act="sqAdd">📅 ${t("Scegli un sensore o un calendario", "Pick a sensor or a calendar")}</button>` : ""}</div></div></div>`;
 }
 

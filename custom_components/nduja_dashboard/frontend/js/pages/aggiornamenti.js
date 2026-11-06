@@ -1,5 +1,5 @@
 /* Aggiornamenti: installa dalla plancia quello che Home Assistant propone (Home Assistant, componenti aggiuntivi,
-   HACS, firmware). Novità, backup prima di installare, avanzamento, «Installa tutti» (Home Assistant per ultimo), versioni saltate. */
+   Marketplace/HACS, firmware). Novità, backup prima di installare, avanzamento, «Installa tutti» (Home Assistant per ultimo), versioni saltate. */
 import { S, ACT, CHG, VISTE, LAYOUT, esc, card, svc, ws, toast, render, openSheet, page, t, isAdmin } from "../core.js";
 import { cambia } from "../edit.js";
 
@@ -20,7 +20,7 @@ function tipo(id) {
   const a = A(id), u = a.release_url || "";
   if (/home_assistant_(core|supervisor|operating_system)/.test(id)) return ["🏠", "Home Assistant", 0];
   if (has(id, 29) && a.title && !/github\.com/.test(u)) return ["🧩", t("Componenti aggiuntivi", "Add-ons"), 1];
-  if (/github\.com/.test(u) && has(id, 23)) return ["📦", "HACS", 2];
+  if (/github\.com/.test(u) && has(id, 23)) return ["📦", "Marketplace", 2];   // da Home Assistant 2026.11 HACS è il Marketplace
   if (/fritz/i.test(id + (a.title || "")) || VISTE.reteAgg?.(id)) return ["📶", t("Rete e server", "Network and servers"), 3];   // modem, NAS, server (pagina Rete)
   if (/firmware|shelly|0x/i.test(id + u)) return ["🔌", t("Firmware dispositivi", "Device firmware"), 4];
   return ["⚙️", t("Altro", "Other"), 5];
