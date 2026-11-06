@@ -9,8 +9,9 @@
    ai telefoni delle persone scelte con l'anticipo scelto; le azioni «Fatto» e «Ricordamelo domani» della notifica le gestisce
    la stessa automazione, anche a plancia chiusa. Si riscrive da sola quando cambiano lista, persone, anticipo o ora.
    Scelte della casa (LAYOUT.scadenze, solo amministratori):
-     { lista: "todo.x", promemoria: { persone: [person.x], altri: [servizi notify], anticipi: [0, 1, 3, 7], ora: "HH:MM" } }
-   In Home la scheda «Scadenze» con le prossime 3; scadute e di oggi anche negli Avvisi. */
+     { lista: "todo.x", promemoria: { persone: [person.x], altri: [servizi notify], anticipi: [0, 1, 3, 7, … giorni a scelta], ora: "HH:MM" },
+       inHome: quante nella scheda della Home (3), avvisi: "no" | 1 | 3 | 7 (giorni prima negli Avvisi della Home; senza = scadute e di oggi) }
+   In Home la scheda «Scadenze» con le prossime 3; scadute e di oggi anche negli Avvisi (si cambia in ⚙️). */
 import { S, REG, DEVICES, ACT, CHG, UI, VISTE, HOME_EXTRA, LAYOUT, PAGES, utenteCfg, t, LOC, esc, nm, nmHA, ok, attr, allEnts, page, ws, api, cached,
   ready, toast, openSheet, closeSheet, render, sicuro, isAdmin, go, apriHA, etichettaNduja } from "../core.js";
 import { cambia } from "../edit.js";
@@ -24,6 +25,11 @@ const adatta = id => puo(id, F_ADD) && puo(id, F_UPD) && (puo(id, F_DATA) || puo
 const NOME_LISTA = /scadenz|deadline|due.?date|promemoria|reminder|rinnov|renewal|bollett/i;
 const AUT = "nduja_scadenze";
 const C = () => LAYOUT.scadenze || {};
+/** quante scadenze nella scheda della Home (⚙️): 3 di partenza */
+const IN_HOME = 3;
+const inHome = () => { const v = +C().inHome; return v >= 1 && v <= 12 ? Math.round(v) : IN_HOME; };
+/** negli Avvisi della Home (⚙️): null = mai; 0 = scadute e di oggi (come prima); 1, 3, 7 = anche quelle entro tanti giorni */
+const entroAvvisi = () => { const v = C().avvisi; return v === "no" ? null : [1, 3, 7].includes(+v) ? +v : 0; };
 
 /** la lista delle scadenze: quella scelta, altrimenti una lista adatta che si chiama «Scadenze» (meglio se Local To-do) */
 export function lista() {
@@ -153,7 +159,8 @@ function quando(x, { fatta = false } = {}) {
   if (g === 1) return { testo: t("domani", "tomorrow") + o, cls: "domani" };
   return { testo: (g < 7 ? x.d.toLocaleDateString(LOC, { weekday: "long" }) : t(`tra ${g} giorni`, `in ${g} days`) + " · " + data) + o, cls: "poi" };
 }
-const scaduteOggi = () => daFare().filter(x => { const g = gg(x); return g != null && g <= 0; });
+/** da mostrare negli Avvisi della Home: scadute e di oggi, o anche le prossime N giorni (⚙️) */
+const daAvvisare = () => { const N = entroAvvisi(); return N == null ? [] : daFare().filter(x => { const g = gg(x); return g != null && g <= N; }); };
 
 /* ---------- comandi ---------- */
 const trova = uid => (tutte() || []).find(x => x.uid === uid);
@@ -225,7 +232,7 @@ function testa(id) {
   const frase = !T ? "&nbsp;" : !A.length ? t("tutto in ordine", "all sorted") : [sc ? `<b class="r">${sc}</b> ${t(sc === 1 ? "scaduta" : "scadute", "overdue")}` : "", og ? `<b class="o">${og}</b> ${t("oggi", "today")}` : "",
     `<b>${A.length}</b> ${t(A.length === 1 ? "da pagare o da fare" : "da pagare o da fare", "to pay or do")}`].filter(Boolean).join(" · ");
   return `<div class="sc1h"><div class="tx"><h2>⏰ ${t("Scadenze", "Deadlines")}</h2><span>${frase}</span></div>
-    <div class="sc1ha">${puo(id, F_ADD) && ok(id) ? `<button class="btn pri" data-act="scNuova">＋ ${t("Nuova", "New")}</button>` : ""}${isAdmin() ? `<button class="btn sm" data-act="scCfg" title="${t("Lista delle scadenze", "Deadlines list")}" aria-label="${t("Lista delle scadenze", "Deadlines list")}">⚙️</button>` : ""}</div></div>`;
+    <div class="sc1ha">${puo(id, F_ADD) && ok(id) ? `<button class="btn pri" data-act="scNuova">＋ ${t("Nuova", "New")}</button>` : ""}${isAdmin() ? `<button class="btn sm" data-act="scCfg" title="${t("Impostazioni delle scadenze", "Deadline settings")}" aria-label="${t("Impostazioni delle scadenze", "Deadline settings")}">⚙️</button>` : ""}</div></div>`;
 }
 /* riepilogo: totale del mese per categoria */
 function mese() {
@@ -238,7 +245,7 @@ function mese() {
     ${L.length ? `<div class="sc1cb">${CAT().filter(c => per[c[0]]).sort((a, b) => per[b[0]] - per[a[0]]).map(c => `<div data-c="${c[0]}"><span>${c[1]} ${esc(c[2])}</span><b>${esc(soldi(per[c[0]]))}</b><i><u style="width:${Math.max(4, per[c[0]] / max * 100)}%"></u></i></div>`).join("")}</div>` : ""}</section>`;
 }
 function promemoriaCard() {
-  if (isAdmin()) serviziNotify();   // preparo l'elenco dei telefoni per 🔔
+  if (isAdmin()) { serviziNotify(); controllaTelefoni(); }   // preparo l'elenco dei telefoni per 🔔; l'automazione segue i telefoni nuovi
   const p = C().promemoria, on = !!p, chi = p ? (p.persone || []).filter(x => S[x]).map(x => nm(x)).concat((p.altri || []).map(nomeServizio)) : [];
   return `<section class="card sc1p"><div class="ch"><h2>🔔 ${t("Promemoria", "Reminders")}</h2>${isAdmin() ? `<button class="btn sm" data-act="scProm">${on ? "✏️" : t("Attiva", "Turn on")}</button>` : ""}</div>
     ${on ? `<div class="sc1ps"><b>${esc(anticipiTesto(p.anticipi))}</b><span>${t("alle", "at")} ${esc(p.ora || "09:00")} · ${esc(chi.join(", ") || "—")}</span></div>
@@ -294,16 +301,25 @@ async function creaLista() {
 
 /* ---------- ⚙️ quale lista (amministratori) ---------- */
 function schedaCfg() {
-  const L = allEnts("todo", id => puo(id, F_ADD)), cur = lista();
+  const L = allEnts("todo", id => puo(id, F_ADD)), cur = lista(), T0 = cur ? tutte() : null;
   const PIATT = { local_todo: "Local To-do", google_tasks: "Google Tasks", todoist: "Todoist", caldav: "CalDAV", microsoft_todo: "Microsoft To Do", shopping_list: t("Lista della spesa", "Shopping list") };
-  return `<div class="sh-head"><div><h3>⚙️ ${t("Lista delle scadenze", "Deadlines list")}</h3><div class="small muted">${t("Vale per tutta la casa.", "For the whole home.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
+  return `<div class="sh-head"><div><h3>⚙️ ${t("Scadenze", "Deadlines")}</h3><div class="small muted">${t("Vale per tutta la casa.", "For the whole home.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
+    <div class="fl1">📋 ${t("Lista delle scadenze", "Deadlines list")}</div>
     <div class="stack">${L.map(id => { const ad = adatta(id), dsc = puo(id, F_DESC);
       return `<button class="li ${cur === id ? "sel1" : ""} ${ad ? "" : "dis"}" data-act="scLista" data-id="${id}" ${ad ? "" : "disabled"}><span class="ic">${cur === id ? "✓" : "📋"}</span><div class="tx"><b>${esc(nm(id))}</b>
         <span>${esc([PIATT[REG[id]?.platform] || REG[id]?.platform || id, !ad ? t("non accetta le date", "doesn't take dates") : !dsc ? t("senza descrizione: niente categoria, ripetizione e importo", "no description: no category, repetition or amount") : ""].filter(Boolean).join(" · "))}</span></div></button>`; }).join("")}</div>
     <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn" data-act="scCrea" ${CR.inCorso ? "disabled" : ""}>＋ ${t("Crea una lista nuova «Scadenze»", "Create a new «Deadlines» list")}</button></div>
     ${CR.errore ? istruzioni() : ""}
-    <p class="small muted" style="margin-top:12px">${t("Consigliata una lista «Local To-do»: tiene la data, l'ora e la descrizione. La lista scelta non compare più nella pagina Liste.", "A «Local To-do» list is best: it keeps date, time and description. The chosen list no longer shows on the Lists page.")}</p>`;
+    <p class="small muted" style="margin-top:12px">${t("Consigliata una lista «Local To-do»: tiene la data, l'ora e la descrizione. La lista scelta non compare più nella pagina Liste.", "A «Local To-do» list is best: it keeps date, time and description. The chosen list no longer shows on the Lists page.")}</p>
+    ${cur ? `<div class="fl1">🏠 ${t("Nella Home", "On Home")}</div>
+    <label class="fld1"><span>${t("Scadenze nella scheda della Home", "Deadlines on the Home card")}</span><select data-chg="scInHome">${[1, 2, 3, 4, 5, 6, 8, 10].map(n => `<option value="${n}" ${inHome() === n ? "selected" : ""}>${n}</option>`).join("")}</select>
+      <small>${t("Le prossime, in ordine di data. Le altre restano qui: in Home compare «e altre…».", "The next ones, by date. The others stay here: Home shows «and more…».")}</small></label>
+    <label class="fld1"><span>${t("Negli Avvisi della Home", "In the Home alerts")}</span><select data-chg="scAvvisi">${[["no", t("Mai", "Never")], [0, t("Scadute e di oggi", "Overdue and today's")], [1, t("Anche quelle di domani", "Tomorrow's too")], [3, t("Anche quelle entro 3 giorni", "Within 3 days too")], [7, t("Anche quelle entro 7 giorni", "Within 7 days too")]]
+      .map(([v, n]) => `<option value="${v}" ${(entroAvvisi() ?? "no") === v ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>
+      <small>${t("Gli Avvisi in cima alla Home. I promemoria sul telefono si regolano a parte, con 🔔.", "The alerts at the top of Home. Phone reminders are set separately, with 🔔.")}${T0 ? ` <b>${t(`Adesso: ${daAvvisare().length} negli Avvisi.`, `Now: ${daAvvisare().length} in the alerts.`)}</b>` : ""}</small></label>` : ""}`;
 }
+CHG.scInHome = el => { const n = +el.value; cambia(l => { l.scadenze = { ...(l.scadenze || {}) }; if (n === IN_HOME) delete l.scadenze.inHome; else l.scadenze.inHome = n; }, "⏰ " + t("In Home: ", "On Home: ") + n); };
+CHG.scAvvisi = el => { const v = el.value; cambia(l => { l.scadenze = { ...(l.scadenze || {}) }; if (v === "0") delete l.scadenze.avvisi; else l.scadenze.avvisi = v === "no" ? "no" : +v; }, "💾 " + t("Salvato", "Saved")); };
 
 /* ---------- ✏️ una scadenza: nuova o da cambiare ---------- */
 let E = null;
@@ -420,8 +436,10 @@ function schedaProm() {
     <div class="fl1">${t("A chi", "To")}</div><div class="cks1">${P.map(p => { const T = telefoniDi(p); return ck(NB.persone.includes(p) && T.length, "scnP", p, esc(nm(p)), T.length ? "📱 " + esc(T.map(nomeServizio).join(", ")) : t("nessun telefono con l'app di Home Assistant", "no phone with the Home Assistant app"), !T.length); }).join("")}
       ${altri.map(s => ck(NB.altri.includes(s), "scnA", s, "📱 " + esc(nomeServizio(s)), t("telefono senza persona", "phone without a person"))).join("")}</div>
     ${!conTel.length && !altri.length ? `<div class="small muted" style="margin-top:6px">${t("Nessun telefono: installa l'app Home Assistant sul telefono e collegala a una persona.", "No phone: install the Home Assistant app on the phone and link it to a person.")}</div>` : ""}
-    <div class="fl1">${t("Quando", "When")}</div><div class="vr1">${ANTICIPI().map(([a, n]) => `<button class="${NB.anticipi.includes(a) ? "on" : ""}" data-act="scnT" data-v="${a}" aria-pressed="${NB.anticipi.includes(a)}">${n}</button>`).join("")}</div>
-    <p class="small muted" style="margin:6px 0 0">${t("Puoi sceglierne più di uno.", "You can pick more than one.")}</p>
+    <div class="fl1">${t("Quando", "When")}</div><div class="vr1">${ANTICIPI().map(([a, n]) => `<button class="${NB.anticipi.includes(a) ? "on" : ""}" data-act="scnT" data-v="${a}" aria-pressed="${NB.anticipi.includes(a)}">${n}</button>`).join("")}
+      ${NB.anticipi.filter(a => !ANTICIPI().some(x => x[0] === a)).sort((a, b) => a - b).map(a => `<button class="on" data-act="scnT" data-v="${a}" aria-pressed="true" title="${t("Tocca per toglierlo", "Tap to remove")}">${t(`${a} giorni prima`, `${a} days before`)} ✕</button>`).join("")}</div>
+    <div class="row sc1nm" style="gap:10px;margin-top:10px;flex-wrap:wrap">${t("Altro:", "Other:")} <input id="sc1an" class="fkn1" type="number" min="1" max="365" step="1" inputmode="numeric" placeholder="14" aria-label="${t("Giorni prima", "Days before")}"> ${t("giorni prima", "days before")} <button class="btn sm" data-act="scnAgg">＋ ${t("Aggiungi", "Add")}</button></div>
+    <p class="small muted" style="margin:6px 0 0">${t("Puoi sceglierne più di uno, anche con un anticipo tuo (per esempio 14 o 30 giorni prima del bollo o del passaporto).", "You can pick more than one, also with your own lead time (for example 14 or 30 days before the road tax or the passport).")}</p>
     <div class="fl1">${t("A che ora", "At what time")}</div><input class="fkn1 dt" type="time" value="${esc(NB.ora)}" data-chg="scnO" aria-label="${t("Ora del promemoria", "Reminder time")}">
     <p class="small muted" style="margin:10px 0 0">${puo(lista(), F_DESC) ? t("Nella notifica: «✓ Fatto» (quelle che si ripetono passano alla prossima data) e «⏰ Ricordamelo domani».", "In the notification: «✓ Done» (repeating ones move to the next date) and «⏰ Remind me tomorrow».") : t("Nella notifica: «✓ Fatto». «Ricordamelo domani» serve una lista con la descrizione.", "In the notification: «✓ Done». «Remind me tomorrow» needs a list with a description.")}</p>
     <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn pri" data-act="scnSalva">💾 ${t("Salva in Home Assistant", "Save to Home Assistant")}</button>${C().promemoria ? `<button class="btn bad" data-act="scnOff">${t("Spegni i promemoria", "Turn off reminders")}</button>` : ""}</div>`;
@@ -493,15 +511,29 @@ async function aggiornaAutomazione(p = C().promemoria, id = lista()) {
   const cfg = automazione(p, id); if (!serviziDi(p).length) return false;
   await api("POST", "/api/config/automation/config/" + AUT, cfg); return true;
 }
+/* i telefoni delle persone scelte possono cambiare (telefono nuovo, app reinstallata): una volta per sessione guardo a quali telefoni
+   scrive l'automazione e, se non sono più quelli delle persone scelte, la riscrivo da sola. Se l'hanno tolta da Home Assistant, niente. */
+let telControllati = false;
+async function controllaTelefoni() {
+  const p = C().promemoria, id = lista();
+  if (telControllati || !isAdmin() || !p || !id || !serviziNotify().length) return;
+  telControllati = true;
+  try {
+    const ora = new Set(JSON.stringify(await api("GET", "/api/config/automation/config/" + AUT) || {}).match(/notify\.mobile_app_\w+/g) || []);
+    const giusti = serviziDi(p).map(s => "notify." + s);
+    if (!giusti.length || (giusti.length === ora.size && giusti.every(s => ora.has(s)))) return;
+    if (await aggiornaAutomazione(p, id)) toast("🔔 " + t("Promemoria aggiornati: i telefoni sono cambiati", "Reminders updated: the phones changed"));
+  } catch { /* in silenzio */ }
+}
 
-/* ---------- Home: le prossime 3 ---------- */
+/* ---------- Home: le prossime 3 (o quante scelte in ⚙️) ---------- */
 function homeCard() {
   const id = lista(); if (!id) return "";
-  const T = tutte(), A = ordina(daFare().filter(x => x.d)), sc = A.filter(x => gg(x) < 0).length;
-  const L = A.slice(0, 3);
+  const T = tutte(), A = ordina(daFare().filter(x => x.d)), sc = A.filter(x => gg(x) < 0).length, N = inHome();
+  const L = A.slice(0, N);
   return `<section class="card sc1hc"><div class="ch"><h2>⏰ ${t("Scadenze", "Deadlines")}${sc ? ` <span class="tag bad">${sc} ${t(sc === 1 ? "scaduta" : "scadute", "overdue")}</span>` : ""}</h2><a data-act="go" data-id="scadenze">${t("Tutte", "All")} ›</a></div>
     ${!ok(id) ? `<div class="small muted">${t("Lista non raggiungibile.", "List unavailable.")}</div>` : !T ? `<div class="small muted">${t("Carico…", "Loading…")}</div>`
-      : L.length ? `<div class="sc1l">${L.map(x => riga(x, { piccola: true })).join("")}</div>${A.length > 3 ? `<div class="small muted sc1alt">${t(`e altre ${A.length - 3}`, `and ${A.length - 3} more`)}</div>` : ""}`
+      : L.length ? `<div class="sc1l">${L.map(x => riga(x, { piccola: true })).join("")}</div>${A.length > N ? `<div class="small muted sc1alt">${t(`e altre ${A.length - N}`, `and ${A.length - N} more`)}</div>` : ""}`
       : `<div class="ls1ok"><span>✓</span><b>${t("Niente in scadenza", "Nothing due")}</b></div>`}</section>`;
 }
 HOME_EXTRA.scadenze = { title: () => t("Scadenze", "Deadlines"), render: homeCard, show: () => !!lista() && paginaAttiva() };
@@ -509,7 +541,7 @@ HOME_EXTRA.scadenze = { title: () => t("Scadenze", "Deadlines"), render: homeCar
 /* ---------- Avvisi della Home: scadute e di oggi ---------- */
 VISTE.scadenzeAvvisi = () => {
   if (!lista() || !PAGES.scadenze?.show() || !paginaAttiva() || utenteCfg().pages?.scadenze === false) return [];
-  return ordina(scaduteOggi()).map(x => { const q = quando(x), c = cat(x.cat);
+  return ordina(daAvvisare()).map(x => { const q = quando(x), c = cat(x.cat);
     return { k: "sc:" + x.uid + ":" + (x.d ? iso(x.d) + x.ora : ""), ic: c[1], b: esc(x.titolo), s: esc(q.testo + (x.importo != null ? " · " + soldi(x.importo) : "")), go: "scadenze", cls: gg(x) < 0 ? "alert" : "" }; });
 };
 
@@ -555,6 +587,10 @@ Object.assign(ACT, {
   scnP: el => { const k = el.dataset.k, i = NB.persone.indexOf(k); i < 0 ? NB.persone.push(k) : NB.persone.splice(i, 1); render(); },
   scnA: el => { const k = el.dataset.k, i = NB.altri.indexOf(k); i < 0 ? NB.altri.push(k) : NB.altri.splice(i, 1); render(); },
   scnT: el => { const a = +el.dataset.v, i = NB.anticipi.indexOf(a); i < 0 ? NB.anticipi.push(a) : NB.anticipi.splice(i, 1); render(); },
+  /* anticipo a scelta: 1-365 giorni prima */
+  scnAgg: () => { const f = document.getElementById("sc1an"), a = Math.round(+String(f?.value || "").replace(",", "."));
+    if (!(a >= 1 && a <= 365)) return toast(t("Scrivi quanti giorni prima, da 1 a 365", "Enter how many days before, from 1 to 365"), true);
+    if (!NB.anticipi.includes(a)) NB.anticipi.push(a); if (f) f.value = ""; render(); },
   scnSalva: async () => {
     const id = lista(); if (!id || !NB) return;
     NB.persone = NB.persone.filter(p => telefoniDi(p).length);

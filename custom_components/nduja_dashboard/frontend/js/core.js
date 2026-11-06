@@ -159,8 +159,10 @@ export function lettoreDi(rid) {
   const dev = REG[rid]?.device, M = Object.keys(S).filter(x => x.startsWith("media_player."));
   return (dev && M.find(x => REG[x]?.device === dev)) || M.find(x => nmHA(x).toLowerCase() === nmHA(rid).toLowerCase()) || null;
 }
-/** è uno schermo (TV, decoder, box, console) e non una cassa? */
-export function isTV(id) {
+/** è uno schermo (TV, decoder, box, console) e non una cassa? Prima la correzione dell'amministratore (LAYOUT.mdTv, pagina Media → ✏️) */
+export const isTV = id => id.startsWith("media_player.") && (LAYOUT.mdTv?.[id] != null ? !!LAYOUT.mdTv[id] : tvAuto(id));
+/** riconoscimento automatico: classe, integrazione, telecomando, nome o modello */
+export function tvAuto(id) {
   if (!id.startsWith("media_player.")) return false;
   const dc = attr(id, "device_class"); if (dc === "tv" || dc === "receiver") return true;
   if (dc === "speaker") return false;
@@ -480,7 +482,7 @@ function renderNav() {
 export const FISSI = [];
 /* pillole in alto: meteo, persone, luci accese, energia (se configurata) */
 export const STRIP = [];
-/** schede della Home aggiunte dalle altre pagine: { chiave: { title(), render(), show() } } (compaiono solo se show() è vero) */
+/** schede della Home aggiunte dalle altre pagine: { chiave: { title(), render(), show(), cfg? } } (compaiono solo se show() è vero; cfg() facoltativo mette ⚙️ sulla scheda in ✏️ Modifica) */
 export const HOME_EXTRA = {};
 function renderStrip() {
   const w = weatherEnt(), home = ents("person").filter(p => S[p].state === "home").length, L = lightsOn().length;

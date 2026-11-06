@@ -87,13 +87,22 @@ const chipD = (id, a, f) => { const tp = tappMini(id); return `<span class="mpd2
 const rigaDev = (a, f) => { const D = dispositivi(a, f), E = AREAS[a] ? elettroMappa(a) : "";
   return D.length || E || UI.edit ? `<div class="mpd1">${E}${D.map(id => chipD(id, a, f)).join("")}${UI.edit ? `<button class="mpd2 add" data-act="mpDevAdd" data-a="${a}" data-f="${f}">＋</button>` : ""}</div>` : ""; };
 
+/* ⚙️ cosa mostrare nelle stanze (tutta la casa, LAYOUT.mapShow: si salvano solo quelle spente); i pericoli (fumo, gas, acqua) si vedono sempre */
+const MOSTRA = () => [["temp", "🌡️", t("Temperatura e umidità", "Temperature and humidity"), t("dai sensori scelti in ✏️ della stanza (Home)", "from the sensors chosen in the room's ✏️ (Home)")],
+  ["open", "🪟", t("Porte e finestre aperte", "Open doors and windows"), t("sensori di apertura della stanza", "the room's opening sensors")],
+  ["mov", "🏃", t("Movimento e presenza", "Motion and presence"), t("spegnilo se un sensore di presenza resta sempre acceso", "turn it off if a presence sensor is always on")],
+  ["clima", "🔥", t("Clima acceso", "Climate on"), t("riscaldamento o condizionatore della stanza", "the room's heating or air conditioning")]];
+const vedo = k => LAYOUT.mapShow?.[k] !== false;
 function stanza(a, p, f) {
   if (!AREAS[a]) return pezzi(p).map((r, i) => `<div class="mpr1 cust ${i ? "pz" : ""}" style="grid-column:${r.x + 1} / span ${r.w};grid-row:${r.y + 1} / span ${r.h}">${i === 0 ? `<button class="mpb1" ${isAdmin() ? `data-act="mpCustom" data-id="${a}" data-f="${f}"` : ""}><b>${esc(nomeStanza(a, f))}</b></button>${rigaDev(a, f)}` : `<span class="mpb1"></span>`}${UI.edit ? comandi(a, i, f) : ""}</div>`).join("");
-  const T = roomTemp(a), H = roomHum(a), L = lightsOn(a).length, nL = luciContate(a).length;
-  const O = inArea(a, "binary_sensor", id => ["door", "window", "opening", "garage_door"].includes(deviceClass(id)) && isOn(id)).length;
-  const mov = inArea(a, "binary_sensor", id => ["motion", "occupancy", "presence"].includes(deviceClass(id)) && isOn(id)).length;
-  const C = inArea(a, "climate").find(id => ok(id) && S[id].state !== "off"), freddo = C && ["cool", "dry"].includes(S[C].state);
-  const pericolo = inArea(a, "binary_sensor", id => ["smoke", "gas", "moisture", "carbon_monoxide"].includes(deviceClass(id)) && isOn(id)).length;
+  const T = vedo("temp") ? roomTemp(a) : null, H = vedo("temp") ? roomHum(a) : null, L = lightsOn(a).length, nL = luciContate(a).length;
+  const O = vedo("open") ? inArea(a, "binary_sensor", id => ["door", "window", "opening", "garage_door"].includes(deviceClass(id)) && isOn(id)).length : 0;
+  const mov = vedo("mov") ? inArea(a, "binary_sensor", id => ["motion", "occupancy", "presence"].includes(deviceClass(id)) && isOn(id)).length : 0;
+  const C = vedo("clima") ? inArea(a, "climate").find(id => ok(id) && S[id].state !== "off") : null, freddo = C && ["cool", "dry"].includes(S[C].state);
+  /* pericoli: per tipo, corretti dalle scelte della pagina Sicurezza (LAYOUT.sicurezza: noPericoli tolti, pericoli aggiunti) */
+  const noP = new Set(LAYOUT.sicurezza?.noPericoli || []);
+  const pericolo = new Set([...inArea(a, "binary_sensor", id => ["smoke", "gas", "moisture", "carbon_monoxide"].includes(deviceClass(id))),
+    ...(LAYOUT.sicurezza?.pericoli || []).filter(id => S[id] && areaOf(id) === a)].filter(id => !noP.has(id) && isOn(id))).size;
   const cls = `mpr1 ${L ? "lit" : ""} ${O ? "open" : ""} ${mov ? "mov" : ""} ${pericolo ? "dang" : ""}`;
   return pezzi(p).map((r, i) => `<div class="${cls} ${i ? "pz" : ""}" style="grid-column:${r.x + 1} / span ${r.w};grid-row:${r.y + 1} / span ${r.h}">
     ${i === 0 ? `<button class="mpb1" data-act="room" data-id="${a}"><b>${esc(nomeStanza(a, f))}</b>
@@ -110,7 +119,7 @@ function pagina() {
   const righe = Math.max(4, ...Object.values(pos).flatMap(p => pezzi(p).map(r => r.y + r.h))), img = LAYOUT.map?.[cur.f]?.img;
   return `<div class="g"><section class="card mp1">
     <div class="ch"><div class="row" style="gap:8px;flex-wrap:wrap"><div class="seg">${["2D", "3D"].map(v => `<button class="${(sGet("map3") === "1") === (v === "3D") ? "act" : ""}" data-act="m3Toggle" data-v="${v}">${v}</button>`).join("")}</div><div class="seg">${P.map(p => `<button class="${p.f === cur.f ? "act" : ""}" data-act="mpFloor" data-v="${p.f}">${esc(p.nome)}</button>`).join("")}</div></div>
-      ${isAdmin() && UI.edit ? `<span class="row" style="gap:6px"><div class="seg">${[["auto", "✨ " + t("Dispositivi automatici", "Auto devices")], ["manual", "✋ " + t("Solo scelti", "Chosen only")]].map(([k, n]) => `<button class="${(mp(cur.f).devMode || "auto") === k ? "act" : ""}" data-act="mpDevMode" data-v="${k}" data-f="${cur.f}">${n}</button>`).join("")}</div><button class="btn sm pri" data-act="mpNew" data-v="${cur.f}">＋ ${t("Stanza", "Room")}</button><button class="btn sm" data-act="mpImg" data-v="${cur.f}">🖼️ ${t("Piantina", "Floor plan")}</button><button class="btn sm" data-act="mpReset" data-v="${cur.f}">↺ ${t("Disposizione automatica", "Auto layout")}</button></span>` : ""}</div>
+      ${isAdmin() && UI.edit ? `<span class="row" style="gap:6px"><div class="seg">${[["auto", "✨ " + t("Dispositivi automatici", "Auto devices")], ["manual", "✋ " + t("Solo scelti", "Chosen only")]].map(([k, n]) => `<button class="${(mp(cur.f).devMode || "auto") === k ? "act" : ""}" data-act="mpDevMode" data-v="${k}" data-f="${cur.f}">${n}</button>`).join("")}</div><button class="btn sm pri" data-act="mpNew" data-v="${cur.f}">＋ ${t("Stanza", "Room")}</button><button class="btn sm" data-act="mpImg" data-v="${cur.f}">🖼️ ${t("Piantina", "Floor plan")}</button><button class="btn sm" data-act="mpReset" data-v="${cur.f}">↺ ${t("Disposizione automatica", "Auto layout")}</button><button class="btn sm" data-act="mpCfg" title="${t("Cosa mostrare", "What to show")}" aria-label="${t("Cosa mostrare", "What to show")}">⚙️</button></span>` : ""}</div>
     ${sGet("map3") === "1" && !UI.edit ? vista3d(cur, pos, righe) : `<div class="mpw1"><div class="mpg1 ${UI.edit ? "edit" : ""}" style="grid-template-rows:repeat(${righe},64px)${img ? `;background-image:url('${esc(img)}')` : ""}">${cur.stanze.map(a => stanza(a, pos[a], cur.f)).join("")}</div>
       <svg class="mpm1" viewBox="0 0 ${COL} ${righe}" preserveAspectRatio="none" aria-hidden="true"><path d="${muri(pos, cur.stanze)}"/></svg></div>`}
     ${UI.edit && cur.nascoste.length ? `<div class="fl1">${t("Tolte dalla mappa", "Removed from the map")}</div><div class="vr1">${cur.nascoste.map(a => `<button data-act="mpShow" data-id="${a}" data-f="${cur.f}">👁 ${esc(nomeStanza(a, cur.f))}</button>`).join("")}</div>` : ""}
@@ -123,7 +132,7 @@ function pagina() {
 const V3 = { rz: +(sGet("map3rz") || -30), rx: +(sGet("map3rx") || 55) };
 function vista3d(cur, pos, righe) {
   const H = 64, Wp = 100 / COL, Hp = 100 / righe, wall = 46;
-  const pav = cur.stanze.flatMap(a => { const L = AREAS[a] ? lightsOn(a).length : 0, O = AREAS[a] ? inArea(a, "binary_sensor", id => ["door", "window", "opening", "garage_door"].includes(deviceClass(id)) && isOn(id)).length : 0;
+  const pav = cur.stanze.flatMap(a => { const L = AREAS[a] ? lightsOn(a).length : 0, O = AREAS[a] && vedo("open") ? inArea(a, "binary_sensor", id => ["door", "window", "opening", "garage_door"].includes(deviceClass(id)) && isOn(id)).length : 0;
     return pezzi(pos[a]).map(r => `<div class="m3f ${L ? "lit" : ""} ${O ? "open" : ""} ${AREAS[a] ? "" : "cust"}" style="left:${r.x * Wp}%;top:${r.y * Hp}%;width:${r.w * Wp}%;height:${r.h * Hp}%"></div>`); }).join("");
   const seg = [];
   for (const a of cur.stanze) {
@@ -135,7 +144,7 @@ function vista3d(cur, pos, righe) {
   const visti = new Set(), muri3 = seg.filter(s => { const k = s.join(); if (visti.has(k)) return false; visti.add(k); return true; }).map(([o, x, y]) => o === "h"
     ? `<div class="m3w h" style="left:${x * Wp}%;top:${y * Hp}%;width:${Wp}%;height:${wall}px"></div>`
     : `<div class="m3w v" style="left:${x * Wp}%;top:${y * Hp}%;height:${Hp}%;width:${wall}px"></div>`).join("");
-  const etichette = cur.stanze.map(a => { const r = pos[a], T = AREAS[a] ? roomTemp(a) : null, L = AREAS[a] ? lightsOn(a).length : 0;
+  const etichette = cur.stanze.map(a => { const r = pos[a], T = AREAS[a] && vedo("temp") ? roomTemp(a) : null, L = AREAS[a] ? lightsOn(a).length : 0;
     return `<button class="m3l" data-act="${AREAS[a] ? "room" : ""}" data-id="${a}" style="left:${(r.x + r.w / 2) * Wp}%;top:${(r.y + r.h / 2) * Hp}%"><b>${esc(nomeStanza(a, cur.f))}</b>${T != null ? `<small>${fnum(T)}°${L ? " · 💡" + L : ""}</small>` : L ? `<small>💡${L}</small>` : ""}</button>`; }).join("");
   return `<div class="m3c" id="m3c"><div class="m3p" style="height:${righe * H}px;transform:scale(.82) rotateX(${V3.rx}deg) rotateZ(${V3.rz}deg)">${pav}${muri3}
     <div class="m3lab" style="--rz:${-V3.rz}deg;--rx:${-V3.rx}deg">${etichette}</div></div></div>
@@ -207,6 +216,12 @@ function nomeSheet(f, id) {
     <label class="fld1"><span>${t("Nome", "Name")}</span><input id="mp1n" type="text" value="${esc(c?.name || "")}" placeholder="${t("Ripostiglio, Scale, Terrazzo…", "Closet, Stairs, Terrace…")}"></label>
     <button class="btn pri" data-act="mpNameSave" data-f="${f}" data-id="${id || ""}" style="margin-top:12px">💾 ${t("Salva", "Save")}</button>`);
 }
+const cfgMappa = () => `<div class="sh-head"><div><h3>⚙️ ${t("Cosa mostrare nelle stanze", "What to show in the rooms")}</h3><div class="small muted">${t("Vale per tutti i piani e per tutta la casa, in 2D e 3D.", "It applies to every floor and the whole home, in 2D and 3D.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
+    <div class="stack">${MOSTRA().map(([k, ic, n, s]) => `<label class="li"><span class="ic">${ic}</span><div class="tx"><b>${n}</b><span>${s}</span></div><input type="checkbox" data-chg="mpShowK" data-k="${k}" ${vedo(k) ? "checked" : ""}></label>`).join("")}</div>
+    <p class="small muted" style="margin:10px 0 0">${t("Le luci (💡), i dispositivi della stanza e i pericoli (🚨 fumo, gas, acqua) si vedono sempre: i dispositivi si scelgono con ＋ e ✕ su ogni stanza, i sensori di pericolo nella pagina Sicurezza.", "Lights (💡), the room's devices and hazards (🚨 smoke, gas, water) are always shown: devices are chosen with ＋ and ✕ on each room, hazard sensors on the Security page.")}</p>`;
+ACT.mpCfg = () => openSheet(cfgMappa);
+CHG.mpShowK = el => { const k = el.dataset.k, on = el.checked;
+  cambia(l => { const m = { ...(l.mapShow || {}) }; if (on) delete m[k]; else m[k] = false; if (Object.keys(m).length) l.mapShow = m; else delete l.mapShow; }, (on ? "👁 " : "🙈 ") + (MOSTRA().find(x => x[0] === k)?.[2] || "")); };
 CHG.mpImgSet = el => { const f = el.dataset.v, v = el.value.trim(); cambia(l => { l.map = { ...(l.map || {}) }; l.map[f] = { ...(l.map[f] || {}) }; if (v) l.map[f].img = v; else delete l.map[f].img; }, "🖼️ " + t("Salvato", "Saved")); };
 
 page("mappa", { title: t("Mappa", "Map"), short: t("Mappa", "Map"), icon: "🗺️", order: 5, editable: true, show: () => Object.keys(AREAS).length > 0 || isAdmin(), render: pagina });

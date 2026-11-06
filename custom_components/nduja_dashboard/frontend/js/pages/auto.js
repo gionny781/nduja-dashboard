@@ -13,6 +13,7 @@ const NON_AUTO = /^(mobile_app|ios|companion|ble_monitor|bluetooth|zha|mqtt_room
 const testo = id => (id + " " + (S[id]?.attributes?.friendly_name || "")).toLowerCase();
 const re = (id, r) => r.test(testo(id));
 const pct = id => unit(id) === "%";
+const RIC_AVVIA = /start_charg|charge_start|avvia_ricarica|charging_start/, RIC_FERMA = /stop_charg|charge_stop|ferma_ricarica|charging_stop/;
 const lunghezza = id => /^(km|mi|m)$/i.test(unit(id));
 
 /* ---------- riconoscimento delle auto ---------- */
@@ -36,6 +37,9 @@ function rilevati(dev) {
     tempOut: trova(sens, x => deviceClass(x) === "temperature" && re(x, /outside|exterior|esterno|outdoor|aussen/)),
     gomme: sens.filter(x => (deviceClass(x) === "pressure" || /^(bar|psi|kpa)$/i.test(unit(x))) && re(x, /tire|tyre|pneum|reifen|tpms/)),
     pos: trova(E, x => x.startsWith("device_tracker.")),
+    /* comando della ricarica: l'interruttore, altrimenti il pulsante «avvia» (o solo «ferma») */
+    ricCmd: trova(E, x => x.startsWith("switch.") && REG[x]?.cat == null && re(x, /charg|ricaric/) && !re(x, /port|sportell|schedule|programm|scheduled/))
+      || trova(E, x => x.startsWith("button.") && REG[x]?.cat == null && re(x, RIC_AVVIA)) || trova(E, x => x.startsWith("button.") && REG[x]?.cat == null && re(x, RIC_FERMA)),
     foto: trova(E, x => x.startsWith("image.") && ok(x)) || trova(E, x => !x.startsWith("camera.") && attr(x, "entity_picture") && !/\/api\/(camera_proxy|image_proxy)\/(?!image\.)/.test(attr(x, "entity_picture"))),
   };
 }
@@ -54,6 +58,7 @@ const RUOLI = () => [
   ["tempIn", t("Temperatura abitacolo", "Cabin temperature"), x => isS(x, "sensor") && (deviceClass(x) === "temperature" || /°/.test(unit(x)))],
   ["tempOut", t("Temperatura esterna", "Outside temperature"), x => isS(x, "sensor") && (deviceClass(x) === "temperature" || /°/.test(unit(x)))],
   ["pos", t("Posizione", "Location"), x => isS(x, "device_tracker")],
+  ["ricCmd", t("Comando della ricarica", "Charging control"), x => isS(x, "switch") || isS(x, "button")],
 ];
 /** sensori dell'auto: quelli trovati da soli, corretti da quelli scelti in ✏️ («none» = nessuno) */
 function ruoli(dev) {
@@ -146,9 +151,11 @@ const valU = (id, d = 0) => id && ok(id) ? `${fnum(val(id) ?? S[id].state, d)}<s
 function comandi(r, d, tutti = false) {
   const E = r.E, dom = d => E.filter(x => x.startsWith(d + ".") && S[x] && REG[x]?.cat == null);
   const usati = new Set([r.limite, r.ampere].filter(Boolean));
-  const ricSw = dom("switch").find(x => re(x, /charg|ricaric/) && !re(x, /port|sportell|schedule|programm|scheduled/)) || null;
-  const ricStart = dom("button").find(x => re(x, /start_charg|charge_start|avvia_ricarica|charging_start/)), ricStop = dom("button").find(x => re(x, /stop_charg|charge_stop|ferma_ricarica|charging_stop/));
-  [ricSw, ricStart, ricStop].forEach(x => x && usati.add(x));
+  /* ricarica: il comando trovato da solo o scelto in ✏️ (interruttore, oppure pulsante «avvia» con il suo «ferma»); «nessuno» = niente pulsante */
+  const cmd = r.ricCmd || null, avviaB = dom("button").find(x => re(x, RIC_AVVIA)), fermaB = dom("button").find(x => re(x, RIC_FERMA));
+  const ricSw = cmd && isS(cmd, "switch") ? cmd : null;
+  const ricStart = cmd && isS(cmd, "button") && !re(cmd, RIC_FERMA) ? cmd : null, ricStop = cmd && isS(cmd, "button") ? (re(cmd, RIC_FERMA) ? cmd : fermaB || null) : null;
+  (cmd ? [cmd, avviaB, fermaB] : []).forEach(x => x && usati.add(x));
   const serr = dom("lock"); serr.forEach(x => usati.add(x));
   const clima = dom("climate")[0] || null; clima && usati.add(clima);
   const cop = dom("cover"); cop.forEach(x => usati.add(x));
@@ -170,7 +177,7 @@ function batteria(r, d) {
   </div>`;
 }
 function scheda(d) {
-  const r = ruoli(d), c = comandi(r, d), pos = dove(r), ric = inRicarica(r), sr = statoRicarica(r);
+  const r = ruoli(d), c = comandi(r, d), pos = dove(r), ric = inRicarica(r), sr = statoRicarica(r), G = conf(d).noGomme ? [] : r.gomme;
   const serrata = c.serr.length ? c.serr.every(x => S[x].state === "locked") : null;
   const climaOn = c.clima && ok(c.clima) && S[c.clima].state !== "off";
   const chip = (ic, txt) => `<span class="vb1">${ic} ${txt}</span>`;
@@ -208,8 +215,8 @@ function scheda(d) {
           <input type="range" min="${attr(x, "min") ?? 0}" max="${attr(x, "max") ?? 100}" step="${attr(x, "step") ?? 1}" value="${val(x)}" data-chg="carNum" data-id="${x}"></label>`).join("")}
       </div>
     </div>
-    ${info.length || r.gomme.length ? `<div class="car-i">${info.map(([k, v]) => `<div><small>${k}</small><b>${v}</b></div>`).join("")}
-      ${r.gomme.length ? `<div class="car-gm"><small>${t("Gomme", "Tyres")}</small><b>${r.gomme.slice(0, 4).map(x => `<span title="${esc(shortName(x))}">${ok(x) ? fnum(val(x), 1) : "—"}</span>`).join("")}<small> ${esc(unit(r.gomme[0]))}</small></b></div>` : ""}</div>` : ""}
+    ${info.length || G.length ? `<div class="car-i">${info.map(([k, v]) => `<div><small>${k}</small><b>${v}</b></div>`).join("")}
+      ${G.length ? `<div class="car-gm"><small>${t("Gomme", "Tyres")}</small><b>${G.slice(0, 4).map(x => `<span title="${esc(shortName(x))}">${ok(x) ? fnum(val(x), 1) : "—"}</span>`).join("")}<small> ${esc(unit(G[0]))}</small></b></div>` : ""}</div>` : ""}
     ${c.btn.length || c.sw.length || c.sel.length || c.num.length ? `<details class="car-x"><summary>${t("Altri comandi", "More controls")} <small>${c.btn.length + c.sw.length + c.sel.length + c.num.length}</small></summary>
       <div class="car-xg">
         ${c.btn.map(x => `<button class="btn" data-act="carPress" data-id="${x}">▶ ${esc(nomeBreve(x, d))}</button>`).join("")}
@@ -234,7 +241,7 @@ function config(d) {
     <p class="small muted" style="margin-top:6px">${r.foto ? t("Uso la foto che dà l'integrazione dell'auto.", "I use the picture provided by the car integration.") : t("L'integrazione non ha una foto: la cerco su Wikipedia con marca e modello.", "The integration has no picture: I look it up on Wikipedia by make and model.")}</p>
     ${!["auto", "none"].includes(f) ? `<label class="fld1"><span>${t("Indirizzo della foto", "Photo link")}</span><input id="car1u" type="url" value="${esc(f === "url" ? "" : f)}" placeholder="https://…"></label>` : ""}
     ${f === "auto" && !r.foto ? `<label class="row" style="gap:8px;margin-top:8px"><input id="car1w" type="checkbox" ${c.noWeb ? "" : "checked"}> ${t("Cerca la foto su internet (Wikipedia)", "Look up the photo online (Wikipedia)")}</label>` : ""}
-    <details class="car-x" ${c.sensori ? "open" : ""}><summary>${t("Sensori", "Sensors")} <small>${Object.keys(c.sensori || {}).length ? t("corretti da te", "corrected by you") : t("trovati da soli", "found automatically")}</small></summary>
+    <details class="car-x" ${c.sensori ? "open" : ""}><summary>${t("Sensori e comandi", "Sensors and controls")} <small>${Object.keys(c.sensori || {}).length ? t("corretti da te", "corrected by you") : t("trovati da soli", "found automatically")}</small></summary>
     <p class="small muted" style="margin:8px 0 6px">${t("Li trovo da soli tra quelli dell'auto. Se uno è sbagliato o manca, toccalo e scegli quello giusto (anche di un'altra integrazione).", "I find them by myself among the car's entities. If one is wrong or missing, tap it and choose the right one (even from another integration).")}</p>
     <div class="stack">${RUOLI().map(([k, n]) => { const sc = c.sensori?.[k], id = r[k];
       return `<button class="li" data-act="carRuolo" data-id="${d}" data-k="${k}"><div class="tx"><b>${esc(n)}</b><span>${sc === "none" ? "🚫 " + t("nessuno", "none") : id ? (sc ? "✋ " : "✨ ") + esc(nm(id)) : "✨ " + t("non trovato", "not found")}</span></div>
@@ -242,7 +249,11 @@ function config(d) {
     <div class="fl1">${t("Batteria", "Battery")}</div>
     <label class="fld1"><span>${t("Batteria bassa sotto (%)", "Low battery below (%)")}</span><input id="car1b" type="number" min="1" max="99" value="${basso(d)}"></label>
     <p class="small muted" style="margin:4px 0 0">${t("Sotto questo valore la barra diventa rossa, sotto il doppio arancione.", "Below this value the bar turns red, below twice the value orange.")}${r.batt && val(r.batt) != null ? ` <b>${t("Adesso", "Now")}: ${Math.round(val(r.batt))}%</b>` : ""}</p>
-    <label class="row" style="gap:8px;margin-top:10px"><input id="car1p" type="checkbox" ${pillola(d) ? "checked" : ""}> 🚗 ${t("Mostra la batteria in alto, accanto al meteo", "Show the battery at the top, next to the weather")}</label>
+    <div class="fl1">${t("Cosa mostrare", "What to show")}</div>
+    <label class="row" style="gap:8px"><input id="car1p" type="checkbox" ${pillola(d) ? "checked" : ""}> 🚗 ${t("Mostra la batteria in alto, accanto al meteo", "Show the battery at the top, next to the weather")}</label>
+    <label class="row" style="gap:8px;margin-top:8px"><input id="car1h" type="checkbox" ${c.noHome ? "" : "checked"}> 🏠 ${t("Mostra nella scheda «Auto» della Home", "Show on the Home «Car» card")}</label>
+    ${rilevati(d).gomme.length ? `<label class="row" style="gap:8px;margin-top:8px"><input id="car1g" type="checkbox" ${c.noGomme ? "" : "checked"}> 🛞 ${t("Mostra la pressione delle gomme", "Show the tyre pressure")} <small class="muted">(${rilevati(d).gomme.slice(0, 4).map(x => ok(x) ? fnum(val(x), 1) : "—").join(" · ")} ${esc(unit(rilevati(d).gomme[0]))})</small></label>` : ""}
+    <p class="small muted" style="margin:6px 0 0">${t("Le altre righe (chilometri, temperature, potenza, posizione) si tolgono scegliendo «🚫 Nessuno» in «Sensori e comandi».", "Other rows (odometer, temperatures, power, location) are removed by choosing «🚫 None» in «Sensors and controls».")}</p>
     ${(() => { const T = comandi(r, d, true), L = [...T.btn, ...T.sw, ...T.sel, ...T.num]; if (!L.length) return "";
       return `<div class="fl1">${t("Altri comandi", "More controls")}</div><p class="small muted" style="margin:0 0 6px">${t("Togli il segno a quelli che non usi: spariscono da «Altri comandi».", "Untick the ones you don't use: they disappear from «More controls».")}</p>
         <div class="stack">${L.map(x => `<label class="row" style="gap:8px"><input type="checkbox" data-chg="carCmd" data-id="${d}" data-e="${x}" ${(c.nascondi || []).includes(x) ? "" : "checked"}> ${esc(nomeBreve(x, d))}</label>`).join("")}</div>`; })()}
@@ -262,7 +273,11 @@ Object.assign(ACT, {
     if (aperta && !sicuro(el, t("Tocca ancora per aprire", "Tap again to unlock"))) return;
     svc("lock", aperta ? "unlock" : "lock", {}, { entity_id: ids }).then(() => toast(aperta ? "🔓 " + t("Apro l'auto", "Unlocking") : "🔒 " + t("Chiudo l'auto", "Locking"))); },
   carClima: el => { const id = el.dataset.id; svc("climate", S[id].state === "off" ? "turn_on" : "turn_off", {}, { entity_id: id }); },
-  carTemp: el => { const id = el.dataset.id, v = (+attr(id, "temperature") || 20) + +el.dataset.v; svc("climate", "set_temperature", { temperature: Math.round(v * 2) / 2 }, { entity_id: id }); },
+  /* passo e limiti del clima dell'auto: quelli che dà l'integrazione (0,5° se non li dà) */
+  carTemp: el => { const id = el.dataset.id, p = +attr(id, "target_temp_step") || 0.5;
+    let v = Math.round(((+attr(id, "temperature") || 20) + Math.sign(+el.dataset.v) * p) / p) * p;
+    if (attr(id, "min_temp") != null) v = Math.max(+attr(id, "min_temp"), v); if (attr(id, "max_temp") != null) v = Math.min(+attr(id, "max_temp"), v);
+    svc("climate", "set_temperature", { temperature: Math.round(v * 10) / 10 }, { entity_id: id }); },
   carToggle: el => svc("switch", "toggle", {}, { entity_id: el.dataset.id }),
   carPress: el => svc("button", "press", {}, { entity_id: el.dataset.id }).then(() => toast("✓ " + shortName(el.dataset.id))),
   carCover: el => { const id = el.dataset.id, ap = S[id].state === "open";
@@ -272,9 +287,12 @@ Object.assign(ACT, {
   carFoto: el => { const d = el.dataset.id, v = el.dataset.v; carSet(d, c => { c.foto = v === "url" ? "url" : v; }); },
   carSave: el => { const d = el.dataset.id, n = document.getElementById("car1n")?.value.trim(), u = document.getElementById("car1u")?.value.trim(), w = document.getElementById("car1w");
     const b = Math.round(+document.getElementById("car1b")?.value), p = document.getElementById("car1p")?.checked, pDef = auto().length === 1;
+    const h = document.getElementById("car1h"), g = document.getElementById("car1g");
     closeSheet(); carSet(d, c => { c.nome = n || undefined; if (u) c.foto = u; else if (c.foto === "url") c.foto = "auto"; if (w) c.noWeb = !w.checked;
       if (b > 0 && b < 100 && b !== 15) c.basso = b; else delete c.basso;
-      if (p === pDef) delete c.pillola; else c.pillola = p; }); },
+      if (p === pDef) delete c.pillola; else c.pillola = p;
+      if (h) { if (h.checked) delete c.noHome; else c.noHome = true; }
+      if (g) { if (g.checked) delete c.noGomme; else c.noGomme = true; } }); },
   carHide: el => { const d = el.dataset.id; closeSheet(); carSet(d, (c, all) => { all._hide = [...new Set([...(all._hide || []), d])]; all._add = (all._add || []).filter(x => x !== d); }); },
   carShow: el => { const d = el.dataset.id; cambia(l => { l.cars = { ...(l.cars || {}), _hide: (l.cars?._hide || []).filter(x => x !== d) }; }, "👁 " + nomeAuto(d)); },
   carAdd: () => scegli({ titolo: "＋ " + t("Aggiungi un'auto", "Add a car"), sotto: t("Scegli un sensore dell'auto (per esempio la batteria): aggiungo tutto il suo dispositivo.", "Choose one of the car's sensors (for example the battery): I add its whole device."),
@@ -298,14 +316,16 @@ function pagina() {
     ${isAdmin() ? `<section class="card span3"><div class="row" style="gap:8px;flex-wrap:wrap"><button class="add1" data-act="carAdd" style="flex:1"><span>＋</span>${t("Aggiungi un'auto che non ho riconosciuto", "Add a car I didn't recognise")}</button></div>
       ${H.length ? `<div class="fl1">🙈 ${t("Nascoste (non sono auto)", "Hidden (not cars)")}</div><div class="row" style="gap:8px;flex-wrap:wrap">${H.map(d => `<button class="btn sm" data-act="carShow" data-id="${d}">↩︎ ${esc(nomeAuto(d))}</button>`).join("")}</div>` : ""}</section>` : ""}</div>`;
 }
+/** auto nella scheda della Home: tutte, tranne quelle tolte in ✏️ */
+const autoHome = () => auto().filter(d => !conf(d).noHome);
 function homeCard() {
-  const L = auto(); if (!L.length) return "";
+  const L = autoHome(); if (!L.length) return "";
   return card("🚗 " + t("Auto", "Car"), `<div class="stack">${L.map(d => { const r = ruoli(d), b = r.batt ? val(r.batt) : null, ric = inRicarica(r), pos = dove(r);
     return `<button class="car-h" data-act="goAuto">${fotoHtml(d, r, "car-hi")}<div class="tx"><b>${esc(nomeAuto(d))}</b>
       <span>${b != null ? `🔋 ${Math.round(b)}%` : ""}${r.range && ok(r.range) ? ` · ${fnum(val(r.range), 0)} ${esc(unit(r.range))}` : ""}${ric ? " · ⚡" : ""}${pos ? ` · ${esc(pos.z)}` : ""}</span>
       ${b != null ? `<span class="bar1"><i style="width:${Math.max(2, b)}%;background:${coloreBatt(d, b)}"></i></span>` : ""}</div><span class="st">›</span></button>`; }).join("")}</div>`);
 }
-HOME_EXTRA.auto = { title: () => t("Auto", "Car"), render: homeCard, show: () => auto().length > 0 };
+HOME_EXTRA.auto = { title: () => t("Auto", "Car"), render: homeCard, show: () => autoHome().length > 0 };
 STRIP.push(() => auto().filter(pillola).map(d => {
   const r = ruoli(d), b = r.batt ? val(r.batt) : null; if (b == null) return "";
   return `<span class="pillv" data-act="go" data-id="auto" title="${esc(nomeAuto(d))}">🚗 ${Math.round(b)}%${inRicarica(r) ? " ⚡" : ""}</span>`;

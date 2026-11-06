@@ -6,7 +6,8 @@
    Spesa: le voci si raggruppano per reparto (reparti.js); il reparto si corregge con un tocco e la plancia lo ricorda.
    Dati della casa (casa.js, sezione «liste», chiunque li può cambiare):
      { reparti: { chiave voce: reparto }, uso: { todo.x: { chiave voce: { s: testo, n: volte, t: "AAAA-MM-GG" } } } }
-   Scelte della casa (LAYOUT.liste, solo amministratori): { nascoste: [todo.x], spesa: { todo.x: true|false } }.
+   Scelte della casa (LAYOUT.liste, solo amministratori): { nascoste: [todo.x], spesa: { todo.x: true|false },
+     inHome: voci nella scheda della Home (senza = 6), base: false = niente suggerimenti di partenza della spesa }.
    Scelte del dispositivo (sGet/sSet): la lista aperta, quella della Home, la vista per reparto o in ordine.
    In Home la scheda «Liste» (HOME_EXTRA) con la lista preferita e un campo per aggiungere al volo. */
 import { S, REG, ACT, CHG, UI, HOOKS, HOME_EXTRA, LAYOUT, t, LOC, esc, nm, ok, attr, allEnts, page, svc, ws, conn, ready, toast,
@@ -105,6 +106,8 @@ function partiScad(due) {
 /* ---------- dati della casa: reparti ricordati e voci usate più spesso ---------- */
 const dati = () => { const s = casa(SEZ); return s?.stato === "ok" ? s.dati || {} : null; };
 const repartoDi = testo => dati()?.reparti?.[chiave(testo)] || repartoAuto(testo);
+/* suggerimenti di partenza della spesa (finché la plancia non ha imparato le vostre voci): si spengono in ⚙️ (LAYOUT.liste.base = false) */
+const conBase = () => LAYOUT.liste?.base !== false;
 const SPESA_BASE = () => [t("Latte", "Milk"), t("Pane", "Bread"), t("Uova", "Eggs"), t("Acqua", "Water"), t("Frutta", "Fruit"), t("Verdura", "Vegetables"),
   t("Pasta", "Pasta"), t("Caffè", "Coffee"), t("Burro", "Butter"), t("Yogurt", "Yogurt"), t("Formaggio", "Cheese"), t("Carta igienica", "Toilet paper")];
 /** ricordo cosa si aggiunge (per i suggerimenti), su tutti i dispositivi */
@@ -121,7 +124,7 @@ const peso = e => { const g = e?.t ? giorniTra(e.t + "T12:00:00", Date.now()) : 
 function suggerimenti(id, q) {
   const u = dati()?.uso?.[id] || {}, ci = new Set(daFare(V[id]?.voci).map(x => chiave(x.summary)));
   const L = Object.entries(u).map(([k, e]) => ({ k, s: e.s, p: peso(e) }));
-  if (isSpesa(id)) SPESA_BASE().forEach((s, i) => { const k = chiave(s); if (!u[k]) L.push({ k, s, p: .05 - i / 1000 }); });
+  if (isSpesa(id) && conBase()) SPESA_BASE().forEach((s, i) => { const k = chiave(s); if (!u[k]) L.push({ k, s, p: .05 - i / 1000 }); });
   const qk = chiave(q);
   return L.filter(x => x.k && !ci.has(x.k) && (!qk || (x.k !== qk && (x.k.startsWith(qk) || x.k.includes(" " + qk)))))
     .sort((a, b) => b.p - a.p).slice(0, qk ? 6 : 8);
@@ -191,6 +194,9 @@ function vuota(id) {
     <small>${puo(id, F_ADD) ? (sp ? t("Scrivi qui sopra cosa comprare, o tocca un suggerimento.", "Type above what to buy, or tap a suggestion.") : t("Scrivi qui sopra la prossima cosa da fare.", "Type above the next thing to do.")) : t("La lista è vuota.", "The list is empty.")}</small></div></div>`;
 }
 const UIL = { q: "", fatte: {} };
+/** quante voci nella scheda della Home: 6, o quelle scelte dall'amministratore in ⚙️ (LAYOUT.liste.inHome) */
+const IN_HOME = [3, 4, 5, 6, 8, 10, 12, 15, 20];
+const inHome = () => { const v = +LAYOUT.liste?.inHome; return IN_HOME.includes(v) ? v : 6; };
 function lato(L, id) {
   const h = diHome();
   return `<section class="card ls1s"><div class="ch"><h2>🛒 ${t("Liste", "Lists")}</h2>${isAdmin() ? `<button class="btn sm" data-act="lsCfg" title="${t("Quali liste e quali sono della spesa", "Which lists and which are for shopping")}">⚙️</button>` : ""}</div>
@@ -240,7 +246,7 @@ function pagina() {
 /* ---------- Home: la lista preferita e un campo per aggiungere al volo ---------- */
 function homeCard() {
   const id = diHome(); if (!id) return "";
-  const v = voci(id), A = daFare(v), sp = isSpesa(id), add = puo(id, F_ADD) && ok(id), MAX = 6;
+  const v = voci(id), A = daFare(v), sp = isSpesa(id), add = puo(id, F_ADD) && ok(id), MAX = inHome();
   /* prima le scadute e quelle di oggi, poi l'ordine della lista */
   const P = [...A].sort((a, b) => ({ ritardo: 0, oggi: 1 }[scad(a)?.cls] ?? 2) - ({ ritardo: 0, oggi: 1 }[scad(b)?.cls] ?? 2));
   return `<section class="card ls1hc"><div class="ch"><h2>${icona(id)} ${esc(nm(id))}${A.length ? ` <span class="tag info">${A.length}</span>` : ""}</h2><a data-act="lsApri" data-id="${id}">${t("Liste", "Lists")} ›</a></div>
@@ -310,8 +316,16 @@ function schedaCfg() {
     <div class="stack">${tutte().map(id => { const vis = !nas.includes(id), sp = isSpesa(id), n = nDaFare(id);
       return `<div class="li ls1cf"><span class="ic">${icona(id)}</span><div class="tx"><b>${esc(nm(id))}</b><span>${esc([PIATT[REG[id]?.platform] || id, n != null ? n + " " + t("da fare", "to do") : ""].filter(Boolean).join(" · "))}</span></div>
         <div class="vr1"><button class="${vis ? "on" : ""}" data-act="lsVis" data-id="${id}" aria-pressed="${vis}">👁 ${t("Visibile", "Visible")}</button><button class="${sp ? "on" : ""}" data-act="lsSp" data-id="${id}" aria-pressed="${sp}">🛒 ${t("Spesa", "Shopping")}</button></div></div>`; }).join("")}</div>
-    <p class="small muted" style="margin-top:12px">${t("«Visibile»: la lista compare nella pagina e in Home. «Spesa»: le voci si raggruppano per reparto e ci sono i suggerimenti per la spesa (all'inizio lo decido io dal nome della lista).", "«Visible»: the list shows on the page and on Home. «Shopping»: items are grouped by aisle and there are shopping suggestions (at first I decide from the list's name).")}</p>`;
+    <p class="small muted" style="margin-top:12px">${t("«Visibile»: la lista compare nella pagina e in Home. «Spesa»: le voci si raggruppano per reparto e ci sono i suggerimenti per la spesa (all'inizio lo decido io dal nome della lista).", "«Visible»: the list shows on the page and on Home. «Shopping»: items are grouped by aisle and there are shopping suggestions (at first I decide from the list's name).")}</p>
+    <label class="fld1"><span>${t("Voci nella scheda della Home", "Items on the Home card")}</span><select data-chg="lsInHome">${IN_HOME.map(n => `<option value="${n}" ${inHome() === n ? "selected" : ""}>${n}</option>`).join("")}</select></label>
+    <p class="small muted" style="margin:6px 0 0">${t("Le altre si vedono qui nella pagina: in Home compare «e altre…». Le scadute e quelle di oggi vengono sempre per prime.", "The rest are on this page: Home shows «and more…». Overdue and today's items always come first.")}${diHome() ? ` ${t("Adesso in Home: ", "On Home now: ")}${esc(nm(diHome()))}${nDaFare(diHome()) != null ? ` (${nDaFare(diHome())} ${t("da fare", "to do")})` : ""}.` : ""}</p>
+    <div class="li" style="margin-top:12px"><span class="ic">💡</span><div class="tx"><b>${t("Suggerimenti di partenza per la spesa", "Starter shopping suggestions")}</b><span>${esc(SPESA_BASE().slice(0, 4).join(", "))}…</span></div>
+      <button class="sw ${conBase() ? "on" : ""}" data-act="lsBase" role="switch" aria-checked="${conBase()}" aria-label="${t("Suggerimenti di partenza per la spesa", "Starter shopping suggestions")}"><i></i></button></div>
+    <p class="small muted" style="margin:6px 0 0">${t("Nelle liste della spesa propongo voci comuni finché non imparo quelle che aggiungete voi. Spegnilo se non ti servono: i suggerimenti imparati restano (si tolgono con ⋯ accanto ai suggerimenti).", "In shopping lists I suggest common items until I learn the ones you add. Turn it off if you don't need them: learned suggestions stay (remove them with ⋯ next to the suggestions).")}</p>`;
 }
+/** salva una scelta di LAYOUT.liste; se torna tutto come di partenza la chiave sparisce */
+const salvaListe = (fn, msg) => cambia(l => { l.liste = { ...(l.liste || {}) }; fn(l.liste); if (!Object.keys(l.liste).length) delete l.liste; }, msg);
+CHG.lsInHome = el => { const n = +el.value; salvaListe(c => { if (n === 6) delete c.inHome; else c.inHome = n; }, "🛒 " + t("In Home: ", "On Home: ") + n); };
 
 /* ---------- trascina per riordinare (solo nelle liste che lo permettono) ---------- */
 let TR = null;
@@ -423,6 +437,7 @@ Object.assign(ACT, {
   lsSugZero: el => { if (!sicuro(el, t("Tocca ancora per dimenticarli", "Tap again to forget them"))) return; const id = SG;
     casaCambia(SEZ, d => { if (!d.uso?.[id]) return false; delete d.uso[id]; }, "🗑 " + t("Suggerimenti azzerati", "Suggestions cleared")).then(ok1 => ok1 && closeSheet()); },
   lsCfg: () => openSheet(schedaCfg),
+  lsBase: () => { const si = !conBase(); salvaListe(c => { if (si) delete c.base; else c.base = false; }, "💡 " + (si ? t("Suggerimenti di partenza accesi", "Starter suggestions on") : t("Suggerimenti di partenza spenti", "Starter suggestions off"))); },
   lsVis: el => { const id = el.dataset.id; cambia(l => { l.liste = { ...(l.liste || {}) }; const s = new Set(l.liste.nascoste || []); s.has(id) ? s.delete(id) : s.add(id); l.liste.nascoste = [...s]; }); },
   lsSp: el => { const id = el.dataset.id, nuovo = !isSpesa(id);
     cambia(l => { l.liste = { ...(l.liste || {}) }; const sp = { ...(l.liste.spesa || {}) }; if (nuovo === spesaAuto(id)) delete sp[id]; else sp[id] = nuovo; l.liste.spesa = sp; }); },

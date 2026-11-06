@@ -15,6 +15,13 @@ import { luciStanza } from "../luce.js";
 
 const saluto = () => { const h = new Date().getHours(); return h < 6 ? t("Buonanotte", "Good night") : h < 13 ? t("Buongiorno", "Good morning") : h < 18 ? t("Buon pomeriggio", "Good afternoon") : t("Buonasera", "Good evening"); };
 const climaAttivi = () => ents("climate", id => ok(id) && S[id].state !== "off");
+/* scelte della Home (⚙️ delle schede in ✏️ Modifica, solo amministratori): se non scegli valgono quelle di sempre */
+/** quante scene nel saluto: 6, o quelle scelte (0 = nessuna) */
+const nScene = () => { const v = LAYOUT.home?.scene; return v != null && +v >= 0 && +v <= 12 ? +v : 6; };
+/** giorni di previsione nella scheda Meteo: 5, o quelli scelti */
+const giorniMeteo = () => { const v = +LAYOUT.home?.meteoGiorni; return v >= 1 && v <= 7 ? v : 5; };
+/** salva una scelta in LAYOUT.home; il valore predefinito toglie la chiave (chi non tocca niente resta com'era) */
+const homeSet = (k, v, def, msg) => cambia(l => { l.home = { ...(l.home || {}) }; if (v === def) delete l.home[k]; else l.home[k] = v; if (!Object.keys(l.home).length) delete l.home; }, msg);
 
 function riepilogo() {
   const nome = (UI.user?.name || "").split(" ")[0];
@@ -31,7 +38,7 @@ function riepilogo() {
     <p class="hs1">${frasi.join(" · ")}</p>
     <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:12px">
       ${L ? `<button class="btn sm" data-act="lightsOff">💡 ${t("Spegni tutte le luci", "Turn off all lights")}</button>` : ""}
-      ${scene().slice(0, UI.edit ? 99 : 6).map(id => item(id, `<button class="btn sm" data-act="toggle" data-id="${id}">🎬 ${esc(nm(id))}</button>`)).join("")}${addBtn(["scene"])}
+      ${scene().slice(0, UI.edit ? 99 : nScene()).map(id => item(id, `<button class="btn sm" data-act="toggle" data-id="${id}">🎬 ${esc(nm(id))}</button>`)).join("")}${addBtn(["scene"])}
     </div></section>`;
 }
 const scene = () => ents("scene").sort((a, b) => nm(a).localeCompare(nm(b), LOC));
@@ -39,10 +46,10 @@ const scene = () => ents("scene").sort((a, b) => nm(a).localeCompare(nm(b), LOC)
 function meteo() {
   const w = weatherEnt(); if (!w) return UI.edit ? card(`🌤️ ${t("Meteo", "Weather")}`, `<div class="small muted">${t("Nessun meteo in Home Assistant.", "No weather in Home Assistant.")}</div>`) : "";
   const a = S[w].attributes, [ic, txt] = WX()[S[w].state] || ["🌡️", S[w].state];
-  const fc = forecast(w).slice(0, 5);
+  const fc = forecast(w).slice(0, giorniMeteo());
   return card(`${ic} ${t("Meteo", "Weather")}`, `${UI.edit ? `<div class="small muted" style="margin:-4px 0 8px">${esc(nm(w))}</div>` : ""}<div class="row" style="gap:14px"><div class="wxbig1">${fnum(a.temperature, 0)}°</div>
       <div><b>${esc(txt)}</b><div class="small muted">${a.humidity != null ? t("Umidità ", "Humidity ") + Math.round(a.humidity) + "%" : ""}${a.wind_speed != null ? ` · ${t("vento", "wind")} ${fnum(a.wind_speed, 0)} ${esc(a.wind_speed_unit || "")}` : ""}</div></div></div>
-    ${fc.length ? `<div class="fc1">${fc.map(d => `<div><small>${new Date(d.datetime).toLocaleDateString(LOC, { weekday: "short" })}</small><span>${(WX()[d.condition] || ["·"])[0]}</span><b>${fnum(d.temperature, 0)}°</b><i>${d.templow != null ? fnum(d.templow, 0) + "°" : ""}</i></div>`).join("")}</div>` : ""}`, UI.edit ? { right: `<button class="btn sm" data-act="wxEdit">✏️</button>` } : PAGES.meteo?.show() && LAYOUT.pages?.meteo !== false && utenteCfg().pages?.meteo !== false ? { link: [t("Dettagli", "Details"), "meteo"] } : {});
+    ${fc.length ? `<div class="fc1"${giorniMeteo() !== 5 ? ` style="grid-template-columns:repeat(${giorniMeteo()},1fr)"` : ""}>${fc.map(d => `<div><small>${new Date(d.datetime).toLocaleDateString(LOC, { weekday: "short" })}</small><span>${(WX()[d.condition] || ["·"])[0]}</span><b>${fnum(d.temperature, 0)}°</b><i>${d.templow != null ? fnum(d.templow, 0) + "°" : ""}</i></div>`).join("")}</div>` : ""}`, UI.edit ? { right: `<button class="btn sm" data-act="wxEdit">✏️</button>` } : PAGES.meteo?.show() && LAYOUT.pages?.meteo !== false && utenteCfg().pages?.meteo !== false ? { link: [t("Dettagli", "Details"), "meteo"] } : {});
 }
 
 function stanza(a) {
@@ -68,9 +75,19 @@ function sceltaMeteo() {
   const W = ents("weather").sort((a, b) => nm(a).localeCompare(nm(b), LOC)), cur = LAYOUT.weather || "";
   return `<div class="sh-head"><div><h3>🌤️ ${t("Meteo di casa", "Home weather")}</h3><div class="small muted">${t("Scegli da dove prendo il meteo.", "Choose the weather source.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
     <div class="stack"><button class="li ${!cur ? "sel1" : ""}" data-act="wxSet" data-id=""><span class="ic">✨</span><div class="tx"><b>${t("Automatico", "Automatic")}</b><span>${esc(nm(weatherEnt() || ""))}</span></div></button>
-    ${W.map(id => { const [ic, tx] = WX()[S[id].state] || ["🌡️", S[id].state]; return `<button class="li ${cur === id ? "sel1" : ""}" data-act="wxSet" data-id="${id}"><span class="ic">${ic}</span><div class="tx"><b>${esc(nm(id))}</b><span>${esc(tx)} · ${fnum(attr(id, "temperature"), 0)}° · ${esc(id)}</span></div></button>`; }).join("")}</div>`;
+    ${W.map(id => { const [ic, tx] = WX()[S[id].state] || ["🌡️", S[id].state]; return `<button class="li ${cur === id ? "sel1" : ""}" data-act="wxSet" data-id="${id}"><span class="ic">${ic}</span><div class="tx"><b>${esc(nm(id))}</b><span>${esc(tx)} · ${fnum(attr(id, "temperature"), 0)}° · ${esc(id)}</span></div></button>`; }).join("")}</div>
+    <label class="fld1" style="margin-top:14px"><span>${t("Giorni di previsione nella scheda", "Forecast days on the card")}</span><select data-chg="wxGiorni">${[3, 4, 5, 6, 7].map(n => `<option value="${n}" ${giorniMeteo() === n ? "selected" : ""}>${n}</option>`).join("")}</select></label>
+    <p class="small muted" style="margin:6px 0 0">${t("Quanti giorni mostra la scheda Meteo della Home, se il servizio meteo li dà. Tutti i giorni restano nella pagina Meteo.", "How many days the Home weather card shows, if the weather service provides them. Every day stays on the Weather page.")}</p>`;
 }
 ACT.wxEdit = () => openSheet(sceltaMeteo);
+CHG.wxGiorni = el => homeSet("meteoGiorni", +el.value, 5, "🌤️ " + t("Previsione: ", "Forecast: ") + el.value + t(" giorni", " days"));
+
+/* ⚙️ saluto e orologio: quante scene sotto il saluto */
+const cfgSaluto = () => `<div class="sh-head"><div><h3>⚙️ ${t("Saluto e orologio", "Greeting and clock")}</h3><div class="small muted">${t("Vale per tutta la casa.", "It applies to the whole home.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
+    <label class="fld1"><span>${t("Scene sotto il saluto", "Scenes under the greeting")}</span><select data-chg="hmScene">${[0, 2, 3, 4, 6, 8, 10, 12].map(n => `<option value="${n}" ${nScene() === n ? "selected" : ""}>${n === 0 ? t("Nessuna", "None") : n}</option>`).join("")}</select></label>
+    <p class="small muted" style="margin:6px 0 0">${t("Le prime in ordine di nome", "The first ones by name")}${scene().length ? ` (${t("ne hai", "you have")} ${scene().length})` : ""}. ${t("Per togliere una scena usa ✕ sul suo pulsante in ✏️ Modifica, per rimetterla ＋.", "To remove a scene use ✕ on its button in ✏️ Edit, ＋ to bring it back.")}</p>`;
+ACT.hmCfg = () => openSheet(cfgSaluto);
+CHG.hmScene = el => homeSet("scene", +el.value, 6, "🎬 " + t("Scene nel saluto: ", "Scenes in the greeting: ") + el.value);
 ACT.wxSet = async el => {
   const l = JSON.parse(JSON.stringify(LAYOUT)); if (el.dataset.id) l.weather = el.dataset.id; else delete l.weather;
   try { await saveLayout(l); closeSheet(); toast("🌤️ " + nm(weatherEnt())); } catch (e) { toast(t("Non salvato: ", "Not saved: ") + (e.message || e.code), true); }
@@ -93,7 +110,7 @@ function schedaStanza(a) {
   const L = luciStanza(a), C = inArea(a, "climate");
   const R = ["cover", "switch", "fan", "lock", "media_player", "humidifier", "vacuum"].flatMap(d => inArea(a, d)).filter(id => !isLightSwitch(id));
   const O = inArea(a, "binary_sensor", id => ["door", "window", "opening", "garage_door"].includes(deviceClass(id)));
-  const SN = inArea(a, "sensor", id => ["temperature", "humidity", "illuminance", "carbon_dioxide", "pm25", "power", "energy"].includes(deviceClass(id)) && ok(id)).slice(0, 12);
+  const SN = sensoriStanza(a);
   return `<div class="sh-head"><div><h3>${esc(ar.name)}</h3><div class="small muted">${T != null ? fnum(T) + "°" : ""}${H != null ? " · " + Math.round(H) + "%" : ""}${ar.floor && FLOORS[ar.floor] ? " · " + esc(FLOORS[ar.floor].name) : ""}</div></div>${isAdmin() ? `<button class="btn sm" data-act="rmEdit" data-id="${a}">✏️ ${t("Personalizza", "Customize")}</button>` : ""}<button class="x" data-act="sheetClose">×</button></div>
     ${VISTE.ariaStanza?.(a) ? `<div class="stack" style="margin:4px 0 10px">${VISTE.ariaStanza(a)}</div>` : ""}
     ${L.length ? `<div class="row between" style="margin:6px 0 8px"><b>${t("Luci", "Lights")}</b>${lightsOn(a).length ? `<button class="btn sm" data-act="lightsOff" data-area="${a}">${t("Spegni", "Turn off")}</button>` : ""}</div><div class="tiles">${L.map(id => lightTile(id)).join("")}</div>` : ""}
@@ -103,6 +120,14 @@ function schedaStanza(a) {
     ${SN.length ? `<div style="margin:14px 0 8px"><b>${t("Sensori", "Sensors")}</b></div><div class="sn1">${SN.map(id => `<button data-act="more" data-id="${id}"><small>${esc(shortName(id))}</small><b>${esc(S[id].state)} ${esc(attr(id, "unit_of_measurement") || "")}</b></button>`).join("")}</div>` : ""}`;
 }
 ACT.room = el => { const a = el.dataset.id; openSheet(() => schedaStanza(a)); };
+/* sensori nella finestra della stanza: trovati da soli per tipo (al massimo 12), meno quelli tolti, più quelli aggiunti in ✏️ (LAYOUT.roomSens[stanza] = { add, hide }) */
+const SN_TIPI = ["temperature", "humidity", "illuminance", "carbon_dioxide", "pm25", "power", "energy"];
+const snConf = a => LAYOUT.roomSens?.[a] || {};
+const sensoriAuto = a => inArea(a, "sensor", id => SN_TIPI.includes(deviceClass(id)) && ok(id));
+function sensoriStanza(a) {
+  const c = snConf(a), via = new Set(c.hide || []);
+  return [...new Set([...sensoriAuto(a).filter(id => !via.has(id)).slice(0, 12), ...(c.add || []).filter(id => S[id])])];
+}
 
 /* ---------- ✏️ stanza: nome, sensori, visibile, ordine ---------- */
 function editStanza(a) {
@@ -114,12 +139,22 @@ function editStanza(a) {
   return `<div class="sh-head"><div><h3>✏️ ${esc(ar.name)}</h3><div class="small muted">${t("Cambia solo nella plancia, non in Home Assistant.", "Changes only the dashboard, not Home Assistant.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
     <label class="fld1"><span>${t("Nome della stanza", "Room name")}</span><input id="rm1n" type="text" data-chg="rmName" data-id="${a}" enterkeyhint="done" value="${esc(LAYOUT.areaNames?.[a] || "")}" placeholder="${esc(ar.nameHA || ar.name)}"></label>
     <div class="stack" style="margin-top:12px">${voce("temp", "🌡️", t("Sensore di temperatura", "Temperature sensor"))}${voce("hum", "💧", t("Sensore di umidità", "Humidity sensor"))}</div>
+    ${(() => { const c = snConf(a), SN = sensoriStanza(a), via = (c.hide || []).filter(id => S[id]);
+      return `<div class="fl1">📈 ${t("Sensori nella finestra della stanza", "Sensors in the room window")}</div>
+      <p class="small muted" style="margin:0 0 6px">${t("Compaiono toccando la stanza. ✨ li trovo da soli (temperatura, umidità, luce, CO₂, PM2,5, consumi), ✋ li hai aggiunti tu. ✕ toglie, ＋ aggiunge qualsiasi sensore.", "They show when you tap the room. ✨ found automatically (temperature, humidity, light, CO₂, PM2.5, power), ✋ added by you. ✕ removes, ＋ adds any sensor.")}</p>
+      <div class="stack">${SN.map(id => `<div class="li"><div class="tx"><b>${(c.add || []).includes(id) ? "✋" : "✨"} ${esc(shortName(id))}</b><span>${ok(id) ? esc(S[id].state) + " " + esc(attr(id, "unit_of_measurement") || "") : t("non raggiungibile", "unavailable")}</span></div>
+        <button class="btn sm" data-act="rmSnDel" data-id="${a}" data-e="${id}" aria-label="${t("Togli", "Remove")}">✕</button></div>`).join("")}</div>
+      ${via.length ? `<div class="vr1" style="margin-top:8px">${via.map(id => `<button data-act="rmSnShow" data-id="${a}" data-e="${id}">↩︎ ${esc(shortName(id))}</button>`).join("")}</div>` : ""}
+      <button class="add1" data-act="rmSnAdd" data-id="${a}" style="margin-top:8px"><span>＋</span>${t("Aggiungi sensore", "Add sensor")}</button>`; })()}
     <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap">
       <button class="btn pri" data-act="rmSave" data-id="${a}">💾 ${t("Salva nome", "Save name")}</button>
       <button class="btn sm" data-act="rmMove" data-id="${a}" data-v="-1">▲ ${t("Prima", "Earlier")}</button><button class="btn sm" data-act="rmMove" data-id="${a}" data-v="1">▼ ${t("Dopo", "Later")}</button>
       <button class="btn ${nascosta ? "" : "bad"}" data-act="rmHide" data-id="${a}">${nascosta ? "👁 " + t("Mostra la stanza", "Show room") : "🙈 " + t("Nascondi la stanza", "Hide room")}</button></div>
     <p class="small muted" style="margin-top:12px">${t("Per aggiungere o togliere luci, clima e dispositivi di questa stanza usa ✏️ Modifica nelle pagine Luci, Clima e Prese.", "To add or remove lights, climate and devices of this room use ✏️ Edit on the Lights, Climate and Plugs pages.")}</p>`;
 }
+/** cambia i sensori della finestra di una stanza; liste vuote e stanze senza scelte si cancellano */
+const snSet = (a, fn, msg) => cambia(l => { l.roomSens = { ...(l.roomSens || {}) }; const c = l.roomSens[a] = JSON.parse(JSON.stringify(l.roomSens[a] || {})); fn(c);
+  for (const k of ["add", "hide"]) if (!(c[k] || []).length) delete c[k]; if (!Object.keys(c).length) delete l.roomSens[a]; if (!Object.keys(l.roomSens).length) delete l.roomSens; }, msg);
 CHG.rmName = el => ACT.rmSave(el);
 document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.id === "rm1n") e.target.blur(); });
 Object.assign(ACT, {
@@ -132,6 +167,13 @@ Object.assign(ACT, {
   },
   rmSave: el => { const a = el.dataset.id, n = (document.getElementById("rm1n")?.value || "").trim(); if ((LAYOUT.areaNames?.[a] || "") === n) return;
     cambia(l => { l.areaNames = { ...(l.areaNames || {}) }; if (n && n !== AREAS[a].nameHA) l.areaNames[a] = n; else delete l.areaNames[a]; }, "💾 " + (n || AREAS[a].nameHA)); },
+  rmSnDel: el => { const a = el.dataset.id, id = el.dataset.e;
+    snSet(a, c => { if ((c.add || []).includes(id)) c.add = c.add.filter(x => x !== id); if (sensoriAuto(a).includes(id)) c.hide = [...new Set([...(c.hide || []), id])]; }, "✕ " + nm(id)); },
+  rmSnShow: el => { const a = el.dataset.id, id = el.dataset.e; snSet(a, c => { c.hide = (c.hide || []).filter(x => x !== id); }, "↩︎ " + nm(id)); },
+  rmSnAdd: el => { const a = el.dataset.id;
+    scegli({ titolo: "📈 " + esc(AREAS[a]?.name || ""), sotto: t("Qualsiasi sensore della casa: compare nella finestra della stanza.", "Any sensor in the house: it shows in the room window."), area: a, auto: false, attuale: null,
+      filtro: id => /^(sensor|binary_sensor|input_number|number)\./.test(id) && !sensoriStanza(a).includes(id),
+      onPick: id => id && snSet(a, c => { c.add = [...new Set([...(c.add || []), id])]; c.hide = (c.hide || []).filter(x => x !== id); }, "＋ " + nm(id)).then(() => openSheet(() => editStanza(a))) }); },
   rmHide: el => { const a = el.dataset.id; cambia(l => { const h = new Set(l.hiddenAreas || []); h.has(a) ? h.delete(a) : h.add(a); l.hiddenAreas = [...h]; }); closeSheet(); },
   rmMove: el => { const a = el.dataset.id, d = +el.dataset.v;
     cambia(l => { const ord = areasSorted(true); const i = ord.indexOf(a), j = i + d; if (j < 0 || j >= ord.length) return; [ord[i], ord[j]] = [ord[j], ord[i]]; l.areaOrder = ord; }); },
@@ -139,14 +181,14 @@ Object.assign(ACT, {
 
 /* ---------- schede della Home: ordine e visibilità (✏️ Modifica) ---------- */
 const SCHEDE = () => ({
-  riepilogo: [t("Saluto e orologio", "Greeting and clock"), riepilogo],
+  riepilogo: [t("Saluto e orologio", "Greeting and clock"), riepilogo, "hmCfg"],
   momenti: [t("Momenti", "Moments"), momentiCard],
   meteo: [t("Meteo", "Weather"), meteo, "wxEdit"],
   stanze: [t("Stanze", "Rooms"), stanze],
   avvisi: [t("Avvisi", "Alerts"), avvisiCard],
   persone: [t("Persone", "People"), personeCard],
   /* in ordine di nome: le pagine si caricano insieme e l'ordine d'arrivo cambierebbe da un'apertura all'altra */
-  ...Object.fromEntries(Object.entries(HOME_EXTRA).sort(([x], [y]) => x.localeCompare(y)).filter(([, x]) => { try { return x.show(); } catch { return false; } }).map(([k, x]) => [k, [x.title(), x.render]])),
+  ...Object.fromEntries(Object.entries(HOME_EXTRA).sort(([x], [y]) => x.localeCompare(y)).filter(([, x]) => { try { return x.show(); } catch { return false; } }).map(([k, x]) => [k, [x.title(), x.render, x.cfg]])),   // cfg: azione del ⚙️ della scheda (facoltativa)
   raccolta: [t("Raccolta differenziata", "Waste collection"), raccoltaCard, "rfEdit"],
   agenda: [t("Agenda", "Agenda"), agendaCard, "calEdit"],
   musica: [t("In riproduzione", "Now playing"), musicaCard],

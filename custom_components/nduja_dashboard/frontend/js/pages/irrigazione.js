@@ -6,11 +6,25 @@
    Durata: con il servizio dell'integrazione se c'è (rainbird.start_irrigation, hydrawise.start_watering, rachio.start_watering,
    bhyve.start_watering, opensprinkler.run_station); altrimenti accendo e lo script «'Nduja · irrigazione» chiude dopo i minuti scelti
    (più l'automazione di sicurezza che chiude quelle zone se Home Assistant si riavvia mentre irrigano).
-   In Home la scheda «Irrigazione» (HOME_EXTRA); le zone escono dalla pagina Prese (VISTE.irrZone). */
+   In Home la scheda «Irrigazione» (HOME_EXTRA); le zone escono dalla pagina Prese (VISTE.irrZone).
+   Scelte di tutta la casa in LAYOUT.irrig (solo amministratori): zone aggiunte e tolte, aspetto, programmi da sospendere (✏️ Modifica);
+   con ⚙️ su «Programmi e meteo» le soglie della pioggia (probabilità, mm, domani o le prossime ore), fin quando dura la pausa, le durate
+   (di partenza e pulsanti rapidi; per zona con ✏️), l'umidità del terreno (soglie e sensori) e i calendari dei programmi.
+   Chi non tocca niente vede la pagina di sempre: 60%, 2 mm, domani; pausa fino a domani alle 23:59; 10 minuti; 5·10·15·30; secco sotto il 25%, bagnato sopra il 60%. */
 import { S, REG, ACT, CHG, UI, LAYOUT, HOME_EXTRA, VISTE, t, esc, nm, nmHA, ok, attr, ents, allEnts, areaOf, AREAS, card, page, svc, svcResp, ws, api,
   sGet, sSet, toast, render, go, isAdmin, openSheet, closeSheet, cached, forecast, weatherEnt, WX, hhmm, LOC, deviceClass, domain, etichettaNduja } from "../core.js";
 import { scegli, cambia } from "../edit.js";
 import { casa, casaCambia } from "../casa.js";
+
+/* ================= scelte della casa (⚙️): senza scelte, i valori di sempre ================= */
+const IR_DEF = { pioggiaPr: 60, pioggiaMm: 2, pioggiaOre: 0, pausaGiorni: 1, durata: 10, secco: 25, zuppo: 60 };
+/* limiti dei campi: [minimo, massimo] */
+const IR_LIM = { pioggiaPr: [5, 100], pioggiaMm: [0.1, 100], pioggiaOre: [0, 72], pausaGiorni: [1, 7], durata: [1, 240], secco: [0, 99], zuppo: [1, 100] };
+const lim = (v, a, b) => Math.max(a, Math.min(b, v));
+/** un numero scelto in ⚙️ (LAYOUT.irrig), o il valore di partenza */
+const reg = k => { const v = LAYOUT.irrig?.[k], n = +v; return v != null && v !== "" && !isNaN(n) ? lim(k === "pioggiaMm" ? n : Math.round(n), ...IR_LIM[k]) : IR_DEF[k]; };
+/** ora di fine della pausa per pioggia: "HH:MM" (23:59 se non scegli) */
+const oraPausa = () => { const v = LAYOUT.irrig?.pausaOra; return /^([01]\d|2[0-3]):[0-5]\d$/.test(v || "") ? v : "23:59"; };
 
 /* ================= zone ================= */
 /** integrazioni da irrigazione: le loro valvole e i loro switch sono zone (tranne programmi, ritardo pioggia…) */
@@ -136,10 +150,21 @@ function sicurezzaCfg(G) {
 const automazioneSicurezza = () => Object.keys(S).find(e => e.startsWith("automation.") && attr(e, "id") === "nduja_irrigazione") || null;
 /** il timer va creato (o aggiornato perché le zone sono cambiate)? solo per gli amministratori */
 function timerDaPreparare() {
-  const G = generiche(); if (!G || !G.length) return null;
+  const G = generiche(); if (!G) return null;
+  /* nessuna zona col timer: se l'automazione di sicurezza c'è ancora con delle zone, la svuoto */
+  if (!G.length) return automazioneSicurezza() && (LAYOUT.irrig?.timer || []).length ? "aggiorna" : null;
   if (!S[SCRIPT] || !automazioneSicurezza()) return "crea";
   return JSON.stringify([...(LAYOUT.irrig?.timer || [])].sort()) === JSON.stringify(G) ? null : "aggiorna";
 }
+/** il timer c'è già ma le zone sono cambiate (aggiunte, tolte o nuove in Home Assistant): lo riscrivo da solo, una volta per ogni elenco di zone */
+let tentato = "";
+function aggiornaDaSolo() {
+  if (!isAdmin() || preparando || timerDaPreparare() !== "aggiorna") return;
+  const k = JSON.stringify(generiche()); if (tentato === k) return; tentato = k;
+  setTimeout(() => preparaTimer().then(ok => { if (ok) toast("⏱ " + t("Timer dell'irrigazione aggiornato con le zone di adesso", "Irrigation timer updated with the current zones")); }), 0);
+}
+/** l'aggiornamento automatico non è riuscito: resta il pulsante */
+const aggiornaFallito = () => !preparando && tentato === JSON.stringify(generiche());
 let preparando = false;
 async function preparaTimer() {
   if (preparando) return false; preparando = true;
@@ -173,7 +198,6 @@ function tempo(c) {
   if (r && !r.stop) { const rf = new Date(r.fine).getTime(), rd = new Date(r.da).getTime(); if (rf > now && da <= rd + 120e3) return { da: rd, fine: rf, tot: rf - rd }; }
   return { da, fine: null, tot: null };
 }
-const lim = (v, a, b) => Math.max(a, Math.min(b, v));
 /** quanto è bagnato il terreno (0…1): cresce mentre irriga, poi si asciuga in due ore */
 function bagnato(c) {
   const now = Date.now();
@@ -243,7 +267,12 @@ function scena(c, key, cls = "") {
 
 /* ================= avvio e stop ================= */
 const DUR = [5, 10, 15, 30];
-const durata = id => lim(+sGet("ir_dur_" + id) || 10, 1, 240);
+/** pulsanti rapidi delle durate: quelli scelti in ⚙️ (da 2 a 6 numeri) o 5·10·15·30 */
+const rapidi = () => { const R = LAYOUT.irrig?.rapidi; return Array.isArray(R) && R.length >= 2 && R.length <= 6 && R.every(m => Number.isInteger(m) && m >= 1 && m <= 240) ? R : DUR; };
+/** durata di partenza di una zona per tutta la casa: quella della zona (✏️), altrimenti quella di ⚙️ (10 se non scegli) */
+const durataCasa = id => { const v = +LAYOUT.irrig?.durate?.[id]; return v >= 1 && v <= 240 ? Math.round(v) : reg("durata"); };
+/** durata usata su questo dispositivo: l'ultima toccata qui, altrimenti quella della casa */
+const durata = id => { const v = +sGet("ir_dur_" + id); return v >= 1 ? lim(Math.round(v), 1, 240) : durataCasa(id); };
 async function avvia(id, min) {
   const c = ctx(id); min = lim(Math.round(min), 1, 240);
   try {
@@ -281,14 +310,29 @@ async function ferma(id) {
 /* ================= meteo, programmi, pausa ================= */
 const PIOGGIA = ["rainy", "pouring", "lightning-rainy", "snowy-rainy", "hail"];
 const domani = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d; };
-/** previsione di domani se piove: { f, pr, mm } */
-function pioggiaDomani() {
+/** una previsione «piove» secondo le soglie di ⚙️: icona della pioggia (se conta), probabilità o millimetri */
+const piove = f => (LAYOUT.irrig?.icona !== false && PIOGGIA.includes(f.condition)) || f.precipitation_probability >= reg("pioggiaPr") || f.precipitation >= reg("pioggiaMm");
+/** la previsione che guardo: domani (giornaliera) o le prossime N ore (oraria), con { f, pr, mm, ore? }; null se non c'è */
+function previsione() {
   const w = weatherEnt(); if (!w) return null;
+  const ore = reg("pioggiaOre");
+  if (ore) {
+    const now = Date.now(), H = (forecast(w, "hourly") || []).filter(x => { const d = new Date(x.datetime).getTime(); return d > now - 36e5 && d <= now + ore * 36e5; });
+    if (!H.length) return null;
+    const P = H.map(x => x.precipitation_probability).filter(x => x != null), M = H.map(x => x.precipitation).filter(x => x != null);
+    const pr = P.length ? Math.max(...P) : undefined, mm = M.length ? Math.round(M.reduce((a, x) => a + (+x || 0), 0) * 10) / 10 : undefined;
+    const f = H.find(x => PIOGGIA.includes(x.condition)) || H.reduce((a, x) => (x.precipitation_probability || 0) > (a.precipitation_probability || 0) ? x : a, H[0]);
+    return { f: { ...f, precipitation_probability: pr, precipitation: mm }, pr, mm, ore };
+  }
   const k = domani().toDateString(), f = (forecast(w, "daily") || []).find(x => new Date(x.datetime).toDateString() === k);
-  if (!f) return null;
-  const pr = f.precipitation_probability, mm = f.precipitation;
-  return PIOGGIA.includes(f.condition) || pr >= 60 || mm >= 2 ? { f, pr, mm } : null;
+  return f ? { f, pr: f.precipitation_probability, mm: f.precipitation } : null;
 }
+/** se piove (domani o nelle prossime ore scelte): { f, pr, mm, ore? } */
+function pioggiaDomani() { const p = previsione(); return p && piove(p.f) ? p : null; }
+/** «Domani piove» o «Pioggia nelle prossime N ore» */
+const titoloPioggia = p => p?.ore ? t(`Pioggia nelle prossime ${p.ore} ore`, `Rain in the next ${p.ore} hours`) : t("Domani piove", "Rain tomorrow");
+/** «No, irriga» vale per questo giorno (o per oggi, con le ore) */
+const chiaveNoPioggia = () => reg("pioggiaOre") ? "h" + new Date().toDateString() : domani().toDateString();
 const AUTO_IRR = /irrig|annaff|sprinkl|gocciol|watering/i, RD = /rain.?delay|ritardo.?pioggia|pausa.?pioggia/i;
 /** cosa si può mettere in pausa: automazioni dell'irrigazione, ritardo pioggia (numero o switch), OpenSprinkler, Hydrawise, switch scelti con ✏️ */
 function pausabili() {
@@ -315,7 +359,10 @@ function nomeP(x) {
   if (["giorni", "rd", "bhyve", "os"].includes(x.via)) { const m = MARCHE[REG[x.id]?.platform]; return m ? m + " · " + t("ritardo pioggia", "rain delay") : nm(x.id); }
   return nm(x.id);
 }
-const fineDomani = () => { const d = domani(); d.setHours(23, 59, 0, 0); return d; };
+/** fin quando dura la pausa per pioggia: fra i giorni scelti in ⚙️ (domani se non scegli), all'ora scelta (23:59) */
+const finePausa = () => { const d = new Date(), [h, m] = oraPausa().split(":").map(Number); d.setDate(d.getDate() + reg("pausaGiorni")); d.setHours(h, m, 0, 0); return d; };
+/** «domani sera» come sempre, oppure il giorno e l'ora scelti */
+const fineTxt = () => reg("pausaGiorni") === 1 && oraPausa() === "23:59" ? t("domani sera", "tomorrow night") : quando(finePausa());
 const dataHA = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:00`;
 async function sospendi(x, fino) {
   const ms = fino - Date.now(), ore = Math.ceil(ms / 36e5);
@@ -343,7 +390,7 @@ const ancoraSpenti = () => { const p = dati().pausa; return p && !pausa() ? (p.f
 let lavoro = false;
 async function mettiInPausa() {
   if (lavoro) return; lavoro = true; render();
-  const fino = fineDomani(), L = pausabili(), fatti = [];
+  const fino = finePausa(), L = pausabili(), fatti = [];
   try {
     for (const x of L) { try { await sospendi(x, fino); fatti.push({ id: x.id, via: x.via }); } catch (e) { if (x.via === "auto") toast(nm(x.id) + ": " + (e.message || e.code || e), true); } }
     if (!fatti.length) return;
@@ -360,8 +407,10 @@ async function togliPausa() {
     toast("▶ " + t("Programmi ripresi", "Schedules resumed"));
   } finally { lavoro = false; render(); }
 }
-/** calendari dei programmi (Rain Bird, Rachio…): prossimi eventi della settimana */
-const calendari = () => allEnts("calendar", id => PIATT.includes(REG[id]?.platform) || /irrig|sprinkl|annaff|watering|gocciol/i.test(testo(id)));
+/** calendari dei programmi (Rain Bird, Rachio…): prossimi eventi della settimana; trovati da soli, più quelli aggiunti e meno quelli tolti in ⚙️ */
+const calAuto = id => id.startsWith("calendar.") && (PIATT.includes(REG[id]?.platform) || /irrig|sprinkl|annaff|watering|gocciol/i.test(testo(id)));
+const calendari = () => { const I = LAYOUT.irrig || {}, no = new Set(I.noCal || []);
+  return [...new Set([...allEnts("calendar", calAuto), ...(I.calendari || []).filter(id => S[id])])].filter(id => !no.has(id)); };
 function eventi() {
   const C = calendari(); if (!C.length) return [];
   return cached("ir:cal:" + C.join(","), 15 * 6e4, async () => {
@@ -374,13 +423,18 @@ function prossime() {
   const Z = zone().map(ctx).map(c => ({ id: c.id, titolo: nm(c.id), da: prossima(c) })).filter(x => x.da);
   return [...Z, ...eventi().map(e => ({ cal: e.cal, titolo: e.titolo, da: e.da }))].sort((a, b) => a.da - b.da);
 }
-/** sensori di umidità del terreno */
-const terreno = () => ents("sensor", id => (deviceClass(id) === "moisture" || /terreno|soil|suolo/i.test(testo(id))) && unitaPct(id) && !/batter|aria|air|room|stanza/i.test(testo(id)) && ok(id));
+/** sensori di umidità del terreno: trovati da soli, più quelli aggiunti e meno quelli tolti in ⚙️ */
 const unitaPct = id => (attr(id, "unit_of_measurement") || "%") === "%";
+const terrenoAuto = id => id.startsWith("sensor.") && (deviceClass(id) === "moisture" || /terreno|soil|suolo/i.test(testo(id))) && unitaPct(id) && !/batter|aria|air|room|stanza/i.test(testo(id));
+const terreniScelti = () => { const I = LAYOUT.irrig || {}, no = new Set(I.noTerreno || []);
+  return [...new Set([...ents("sensor", terrenoAuto), ...(I.terreno || []).filter(id => S[id])])].filter(id => !no.has(id)); };
+const terreno = () => terreniScelti().filter(id => ok(id) && !isNaN(parseFloat(S[id].state)));
+/** secco, giusto o bagnato secondo le soglie di ⚙️ */
+const umidK = v => v < reg("secco") ? "secco" : v > reg("zuppo") ? "zuppo" : "ok";
 
 /* ================= pagina ================= */
 function tessera(id, i) {
-  const c = ctx(id), st = statoZ(c), on = st.k === "on", un = st.k === "un", d = durata(id), now = Date.now();
+  const c = ctx(id), st = statoZ(c), on = st.k === "on", un = st.k === "un", d = durata(id), now = Date.now(), R = rapidi();
   const marca = MARCHE[c.p] || (c.d === "script" ? "Script" : "");
   const pr = on && st.T?.tot ? lim(1 - (st.T.fine - now) / st.T.tot, 0, 1) : null;
   return `<section class="card ir1z ${st.k}">
@@ -390,8 +444,8 @@ function tessera(id, i) {
     ${pr != null ? `<div class="ir1pr" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pr * 100)}"><i style="width:${(pr * 100).toFixed(1)}%"></i></div>` : ""}
     <div class="ir1c">${on ? `<span class="ir1fn">${st.T?.fine ? t("fino alle ", "until ") + hhmm(st.T.fine) : t("dalle ", "since ") + hhmm(st.T.da)}</span>
         <button class="btn bad ir1go" data-act="irStop" data-id="${id}">■ ${t("Ferma", "Stop")}</button>`
-      : `<div class="seg ir1d" role="group" aria-label="${t("Durata", "Duration")}">${DUR.map(m => `<button class="${d === m ? "act" : ""}" data-act="irDur" data-id="${id}" data-v="${m}" aria-pressed="${d === m}">${m}′</button>`).join("")}
-        <button class="${DUR.includes(d) ? "" : "act"}" data-act="irAltro" data-id="${id}" aria-label="${t("Altra durata", "Other duration")}">${DUR.includes(d) ? "⋯" : d + "′"}</button></div>
+      : `<div class="seg ir1d" role="group" aria-label="${t("Durata", "Duration")}">${R.map(m => `<button class="${d === m ? "act" : ""}" data-act="irDur" data-id="${id}" data-v="${m}" aria-pressed="${d === m}">${m}′</button>`).join("")}
+        <button class="${R.includes(d) ? "" : "act"}" data-act="irAltro" data-id="${id}" aria-label="${t("Altra durata", "Other duration")}">${R.includes(d) ? "⋯" : d + "′"}</button></div>
         <button class="btn pri ir1go" data-act="irGo" data-id="${id}" ${un ? "disabled" : ""}>▶ ${t("Avvia", "Start")}</button>`}</div>
     ${c.d === "script" && !on ? `<div class="small muted ir1nt">${t("Lo script riceve i minuti nella variabile «minuti».", "The script gets the minutes in the «minuti» variable.")}</div>` : ""}
   </section>`;
@@ -404,20 +458,20 @@ function avviso() {
       <button class="btn" data-act="irRiprendi" ${lavoro ? "disabled" : ""}>▶ ${t("Riprendi", "Resume")}</button></div>`, { cls: "span3 ir1av pz" });
   if (sp.length) return card("", `<div class="ir1a"><span class="ir1ai">⚠️</span><div class="tx"><b>${t("La pausa è finita, ma questi programmi sono ancora spenti", "The pause is over, but these schedules are still off")}</b>
       <span>${sp.map(x => esc(nm(x.id))).join(", ")}</span></div><button class="btn pri" data-act="irRiprendi" ${lavoro ? "disabled" : ""}>▶ ${t("Riaccendi", "Turn back on")}</button></div>`, { cls: "span3 ir1av" });
-  if (!pd || sGet("ir_nopioggia") === domani().toDateString()) return "";
+  if (!pd || sGet("ir_nopioggia") === chiaveNoPioggia()) return "";
   const ic = (WX()[pd.f.condition] || ["🌧️"])[0], det = [pd.pr != null ? pd.pr + "%" : "", pd.mm ? String(pd.mm).replace(".", t(",", ".")) + " mm" : ""].filter(Boolean).join(" · ");
-  return card("", `<div class="ir1a"><span class="ir1ai">${ic}</span><div class="tx"><b>${t("Domani piove: vuoi saltare l'irrigazione?", "Rain tomorrow: skip watering?")}</b>
-      <span>${det ? esc(det) + " · " : ""}${L.length ? t("Metto in pausa i programmi fino a domani sera: ", "I'll pause the schedules until tomorrow night: ") + L.map(x => esc(nomeP(x))).join(", ")
+  return card("", `<div class="ir1a"><span class="ir1ai">${ic}</span><div class="tx"><b>${titoloPioggia(pd)}${t(": vuoi saltare l'irrigazione?", ": skip watering?")}</b>
+      <span>${det ? esc(det) + " · " : ""}${L.length ? t("Metto in pausa i programmi fino a ", "I'll pause the schedules until ") + esc(fineTxt()) + ": " + L.map(x => esc(nomeP(x))).join(", ")
         : isAdmin() ? t("Non trovo programmi da mettere in pausa: se irrighi con un'automazione, aggiungila con ✏️ Modifica.", "No schedules to pause found: if you water with an automation, add it with ✏️ Edit.")
         : t("Non trovo programmi da mettere in pausa.", "No schedules to pause found.")}</span></div>
       <div class="ir1ab">${L.length ? `<button class="btn pri" data-act="irPausa" ${lavoro ? "disabled" : ""}>⏸ ${t("Sì, salta", "Yes, skip")}</button>` : ""}<button class="btn" data-act="irNoPioggia">${L.length ? t("No, irriga", "No, water") : t("Ok", "OK")}</button></div></div>`, { cls: "span3 ir1av" });
 }
 /** solo per gli amministratori: il timer della plancia va creato o aggiornato */
 function avvisoTimer() {
-  const k = isAdmin() ? timerDaPreparare() : null; if (!k) return "";
+  const k = isAdmin() ? timerDaPreparare() : null; if (!k || (k === "aggiorna" && !aggiornaFallito())) return "";   // «aggiorna» lo faccio da solo
   const G = generiche();
   return card("", `<div class="ir1a"><span class="ir1ai">⏱</span><div class="tx"><b>${k === "crea" ? t("Prepara il timer dell'irrigazione", "Set up the irrigation timer") : t("Le zone sono cambiate: aggiorna il timer", "Zones changed: update the timer")}</b>
-      <span>${t("Creo in Home Assistant lo script «'Nduja · irrigazione», che chiude la zona dopo i minuti scelti anche a plancia chiusa, e un'automazione che, se Home Assistant si riavvia durante un'irrigazione, chiude per sicurezza: ", "I create the «'Nduja · irrigation» script in Home Assistant, which closes the zone after the chosen minutes even with the dashboard closed, and an automation that, if Home Assistant restarts while watering, closes for safety: ")}${G.map(id => esc(nm(id))).join(", ")}.</span></div>
+      <span>${t("Creo in Home Assistant lo script «'Nduja · irrigazione», che chiude la zona dopo i minuti scelti anche a plancia chiusa, e un'automazione che, se Home Assistant si riavvia durante un'irrigazione, chiude per sicurezza: ", "I create the «'Nduja · irrigation» script in Home Assistant, which closes the zone after the chosen minutes even with the dashboard closed, and an automation that, if Home Assistant restarts while watering, closes for safety: ")}${G.map(id => esc(nm(id))).join(", ") || "—"}.</span></div>
       <button class="btn pri" data-act="irTimer" ${preparando ? "disabled" : ""}>${k === "crea" ? "＋ " + t("Crea", "Create") : "↻ " + t("Aggiorna", "Update")}</button></div>`, { cls: "span3 ir1av" });
 }
 function programmi() {
@@ -425,14 +479,19 @@ function programmi() {
   const col = (tit, corpo) => `<div class="ir1col"><div class="mu1l">${tit}</div>${corpo}</div>`;
   const prog = P.length ? `<div class="stack">${P.map(x => `<div class="li ir1pl"><span class="ic">🗓</span><div class="tx"><b>${esc(quando(x.da))}</b><span>${esc(x.titolo)}</span></div></div>`).join("")}</div>`
     : `<div class="small muted">${t("Nessuna partenza programmata che conosco: le integrazioni che la espongono (Hydrawise, b-hyve, Rain Bird con il calendario…) la mostrano qui.", "No scheduled start I know of: integrations that expose it (Hydrawise, b-hyve, Rain Bird with its calendar…) show it here.")}</div>`;
-  const meteo = F.length ? `<div class="ir1fc">${F.map(d => { const wet = PIOGGIA.includes(d.condition) || d.precipitation_probability >= 60;
+  /* gli orari delle automazioni che irrigano si cambiano nell'automazione: costruttore della plancia o editor di Home Assistant */
+  const AU = isAdmin() && ACT.auEdit ? L.filter(x => x.via === "auto") : [];
+  const orari = AU.length ? `<div class="stack" style="margin-top:12px">${AU.map(x => `<div class="li ir1pl"><span class="ic">🔁</span><div class="tx"><b>${esc(nm(x.id))}</b><span>${attr(x.id, "last_triggered") ? t("ultima volta ", "last run ") + esc(quando(new Date(attr(x.id, "last_triggered")))) : t("automazione", "automation")}</span></div>
+      <button class="btn sm" data-act="auEdit" data-id="${x.id}" title="${t("Cambia gli orari nell'automazione", "Change the times in the automation")}">🕒 ${t("Orari", "Times")}</button></div>`).join("")}</div>` : "";
+  const meteo = F.length ? `<div class="ir1fc">${F.map(d => { const wet = piove(d);
       return `<div class="${wet ? "wet" : ""}"><small>${esc(new Date(d.datetime).toLocaleDateString(LOC, { weekday: "short" }))}</small><span>${(WX()[d.condition] || ["·"])[0]}</span><b>${d.precipitation_probability != null ? d.precipitation_probability + "%" : d.precipitation != null ? d.precipitation + " mm" : "—"}</b></div>`; }).join("")}</div>`
     : `<div class="small muted">${w ? t("Previsioni in arrivo…", "Forecast loading…") : t("Nessun meteo in Home Assistant.", "No weather in Home Assistant.")}</div>`;
-  const umid = U.length ? `<div class="stack">${U.map(id => { const v = +S[id].state, k = v < 25 ? "secco" : v > 60 ? "zuppo" : "ok";
+  const umid = U.length ? `<div class="stack">${U.map(id => { const v = +S[id].state, k = umidK(v);
       return `<button class="ir1u ${k}" data-act="more" data-id="${id}"><span class="tx"><b>${esc(nm(id))}</b><small>${k === "secco" ? t("secco", "dry") : k === "zuppo" ? t("bagnato", "wet") : t("giusto", "fine")}</small></span><span class="ir1ub"><i style="width:${lim(v, 0, 100)}%"></i></span><em>${Math.round(v)}%</em></button>`; }).join("")}</div>`
-    : `<div class="small muted">${t("Nessun sensore di umidità del terreno.", "No soil moisture sensor.")}</div>`;
-  const pulsante = !pz && L.length ? `<div class="row" style="margin-top:14px;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="irPausa" ${lavoro ? "disabled" : ""}>⏸ ${t("Salta l'irrigazione fino a domani sera", "Skip watering until tomorrow night")}</button></div>` : "";
-  return card("📅 " + t("Programmi e meteo", "Schedules and weather"), `<div class="ir1pm">${col(t("Prossime irrigazioni", "Next waterings"), prog + pulsante)}${col(t("Pioggia prevista", "Expected rain"), meteo)}${col(t("Umidità del terreno", "Soil moisture"), umid)}</div>`, { cls: "span3" });
+    : `<div class="small muted">${t("Nessun sensore di umidità del terreno.", "No soil moisture sensor.")}${isAdmin() ? " " + t("Se ce l'hai, aggiungilo con ⚙️.", "If you have one, add it with ⚙️.") : ""}</div>`;
+  const pulsante = !pz && L.length ? `<div class="row" style="margin-top:14px;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="irPausa" ${lavoro ? "disabled" : ""}>⏸ ${t("Salta l'irrigazione fino a ", "Skip watering until ") + esc(fineTxt())}</button></div>` : "";
+  return card("📅 " + t("Programmi e meteo", "Schedules and weather"), `<div class="ir1pm">${col(t("Prossime irrigazioni", "Next waterings"), prog + orari + pulsante)}${col(t("Pioggia prevista", "Expected rain"), meteo)}${col(t("Umidità del terreno", "Soil moisture"), umid)}</div>`,
+    { cls: "span3", right: isAdmin() ? `<button class="btn sm" data-act="irCfg" title="${t("Pioggia, pausa, durate e terreno", "Rain, pause, durations and soil")}" aria-label="${t("Pioggia, pausa, durate e terreno", "Rain, pause, durations and soil")}">⚙️</button>` : "" });
 }
 /** ✏️: zone aggiunte e tolte, programmi da sospendere, timer */
 function modifica() {
@@ -444,7 +503,8 @@ function modifica() {
     <div class="ir1col"><div class="mu1l">${t("Zone", "Zones")}</div><div class="stack">
       <button class="add1" data-act="irAdd"><span>＋</span>${t("Aggiungi zona (switch, valvola o script)", "Add zone (switch, valve or script)")}</button>
       ${tolte.map(id => riga(id, t("tolta dalla pagina", "removed from the page"), `<button class="btn sm" data-act="irRimetti" data-id="${id}">↺ ${t("Rimetti", "Restore")}</button>`)).join("")}</div>
-      <p class="small muted" style="margin-top:10px">${t("Tocca ✏️ su una zona per cambiarle nome e aspetto o toglierla.", "Tap ✏️ on a zone to change its name and look or remove it.")}</p></div>
+      <p class="small muted" style="margin-top:10px">${t("Tocca ✏️ su una zona per cambiarle nome, aspetto e durata o toglierla.", "Tap ✏️ on a zone to change its name, look and duration or remove it.")}</p>
+      <button class="btn sm" style="margin-top:10px" data-act="irCfg">⚙️ ${t("Pioggia, pausa, durate e terreno", "Rain, pause, durations and soil")}</button></div>
     <div class="ir1col"><div class="mu1l">${t("Da mettere in pausa quando piove", "To pause when it rains")}</div><div class="stack">
       ${L.map(x => riga(x.id, VIA()[x.via], `<button class="btn sm" data-act="irNoP" data-id="${x.id}" aria-label="${t("Togli", "Remove")}">✕</button>`, nomeP(x))).join("")}
       ${extra.map(id => riga(id, t("spento adesso: lo metto in pausa quando è acceso", "off now: I'll pause it when it's on"), `<button class="btn sm" data-act="irNoP" data-id="${id}" aria-label="${t("Togli", "Remove")}">✕</button>`)).join("")}
@@ -458,7 +518,7 @@ function modifica() {
   </div>`, { cls: "span3" });
 }
 function pagina() {
-  const Z = zone();
+  const Z = zone(); aggiornaDaSolo();
   return `<div class="g g3">${avviso()}${avvisoTimer()}${Z.map(tessera).join("")}
     ${!Z.length ? card("💧 " + t("Irrigazione", "Irrigation"), `<div class="empty">${t("Nessuna zona: premi ✏️ Modifica e ＋ per aggiungerne.", "No zones: press ✏️ Edit and ＋ to add some.")}</div>`, { cls: "span3" }) : ""}
     ${programmi()}${modifica()}</div>`;
@@ -471,7 +531,7 @@ function homeCard() {
     return `<div class="ir1hr"><button class="ir1hb" data-act="irVai">${scena(c, "h" + c.id.replace(/\W/g, ""), "xs")}<span class="tx"><b>${esc(nm(c.id))}</b><small>${esc(st.n)}</small></span></button>
       <button class="mpc1" data-act="irStop" data-id="${c.id}" aria-label="${t("Ferma", "Stop")} ${esc(nm(c.id))}">■</button></div>`; }).join("");
   const sotto = [pz ? "⏸ " + t("in pausa fino a ", "paused until ") + quando(new Date(pz.fino)) : "", P ? "🗓 " + t("Prossima: ", "Next: ") + P.titolo + " · " + quando(P.da) : "",
-    !pz && pd && sGet("ir_nopioggia") !== domani().toDateString() ? "🌧️ " + t("Domani piove", "Rain tomorrow") : ""].filter(Boolean);
+    !pz && pd && sGet("ir_nopioggia") !== chiaveNoPioggia() ? "🌧️ " + titoloPioggia(pd) : ""].filter(Boolean);
   return card("💧 " + t("Irrigazione", "Irrigation"), `${righe ? `<div class="stack">${righe}</div>` : `<button class="ir1h0" data-act="irVai">${t("Nessuna zona in irrigazione", "No zone watering")}</button>`}
     ${sotto.length ? `<button class="ir1hs" data-act="irVai">${sotto.map(s => `<span>${esc(s)}</span>`).join("")}</button>` : ""}`, { link: [t("Zone", "Zones"), "irrigazione"] });
 }
@@ -488,6 +548,8 @@ function foglioZona() {
     <div class="ir1ak">${[["auto", "✨ " + t("Automatico", "Automatic")], ["irrigatore", t("Irrigatore", "Sprinkler")], ["goccia", t("A goccia", "Drip")]].map(([k, n]) => {
       const g = k === "auto" ? gocciaDaNome(id) : k === "goccia";
       return `<button class="${a === k ? "on" : ""}" data-act="irAsp" data-v="${k}">${`<div class="ir1s ${g ? "gc1" : "sp1"} on sm" style="--wet:.55">${g ? aiuola("ak" + k) : prato("ak" + k)}</div>`}<span>${n}</span></button>`; }).join("")}</div>
+    <label class="fld1" style="margin-top:12px"><span>⏱ ${t("Durata di partenza", "Starting duration")}</span><span class="ar1in"><input id="ir1zd" type="number" inputmode="numeric" min="1" max="240" value="${LAYOUT.irrig?.durate?.[id] ?? ""}" placeholder="${reg("durata")}"><em>min</em></span></label>
+    <p class="small muted" style="margin:6px 0 0;line-height:1.45">${t(`La durata già scelta su questa zona per tutta la casa; vuoto = quella di ⚙️ (${reg("durata")} min). Chi tocca un'altra durata sul suo telefono o tablet la ritrova lì.`, `The duration already picked on this zone for the whole home; empty = the one in ⚙️ (${reg("durata")} min). Whoever taps another duration on their phone or tablet finds it there.`)}</p>
     <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn pri" data-act="irEdSalva">💾 ${t("Salva", "Save")}</button>
       <button class="btn bad" data-act="irTogli">✕ ${man ? t("Togli dalla pagina", "Remove from the page") : t("Non è una zona", "Not a zone")}</button></div>
     <p class="small muted" style="margin-top:12px">${t("Il nome cambia solo nella plancia, non in Home Assistant.", "The name changes only in the dashboard, not in Home Assistant.")}</p>`;
@@ -502,26 +564,96 @@ function foglioDurata() {
     <div class="row" style="gap:8px;margin-top:16px;justify-content:center"><button class="btn pri" data-act="irDurGo">▶ ${t("Avvia", "Start")}</button><button class="btn" data-act="irDurOk">${t("Usa come durata", "Use as duration")}</button></div>`;
 }
 const minuti = () => lim(Math.round(+document.getElementById("ir1m")?.value || 10), 1, 240);
-const irrigCambia = (fn, msg) => cambia(l => { l.irrig = JSON.parse(JSON.stringify(l.irrig || {})); fn(l.irrig, l); }, msg);
+const irrigCambia = (fn, msg) => cambia(l => { l.irrig = JSON.parse(JSON.stringify(l.irrig || {})); fn(l.irrig, l); if (!Object.keys(l.irrig).length) delete l.irrig; }, msg);
+
+/* ---------- ⚙️ pioggia, pausa, durate, terreno e calendari (amministratori; per tutta la casa, si salvano subito) ---------- */
+/** elenchi trovati da soli che si correggono a mano: chiave delle aggiunte, chiave dei tolti, quelli trovati, elenco attuale, cosa si può scegliere */
+const LISTE = () => ({
+  terreno: { extra: "terreno", no: "noTerreno", trovati: () => ents("sensor", terrenoAuto), scelti: terreniScelti, titolo: "🌱 " + t("Sensore di umidità del terreno", "Soil moisture sensor"),
+    filtro: id => id.startsWith("sensor.") && (deviceClass(id) === "moisture" || attr(id, "unit_of_measurement") === "%") },
+  cal: { extra: "calendari", no: "noCal", trovati: () => allEnts("calendar", calAuto), scelti: calendari, titolo: "🗓 " + t("Calendario dei programmi", "Schedule calendar"), filtro: id => id.startsWith("calendar.") },
+});
+let RIAPRI = false;
+const dopo = () => { if (RIAPRI) setTimeout(() => openSheet(foglioCfg), 60); RIAPRI = false; };
+function foglioCfg() {
+  const I = LAYOUT.irrig || {}, w = weatherEnt(), p = previsione(), R = rapidi();
+  const num = (k, lab, unita, step = 1) => `<label class="fld1"><span>${lab}</span><span class="ar1in"><input type="number" inputmode="decimal" min="${IR_LIM[k][0]}" max="${IR_LIM[k][1]}" step="${step}" value="${reg(k)}" data-chg="irNum" data-k="${k}"><em>${unita}</em></span></label>`;
+  const sel = (k, lab, ops) => `<label class="fld1"><span>${lab}</span><select data-chg="irNum" data-k="${k}">${ops.map(([v, n]) => `<option value="${v}" ${reg(k) === v ? "selected" : ""}>${n}</option>`).join("")}</select></label>`;
+  const aiuto = s => `<p class="small muted" style="margin:6px 0 0;line-height:1.45">${s}</p>`;
+  const mmTxt = v => String(v).replace(".", t(",", "."));
+  const adesso = !w ? "⚠️ " + t("Nessun meteo in Home Assistant.", "No weather in Home Assistant.")
+    : !p ? t("Previsione non ancora arrivata.", "Forecast not here yet.") + ` ${t("Meteo usato", "Weather used")}: <b>${esc(nm(w))}</b>.`
+    : `${t("Adesso", "Now")}: ${p.ore ? t(`prossime ${p.ore} ore`, `next ${p.ore} hours`) : t("domani", "tomorrow")} <b>${[p.pr != null ? p.pr + "%" : "", p.mm != null ? mmTxt(p.mm) + " mm" : ""].filter(Boolean).join(" · ") || "—"}</b> → ${piove(p.f) ? "🌧️ " + t("piove", "rain") : "☀️ " + t("non piove", "no rain")} · ${t("meteo", "weather")}: ${esc(nm(w))}.`;
+  const elenco = k => {
+    const L = LISTE()[k], tolti = (I[L.no] || []).filter(id => S[id]);
+    const valore = id => !ok(id) ? t("non raggiungibile", "unavailable") : k === "terreno" ? (isNaN(parseFloat(S[id].state)) ? esc(S[id].state) : Math.round(+S[id].state) + "% · " + { secco: t("secco", "dry"), zuppo: t("bagnato", "wet"), ok: t("giusto", "fine") }[umidK(+S[id].state)]) : esc(id);
+    return `<div class="stack" style="margin-top:8px">${L.scelti().map(id => `<div class="li"><div class="tx"><b>${esc(nm(id))}</b><span>${valore(id)}${(I[L.extra] || []).includes(id) ? " · " + t("aggiunto a mano", "added by hand") : ""}</span></div><button class="x3" data-act="irLDel" data-k="${k}" data-id="${id}" aria-label="${t("Togli", "Remove")} · ${esc(nm(id))}">✕</button></div>`).join("")}
+      ${tolti.map(id => `<div class="li"><div class="tx"><b>${esc(nm(id))}</b><span>${t("tolto da questa pagina", "removed from this page")}</span></div><button class="btn sm" data-act="irLRim" data-k="${k}" data-id="${id}">↺ ${t("Rimetti", "Restore")}</button></div>`).join("")}
+      <button class="add1" data-act="irLAdd" data-k="${k}"><span>＋</span>${t("Aggiungi", "Add")}</button></div>`;
+  };
+  const giorni = [1, 2, 3, 4, 5, 6, 7].map(g => [g, g === 1 ? t("domani", "tomorrow") : g === 2 ? t("dopodomani", "the day after tomorrow") : t(`fra ${g} giorni`, `in ${g} days`)]);
+  return `<div class="sh-head"><div><h3>⚙️ ${t("Irrigazione", "Irrigation")}</h3><div class="small muted">${t("Valgono per tutta la casa e solo nella plancia. Si salvano subito.", "They apply to the whole home and only in the dashboard. Saved immediately.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
+    <div class="fl1">🌧️ ${t("Quando dico che piove", "When I say it rains")}</div>
+    ${sel("pioggiaOre", t("Guarda", "Look at"), [[0, t("domani (previsione del giorno)", "tomorrow (daily forecast)")], ...[3, 6, 12, 24, 48].map(h => [h, t(`le prossime ${h} ore (previsione oraria)`, `the next ${h} hours (hourly forecast)`)])])}
+    <div class="apn1">${num("pioggiaPr", t("Probabilità da", "Chance from"), "%")}${num("pioggiaMm", t("Oppure pioggia da", "Or rain from"), "mm", "0.5")}</div>
+    <div class="row between" style="gap:8px;margin-top:10px"><span>${t("Conta anche l'icona della pioggia", "Also count the rain icon")}</span><button class="sw ${I.icona !== false ? "on" : ""}" data-act="irIcona" aria-pressed="${I.icona !== false}" aria-label="${t("Conta anche l'icona della pioggia", "Also count the rain icon")}"><i></i></button></div>
+    ${aiuto(t("Se la previsione supera una di queste soglie (o mostra pioggia, se l'icona conta) compare «vuoi saltare l'irrigazione?», qui e nella Home. Con le ore sommo i millimetri e prendo la probabilità più alta.", "If the forecast goes over one of these thresholds (or shows rain, if the icon counts) «skip watering?» appears, here and on Home. With hours I add up the millimetres and take the highest chance.") + "<br>" + adesso)}
+    <div class="fl1">⏸ ${t("Pausa per pioggia", "Rain pause")}</div>
+    <div class="apn1">${sel("pausaGiorni", t("Fino a", "Until"), giorni)}<label class="fld1"><span>${t("Alle", "At")}</span><input type="time" value="${oraPausa()}" data-chg="irOra"></label></div>
+    ${aiuto(t("«Sì, salta» mette in pausa i programmi fino a: ", "«Yes, skip» pauses the schedules until: ") + "<b>" + esc(quando(finePausa())) + "</b>. " + t("Le automazioni le riaccende Home Assistant da solo; i ritardi pioggia delle integrazioni finiscono da soli.", "Home Assistant turns the automations back on by itself; the integrations' rain delays end by themselves."))}
+    <div class="fl1">⏱ ${t("Durate", "Durations")}</div>
+    <div class="apn1">${num("durata", t("Durata di partenza", "Starting duration"), "min")}<label class="fld1"><span>${t("Pulsanti rapidi (minuti)", "Quick buttons (minutes)")}</span><input type="text" inputmode="numeric" value="${R.join(", ")}" placeholder="5, 10, 15, 30" data-chg="irRapidi"></label></div>
+    ${aiuto(t("La durata già scelta su ogni zona (ognuna si può cambiare con ✏️ sulla zona); su ogni telefono o tablet resta l'ultima durata toccata. I pulsanti rapidi sono da 2 a 6 numeri separati da virgole, fino a 240.", "The duration already picked on every zone (each can be changed with ✏️ on the zone); each phone or tablet keeps the last duration tapped. Quick buttons are 2 to 6 numbers separated by commas, up to 240."))}
+    <div class="fl1">🌱 ${t("Umidità del terreno", "Soil moisture")}</div>
+    <div class="apn1">${num("secco", t("Secco sotto", "Dry below"), "%")}${num("zuppo", t("Bagnato sopra", "Wet above"), "%")}</div>
+    ${aiuto(t("Servono solo a colorare i sensori: in mezzo è «giusto». Li trovo da soli; puoi toglierli (per esempio quelli dei vasi in casa) o aggiungerne.", "They only colour the sensors: in between is «fine». I find them myself; you can remove some (e.g. indoor pots) or add more."))}
+    ${elenco("terreno")}
+    <div class="fl1">🗓 ${t("Calendari dei programmi", "Schedule calendars")}</div>
+    ${aiuto(t("Le partenze di questi calendari (Rain Bird, Rachio…) compaiono in «Prossime irrigazioni».", "The starts in these calendars (Rain Bird, Rachio…) show in «Next waterings»."))}
+    ${elenco("cal")}
+    <div class="row" style="gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn" data-act="irDef">↺ ${t("Numeri di partenza", "Default numbers")}</button></div>`;
+}
+CHG.irNum = el => {
+  const k = el.dataset.k, s = String(el.value).replace(",", ".").trim(), v = +s, [a, b] = IR_LIM[k];
+  if (s !== "" && (isNaN(v) || v < a || v > b)) { toast(t(`Scegli un numero da ${String(a).replace(".", ",")} a ${b}`, `Pick a number from ${a} to ${b}`), true); el.value = reg(k); return; }
+  const n = s === "" ? IR_DEF[k] : k === "pioggiaMm" ? Math.round(v * 10) / 10 : Math.round(v);
+  if ((k === "secco" && n >= reg("zuppo")) || (k === "zuppo" && n <= reg("secco"))) { toast(t("«Secco sotto» deve essere più basso di «Bagnato sopra»", "«Dry below» must be lower than «Wet above»"), true); el.value = reg(k); return; }
+  irrigCambia(I => { if (n === IR_DEF[k]) delete I[k]; else I[k] = n; }, "💾 " + String(n).replace(".", t(",", ".")));
+};
+CHG.irOra = el => { const v = el.value; if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(v)) { el.value = oraPausa(); return; }
+  irrigCambia(I => { if (v === "23:59") delete I.pausaOra; else I.pausaOra = v; }, "⏸ " + v); };
+CHG.irRapidi = el => {
+  const R = [...new Set(String(el.value).split(/[^\d]+/).filter(Boolean).map(Number))].sort((a, b) => a - b);
+  if (R.length < 2 || R.length > 6 || R.some(m => m < 1 || m > 240)) { toast(t("Scrivi da 2 a 6 durate da 1 a 240 minuti, per esempio 5, 10, 20", "Enter 2 to 6 durations from 1 to 240 minutes, e.g. 5, 10, 20"), true); el.value = rapidi().join(", "); return; }
+  irrigCambia(I => { if (JSON.stringify(R) === JSON.stringify(DUR)) delete I.rapidi; else I.rapidi = R; }, "⏱ " + R.join(" · "));
+};
 
 Object.assign(ACT, {
   irGo: el => avvia(el.dataset.id, durata(el.dataset.id)),
   irStop: (el, e) => { e?.stopPropagation?.(); ferma(el.dataset.id); },
-  irDur: el => { sSet("ir_dur_" + el.dataset.id, el.dataset.v); render(true); },
+  /* la durata della casa non la ricordo sul dispositivo: così, se l'amministratore la cambia, arriva anche qui */
+  irDur: el => { const id = el.dataset.id; sSet("ir_dur_" + id, +el.dataset.v === durataCasa(id) ? "" : el.dataset.v); render(true); },
   irAltro: el => { DZ = el.dataset.id; openSheet(foglioDurata); setTimeout(() => document.getElementById("ir1m")?.select(), 80); },
   irPiu: el => { const i = document.getElementById("ir1m"); if (i) i.value = lim((+i.value || 10) + +el.dataset.v, 1, 240); },
   irSetM: el => { const i = document.getElementById("ir1m"); if (i) i.value = el.dataset.v; },
-  irDurOk: () => { sSet("ir_dur_" + DZ, minuti()); closeSheet(); },
-  irDurGo: () => { const m = minuti(), id = DZ; sSet("ir_dur_" + id, m); closeSheet(); avvia(id, m); },
+  irDurOk: () => { const m = minuti(); sSet("ir_dur_" + DZ, m === durataCasa(DZ) ? "" : m); closeSheet(); },
+  irDurGo: () => { const m = minuti(), id = DZ; sSet("ir_dur_" + id, m === durataCasa(id) ? "" : m); closeSheet(); avvia(id, m); },
   irVai: () => go("irrigazione"),
   irPausa: () => mettiInPausa(),
   irRiprendi: () => togliPausa(),
-  irNoPioggia: () => { sSet("ir_nopioggia", domani().toDateString()); render(true); },
+  irNoPioggia: () => { sSet("ir_nopioggia", chiaveNoPioggia()); render(true); },
   irTimer: () => preparaTimer().then(ok => { if (ok) toast("⏱ " + t("Timer pronto", "Timer ready")); }),
   irEd: el => { ED = el.dataset.id; openSheet(foglioZona); },
   irAsp: el => { const v = el.dataset.v, id = ED; irrigCambia(I => { I.aspetto = I.aspetto || {}; if (v === "auto") delete I.aspetto[id]; else I.aspetto[id] = v; }).then(() => { if (UI.sheet) render(); }); },
-  irEdSalva: () => { const id = ED, n = (document.getElementById("ir1n")?.value || "").trim(); closeSheet();
-    cambia(l => { l.names = { ...(l.names || {}) }; if (n && n !== nmHA(id)) l.names[id] = n; else delete l.names[id]; }, "💾 " + (n || nmHA(id))); },
+  irEdSalva: () => {
+    const id = ED, n = (document.getElementById("ir1n")?.value || "").trim(), dv = String(document.getElementById("ir1zd")?.value ?? "").replace(",", ".").trim(), dn = Math.round(+dv);
+    if (dv !== "" && !(dn >= 1 && dn <= 240)) return toast(t("Durata: scegli da 1 a 240 minuti", "Duration: pick 1 to 240 minutes"), true);
+    const prima = durataCasa(id); closeSheet();
+    cambia(l => { l.names = { ...(l.names || {}) }; if (n && n !== nmHA(id)) l.names[id] = n; else delete l.names[id];
+      /* durata della zona: salvo solo se diversa da quella di ⚙️ */
+      l.irrig = JSON.parse(JSON.stringify(l.irrig || {})); const D = l.irrig.durate = l.irrig.durate || {};
+      if (dv === "" || dn === reg("durata")) delete D[id]; else D[id] = dn; if (!Object.keys(D).length) delete l.irrig.durate; if (!Object.keys(l.irrig).length) delete l.irrig; }, "💾 " + (n || nmHA(id)))
+      .then(() => { if (durataCasa(id) !== prima) { sSet("ir_dur_" + id, ""); render(true); } }); },
   irTogli: () => { const id = ED; closeSheet(); irrigCambia(I => { I.zone = (I.zone || []).filter(x => x !== id); if (eZona(id)) I.tolte = [...new Set([...(I.tolte || []), id])]; }, "✕ " + nm(id)); },
   irRimetti: el => { const id = el.dataset.id; irrigCambia(I => { I.tolte = (I.tolte || []).filter(x => x !== id); }, "↺ " + nm(id)); },
   irAdd: () => scegli({ titolo: "＋ " + t("Zona", "Zone"), sotto: t("Switch, valvole, interruttori e script della casa.", "Switches, valves, toggles and scripts in the house."), auto: false, attuale: null,
@@ -532,6 +664,19 @@ Object.assign(ACT, {
     onPick: id => id && irrigCambia(I => { I.pausa = [...new Set([...(I.pausa || []), id])]; I.noPausa = (I.noPausa || []).filter(x => x !== id); }, "＋ " + nm(id)) }),
   irNoP: el => { const id = el.dataset.id; irrigCambia(I => { const extra = (I.pausa || []).includes(id); I.pausa = (I.pausa || []).filter(x => x !== id); if (!extra) I.noPausa = [...new Set([...(I.noPausa || []), id])]; }); },
   irSiP: el => { const id = el.dataset.id; irrigCambia(I => { I.noPausa = (I.noPausa || []).filter(x => x !== id); }); },
+  irCfg: () => openSheet(foglioCfg),
+  irIcona: () => irrigCambia(I => { if (I.icona === false) delete I.icona; else I.icona = false; }),
+  irDef: () => irrigCambia(I => { for (const k of [...Object.keys(IR_DEF), "pausaOra", "rapidi", "icona"]) delete I[k]; }, "↺ " + t("Numeri di partenza", "Default numbers")),
+  /* elenchi di ⚙️ (sensori del terreno, calendari): ✕ toglie (se trovato da solo, lo ricordo tra i tolti), ↺ rimette, ＋ aggiunge */
+  irLDel: el => { const L = LISTE()[el.dataset.k], id = el.dataset.id;
+    irrigCambia(I => { I[L.extra] = (I[L.extra] || []).filter(x => x !== id); if (!I[L.extra].length) delete I[L.extra]; if (L.trovati().includes(id)) I[L.no] = [...new Set([...(I[L.no] || []), id])]; }, "✕ " + nm(id)); },
+  irLRim: el => { const L = LISTE()[el.dataset.k], id = el.dataset.id;
+    irrigCambia(I => { I[L.no] = (I[L.no] || []).filter(x => x !== id); if (!I[L.no].length) delete I[L.no]; }, "↺ " + nm(id)); },
+  irLAdd: el => { const L = LISTE()[el.dataset.k], qui = new Set(L.scelti()); RIAPRI = !!UI.sheet;
+    scegli({ titolo: "＋ " + L.titolo, sotto: t("Tutti quelli della casa: cerca per nome.", "Everything in the house: search by name."), auto: false, attuale: null,
+      filtro: id => L.filtro(id) && !qui.has(id),
+      onPick: id => { if (!id || id === "none") return dopo();
+        irrigCambia(I => { I[L.no] = (I[L.no] || []).filter(x => x !== id); if (!I[L.no].length) delete I[L.no]; if (!L.trovati().includes(id)) I[L.extra] = [...new Set([...(I[L.extra] || []), id])]; }, "＋ " + nm(id)).then(dopo); } }); },
 });
 document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.id === "ir1m") { e.preventDefault(); ACT.irDurGo(); } });
 

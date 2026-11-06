@@ -7,7 +7,7 @@
    Promemoria: «Annaffia ogni N giorni», «Concima ogni N settimane», «Fatto oggi» (lo segna chiunque); negli Avvisi della Home e,
    se un amministratore li attiva (🔔), sul telefono con l'automazione «'Nduja · piante».
    Giardino: una pianta collegata a una zona dell'Irrigazione si segna annaffiata da sola quando la zona parte (lo fa Home Assistant,
-   piante.py); se domani piove, il promemoria delle piante di fuori slitta a dopodomani.
+   piante.py); se domani piove, il promemoria delle piante di fuori slitta a dopodomani (si spegne in ⚙️).
 
    Dati della casa (casa.js), sezione «piante» = { piante: { id: {
      man (aggiunta a mano), nome, area ("" = nessuna), fuori (true/false; manca = da solo), tipo, foto,
@@ -15,7 +15,7 @@
      zona (switch/valve dell'irrigazione), sens: { misura: entity_id | "none" }, soglie: { misura: [min, max] }, tolta (trovata da sola ma tolta),
      storia: [{ c: "acqua"|"concime", q, chi, via, prima }], nt / fz (nome e «fuori» per l'automazione del telefono) } } }
    id: entity_id della plant, «dev:<dispositivo>» o «s:<sensore>» per i sensori senza plant, «m…» per quelle aggiunte a mano.
-   Scelte della casa (amministratori) in LAYOUT.piante = { pioggia: { pr, mm }, batt, avvisi, sete, promemoria: { persone, altri, ora, meteo } }. */
+   Scelte della casa (amministratori) in LAYOUT.piante = { pioggia: { pr, mm, slitta (false = non slittare) }, batt, avvisi, sete, promemoria: { persone, altri, ora, meteo } }. */
 import { S, REG, AREAS, DEVICES, ACT, CHG, UI, LAYOUT, VISTE, PAGES, t, LOC, esc, nmHA, ok, val, attr, unit, fnum, allEnts, areaOf, areasSorted,
   deviceClass, page, toast, openSheet, closeSheet, render, isAdmin, ws, api, cached, weatherEnt, forecast, WX, utenteCfg, etichettaNduja,
   sicuro, ready, go, tokenHA } from "../core.js";
@@ -26,7 +26,7 @@ import { serviziNotify, telefoniDi, nomeServizio } from "./scadenze.js";
 
 const SEZ = "piante", AUT = "nduja_piante", MAX = 200, MAX_STORIA = 12, GIORNO = 864e5;
 const C = () => LAYOUT.piante || {};
-const piCambia = (fn, msg) => cambia(l => { l.piante = JSON.parse(JSON.stringify(l.piante || {})); fn(l.piante, l); }, msg);
+const piCambia = (fn, msg) => cambia(l => { l.piante = JSON.parse(JSON.stringify(l.piante || {})); fn(l.piante, l); if (!Object.keys(l.piante).length) delete l.piante; }, msg);
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
 
 /* ================= giorni ================= */
@@ -228,11 +228,18 @@ const ogniDi = (p, c) => { const o = p.rec[c]?.ogni; return o != null && o !== "
 const PIOGGIA = ["rainy", "pouring", "lightning-rainy", "snowy-rainy", "hail"];
 const prMin = () => lim(+C().pioggia?.pr || 60, 10, 100);
 const mmMin = () => lim(C().pioggia?.mm != null && C().pioggia.mm !== "" ? +C().pioggia.mm : 2, 0, 100);
-function pioggiaDomani() {
+/** il promemoria delle piante di fuori slitta se domani piove: sì, finché un amministratore non lo spegne in ⚙️ (pioggia.slitta = false) */
+const slittaOn = () => C().pioggia?.slitta !== false;
+/** le previsioni di domani dal meteo di casa, o null */
+function domani() {
   const w = weatherEnt(); if (!w) return null;
-  const k = piuGiorni(Date.now(), 1).toDateString(), f = (forecast(w, "daily") || []).find(x => new Date(x.datetime).toDateString() === k);
-  if (!f) return null;
-  return PIOGGIA.includes(f.condition) || (f.precipitation_probability ?? 0) >= prMin() || (mmMin() > 0 && (f.precipitation ?? 0) >= mmMin()) ? f : null;
+  const k = piuGiorni(Date.now(), 1).toDateString();
+  return (forecast(w, "daily") || []).find(x => new Date(x.datetime).toDateString() === k) || null;
+}
+const piove = f => !!f && (PIOGGIA.includes(f.condition) || (f.precipitation_probability ?? 0) >= prMin() || (mmMin() > 0 && (f.precipitation ?? 0) >= mmMin()));
+function pioggiaDomani() {
+  if (!slittaOn()) return null;
+  const f = domani(); return piove(f) ? f : null;
 }
 /** prossima volta: { g (giorno), m (giorni che mancano: < 0 in ritardo), slitta, ogni, ultima, via, chi } o null */
 function scad(p, c) {
@@ -590,6 +597,16 @@ async function salva() {
 }
 
 /* ================= ⚙️ impostazioni (amministratori) ================= */
+/** il meteo usato e cosa prevede per domani, accanto alle soglie della pioggia */
+function meteoTesto() {
+  const w = weatherEnt();
+  if (!w) return "⚠️ " + t("Non c'è un meteo in Home Assistant: il promemoria non slitta mai.", "There's no weather in Home Assistant: the reminder never moves.");
+  const f = domani(), nome = LAYOUT.names?.[w] || nmHA(w);
+  const prev = !f ? t("previsioni di domani non disponibili", "tomorrow's forecast not available")
+    : [(WX()[f.condition] || ["🌡️", f.condition || ""]).join(" "), f.precipitation_probability != null ? fnum(f.precipitation_probability, 0) + "%" : "", f.precipitation != null ? fnum(f.precipitation, 1) + " mm" : ""].filter(Boolean).join(" · ")
+      + " → " + (piove(f) ? t("piove: le piante di fuori aspettano", "rain: outdoor plants wait") : t("non piove", "no rain"));
+  return `🌤️ ${t("Meteo", "Weather")}: <b>${esc(nome)}</b> (${t("si cambia nella Home con ✏️ Modifica", "change it on Home with ✏️ Edit")}) · ${t("Domani", "Tomorrow")}: ${esc(prev)}`;
+}
 function impostazioni() {
   const c = C();
   return `<div class="sh-head"><div><h3>⚙️ ${t("Piante", "Plants")}</h3><div class="small muted">${t("Valgono per tutta la casa. Si salvano appena esci da un campo.", "They apply to the whole home. Saved when you leave a field.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
@@ -597,9 +614,11 @@ function impostazioni() {
     <div class="li"><div class="tx"><b>${t("Piante da annaffiare o da concimare", "Plants to water or feed")}</b><span>${t("Il giorno del promemoria e finché non è fatto.", "On the reminder's day and until it's done.")}</span></div><button class="sw ${avvisiOn() ? "on" : ""}" data-act="piCfgSw" data-f="avvisi" aria-pressed="${avvisiOn()}" aria-label="${t("Avvisi", "Alerts")}"><i></i></button></div>
     <div class="li"><div class="tx"><b>${t("Piante che hanno sete", "Thirsty plants")}</b><span>${t("Quando il sensore del terreno scende sotto la soglia.", "When the soil sensor drops below the threshold.")}</span></div><button class="sw ${seteOn() ? "on" : ""}" data-act="piCfgSw" data-f="sete" aria-pressed="${seteOn()}" aria-label="${t("Sete", "Thirst")}"><i></i></button></div>
     <div class="fl1">🌧️ ${t("Pioggia di domani", "Tomorrow's rain")}</div>
-    <p class="small muted" style="margin:0 2px 8px">${t("Se domani piove, il promemoria per annaffiare le piante di fuori slitta a dopodomani. Conta come pioggia quando il meteo prevede pioggia, oppure:", "If it rains tomorrow, the watering reminder for outdoor plants moves to the day after. It counts as rain when the forecast says rain, or:")}</p>
+    <div class="li"><div class="tx"><b>${t("Se domani piove, aspetta ad annaffiare", "If it rains tomorrow, wait to water")}</b><span>${t("Il promemoria delle piante di fuori slitta a dopodomani, anche sul telefono. Spegnilo se le tue piante di fuori sono al riparo.", "The reminder for outdoor plants moves to the day after, on the phone too. Turn it off if your outdoor plants are sheltered.")}</span></div><button class="sw ${slittaOn() ? "on" : ""}" data-act="piCfgSl" aria-pressed="${slittaOn()}" aria-label="${t("Slitta con la pioggia", "Postpone with rain")}"><i></i></button></div>
+    ${slittaOn() ? `<p class="small muted" style="margin:8px 2px 8px">${t("Conta come pioggia quando il meteo prevede pioggia, oppure:", "It counts as rain when the forecast says rain, or:")}</p>
     <label class="fld1"><span>${t("Probabilità di pioggia almeno", "Chance of rain at least")}</span><span class="ar1in"><input type="number" min="10" max="100" step="5" value="${prMin()}" data-chg="piCfgN" data-f="pr"><em>%</em></span></label>
     <label class="fld1"><span>${t("Oppure pioggia prevista almeno (0 = non contare)", "Or expected rain at least (0 = don't count)")}</span><span class="ar1in"><input type="number" min="0" max="100" step="0.5" value="${mmMin()}" data-chg="piCfgN" data-f="mm"><em>mm</em></span></label>
+    <p class="small muted" style="margin:8px 2px 0">${meteoTesto()}</p>` : ""}
     <div class="fl1">🔋 ${t("Sensori", "Sensors")}</div>
     <label class="fld1"><span>${t("Pila del sensore scarica sotto il", "Sensor battery low below")}</span><span class="ar1in"><input type="number" min="1" max="60" step="1" value="${battMin()}" data-chg="piCfgN" data-f="batt"><em>%</em></span></label>
     <p class="small muted" style="margin-top:12px">${t("Le soglie di umidità, luce, temperatura e fertilità si scelgono per ogni pianta con ✏️.", "Moisture, light, temperature and fertility thresholds are set for each plant with ✏️.")}</p>`;
@@ -618,7 +637,7 @@ function foglioProm() {
     <div class="fl1">${t("A chi", "To")}</div><div class="cks1">${P.map(p => { const T = telefoniDi(p); return ck(NB.persone.includes(p) && T.length, "pinP", p, esc(nmHA(p)), T.length ? "📱 " + esc(T.map(nomeServizio).join(", ")) : t("nessun telefono con l'app di Home Assistant", "no phone with the Home Assistant app"), !T.length); }).join("")}
       ${altri.map(s => ck(NB.altri.includes(s), "pinA", s, "📱 " + esc(nomeServizio(s)), t("telefono senza persona", "phone without a person"))).join("")}</div>
     <div class="fl1">${t("A che ora", "At what time")}</div><input class="fkn1 dt" type="time" value="${esc(NB.ora)}" data-chg="pinO" aria-label="${t("Ora del promemoria", "Reminder time")}">
-    <p class="small muted" style="margin:10px 2px 0">${t("Solo per le piante con «Annaffia ogni» o «Concima ogni». Se domani piove, le piante di fuori aspettano. Toccando la notifica si apre questa pagina.", "Only for plants with «Water every» or «Feed every». If it rains tomorrow, outdoor plants wait. Tapping the notification opens this page.")}</p>
+    <p class="small muted" style="margin:10px 2px 0">${t("Solo per le piante con «Annaffia ogni» o «Concima ogni».", "Only for plants with «Water every» or «Feed every».")}${slittaOn() ? " " + t("Se domani piove, le piante di fuori aspettano (⚙️).", "If it rains tomorrow, outdoor plants wait (⚙️).") : ""} ${t("Toccando la notifica si apre questa pagina.", "Tapping the notification opens this page.")}</p>
     <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn pri" data-act="pinSalva" ${sv === false ? "disabled" : ""}>💾 ${t("Salva in Home Assistant", "Save to Home Assistant")}</button>${C().promemoria ? `<button class="btn bad" data-act="pinOff">${t("Spegni i promemoria", "Turn off reminders")}</button>` : ""}</div>`;
 }
 const serviziDi = p => [...new Set([...(p.persone || []).filter(x => S[x]).flatMap(telefoniDi), ...(p.altri || []).filter(s => serviziNotify().includes(s))])];
@@ -635,14 +654,14 @@ function automazione(p) {
 {%- for cosa in ['acqua', 'concime'] -%}{%- set r = p.get(cosa) if p.get(cosa) is mapping else {} -%}{%- set o = (r.get('ogni') or 0) | int(0) -%}
 {%- if o > 0 and not (cosa == 'acqua' and p.get('zona') and is_state(p.get('zona'), ['on', 'open', 'opening'])) -%}
 {%- set u = r.get('ultima') -%}{%- set g = ((as_local(as_datetime(u)).date() + timedelta(days=o * (1 if cosa == 'acqua' else 7))) if u and as_datetime(u) else oggi) -%}
-{%- if cosa == 'acqua' and p.get('fz') and ns.piove and (g - oggi).days <= 1 -%}{%- set g = oggi + timedelta(days=2) -%}{%- endif -%}
+{%- if cosa == 'acqua' and slitta and p.get('fz') and ns.piove and (g - oggi).days <= 1 -%}{%- set g = oggi + timedelta(days=2) -%}{%- endif -%}
 {%- if g <= oggi -%}{%- if cosa == 'acqua' -%}{%- set ns.a = ns.a + [p.get('nt') or p.get('nome') or id] -%}{%- else -%}{%- set ns.c = ns.c + [p.get('nt') or p.get('nome') or id] -%}{%- endif -%}{%- endif -%}
 {%- endif -%}{%- endfor -%}{%- endfor -%}
 {{ ((['💧 ` + t("Annaffia", "Water") + String.raw`: ' ~ (ns.a | join(', '))] if ns.a else []) + (['🌱 ` + t("Concima", "Feed") + String.raw`: ' ~ (ns.c | join(', '))] if ns.c else [])) | join('\n') }}`;
   const avviso = sv.map(s => ({ action: "notify." + s, data: { title: "🪴 " + t("Piante", "Plants"), message: "{{ testo }}",
     data: { tag: "nduja-piante", group: "nduja-piante", channel: t("Piante 'Nduja", "'Nduja plants"), url: "/nduja?apri=piante", clickAction: "/nduja?apri=piante" } } }));
   return { id: AUT, alias: "'Nduja · " + t("piante", "plants"), description: t("Creata da 'Nduja Dashboard (Piante → 🔔): ogni giorno le piante da annaffiare e da concimare sul telefono. Si aggiorna da sola dalla plancia.", "Created by 'Nduja Dashboard (Plants → 🔔): every day the plants to water and feed on the phone. The dashboard keeps it up to date."),
-    variables: { meteo: w, pr: prMin(), mm: mmMin(), pioggia: PIOGGIA, trovate: trovate().map(a => a.id) },
+    variables: { meteo: w, pr: prMin(), mm: mmMin(), pioggia: PIOGGIA, slitta: slittaOn(), trovate: trovate().map(a => a.id) },
     triggers: [{ trigger: "time", at: `${String(+hh || 0).padStart(2, "0")}:${String(+mm || 0).padStart(2, "0")}:00` }],
     conditions: [],
     actions: [
@@ -661,7 +680,8 @@ async function aggiornaAutomazione(p = C().promemoria) {
   if (p.firma !== firma) await piCambia(c => { if (c.promemoria) c.promemoria.firma = firma; });
   return true;
 }
-const firmaAut = () => [weatherEnt() || "", prMin(), mmMin(), trovate().map(a => a.id).sort().join(",")].join("|");
+/* «|fermo» solo se lo slittamento è spento: le automazioni di prima restano valide e non si riscrivono per niente */
+const firmaAut = () => [weatherEnt() || "", prMin(), mmMin(), trovate().map(a => a.id).sort().join(",")].join("|") + (slittaOn() ? "" : "|fermo");
 let controllato = 0;
 function controllaAutomazione() {
   const p = C().promemoria; if (!p || !isAdmin() || Date.now() - controllato < 6e4 || !serviziNotify().length) return;
@@ -704,6 +724,9 @@ Object.assign(ACT, {
   piUrl: () => { leggiCampi(); const u = indirizzoLocale(E.url); if (!u) return toast(t("Scrivi l'indirizzo", "Write the address"), true); E.foto = u; E.vista = "form"; render(); },
   piFotoNo: () => { E.foto = ""; E.url = ""; E.vista = "form"; render(); },
   piCfg: () => openSheet(impostazioni),
+  /* slittamento con la pioggia: acceso = nessuna chiave (come prima); l'automazione del telefono si riscrive da sola */
+  piCfgSl: () => { const on = slittaOn(); piCambia(c => { c.pioggia = { ...(c.pioggia || {}) }; if (on) c.pioggia.slitta = false; else delete c.pioggia.slitta; if (!Object.keys(c.pioggia).length) delete c.pioggia; })
+    .then(() => { if (C().promemoria) aggiornaAutomazione().catch(e => toast(t("Promemoria non aggiornati: ", "Reminders not updated: ") + (e.message || e), true)); }); },
   piCfgSw: el => { const f = el.dataset.f, on = f === "avvisi" ? avvisiOn() : seteOn(); piCambia(c => { c[f] = !on; }); },
   piProm: () => { const p = C().promemoria; NB = { persone: [], altri: [], ora: "08:30", ...JSON.parse(JSON.stringify(p || {})) }; NB.auto = !p; openSheet(foglioProm); },
   pinP: el => { const k = el.dataset.k, i = NB.persone.indexOf(k); i < 0 ? NB.persone.push(k) : NB.persone.splice(i, 1); render(); },

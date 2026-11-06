@@ -2,10 +2,11 @@
    modem/router, mini PC, NAS, Proxmox, Raspberry e stampanti (acceso/spento, CPU, RAM, disco, temperatura, uptime,
    riavvio/accensione con doppia conferma), dispositivi collegati (quanti online, i nuovi di oggi), Wi-Fi ospiti con il QR
    disegnato da ../qr.js e gruppo di continuità (NUT, APC UPS Daemon).
-   Tutto si trova da solo; con ✏️ (solo admin) si aggiunge, toglie, rinomina e si scelgono i sensori: LAYOUT.rete.
+   Tutto si trova da solo; con ✏️ (solo admin) si aggiunge, toglie, rinomina e si scelgono i sensori: LAYOUT.rete
+   { nomi, tipi, sens: { dispositivo: { ruolo: id | "none" } }, inet, ospiti, extra, tolti, avvisa: { dispositivo: true|false }, soglie: { o, r } }.
    In Home la scheda «Rete» (HOME_EXTRA). La pagina compare solo se trova qualcosa. */
-import { S, REG, DEVICES, ACT, UI, LAYOUT, HOME_EXTRA, VISTE, t, LOC, esc, fnum, nm, nmHA, ok, val, attr, unit, card, empty, page, svc, ws, cached,
-  toast, openSheet, closeSheet, render, isAdmin, sicuro, deviceClass, domain, ago, durata } from "../core.js";
+import { S, REG, DEVICES, ACT, CHG, UI, LAYOUT, HOME_EXTRA, VISTE, t, LOC, esc, fnum, nm, nmHA, ok, val, attr, unit, card, empty, page, svc, ws, cached,
+  toast, openSheet, closeSheet, render, isAdmin, sicuro, deviceClass, domain, ago, durata, sGet, sSet } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 import { statistiche, linea } from "../grafici.js";
 import { qrSvg, wifiQR } from "../qr.js";
@@ -32,6 +33,16 @@ const testo = id => (id + " " + nmHA(id)).toLowerCase();
 const pct = id => unit(id) === "%";
 const piatt = id => REG[id]?.platform || "";
 const IP4 = /^(\d{1,3}\.){3}\d{1,3}$/, IP6 = /^[0-9a-f:]{6,}$/i;
+/** CPU, RAM e disco: arancione e rosso da queste percentuali (✏️ → 📊 Soglie e avvisi); prima fisse a 75% e 90% */
+const SOGLIE_DEF = { o: 75, r: 90 };
+function soglie() {
+  const s = conf().soglie || {}, n = (v, d) => { v = +v; return v > 0 && v <= 100 ? v : d; }, r = n(s.r, SOGLIE_DEF.r);
+  return { o: Math.min(n(s.o, SOGLIE_DEF.o), r), r };
+}
+/* modem, server, NAS e Raspberry devono restare accesi: se sono spenti lo dico in Home e nel menu (PC e macchine virtuali spente sono normali).
+   Con ✏️ sul dispositivo si cambia per ognuno: «Avvisami se è spento» (LAYOUT.rete.avvisa) */
+const IMPORTANTI = ["router", "server", "nas", "rpi"];
+const avvisa = d => { const a = conf().avvisa?.[d.k]; return typeof a === "boolean" ? a : IMPORTANTI.includes(d.tipo); };
 
 /* ---------- velocità: tutto in Mbit/s ---------- */
 const MBIT = { "bit/s": 1e-6, "kbit/s": 1e-3, "mbit/s": 1, "gbit/s": 1e3, "b/s": 8e-6, "kb/s": 8e-3, "kib/s": 8.192e-3, "mb/s": 8, "mib/s": 8.389, "gb/s": 8e3, "gib/s": 8590 };
@@ -86,6 +97,8 @@ function ruoli(k, E) {
   R.riavvia = B.find(x => x.startsWith("button.") && (deviceClass(x) === "restart" || /reboot|restart|riavvi/i.test(testo(x))) && !/reconnect|riconnett/i.test(testo(x))) || null;
   R.spegni = B.find(x => x.startsWith("button.") && /shutdown|power_off|poweroff|spegn|\bhalt\b|_stop$|\bstop\b/i.test(testo(x))) || null;
   R.accendi = B.find(x => (x.startsWith("switch.") && piatt(x) === "wake_on_lan") || (x.startsWith("button.") && (/wake|power_on|poweron|accendi|_start$|\bstart\b|\bwol\b/i.test(testo(x)) || piatt(x) === "wake_on_lan"))) || null;
+  /* pulsanti scelti a mano (✏️ → Pulsanti): un'entità qualsiasi o «nessuno» */
+  for (const r of ["riavvia", "spegni", "accendi"]) { const s = scelto(r); if (s !== undefined) R[r] = s; }
   R.agg = E.find(x => x.startsWith("update.") && S[x].state === "on") || null;
   /* stampanti: stato e inchiostri/toner */
   R.inchiostri = sens.filter(x => pct(x) && /ink|toner|inchiostr|marker|drum|tamburo|black|cyan|magenta|yellow|nero|ciano|giallo/i.test(testo(x)));
@@ -168,7 +181,7 @@ function internetOra() {
   let stato = conn.find(x => /wan|internet|connection|connessione|connected|online/i.test(testo(x))) || conn[0] || pingNet[0] || null;
   let ip = RE.find(x => x.startsWith("sensor.") && IP4.test(S[x].state) && /external|public|wan|pubblic|esterno/i.test(testo(x)))
     || Object.keys(S).find(x => x.startsWith("sensor.") && piatt(x) === "dnsip" && IP4.test(S[x].state)) || null;
-  const daQuando = RE.find(x => deviceClass(x) === "timestamp" && /connection|connessione|wan|online/i.test(testo(x))) || null;
+  let daQuando = RE.find(x => deviceClass(x) === "timestamp" && /connection|connessione|wan|online/i.test(testo(x))) || null;
   /* speedtest */
   const SP = [...ST, ...Object.keys(S).filter(x => x.startsWith("sensor.") && /speedtest|fast_com|librespeed/.test(x) && !ST.includes(x))].filter(x => x.startsWith("sensor."));
   let sd = SP.find(x => /download|scaric/i.test(testo(x))) || (SP.find(x => /fast_com/.test(x)) ?? null), su = SP.find(x => /upload|caric/i.test(testo(x)) && !/download/i.test(testo(x))) || null,
@@ -176,6 +189,9 @@ function internetOra() {
   const s = { stato: scelto("stato"), down: scelto("down"), up: scelto("up"), ip: scelto("ip"), sd: scelto("sd"), su: scelto("su"), sp: scelto("sp") };
   if (s.stato !== undefined) stato = s.stato; if (s.down !== undefined) down = s.down; if (s.up !== undefined) up = s.up; if (s.ip !== undefined) ip = s.ip;
   if (s.sd !== undefined) sd = s.sd; if (s.su !== undefined) su = s.su; if (s.sp !== undefined) sp = s.sp;
+  /* velocità massima della linea (scala delle barre) e «connesso da»: anche questi si scelgono a mano */
+  if (scelto("maxDown") !== undefined) maxDown = scelto("maxDown"); if (scelto("maxUp") !== undefined) maxUp = scelto("maxUp");
+  if (scelto("daQuando") !== undefined) daQuando = scelto("daQuando");
   /* collegato? */
   let collegato = null;
   if (stato && S[stato]) collegato = ok(stato) ? S[stato].state === "on" : null;
@@ -212,13 +228,13 @@ function nuoviOggi() {
 /* ---------- UPS ---------- */
 function upsInfo(k) {
   const E = trovaTutto().G[k] || [], sens = E.filter(x => x.startsWith("sensor.")), T = x => testo(x), sc = conf().sens?.[k] || {};
-  const pick = (r, f) => sc[r] && S[sc[r]] ? sc[r] : sens.find(f) || null;
+  const pick = (r, f) => sc[r] === "none" ? null : sc[r] && S[sc[r]] ? sc[r] : sens.find(f) || null;   // «🚫 Nessuno» scelto in ✏️ vale davvero
   const carica = pick("carica", x => pct(x) && (deviceClass(x) === "battery" || /battery_charge|charge|carica|bcharge|_battery$/i.test(T(x))) && !/low|warning|restart|min/i.test(T(x)));
   const autonomia = pick("autonomia", x => /runtime|time_left|timeleft|autonomia|tempo_residuo/i.test(T(x)) && !/low|min|warning/i.test(T(x)));
   const carico = pick("carico", x => pct(x) && /load|carico|loadpct/i.test(T(x)));
-  const statoS = pick("stato", x => /status|stato/i.test(T(x)) && !/data|_raw|alarm/i.test(T(x)) && isNaN(+S[x].state)) || sens.find(x => /status_data|statflag/i.test(T(x)));
+  const statoS = sc.stato === "none" ? null : pick("stato", x => /status|stato/i.test(T(x)) && !/data|_raw|alarm/i.test(T(x)) && isNaN(+S[x].state)) || sens.find(x => /status_data|statflag/i.test(T(x)));
   const online = E.find(x => x.startsWith("binary_sensor.") && /online|status|power|rete/i.test(T(x)));
-  const tensione = sens.find(x => /input_voltage|line_?v|tensione_ingresso|linev/i.test(T(x)) || (deviceClass(x) === "voltage" && /input|ingresso|line/i.test(T(x))));
+  const tensione = pick("tensione", x => /input_voltage|line_?v|tensione_ingresso|linev/i.test(T(x)) || (deviceClass(x) === "voltage" && /input|ingresso|line/i.test(T(x))));
   const st = statoS && ok(statoS) ? String(S[statoS].state) : "";
   const aBatteria = /on ?batt|onbatt|\bOB\b|discharg|scarica|a batteria|battery mode/i.test(st) || (online && ok(online) && S[online].state === "off");
   const bassa = /\bLB\b|low ?batt|batteria bassa/i.test(st);
@@ -254,7 +270,7 @@ function scala(m, maxId, sp) {
 }
 const metro = (lab, id, cls = "", titolo = "") => {
   if (!id) return "";
-  const v = val(id), p = v == null ? 0 : Math.max(0, Math.min(100, v)), lv = p >= 90 ? "r" : p >= 75 ? "o" : "";
+  const v = val(id), p = v == null ? 0 : Math.max(0, Math.min(100, v)), S0 = soglie(), lv = p >= S0.r ? "r" : p >= S0.o ? "o" : "";
   return `<div class="rt1m ${lv} ${cls}" ${titolo ? `title="${esc(titolo)}"` : ""}><span>${lab}</span><span class="rt1mb"><i style="width:${p}%"></i></span><b>${v == null ? "—" : Math.round(v) + "%"}</b></div>`;
 };
 function uptimeTesto(id) {
@@ -266,6 +282,8 @@ function uptimeTesto(id) {
 
 /* ---------- schede ---------- */
 let ipVisto = false, spMetrica = "sd", spInCorso = 0;
+/* grafico dello speedtest: 7 o 30 giorni, scelta di questo dispositivo */
+let spGiorni = sGet("rtSpGiorni") === "30" ? 30 : 7;
 function cardInternet(I) {
   const dm = I.down ? mbit(I.down) : null, um = I.up ? mbit(I.up) : null, spd = I.sd ? mbit(I.sd) : null, spu = I.su ? mbit(I.su) : null;
   const sD = scala(dm, I.maxDown, spd), sU = scala(um, I.maxUp, spu);
@@ -296,7 +314,7 @@ function cardSpeedtest(I) {
   const inCorso = Date.now() - spInCorso < 90000 && !(ultimo > spInCorso);   // finita quando arrivano i valori nuovi
   let grafico = "";
   if (corrente) {
-    const start = new Date(Date.now() - 7 * 864e5), r = statistiche([corrente], start, "hour", ["mean", "min", "max"]);
+    const start = new Date(Date.now() - spGiorni * 864e5), r = statistiche([corrente], start, spGiorni > 7 ? "day" : "hour", ["mean", "min", "max"]);
     if (r === undefined) grafico = `<div class="small muted">${t("Carico…", "Loading…")}</div>`;
     else {
       const f = spMetrica === "sp" ? 1 : fattore(unit(corrente)) ?? 1;
@@ -309,7 +327,8 @@ function cardSpeedtest(I) {
   return card(`🚀 ${t("Speedtest", "Speedtest")}`, `
     <div class="rt1sks">${box("sd", I.sd, vv(I.sd) == null ? "—" : fnum(vv(I.sd), vv(I.sd) < 100 ? 1 : 0), "Mbit/s")}${box("su", I.su, vv(I.su) == null ? "—" : fnum(vv(I.su), vv(I.su) < 100 ? 1 : 0), "Mbit/s")}${box("sp", I.sp, I.sp && val(I.sp) != null ? fnum(val(I.sp), 0) : "—", "ms")}</div>
     <div class="rt1g">${grafico}</div>
-    <div class="row between rt1sf"><span class="small muted">${ultimo ? t("Ultima prova", "Last test") + " " + esc(ago(new Date(ultimo).toISOString())) : ""} · ${t("ultimi 7 giorni", "last 7 days")}</span>
+    <div class="row between rt1sf"><span class="small muted">${ultimo ? t("Ultima prova", "Last test") + " " + esc(ago(new Date(ultimo).toISOString())) : ""}</span>
+      <div class="seg">${[7, 30].map(g => `<button class="${spGiorni === g ? "act" : ""}" data-act="rtSpG" data-v="${g}">${t(`${g} giorni`, `${g} days`)}</button>`).join("")}</div>
       <button class="btn sm pri" data-act="rtSpeed" ${inCorso ? "disabled" : ""}>${inCorso ? "⏳ " + t("Prova in corso…", "Testing…") : "▶ " + t("Prova adesso", "Test now")}</button></div>`, { cls: "rt1st" });
 }
 function cardCollegati(I) {
@@ -386,7 +405,8 @@ function pagina() {
   const modifica = UI.edit && isAdmin() ? `<section class="card span3 rt1e">
       <div class="ch"><h2>✏️ ${t("Scelte della rete", "Network settings")}</h2></div>
       <div class="row" style="gap:8px;flex-wrap:wrap"><button class="add1" data-act="rtAggiungi"><span>＋</span>${t("Aggiungi un dispositivo", "Add a device")}</button>
-        <button class="btn" data-act="rtInet">🌐 ${t("Sensori di internet e speedtest", "Internet and speedtest sensors")}</button><button class="btn" data-act="rtOsp">📶 ${t("Wi-Fi ospiti", "Guest Wi-Fi")}</button></div>
+        <button class="btn" data-act="rtInet">🌐 ${t("Sensori di internet e speedtest", "Internet and speedtest sensors")}</button><button class="btn" data-act="rtOsp">📶 ${t("Wi-Fi ospiti", "Guest Wi-Fi")}</button>
+        <button class="btn" data-act="rtSoglie">📊 ${t("Soglie e avvisi", "Thresholds and alerts")}</button></div>
       ${nascosti.length ? `<div class="fl1">👁 ${t("Tolti dalla pagina", "Removed from the page")} (${nascosti.length})</div><div class="stack">${nascosti.map(k => `<div class="li"><span class="ic">🙈</span><div class="tx"><b>${esc(c0(k))}</b><span>${esc(DEVICES[k]?.model || k)}</span></div><button class="btn sm" data-act="rtRimetti" data-k="${esc(k)}">👁 ${t("Rimetti", "Restore")}</button></div>`).join("")}</div>` : ""}
     </section>` : "";
   const vuoto = !haInternet && !D.length && !U.length ? card("🌐 " + t("Rete", "Network"), empty(t("Non ho trovato modem, server o gruppi di continuità in Home Assistant.", "I found no modem, server or UPS in Home Assistant.")), { cls: "span3" }) : "";
@@ -401,27 +421,39 @@ function pagina() {
 }
 
 /* ---------- ✏️ schede di modifica ---------- */
-const salvaR = (fn, msg) => cambia(l => { const R = l.rete = JSON.parse(JSON.stringify(l.rete || {})); fn(R); for (const k of ["nomi", "tipi", "sens", "inet", "ospiti"]) if (R[k] && !Object.keys(R[k]).length) delete R[k]; }, msg);
+const salvaR = (fn, msg) => cambia(l => { const R = l.rete = JSON.parse(JSON.stringify(l.rete || {})); fn(R); for (const k of ["nomi", "tipi", "sens", "inet", "ospiti", "avvisa", "soglie"]) if (R[k] && !Object.keys(R[k]).length) delete R[k]; }, msg);
 const RUOLI_DEV = () => [["stato", "🟢 " + t("Acceso / spento", "On / off"), id => id.startsWith("binary_sensor.") || id.startsWith("switch.")], ["cpu", "🧠 CPU (%)", id => id.startsWith("sensor.")],
   ["ram", "🧮 RAM (%)", id => id.startsWith("sensor.")], ["disco", "💽 " + t("Disco (%)", "Disk (%)"), id => id.startsWith("sensor.")], ["temp", "🌡 " + t("Temperatura", "Temperature"), id => id.startsWith("sensor.")],
   ["uptime", "⏱ " + t("Acceso da (uptime o ultimo avvio)", "Uptime or last boot"), id => id.startsWith("sensor.")]];
-const RUOLI_UPS = () => [["carica", "🔋 " + t("Carica (%)", "Charge (%)")], ["autonomia", "⏳ " + t("Autonomia", "Runtime")], ["carico", "⚡ " + t("Carico (%)", "Load (%)")], ["stato", "ℹ️ " + t("Stato", "Status")]];
+/* pulsanti del dispositivo: trovati dal nome, si correggono a mano (un pulsante sbagliato potrebbe spegnere il server) */
+const premibile = id => /^(button|input_button)\./.test(id);
+const RUOLI_TASTI = () => [["accendi", "⏻ " + t("Accendi (anche Wake on LAN)", "Turn on (also Wake on LAN)"), id => premibile(id) || id.startsWith("switch.")],
+  ["riavvia", "🔄 " + t("Riavvia", "Restart"), premibile], ["spegni", "⏻ " + t("Spegni", "Shut down"), premibile]];
+const RUOLI_UPS = () => [["carica", "🔋 " + t("Carica (%)", "Charge (%)")], ["autonomia", "⏳ " + t("Autonomia", "Runtime")], ["carico", "⚡ " + t("Carico (%)", "Load (%)")], ["stato", "ℹ️ " + t("Stato", "Status")],
+  ["tensione", "🔌 " + t("Tensione della rete elettrica (V)", "Mains voltage (V)")]];
 const RUOLI_NET = () => [["stato", "🌐 " + t("Connessione (sì/no)", "Connection (yes/no)"), id => id.startsWith("binary_sensor.")], ["down", "⬇ " + t("Download in tempo reale", "Live download"), isRate],
-  ["up", "⬆ " + t("Upload in tempo reale", "Live upload"), isRate], ["ip", "🌍 " + t("IP pubblico", "Public IP"), id => id.startsWith("sensor.")],
+  ["up", "⬆ " + t("Upload in tempo reale", "Live upload"), isRate], ["maxDown", "📏 " + t("Velocità massima della linea: download", "Line maximum speed: download"), isRate],
+  ["maxUp", "📏 " + t("Velocità massima della linea: upload", "Line maximum speed: upload"), isRate], ["daQuando", "⏱ " + t("Connesso da (data e ora)", "Connected since (date and time)"), id => id.startsWith("sensor.")],
+  ["ip", "🌍 " + t("IP pubblico", "Public IP"), id => id.startsWith("sensor.")],
   ["sd", "🚀 Speedtest download", id => id.startsWith("sensor.")], ["su", "🚀 Speedtest upload", id => id.startsWith("sensor.")], ["sp", "⏱ Speedtest ping", id => id.startsWith("sensor.")]];
 const valoreDi = id => id && S[id] ? (ok(id) ? esc(S[id].state) + (unit(id) ? " " + esc(unit(id)) : "") : t("non raggiungibile", "unavailable")) : "—";
 const rigaScelta = (act, k, r, n, id, manuale) => `<button class="pk1 ${manuale ? "sel1" : ""}" data-act="${act}" data-k="${esc(k)}" data-r="${r}"><span class="tx"><b>${n}</b><small>${id ? esc(nm(id)) + " · " + valoreDi(id) : t("nessuno", "none")}${manuale ? "" : " · ✨ " + t("automatico", "automatic")}</small></span><span class="st">›</span></button>`;
 
 function schedaDispositivo(k) {
-  const { D, U } = trovaTutto(), d = D.find(x => x.k === k), ups = U.includes(k);
+  const { D, U } = trovaTutto(), d = D.find(x => x.k === k), ups = U.includes(k), dv = dispositivi().find(x => x.k === k);
   const E = trovaTutto().G[k] || [], sc = conf().sens?.[k] || {};
   const R = ups ? upsInfo(k) : d ? ruoli(k, E) : {};
   const tipo = conf().tipi?.[k] || d?.tipo || "altro";
   return `<div class="sh-head"><div><h3>✏️ ${esc(c0(k))}</h3><div class="small muted">${esc([DEVICES[k]?.maker, DEVICES[k]?.model].filter(Boolean).join(" ") || k)}</div></div><button class="x" data-act="sheetClose">×</button></div>
     <label class="fld1"><span>${t("Nome", "Name")}</span><input id="rt1n" type="text" value="${esc(BZ.rt1n ?? conf().nomi?.[k] ?? "")}" placeholder="${esc(nomeDev(k))}"></label>
-    ${ups ? "" : `<div class="fl1">${t("Tipo", "Type")}</div><div class="rt1tp">${ORDINE_TIPI.map(x => `<button class="${(bozzaTipo || tipo) === x ? "act" : ""}" data-act="rtTipo" data-k="${esc(k)}" data-v="${x}">${TIPI()[x][0]} ${TIPI()[x][1]}</button>`).join("")}</div>`}
+    ${ups ? "" : `<div class="fl1">${t("Tipo", "Type")}</div><div class="rt1tp">${ORDINE_TIPI.map(x => `<button class="${(bozzaTipo || tipo) === x ? "act" : ""}" data-act="rtTipo" data-k="${esc(k)}" data-v="${x}">${TIPI()[x][0]} ${TIPI()[x][1]}</button>`).join("")}</div>
+    <label class="row" style="gap:8px;margin-top:12px;font-size:13px"><input type="checkbox" data-chg="rtAvv" ${(bozzaAvv ?? avvisa({ k, tipo: bozzaTipo || tipo })) ? "checked" : ""}> ${t("Avvisami se è spento (in Home e nel menu)", "Alert me when it's off (on Home and in the menu)")}</label>
+    <p class="small muted" style="margin:4px 0 0;line-height:1.45">${t("Di partenza sì per modem, server, NAS e Raspberry, che devono restare accesi; no per PC, macchine virtuali e stampanti.", "On by default for modems, servers, NAS and Raspberry, which should stay on; off for PCs, virtual machines and printers.")}${dv && dv.on != null ? ` <b>${t("Adesso", "Now")}: ${dv.on ? t("acceso", "on") : t("spento", "off")}</b>` : ""}</p>`}
     <div class="fl1">${t("Sensori", "Sensors")}</div>
     <div class="pkl1">${(ups ? RUOLI_UPS() : RUOLI_DEV()).map(([r, n]) => rigaScelta("rtSens", k, r, n, sc[r] === "none" ? null : R[r], !!sc[r])).join("")}</div>
+    ${ups ? "" : `<div class="fl1">${t("Pulsanti", "Buttons")}</div>
+    <p class="small muted" style="margin:0 0 6px;line-height:1.45">${t("Quelli che compaiono sulla scheda, sempre con la doppia conferma. Se ho scelto il pulsante sbagliato correggilo qui, o scegli «Nessuno».", "The ones shown on the card, always with a double confirmation. If I picked the wrong button fix it here, or choose «None».")}</p>
+    <div class="pkl1">${RUOLI_TASTI().map(([r, n]) => rigaScelta("rtSens", k, r, n, sc[r] === "none" ? null : R[r], !!sc[r])).join("")}</div>`}
     <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn pri" data-act="rtSalva" data-k="${esc(k)}">💾 ${t("Salva", "Save")}</button>
       <button class="btn bad" data-act="rtTogli" data-k="${esc(k)}">✕ ${t("Togli dalla pagina", "Remove from the page")}</button></div>
     <p class="small muted" style="margin-top:12px">${t("Le scelte valgono per tutta la casa e solo nella plancia.", "Choices apply to the whole home and only in the dashboard.")}</p>`;
@@ -429,7 +461,21 @@ function schedaDispositivo(k) {
 function schedaInternet() {
   const I = internet(), c = conf().inet || {};
   return `<div class="sh-head"><div><h3>🌐 ${t("Internet e speedtest", "Internet and speedtest")}</h3><div class="small muted">${t("Lascia «automatico» se va bene così.", "Leave «automatic» if it's fine.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
-    <div class="pkl1">${RUOLI_NET().map(([r, n]) => rigaScelta("rtNet", "", r, n, c[r] === "none" ? null : I[r], !!c[r])).join("")}</div>`;
+    <div class="pkl1">${RUOLI_NET().map(([r, n]) => rigaScelta("rtNet", "", r, n, c[r] === "none" ? null : I[r], !!c[r])).join("")}</div>
+    <p class="small muted" style="margin-top:12px;line-height:1.45">${t("La velocità massima della linea fa da fondo scala alle barre di download e upload: senza, uso una scala tonda (100, 300, 1000 Mbit/s…).", "The line maximum speed is the full scale of the download and upload bars: without it I use a round scale (100, 300, 1000 Mbit/s…).")}</p>`;
+}
+/* 📊 soglie di CPU, RAM e disco (tutta la casa) */
+function schedaSoglie() {
+  const S0 = soglie(), D = dispositivi().filter(d => d.r.cpu || d.r.ram || d.r.disco);
+  const alto = D.flatMap(d => [d.r.cpu, d.r.ram, d.r.disco].filter(Boolean).map(id => ({ d, id, v: val(id) }))).filter(x => x.v != null).sort((a, b) => b.v - a.v)[0];
+  return `<div class="sh-head"><div><h3>📊 ${t("Soglie e avvisi", "Thresholds and alerts")}</h3><div class="small muted">${t("Vale per tutta la casa.", "It applies to the whole home.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
+    <div class="fl1">${t("CPU, RAM e disco", "CPU, RAM and disk")}</div>
+    <p class="small muted" style="margin:0 0 6px;line-height:1.45">${t("Da queste percentuali le barre dei server diventano arancioni e poi rosse.", "From these percentages the server bars turn orange, then red.")}${alto ? ` <b>${t("Adesso il più alto", "Highest now")}: ${esc(alto.d.nome)} · ${esc(nm(alto.id))} ${Math.round(alto.v)}%</b>` : ""}</p>
+    <div class="row" style="gap:10px"><label class="fld1" style="flex:1;margin-top:0"><span>🟠 ${t("Arancione da (%)", "Orange from (%)")}</span><input type="number" min="1" max="100" step="1" value="${S0.o}" data-chg="rtSoglia" data-k="o"></label>
+      <label class="fld1" style="flex:1;margin-top:0"><span>🔴 ${t("Rosso da (%)", "Red from (%)")}</span><input type="number" min="1" max="100" step="1" value="${S0.r}" data-chg="rtSoglia" data-k="r"></label></div>
+    <div class="fl1">${t("Dispositivi spenti", "Devices that are off")}</div>
+    <p class="small muted" style="margin:0;line-height:1.45">${t("Quali dispositivi spenti segnalare in Home e nel menu si sceglie con ✏️ su ogni dispositivo («Avvisami se è spento»).", "Which devices to report when off on Home and in the menu is chosen with ✏️ on each device («Alert me when it's off»).")}
+      ${(() => { const L = dispositivi().filter(avvisa); return L.length ? `<br>${t("Adesso", "Now")}: <b>${L.map(d => esc(d.nome)).join(", ")}</b>` : ""; })()}</p>`;
 }
 function schedaOspiti() {
   const I = internet(), o = conf().ospiti || {}, g = I.ospiti || {};
@@ -451,11 +497,22 @@ function schedaQR() {
 
 /* ---------- azioni ---------- */
 /* bozze delle schede: restano se si apre l'elenco dei sensori e si torna indietro */
-let bozzaTipo = null, bozzaOsp = null, BZ = {};
+let bozzaTipo = null, bozzaOsp = null, bozzaAvv = null, BZ = {};
 document.addEventListener("input", e => { if (["rt1n", "rt1ss", "rt1pw"].includes(e.target.id)) BZ[e.target.id] = e.target.value; });
+CHG.rtAvv = el => { bozzaAvv = el.checked; };
+/* soglie: si salvano subito; chi lascia quelle di partenza non ha niente in LAYOUT */
+CHG.rtSoglia = el => {
+  const k = el.dataset.k, v = Math.round(+String(el.value).replace(",", ".")), S0 = soglie();
+  if (el.value === "" || !(v >= 1 && v <= 100)) { el.value = S0[k]; return toast(t("Scrivi un numero da 1 a 100", "Enter a number from 1 to 100"), true); }
+  const N = { ...S0, [k]: v };
+  if (N.o >= N.r) { el.value = S0[k]; return toast(t("L'arancione deve venire prima del rosso", "Orange must come before red"), true); }
+  salvaR(R => { const s = { ...(R.soglie || {}), [k]: v }; for (const x of ["o", "r"]) if (s[x] == null || +s[x] === SOGLIE_DEF[x]) delete s[x]; R.soglie = s; }, "📊 " + t("Salvato", "Saved"));
+};
 Object.assign(ACT, {
   rtIp: () => { ipVisto = !ipVisto; render(); },
   rtSpM: el => { spMetrica = el.dataset.v; render(); },
+  rtSpG: el => { spGiorni = +el.dataset.v === 30 ? 30 : 7; sSet("rtSpGiorni", String(spGiorni)); render(); },
+  rtSoglie: () => openSheet(schedaSoglie),
   rtSpeed: () => {
     const I = internet(), L = [I.sd, I.su, I.sp].filter(Boolean); if (!L.length) return;
     spInCorso = Date.now(); render();
@@ -469,18 +526,21 @@ Object.assign(ACT, {
   },
   rtOspT: el => svc("switch", "toggle", {}, { entity_id: el.dataset.id }),
   rtQR: () => openSheet(schedaQR),
-  rtEd: el => { const k = el.dataset.k; bozzaTipo = null; BZ = {}; openSheet(() => schedaDispositivo(k)); },
+  rtEd: el => { const k = el.dataset.k; bozzaTipo = null; bozzaAvv = null; BZ = {}; openSheet(() => schedaDispositivo(k)); },
   rtTipo: el => { bozzaTipo = el.dataset.v; render(); },
   rtSalva: el => {
-    const k = el.dataset.k, n = document.getElementById("rt1n")?.value.trim(), tipo = bozzaTipo; closeSheet();
+    const k = el.dataset.k, n = document.getElementById("rt1n")?.value.trim(), tipo = bozzaTipo, avv = bozzaAvv; closeSheet();
+    const tipoOra = tipo || conf().tipi?.[k] || trovaTutto().D.find(x => x.k === k)?.tipo || "altro";
     salvaR(R => { R.nomi = { ...(R.nomi || {}) }; R.tipi = { ...(R.tipi || {}) };
       if (n && n !== nomeDev(k)) R.nomi[k] = n; else delete R.nomi[k];
-      if (tipo) R.tipi[k] = tipo; }, "💾 " + (n || nomeDev(k)));
+      if (tipo) R.tipi[k] = tipo;
+      /* «Avvisami se è spento»: salvato solo se diverso da quello del tipo */
+      if (avv != null) { R.avvisa = { ...(R.avvisa || {}) }; if (avv === IMPORTANTI.includes(tipoOra)) delete R.avvisa[k]; else R.avvisa[k] = avv; } }, "💾 " + (n || nomeDev(k)));
   },
   rtTogli: el => { const k = el.dataset.k; if (UI.sheet) closeSheet(); salvaR(R => { R.tolti = [...new Set([...(R.tolti || []), k])]; R.extra = (R.extra || []).filter(id => (REG[id]?.device || id) !== k); }, "✕ " + c0(k)); },
   rtRimetti: el => { const k = el.dataset.k; salvaR(R => { R.tolti = (R.tolti || []).filter(x => x !== k); }, "👁 " + c0(k)); },
   rtSens: el => {
-    const k = el.dataset.k, r = el.dataset.r, ups = trovaTutto().U.includes(k), ruolo = (ups ? RUOLI_UPS() : RUOLI_DEV()).find(x => x[0] === r), E = trovaTutto().G[k] || [];
+    const k = el.dataset.k, r = el.dataset.r, ups = trovaTutto().U.includes(k), ruolo = (ups ? RUOLI_UPS() : [...RUOLI_DEV(), ...RUOLI_TASTI()]).find(x => x[0] === r), E = trovaTutto().G[k] || [];
     scegli({ titolo: ruolo[1], sotto: esc(c0(k)), filtro: id => (ruolo[2] || (x => x.startsWith("sensor.")))(id) && (E.includes(id) || !REG[id]?.hidden), area: null,
       attuale: conf().sens?.[k]?.[r] || "", nessuno: true,
       onPick: id => { salvaR(R => { R.sens = { ...(R.sens || {}) }; R.sens[k] = { ...(R.sens[k] || {}) }; if (id) R.sens[k][r] = id; else delete R.sens[k][r]; if (!Object.keys(R.sens[k]).length) delete R.sens[k]; });
@@ -511,15 +571,14 @@ Object.assign(ACT, {
 export function haRete() {
   try { const I = internet(); return !!(I.routers.length || I.stato || I.down || I.sd || I.pingNet.length || dispositivi().length || trovaTutto().U.length || I.ospiti || trackers().length); } catch { return false; }
 }
-/* modem, server, NAS e Raspberry devono restare accesi: se sono spenti lo dico in Home e nel menu (PC e macchine virtuali spente sono normali) */
-const IMPORTANTI = ["router", "server", "nas", "rpi"];
+/* dispositivi da tenere accesi (avvisa(), in alto): se sono spenti lo dico in Home e nel menu */
 function homeCard() {
-  const I = internet(), D = dispositivi(), spenti = D.filter(d => d.on === false && IMPORTANTI.includes(d.tipo)), U = trovaTutto().U.map(upsInfo).filter(u => u.aBatteria);
+  const I = internet(), D = dispositivi(), spenti = D.filter(d => d.on === false && avvisa(d)), U = trovaTutto().U.map(upsInfo).filter(u => u.aBatteria);
   const st = I.collegato === true ? ["ok", "🟢", t("Internet ok", "Internet ok")] : I.collegato === false ? ["bad", "🔴", t("Internet giù", "Internet down")] : ["", "⚪", t("Internet", "Internet")];
   const dm = I.down ? mbit(I.down) : null, um = I.up ? mbit(I.up) : null, on = trackers().filter(x => S[x].state === "home").length;
   return card("🌐 " + t("Rete", "Network"), `<button class="rt1h ${st[0]}" data-act="go" data-id="rete">
       <span class="rt1hi">${st[1]}</span><div class="tx"><b>${st[2]}</b><span>${I.collegato === false && I.stato && S[I.stato] ? t("giù da", "down for") + " " + esc(durata((Date.now() - new Date(S[I.stato].last_changed).getTime()) / 1000)) : dm != null || um != null ? `⬇ ${velocita(dm)} · ⬆ ${velocita(um)}` : I.sd && mbit(I.sd) != null ? `🚀 ${velocita(mbit(I.sd))}` : ""}${on ? ` · 🔗 ${on} online` : ""}</span></div><span class="st">›</span></button>
-    ${spenti.length ? `<div class="rt1hs">${spenti.map(d => `<span class="tag bad">⏻ ${esc(d.nome)} ${t("spento", "off")}</span>`).join("")}</div>` : D.some(d => IMPORTANTI.includes(d.tipo)) ? `<div class="small muted" style="margin-top:8px">✅ ${t("Modem e server accesi", "Modem and servers on")}</div>` : ""}
+    ${spenti.length ? `<div class="rt1hs">${spenti.map(d => `<span class="tag bad">⏻ ${esc(d.nome)} ${t("spento", "off")}</span>`).join("")}</div>` : D.some(avvisa) ? `<div class="small muted" style="margin-top:8px">✅ ${t("Modem e server accesi", "Modem and servers on")}</div>` : ""}
     ${U.map(u => `<div class="rt1hs"><span class="tag bad">🔋 ${esc(u.nome)} ${t("a batteria", "on battery")}${u.carica && val(u.carica) != null ? " · " + Math.round(val(u.carica)) + "%" : ""}</span></div>`).join("")}`, { link: [t("Tutto", "All"), "rete"] });
 }
 HOME_EXTRA.rete = { title: () => t("Rete", "Network"), render: homeCard, show: haRete };
@@ -529,4 +588,4 @@ VISTE.reteMostrati = () => { const I = internet(), S2 = new Set(); if (I.ospiti?
 VISTE.reteAgg = id => { const k = REG[id]?.device; return !!k && (dispositivi().some(d => d.k === k) || trovaTutto().U.includes(k)); };
 
 page("rete", { title: t("Rete e server", "Network and servers"), short: t("Rete", "Network"), icon: "🌐", order: 85, editable: true,
-  show: () => haRete() || (conf().extra || []).length > 0, badge: () => internet().collegato === false || dispositivi().some(d => d.on === false && IMPORTANTI.includes(d.tipo)), render: pagina });
+  show: () => haRete() || (conf().extra || []).length > 0, badge: () => internet().collegato === false || dispositivi().some(d => d.on === false && avvisa(d)), render: pagina });

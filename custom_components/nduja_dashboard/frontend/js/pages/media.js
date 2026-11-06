@@ -3,10 +3,12 @@
    (croce, OK, indietro, home, menu, volume, canali, numeri a scomparsa) con i comandi giusti per l'integrazione
    e i soli tasti che funzionano (con ✏️ un tasto si ridefinisce con un comando tuo); le app di streaming
    con un logo di testo e i colori disegnati per 'Nduja. In Home la scheda «Media» per la TV accesa.
-   Le TV escono dalla pagina Musica (vedi tvInMedia in core.js). */
+   Le TV escono dalla pagina Musica (vedi tvInMedia in core.js).
+   Scelte della casa (solo amministratori, con ✏️): mdTasti { schermo: { tasto: comando } }, mdTv { media_player: true|false } (TV o cassa,
+   solo quando è diverso dal riconoscimento automatico), mdApp { schermo: [nomi delle app tolte] }. */
 import { S, REG, DEVICES, ACT, CHG, UI, LAYOUT, HOME_EXTRA, t, esc, nm, ok, attr, ents, areaOf, AREAS, card, empty, page, svc, sGet, sSet,
-  toast, render, go, isAdmin, openSheet, closeSheet, isTV, remotoDi, lettoreDi } from "../core.js";
-import { item, addBtn, cambia } from "../edit.js";
+  toast, render, go, isAdmin, openSheet, closeSheet, isTV, tvAuto, excluded, remotoDi, lettoreDi } from "../core.js";
+import { item, addBtn, cambia, scegli, mostra } from "../edit.js";
 
 const F = { PAUSE: 1, VOL: 4, MUTE: 8, PREV: 16, NEXT: 32, ON: 128, OFF: 256, PLAY_MEDIA: 512, VSTEP: 1024, SOURCE: 2048, PLAY: 16384 };
 const ha = (id, f) => !!id && ((attr(id, "supported_features") || 0) & f) === f;
@@ -18,6 +20,13 @@ const schermi = () => ents("media_player", isTV).sort((a, b) => nm(a).localeComp
 /** telecomandi senza un lettore (Harmony, Broadlink…) */
 const remotiSoli = () => ents("remote", id => !lettoreDi(id)).sort((a, b) => nm(a).localeCompare(nm(b)));
 const chiavi = () => [...schermi(), ...remotiSoli()];
+/** lettori che riconoscevo come TV ma l'amministratore ha detto «è una cassa» (LAYOUT.mdTv[id] = false): stanno in Musica */
+const casse = () => Object.keys(LAYOUT.mdTv || {}).filter(id => LAYOUT.mdTv[id] === false && S[id]).sort((a, b) => nm(a).localeCompare(nm(b)));
+/** TV sì o no: salvo solo quando è diverso dal riconoscimento automatico (chi non tocca niente non ha la chiave) */
+function tvSi(id, si) {
+  cambia(l => { const T = { ...(l.mdTv || {}) }; if (si === tvAuto(id)) delete T[id]; else T[id] = si; if (Object.keys(T).length) l.mdTv = T; else delete l.mdTv;
+    if (si && excluded(id)) mostra(l, id); }, (si ? "📺 " : "🔊 ") + nm(id) + (si ? t(" · in Media", " · in Media") : t(" · in Musica", " · in Music")));
+}
 function scelto() {
   const K = chiavi(), v = sGet("md_tv");
   return K.includes(v) ? v : K.find(acceso) || K[0] || null;
@@ -130,6 +139,8 @@ const APP = [
 const appDi = s => APP.find(a => a.r.test(String(s || ""))) || null;
 /* gli ingressi (HDMI, TV, AV…) non sono app: stanno nel menu «Sorgente» */
 const INGRESSO = /^(tv|live\s*tv|dtv|atv|hdmi.*|av\s*\d*|component.*|composite.*|usb.*|antenna|cable|cavo|sat(ellite)?|digitale terrestre|vga|pc|scart|optical|ottico|bluetooth|line.*|input.*|ingresso.*|game|aux|tuner|radio|home dashboard|apps|app|settings|impostazioni|.*input.*|hdmi\d.*)$/i;
+/** app tolte dall'amministratore per questo schermo (LAYOUT.mdApp[schermo] = [nomi]): quelle che non ha o non usa */
+const appNascoste = k => LAYOUT.mdApp?.[k] || [];
 /** le app di uno schermo: { nome, app (del catalogo o null), via: "source" | "app" | "activity", v (valore da mandare) } */
 function apps(c) {
   const mp = c.mp, L = [], visti = new Set();
@@ -236,15 +247,16 @@ function cardTelecomando(c) {
   return card("🎛️ " + t("Telecomando", "Remote"), corpo, { cls: "md1a2" });
 }
 function cardApp(c) {
-  const L = apps(c), o = appOra(c), act = attr(c.rm, "activity_list"), cur = attr(c.rm, "current_activity");
+  const ed = UI.edit && isAdmin(), na = appNascoste(c.k), L = apps(c).filter(x => ed || !na.includes(x.nome)), o = appOra(c), act = attr(c.rm, "activity_list"), cur = attr(c.rm, "current_activity");
   const attivita = Array.isArray(act) && act.length ? act.filter(x => !/^power\s*off$/i.test(x)) : [];
   if (!L.length && !attivita.length) return "";
   APPV[c.k] = L;
   const aperta = x => !!o && o.tutti.some(v => v === String(x.v).toLowerCase() || v === x.nome.toLowerCase() || (x.app && x.app.r.test(v)));
-  const pezzi = L.map((x, i) => `<button class="md1ap ${aperta(x) ? "ora" : ""}" data-act="mdApp" data-id="${c.k}" data-i="${i}" aria-label="${t("Apri", "Open")} ${esc(x.nome)}">${logo(x.app, x.nome)}<small>${esc(x.nome)}</small></button>`).join("");
+  const pezzi = L.map((x, i) => ed ? `<button class="md1ap" data-act="mdAppNa" data-id="${c.k}" data-v="${esc(x.nome)}" aria-pressed="${!na.includes(x.nome)}" ${na.includes(x.nome) ? `style="opacity:.38"` : ""}>${logo(x.app, x.nome)}<small>${na.includes(x.nome) ? "🙈 " : "✓ "}${esc(x.nome)}</small></button>`
+    : `<button class="md1ap ${aperta(x) ? "ora" : ""}" data-act="mdApp" data-id="${c.k}" data-i="${i}" aria-label="${t("Apri", "Open")} ${esc(x.nome)}">${logo(x.app, x.nome)}<small>${esc(x.nome)}</small></button>`).join("");
   const att = attivita.map(a => `<button class="md1at ${a === cur ? "ora" : ""}" data-act="mdAtt" data-id="${c.rm}" data-v="${esc(a)}"><span>${a === cur ? "●" : "▶"}</span>${esc(a)}</button>`).join("");
-  return card("▶ " + (L.length ? t("App", "Apps") : t("Attività", "Activities")), `${L.length ? `<div class="md1aps">${pezzi}</div>` : ""}${attivita.length ? `${L.length ? `<div class="mu1l">${t("Attività", "Activities")}</div>` : ""}<div class="md1ats">${att}</div>` : ""}
-    ${c.plat === "androidtv_remote" && L.some(x => x.via === "activity") ? `<div class="small muted" style="margin-top:10px">${t("Si aprono se l'app è installata sulla TV.", "They open if the app is installed on the TV.")}</div>` : ""}`, { cls: "md1a3" });
+  return card("▶ " + (L.length ? t("App", "Apps") : t("Attività", "Activities")), `${ed && L.length ? `<p class="small muted" style="margin:0 2px 12px">✏️ ${t("Tocca un'app per toglierla da questo schermo (per esempio se non è installata); toccala di nuovo per rimetterla.", "Tap an app to remove it from this screen (for example if it isn't installed); tap it again to bring it back.")}</p>` : ""}${L.length ? `<div class="md1aps">${pezzi}</div>` : ""}${attivita.length ? `${L.length ? `<div class="mu1l">${t("Attività", "Activities")}</div>` : ""}<div class="md1ats">${att}</div>` : ""}
+    ${c.plat === "androidtv_remote" && L.some(x => x.via === "activity") && !ed ? `<div class="small muted" style="margin-top:10px">${t("Si aprono se l'app è installata sulla TV.", "They open if the app is installed on the TV.")}${isAdmin() ? t(" Quelle che non hai le togli con ✏️ Modifica.", " Remove the ones you don't have with ✏️ Edit.") : ""}</div>` : ""}`, { cls: "md1a3" });
 }
 const APPV = {};
 
@@ -256,10 +268,15 @@ function chip(k, sel) {
 }
 function pagina() {
   const K = chiavi(), k = scelto();
-  if (!k) return `<div class="g g3">${card("📺 Media", empty(UI.edit ? t("Premi ＋ per aggiungere una TV o un telecomando.", "Press ＋ to add a TV or a remote.") : t("Nessuna TV: premi ✏️ Modifica in alto per aggiungerne.", "No TV: press ✏️ Edit at the top to add some.")) + addBtn(["media_player", "remote"], { big: true, label: t("Aggiungi TV o telecomando", "Add TV or remote") }), { cls: "span3" })}</div>`;
+  const lista = UI.edit ? card("✏️ " + t("Schermi e telecomandi", "Screens and remotes"), `<div class="stack">${K.map(id => { const riga = item(id, `<div class="li"><span class="ic">${icona(id)}</span><div class="tx"><b>${esc(nm(id))}</b><span>${esc([AREAS[areaOf(id)]?.name, MARCHE[ctx(id).plat]].filter(Boolean).join(" · ") || id)}</span></div></div>`);
+      /* il pulsante sta fuori dalla riga di item(): in modifica la riga non riceve i tocchi */
+      return id.startsWith("media_player.") && isAdmin() ? `<div class="row" style="gap:8px;align-items:center"><div style="flex:1;min-width:0">${riga}</div><button class="btn sm" data-act="mdTv" data-id="${id}" data-v="0" title="${t("Va nella pagina Musica", "Goes to the Music page")}">🔊 ${t("È una cassa", "It's a speaker")}</button></div>` : riga; }).join("")}
+    ${addBtn(["media_player", "remote"], { label: t("Aggiungi TV o telecomando", "Add TV or remote") })}
+    ${isAdmin() ? `<button class="add1" data-act="mdTvAdd"><span>＋</span>${t("Una TV che non ho riconosciuto", "A TV I didn't recognise")}</button>` : ""}</div>
+    ${casse().length ? `<div class="fl1">🔊 ${t("Spostate in Musica (non sono TV)", "Moved to Music (not TVs)")}</div><div class="row" style="gap:8px;flex-wrap:wrap">${casse().map(id => `<button class="btn sm" data-act="mdTv" data-id="${id}" data-v="1">↩︎ ${esc(nm(id))}</button>`).join("")}</div>` : ""}
+    <p class="small muted" style="margin:10px 2px 0">${t("Le TV, i decoder e le console le riconosco da solo; le casse stanno nella pagina Musica. Se sbaglio, correggi qui: «È una cassa» la sposta in Musica, «＋ Una TV che non ho riconosciuto» la porta qui. ✕ la toglie da tutta la plancia.", "I recognise TVs, set-top boxes and consoles myself; speakers live on the Music page. If I get it wrong, fix it here: «It's a speaker» moves it to Music, «＋ A TV I didn't recognise» brings it here. ✕ removes it from the whole dashboard.")}</p>`, { cls: "span3" }) : "";
+  if (!k) return `<div class="g g3">${card("📺 Media", empty(UI.edit ? t("Premi ＋ per aggiungere una TV o un telecomando.", "Press ＋ to add a TV or a remote.") : t("Nessuna TV: premi ✏️ Modifica in alto per aggiungerne.", "No TV: press ✏️ Edit at the top to add some.")), { cls: "span3" })}${lista}</div>`;
   const c = ctx(k);
-  const lista = UI.edit ? card("✏️ " + t("Schermi e telecomandi", "Screens and remotes"), `<div class="stack">${K.map(id => item(id, `<div class="li"><span class="ic">${icona(id)}</span><div class="tx"><b>${esc(nm(id))}</b><span>${esc([AREAS[areaOf(id)]?.name, MARCHE[ctx(id).plat]].filter(Boolean).join(" · ") || id)}</span></div></div>`)).join("")}
-    ${addBtn(["media_player", "remote"], { label: t("Aggiungi TV o telecomando", "Add TV or remote") })}</div>`, { cls: "span3" }) : "";
   return `<div class="g g3">
     ${K.length > 1 ? card("", `<div class="mu1cs">${K.map(x => chip(x, x === k)).join("")}</div>`, { cls: "span3 md1cc" }) : ""}
     <div class="span3 md1g">${c.mp ? cardTV(c) : cardRemoto(c)}${cardTelecomando(c)}${cardApp(c)}</div>
@@ -303,6 +320,12 @@ Object.assign(ACT, {
   mdNum: () => { MD.num = !MD.num; render(true); },
   mdApp: el => { const c = ctx(el.dataset.id), x = (APPV[el.dataset.id] || [])[+el.dataset.i]; if (x) apri(c, x); },
   mdAtt: el => { vibra(); svc("remote", "turn_on", { activity: el.dataset.v }, { entity_id: el.dataset.id }).then(() => toast("▶ " + el.dataset.v)).catch(() => {}); },
+  mdTv: el => tvSi(el.dataset.id, el.dataset.v === "1"),
+  mdTvAdd: () => scegli({ titolo: "📺 " + t("Una TV che non ho riconosciuto", "A TV I didn't recognise"), sotto: t("Scegli il lettore: lo sposto dalla pagina Musica a questa.", "Pick the player: I move it from the Music page to this one."),
+    filtro: id => id.startsWith("media_player.") && !isTV(id), auto: false, attuale: null, onPick: id => { if (id && id !== "none") tvSi(id, true); } }),
+  mdAppNa: el => { const k = el.dataset.id, n = el.dataset.v, via = appNascoste(k).includes(n);
+    cambia(l => { const M = { ...(l.mdApp || {}) }, s = new Set(M[k] || []); via ? s.delete(n) : s.add(n); if (s.size) M[k] = [...s]; else delete M[k]; if (Object.keys(M).length) l.mdApp = M; else delete l.mdApp; },
+      (via ? "↩︎ " : "🙈 ") + n); },
   mdEd: el => { ED = { id: el.dataset.id, k: el.dataset.k }; openSheet(foglioTasto); setTimeout(() => document.getElementById("md1c")?.focus(), 80); },
   mdEdSalva: () => { const v = (document.getElementById("md1c")?.value || "").trim(); closeSheet(); salvaTasto(v); },
   mdEdVia: () => { closeSheet(); salvaTasto(""); },
@@ -324,4 +347,4 @@ document.addEventListener("keydown", e => {
 });
 
 page("media", { title: "Media", short: "Media", icon: "📺", order: 34, editable: true,
-  show: () => chiavi().length > 0, badge: () => schermi().some(id => S[id]?.state === "playing"), render: pagina });
+  show: () => chiavi().length > 0 || (isAdmin() && casse().length > 0), badge: () => schermi().some(id => S[id]?.state === "playing"), render: pagina });

@@ -815,6 +815,7 @@ const PIANTE_DEMO = () => { const fa = g => new Date(Date.now() - g * 864e5).toI
 function mockPianteZona(id) { const C = JSON.parse(localStorage.getItem("mockCasa") || "{}"), x = C.piante; if (!x) return; let n = 0; const q = new Date().toISOString().replace(/\.\d+Z$/, "+00:00");
   for (const p of Object.values(x.dati.piante || {})) if (p.zona === id && !p.tolta) { p.storia = [{ c: "acqua", q, via: "irr", z: id, prima: p.acqua?.ultima || null }, ...(p.storia || [])].slice(0, 12); p.acqua = { ...(p.acqua || {}), ultima: q, via: "irr", chi: null }; n++; }
   if (!n) return; x.rev++; localStorage.setItem("mockCasa", JSON.stringify(C)); console.log("PIANTE irrigate", id); setTimeout(() => window.mockCasaEv?.({ sezione: "piante", rev: x.rev }), 30); }
+const MOCK_CFG = {};
 function mockApi(url, o) {
   /* scadenze (0.7.40): flusso di configurazione di Local To-do («Crea la lista Scadenze») */
   const fl = String(url).match(/\/api\/config\/config_entries\/flow(?:\/([\w-]+))?$/);
@@ -831,8 +832,10 @@ function mockApi(url, o) {
   const mm = String(url).match(/\/api\/config\/(script|automation)\/config\/([\w-]+)/); if (!mm) return null;
   const [, tipo, id] = mm, eid = tipo + "." + id, corpo = o?.body ? JSON.parse(o.body) : {};
   console.log("API", o?.method || "GET", url, o?.body || "");
-  if (o?.method === "DELETE") { delete ENT[eid]; setTimeout(() => window.mockStati?.({ r: [eid] }), 100); }
-  else if (o?.method === "POST") { ENT[eid] = st(tipo === "script" ? "off" : "on", { friendly_name: corpo.alias, id }); setTimeout(() => window.mockStati?.({ a: { [eid]: ENT[eid] } }), 300); }
+  if (o?.method === "DELETE") { delete ENT[eid]; delete MOCK_CFG[eid]; setTimeout(() => window.mockStati?.({ r: [eid] }), 100); }
+  else if (o?.method === "POST") { MOCK_CFG[eid] = corpo; ENT[eid] = st(tipo === "script" ? "off" : "on", { friendly_name: corpo.alias, id }); setTimeout(() => window.mockStati?.({ a: { [eid]: ENT[eid] } }), 300); }
+  /* GET (0.7.48): la configurazione salvata in questa sessione, se c'è (scadenze controlla a quali telefoni scrive l'automazione) */
+  else if (MOCK_CFG[eid]) return Promise.resolve(new Response(JSON.stringify(MOCK_CFG[eid]), { status: 200, headers: { "Content-Type": "application/json" } }));
   return Promise.resolve(new Response(JSON.stringify({ result: "ok" }), { status: 200, headers: { "Content-Type": "application/json" } }));
 }
 /* assistente vocale (0.7.45): pipeline finte, conversation/process con un «cervello» di prova e assist_pipeline/run con l'audio

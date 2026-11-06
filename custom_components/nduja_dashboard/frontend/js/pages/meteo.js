@@ -11,9 +11,9 @@
    Scelte della casa (LAYOUT.meteo, solo amministratori):
      { sensori: { temp, hum, pioggia, intensita, piove, vento, raffica, dir, pressione, uv: entity_id | "none" },
        allerte: { piu: [entity_id], meno: [entity_id], home: 3 (2 giallo, 3 arancione, 4 rosso, 0 mai) },
-       radar: { cam: entity_id | "none", url: "", min: 5 } }
+       radar: { cam: entity_id | "none", url: "", min: 5 }, pioggiaPr: % da cui la pioggia è «probabile» (senza = 50) }
    Scelte di questo dispositivo: nduja_meteoEnt (meteo da mostrare), nduja_meteoOre (24 | 48), nduja_meteoRadar (cam | url). */
-import { S, REG, AREAS, ACT, LAYOUT, VISTE, PAGES, utenteCfg, IT, t, LOC, esc, fnum, nm, nmHA, ok, attr, unit, deviceClass, allEnts, areaOf, page,
+import { S, REG, AREAS, ACT, CHG, LAYOUT, VISTE, PAGES, utenteCfg, IT, t, LOC, esc, fnum, nm, nmHA, ok, attr, unit, deviceClass, allEnts, areaOf, page,
   forecast, weatherEnt, WX, hhmm, sGet, sSet, render, openSheet, closeSheet, isAdmin, toast, durata } from "../core.js";
 import { cambia, scegli, indirizzoLocale } from "../edit.js";
 import { scena, sole } from "../scenaenergia.js";
@@ -23,6 +23,9 @@ const G = 864e5;
 const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
 const A = (w, k) => num(attr(w, k));
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
+/** da quale probabilità (%) la pioggia è «probabile»: 50, o quella scelta dall'amministratore in ⚙️ (LAYOUT.meteo.pioggiaPr) */
+const PR = [20, 30, 40, 50, 60, 70, 80];
+const soglPioggia = () => { const v = +C().pioggiaPr; return PR.includes(v) ? v : 50; };
 
 /* ---------- quale meteo ---------- */
 /** il meteo di questa pagina: quello scelto su questo dispositivo, altrimenti quello di casa */
@@ -381,9 +384,9 @@ function adesso(w, D, H) {
   const st = !sc.sole.su && S[w].state === "sunny" ? "clear-night" : S[w].state, [ic, tx] = WX()[st] || ["🌡️", S[w].state];
   const P = percepita(w), fuori = w === weatherEnt() ? sensore("temp") : null, tf = fuori ? num(S[fuori].state) : null;
   const hiLo = oggi && (oggi.temperature != null || oggi.templow != null) ? `${oggi.temperature != null ? "↑ " + gr(num(oggi.temperature)) : ""}${oggi.templow != null ? "  ↓ " + gr(num(oggi.templow)) : ""}` : "";
-  const pioggia = (() => { const L = H.slice(0, 24); const i = L.findIndex(f => (num(f.precipitation_probability) || 0) >= 50 || /rain|pour|lightning-rainy|snow|hail/.test(f.condition || ""));
+  const sp = soglPioggia(), pioggia = (() => { const L = H.slice(0, 24); const i = L.findIndex(f => (num(f.precipitation_probability) || 0) >= sp || /rain|pour|lightning-rainy|snow|hail/.test(f.condition || ""));
     if (!L.length) return ""; if (i < 0) return "☀️ " + t("niente pioggia nelle prossime 24 ore", "no rain in the next 24 hours");
-    if (i === 0 && /rain|pour|snow|hail|lightning/.test(S[w].state)) { const j = L.findIndex(f => (num(f.precipitation_probability) || 0) < 40 && !/rain|pour|snow|hail|lightning/.test(f.condition || ""));
+    if (i === 0 && /rain|pour|snow|hail|lightning/.test(S[w].state)) { const j = L.findIndex(f => (num(f.precipitation_probability) || 0) < sp - 10 && !/rain|pour|snow|hail|lightning/.test(f.condition || ""));
       return "☂️ " + (j > 0 ? t("dovrebbe smettere verso le ", "should stop around ") + hhmm(Date.parse(L[j].datetime)) : t("continua per tutto il giorno", "keeps going all day")); }
     const p = num(L[i].precipitation_probability); return "🌂 " + (/snow/.test(L[i].condition || "") ? t("neve", "snow") : t("pioggia", "rain")) + t(" probabile verso le ", " likely around ") + hhmm(Date.parse(L[i].datetime)) + (p != null ? ` (${Math.round(p)}%)` : ""); })();
   const chi = meteiTutti().length > 1 || sGet("meteoEnt");
@@ -449,7 +452,7 @@ function prossimiGiorni(w, D, largo) {
     const vento = d.wind_speed != null ? `💨 ${fnum(d.wind_speed, 0)}${gradi(d.wind_bearing) != null ? " " + sigla(gradi(d.wind_bearing)) : ""}` : "";
     return `<div class="mt1d ${oggi ? "oggi" : ""}"><span class="dn"><b>${esc(nome)}</b><small>${esc(new Date(d.g).toLocaleDateString(LOC, { day: "numeric", month: "short" }))}</small></span>
       <span class="di" title="${esc((WX()[d.condition] || ["", d.condition || ""])[1])}">${icona(d.condition)}</span>
-      <span class="dp ${p != null && p >= 50 ? "hi" : ""}">${p != null && p >= 10 ? "💧" + Math.round(p) + "%" : mm ? "💧" + fnum(mm, 1) : ""}</span>
+      <span class="dp ${p != null && p >= soglPioggia() ? "hi" : ""}">${p != null && p >= 10 ? "💧" + Math.round(p) + "%" : mm ? "💧" + fnum(mm, 1) : ""}</span>
       <span class="dl">${loV != null ? gr(loV) : ""}</span>
       <span class="db"><i style="left:${pos(loV ?? hiV)}%;right:${(100 - pos(hiV ?? loV)).toFixed(1)}%;background:linear-gradient(90deg,${coloreT(inC(loV, w))},${coloreT(inC(hiV, w))})"></i>${oggi && Tn != null ? `<u style="left:${lim(+pos(Tn), 0, 100)}%"></u>` : ""}</span>
       <span class="dh">${hiV != null ? gr(hiV) : ""}</span>
@@ -502,6 +505,9 @@ function impostazioni() {
       <button class="add1" data-act="mtAlPiu"><span>＋</span>${t("Aggiungi una fonte di allerte", "Add a warning source")}</button></div>
     <div class="row between" style="gap:10px;flex-wrap:wrap;margin-top:12px"><span class="small"><b>${t("In Home, negli Avvisi", "On Home, in Alerts")}</b><br><span class="muted">${t("da quale livello mostrare l'allerta", "from which level to show the warning")}</span></span>
       <div class="seg">${[[2, "🟡 " + t("Gialla", "Yellow")], [3, "🟠 " + t("Arancione", "Orange")], [4, "🔴 " + t("Rossa", "Red")], [0, t("Mai", "Never")]].map(([v, n]) => `<button class="${soglia === v ? "act" : ""}" data-act="mtAlHome" data-v="${v}">${n}</button>`).join("")}</div></div>
+    <div class="fl1">🌂 ${t("Previsione della pioggia", "Rain forecast")}</div>
+    <label class="fld1"><span>${t("Pioggia «probabile» da (probabilità nelle previsioni ora per ora)", "Rain is «likely» from (chance in the hourly forecast)")}</span><select data-chg="mtPioggiaPr">${PR.map(v => `<option value="${v}" ${soglPioggia() === v ? "selected" : ""}>${v}%</option>`).join("")}</select></label>
+    <p class="small muted" style="margin:6px 2px 0">${t("Decide la riga «pioggia probabile verso le…» sotto la scena e quali giorni hanno la goccia in evidenza. Più basso: ti avviso prima, anche per pioggia incerta. L'avviso delle finestre aperte ha una sua regola, in Home → Avvisi → ⚙️.", "Sets the «rain likely around…» line under the scene and which days get the highlighted drop. Lower: you're warned sooner, even for uncertain rain. The open-windows alert has its own rule, in Home → Alerts → ⚙️.")}${(() => { const w = weatherEnt(), P = w ? orarie(w).slice(0, 24).map(f => num(f.precipitation_probability)).filter(v => v != null) : []; return P.length ? " " + t("Nelle prossime 24 ore: al massimo ", "Next 24 hours: at most ") + Math.round(Math.max(...P)) + "%." : ""; })()}</p>
     <div class="fl1">🛰️ ${t("Radar pioggia", "Rain radar")}</div>
     <p class="small muted" style="margin:0 2px 8px">${t("Compare solo se c'è una telecamera radar in Home Assistant (per esempio RainViewer) o se scrivi qui l'indirizzo di un'immagine. Non carico nient'altro.", "Shown only if there's a radar camera in Home Assistant (for example RainViewer) or if you enter an image address here. I don't load anything else.")}</p>
     <div class="stack"><button class="li" data-act="mtRadCam"><span class="ic">📷</span><div class="tx"><b>${t("Telecamera radar", "Radar camera")}</b><span>${r.cam === "none" ? "🚫 " + t("nessuna", "none") : r.cam && S[r.cam] ? esc(nm(r.cam)) : cam ? "✨ " + esc(nm(cam)) : "✨ " + t("automatica: non trovata", "automatic: not found")}</span></div><span class="st">›</span></button></div>
@@ -512,6 +518,7 @@ function impostazioni() {
 }
 const riapri = () => openSheet(impostazioni);
 const salvaMeteo = (fn, msg) => cambia(l => { l.meteo = JSON.parse(JSON.stringify(l.meteo || {})); fn(l.meteo); }, msg);
+CHG.mtPioggiaPr = el => { const v = +el.value; cambia(l => { const m = { ...(l.meteo || {}) }; if (v === 50) delete m.pioggiaPr; else m.pioggiaPr = v; if (Object.keys(m).length) l.meteo = m; else delete l.meteo; }, "🌂 " + t("Pioggia probabile da ", "Rain likely from ") + v + "%"); };
 Object.assign(ACT, {
   mtCfg: () => riapri(),
   mtSens: el => {

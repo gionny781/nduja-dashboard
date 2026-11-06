@@ -3,7 +3,7 @@
    Ogni tapparella ha il suo disegno della plancia (SVG + CSS) che sale e scende con la posizione; si trascina sulla finestra.
    Gruppi rapidi (casa, piano, stanza, lato), scenari salvati come script e automatismi facoltativi creati su richiesta.
    Scelte in LAYOUT.tapparelle = { extra:[], tolte:[], lati:{id:"n|e|s|o"}, aspetto:{id:tipo}, finestre:{id:sensore|"none"},
-   meta: %, scenari:[{ id, nome, icona, passi:[{ dove, cosa:"su|giu|pos", pos }] }], auto:{ sole, caldo, finestra }, firme:{ id: impronta } } */
+   meta: %, scenari:[{ id, nome, icona, passi:[{ dove, cosa:"su|giu|pos", pos }] }], auto:{ sole, caldo (rot = casa girata di ± gradi), finestra }, firme:{ id: impronta } } */
 import { S, AREAS, FLOORS, REG, ACT, CHG, LAYOUT, UI, VISTE, HOME_EXTRA, HOOKS, t, LOC, esc, nm, nmHA, ok, attr, ents, allEnts, areaOf, areasSorted,
   deviceClass, card, page, svc, toast, openSheet, closeSheet, render, isAdmin, api, etichettaNduja, sGet, sSet, go, weatherEnt, unit, fnum, pronto } from "../core.js";
 import { cambia, scegli } from "../edit.js";
@@ -329,7 +329,7 @@ CHG.tpScP = el => { const p = SC.passi[+el.dataset.i]; p[el.dataset.k] = el.data
 
 /* ---------- automatismi (facoltativi, creati su richiesta): automazioni con l'etichetta «'Nduja» ---------- */
 const AUTO_DEF = () => ({ sole: { on: false, dove: "casa", chiudi: true, apri: true, rt: 15, ra: 0, dopo: "07:00" },
-  caldo: { on: false, lati: ["s", "o"], temp: unitaT() === "°F" ? 79 : 26, pos: meta(), el: 10, sole: true, sens: "" }, finestra: { on: false } });
+  caldo: { on: false, lati: ["s", "o"], temp: unitaT() === "°F" ? 79 : 26, pos: meta(), el: 10, sole: true, sens: "", rot: 0 }, finestra: { on: false } });
 const AU = k => ({ ...AUTO_DEF()[k], ...(C().auto?.[k] || {}) });
 const AID = { sole: "nduja_tapp_sole", caldo: "nduja_tapp_caldo", finestra: "nduja_tapp_finestra" };
 const ritardo = m => { const o = Math.round(+m || 0), a = Math.abs(o); return `${o < 0 ? "-" : ""}${String(Math.floor(a / 60)).padStart(2, "0")}:${String(a % 60).padStart(2, "0")}:00`; };
@@ -370,13 +370,17 @@ function fonteT(a = AU("caldo")) {
 }
 function unitaT() { try { return fonteT({})?.u || "°C"; } catch { return "°C"; } }
 const AZ = { n: "(az >= 315 or az < 45)", e: "(az >= 45 and az < 135)", s: "(az >= 135 and az < 225)", o: "(az >= 225 and az < 315)" };
-const latoDelSole = az => az >= 315 || az < 45 ? "n" : az < 135 ? "e" : az < 225 ? "s" : "o";
+/** di quanti gradi la casa è girata rispetto ai punti cardinali (−45…45, in senso orario): sposta i quattro lati del sole */
+const rotazione = (a = AU("caldo")) => clamp(Math.round(+a.rot || 0), -45, 45);
+const latoDelSole = (az, rot = 0) => { az = ((az - rot) % 360 + 360) % 360; return az >= 315 || az < 45 ? "n" : az < 135 ? "e" : az < 225 ? "s" : "o"; };
 function cfgCaldo() {
   const a = AU("caldo"), T = fonteT(a); if (!a.on || !T) return null;
   const P = clamp(Math.round(+a.pos || 50), 0, 95), per = (a.lati || []).map(l => [l, tutte().filter(id => latoDi(id) === l && puoPos(id))]).filter(([, L]) => L.length);
   if (!per.length) return null;
-  const w = a.sole ? weatherEnt() : null;
-  const tpl = l => `{% set az = state_attr('sun.sun', 'azimuth') | float(-1) %}{% set el = state_attr('sun.sun', 'elevation') | float(-90) %}{% set t = ${T.tpl} %}{{ el >= ${+a.el || 0} and t >= ${+a.temp} and ${AZ[l]}${w ? ` and states('${w}') in ['sunny', 'partlycloudy']` : ""} }}`;
+  const w = a.sole ? weatherEnt() : null, rot = rotazione(a);
+  /* senza rotazione il modello resta quello di sempre (stessa impronta: l'automazione già creata non si riscrive) */
+  const azT = rot ? `((state_attr('sun.sun', 'azimuth') | float(-1)) - (${rot})) % 360` : `state_attr('sun.sun', 'azimuth') | float(-1)`;
+  const tpl = l => `{% set az = ${azT} %}{% set el = state_attr('sun.sun', 'elevation') | float(-90) %}{% set t = ${T.tpl} %}{{ el >= ${+a.el || 0} and t >= ${+a.temp} and ${AZ[l]}${w ? ` and states('${w}') in ['sunny', 'partlycloudy']` : ""} }}`;
   const seq = per.map(([l, L]) => ({ conditions: [{ condition: "trigger", id: l }], sequence: chiudiSicuro(L, P) }));
   return { alias: "'Nduja · " + t("tapparelle col sole e il caldo", "covers in sun and heat"),
     description: t("Creata da 'Nduja Dashboard (pagina Tapparelle): quando fa caldo e il sole batte su un lato della casa, porta a metà le tapparelle di quel lato (solo quelle più aperte). Si aggiorna da sola quando cambi le scelte nella plancia.",
@@ -451,7 +455,7 @@ function schedaAuto() {
     <div class="tp1fr">${spunta("sole", "apri", s.apri, "🌅 " + t("Apri all'alba", "Open at sunrise"))}${s.apri ? num("sole", "ra", s.ra, -180, 240, 5, t("Minuti dopo l'alba", "Minutes after sunrise"), "min")
       + `<label class="fld1 tp1n2"><span>${t("Non prima delle (vuoto = nessun limite)", "Not before (empty = no limit)")}</span><input type="time" value="${esc(s.dopo || "")}" data-chg="tpAuF" data-k="sole" data-f="dopo"></label>` : ""}</div>`;
   /* caldo e sole sul lato */
-  const c = AU("caldo"), T = fonteT(c), az = +attr("sun.sun", "azimuth"), el = +attr("sun.sun", "elevation"), w = weatherEnt();
+  const c = AU("caldo"), T = fonteT(c), az = +attr("sun.sun", "azimuth"), el = +attr("sun.sun", "elevation"), w = weatherEnt(), rot = rotazione(c), g = x => ((x + rot) % 360 + 360) % 360 + "°";
   const conLato = LATI().map(([k]) => [k, L.filter(id => latoDi(id) === k && puoPos(id)).length]);
   const corpoCaldo = `<div class="fl1">${t("Lati della casa", "Sides of the house")}</div><div class="vr1">${LATI().map(([k, nome]) => { const q = conLato.find(x => x[0] === k)[1];
       return `<button class="${(c.lati || []).includes(k) ? "on" : ""}" data-act="tpAuLato" data-v="${k}" aria-pressed="${(c.lati || []).includes(k)}">🧭 ${esc(nome)} <em class="tp1q0">${q}</em></button>`; }).join("")}</div>
@@ -459,7 +463,9 @@ function schedaAuto() {
     <div class="tp1fr">${num("caldo", "temp", c.temp, -20, 120, .5, t("Quando fuori ci sono almeno", "When it's at least this hot outside"), T?.u || "°C")}${num("caldo", "pos", c.pos, 0, 95, 5, t("Porta le tapparelle al", "Bring covers to"), "%")}${num("caldo", "el", c.el, 0, 60, 1, t("Sole alto almeno", "Sun at least this high"), "°")}</div>
     <button class="li tp1ts" data-act="tpAuSens"><span class="ic">🌡️</span><div class="tx"><b>${T ? esc(nm(T.id)) : t("Nessuna temperatura esterna", "No outdoor temperature")}</b><span>${c.sens && S[c.sens] ? t("scelto da te", "chosen by you") : "✨ " + t("automatico", "automatic")}${T && !isNaN(T.v) ? " · " + t("adesso ", "now ") + fnum(T.v) + " " + esc(T.u) : ""}</span></div><span class="st">›</span></button>
     ${w ? spunta("caldo", "sole", c.sole, "☀️ " + t(`Solo se il meteo dice sole (${nm(w)})`, `Only if the weather says sunny (${nm(w)})`)) : ""}
-    ${!isNaN(az) ? `<p class="small muted tp1nt">${el > 0 ? t(`Adesso il sole è a ${nomeLato(latoDelSole(az)).toLowerCase()} (${Math.round(az)}°), alto ${Math.round(el)}°.`, `The sun is now ${nomeLato(latoDelSole(az)).toLowerCase()} (${Math.round(az)}°), ${Math.round(el)}° high.`) : t("Adesso il sole è sotto l'orizzonte.", "The sun is below the horizon now.")} ${t("Lato nord: da 315° a 45°, est: 45°-135°, sud: 135°-225°, ovest: 225°-315°.", "North side: 315° to 45°, east: 45°-135°, south: 135°-225°, west: 225°-315°.")}</p>` : ""}`;
+    ${!isNaN(az) ? `<p class="small muted tp1nt">${el > 0 ? t(`Adesso il sole è a ${nomeLato(latoDelSole(az, rot)).toLowerCase()} (${Math.round(az)}°), alto ${Math.round(el)}°.`, `The sun is now ${nomeLato(latoDelSole(az, rot)).toLowerCase()} (${Math.round(az)}°), ${Math.round(el)}° high.`) : t("Adesso il sole è sotto l'orizzonte.", "The sun is below the horizon now.")} ${t(`Lato nord: da ${g(315)} a ${g(45)}, est: ${g(45)}-${g(135)}, sud: ${g(135)}-${g(225)}, ovest: ${g(225)}-${g(315)}.`, `North side: ${g(315)} to ${g(45)}, east: ${g(45)}-${g(135)}, south: ${g(135)}-${g(225)}, west: ${g(225)}-${g(315)}.`)} ${t("«Sole alto almeno» evita di chiudere quando il sole è così basso che lo coprono alberi o case di fronte.", "«Sun at least this high» avoids closing when the sun is so low that trees or houses opposite hide it.")}</p>` : ""}
+    <div class="tp1fr">${num("caldo", "rot", rot, -45, 45, 1, t("Correggi l'orientamento della casa (gradi)", "Correct the house orientation (degrees)"), "°")}</div>
+    <p class="small muted tp1nt">${t("Se la casa non è dritta verso i punti cardinali: con +20 il lato «sud» guarda a 200° (verso sud-ovest), con −20 a 160°. Lascia 0 se va bene così; gli angoli qui sopra si spostano insieme.", "If the house isn't square to the compass points: with +20 the «south» side faces 200° (towards south-west), with −20 160°. Leave 0 if it's fine; the angles above move with it.")}</p>`;
   /* finestra aperta */
   const F = coppie(L), K = Object.keys(F);
   const corpoFin = K.length ? `<div class="stack">${K.map(id => `<div class="li tp1cp"><span class="ic">${isOnF(F[id]) ? "🔓" : "🔒"}</span><div class="tx"><b>${esc(nm(id))}</b><span>↔ ${esc(nm(F[id]))}${isOnF(F[id]) ? " · " + t("aperta adesso", "open now") : ""}</span></div></div>`).join("")}</div>

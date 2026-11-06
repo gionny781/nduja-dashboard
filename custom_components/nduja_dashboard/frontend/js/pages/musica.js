@@ -45,13 +45,19 @@ const MARCHE = { alexa_media: "Alexa", cast: "Google Cast", sonos: "Sonos", musi
 const isGruppo = id => Array.isArray(attr(id, "entity_id")) || piattaforma(id) === "group" || /\bgroup\b|gruppo/i.test(DEVICES[REG[id]?.device]?.model || "");
 /** le casse a cui si può mandare musica dalla plancia */
 const casse = () => ents("media_player", id => ha(id, F.PLAY_MEDIA)).sort((a, b) => nm(a).localeCompare(nm(b)));
+/* scelte della casa (⚙️ di «Dove ascolti», amministratori): LAYOUT.musica = { noDove: [casse tolte], inHome (lettori nella Home), noMA (niente consiglio) } */
+const MC = () => LAYOUT.musica || {};
+/** casse tolte da «Dove ascolti» e da «Sposta su…» (restano nelle stanze qui sotto) */
+const tolta = id => (MC().noDove || []).includes(id);
+/** quanti lettori nella scheda «In riproduzione» della Home: 3, o quelli scelti in ⚙️ */
+const inHome = () => { const v = +MC().inHome; return v >= 1 && v <= 6 ? v : 3; };
 export function dove() { const v = sGet("mu_dove"); return v && v !== "qui" && S[v] && casse().includes(v) ? v : "qui"; }
 const questo = () => /iPad|Tablet/i.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1) ? t("questo tablet", "this tablet")
   : /Mobi|Android|iPhone/i.test(navigator.userAgent) ? t("questo telefono", "this phone") : t("questo computer", "this computer");
 
 function scelta() {
   /* le TV passate in Media non compaiono tra le casse, tranne quella già scelta qui (la scelta resta) */
-  const tv = tvInMedia(), chi = dove(), C = casse().filter(id => !tv || !isTV(id) || id === chi), G = C.filter(isGruppo), K = C.filter(id => !isGruppo(id)), b = brano();
+  const tv = tvInMedia(), chi = dove(), C = casse().filter(id => id === chi || ((!tv || !isTV(id)) && !tolta(id))), G = C.filter(isGruppo), K = C.filter(id => !isGruppo(id)), b = brano();
   const chip = (id, ic, nome, sotto, attivo) => `<button class="mu1c ${chi === id ? "act" : ""} ${attivo ? "play" : ""}" data-act="mu1dove" data-id="${id}" aria-pressed="${chi === id}">
     <span class="ic">${ic}</span><span class="tx"><b>${esc(nome)}</b><small>${esc(sotto)}</small></span>${attivo ? eq() : ""}</button>`;
   const sottoCassa = id => suona(id) && attr(id, "media_title") ? "▶ " + attr(id, "media_title")
@@ -60,10 +66,26 @@ function scelta() {
   /* prima questo dispositivo, poi le casse, poi i gruppi (👥), separati da una lineetta */
   const sep = `<span class="mu1sep" aria-hidden="true"></span>`, ch = L => L.map(id => chip(id, isGruppo(id) ? "👥" : tipo(id), nm(id), sottoCassa(id), suona(id))).join("");
   /* senza Music Assistant: una riga discreta per chi può installarla */
-  const consiglio = !haMA() && isAdmin() ? `<div class="ma1h">🎶 ${t("Per cercare e ascoltare da Spotify, Apple Music, radio… installa Music Assistant.", "To search and listen from Spotify, Apple Music, radio… install Music Assistant.")}
+  const consiglio = !haMA() && isAdmin() && !MC().noMA ? `<div class="ma1h">🎶 ${t("Per cercare e ascoltare da Spotify, Apple Music, radio… installa Music Assistant.", "To search and listen from Spotify, Apple Music, radio… install Music Assistant.")}
     <a href="https://www.home-assistant.io/integrations/music_assistant/" target="_blank" rel="noopener noreferrer">${t("Come si fa", "How to")} ↗</a></div>` : "";
-  return card("🎧 " + t("Dove ascolti", "Where to listen"), `<div class="mu1cs">${[qui, ch(K), ch(G)].filter(Boolean).join(sep)}</div>${consiglio}`, { cls: "span3 mu1s" });
+  const cfg = isAdmin() ? `<button class="btn sm" data-act="mu1cfg" title="${t("Impostazioni", "Settings")}" aria-label="${t("Impostazioni", "Settings")}">⚙️</button>` : "";
+  return card("🎧 " + t("Dove ascolti", "Where to listen"), `<div class="mu1cs">${[qui, ch(K), ch(G)].filter(Boolean).join(sep)}</div>${consiglio}`, { cls: "span3 mu1s", right: cfg });
 }
+/* ⚙️ (amministratori): casse in «Dove ascolti», lettori nella Home, consiglio di Music Assistant */
+function cfgMusica() {
+  const tv = tvInMedia(), C = casse().filter(id => !tv || !isTV(id)), no = MC().noDove || [];
+  const sw = (on, act, tx, sotto, extra = "") => `<div class="li"><div class="tx"><b>${tx}</b>${sotto ? `<span>${sotto}</span>` : ""}</div><button class="sw ${on ? "on" : ""}" data-act="${act}" ${extra} aria-pressed="${on}" aria-label="${esc(String(tx).replace(/<[^>]+>/g, ""))}"><i></i></button></div>`;
+  return `<div class="sh-head"><div><h3>⚙️ ${t("Musica", "Music")}</h3><div class="small muted">${t("Vale per tutta la casa. Si salva subito.", "It applies to the whole home. Saved immediately.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
+    <div class="fl1">🎧 ${t("Casse in «Dove ascolti»", "Speakers in «Where to listen»")}</div>
+    <p class="small muted" style="margin:0 2px 8px;line-height:1.45">${t("Spegni quelle che non usi per la musica (una TV, un gruppo che non ti serve): spariscono da «Dove ascolti» e da «Sposta su…», ma restano nelle stanze qui sotto. Per toglierle da tutta la plancia usa ✕ in ✏️ Modifica.", "Turn off the ones you don't use for music (a TV, a group you don't need): they disappear from «Where to listen» and «Move to…», but stay in the rooms below. To remove them from the whole dashboard use ✕ in ✏️ Edit.")}</p>
+    <div class="stack">${C.map(id => sw(!no.includes(id), "mu1cfgC", esc(nm(id)), esc([isGruppo(id) ? t("Gruppo", "Group") : "", MARCHE[piattaforma(id)], AREAS[areaOf(id)]?.name].filter(Boolean).join(" · ") || id), `data-id="${id}"`)).join("") || `<div class="small muted">${t("Nessuna cassa a cui mandare musica.", "No speaker to send music to.")}</div>`}</div>
+    <div class="fl1">🏠 ${t("Scheda «In riproduzione» della Home", "«Now playing» Home card")}</div>
+    <label class="fld1" style="margin-top:0"><span>${t("Quanti lettori al massimo", "How many players at most")}</span><select data-chg="mu1cfgH">${[1, 2, 3, 4, 5, 6].map(n => `<option value="${n}" ${inHome() === n ? "selected" : ""}>${n}</option>`).join("")}</select></label>
+    <p class="small muted" style="margin:6px 2px 0">${t("Compaiono solo quelli che stanno suonando (anche questo dispositivo); gli altri restano qui nella pagina Musica.", "Only those playing show up (this device too); the others stay here on the Music page.")}</p>
+    ${!haMA() ? `<div class="fl1">🎶 Music Assistant</div>${sw(!MC().noMA, "mu1cfgMA", t("Consiglia di installare Music Assistant", "Suggest installing Music Assistant"), t("La riga sotto «Dove ascolti», solo per gli amministratori.", "The line under «Where to listen», only for admins."))}` : ""}`;
+}
+/** salva LAYOUT.musica: fn(copia); se resta vuota la tolgo (chi non tocca niente non ha la chiave) */
+const salvaM = (fn, msg) => cambia(l => { l.musica = { ...(l.musica || {}) }; fn(l.musica); if (!l.musica.noDove?.length) delete l.musica.noDove; if (!Object.keys(l.musica).length) delete l.musica; }, msg);
 const eq = () => `<i class="mu1eq" aria-hidden="true"><b></b><b></b><b></b></i>`;
 
 /* ================= lettore della plancia (questo dispositivo) ================= */
@@ -436,7 +458,7 @@ function puoSpostare(da, a) {
   if (a === "qui") return /^media-source:\/\//.test(c);
   return ha(a, F.PLAY_MEDIA) && !isAlexa(a) && (portabile(c) || piattaforma(a) === piattaforma(da));
 }
-const destinazioni = da => ["qui", ...casse()].filter(a => puoSpostare(da, a));
+const destinazioni = da => ["qui", ...casse().filter(a => !tolta(a))].filter(a => puoSpostare(da, a));
 const comeSposta = (da, a) => isMA(da) && isMA(a) ? t("passa tutta la coda (Music Assistant)", "moves the whole queue (Music Assistant)")
   : da === "qui" && QUI.coda.length > QUI.i + 1 ? ha(a, F.ENQUEUE) ? t("con il resto della coda", "with the rest of the queue") : t("riparte questo brano, senza il resto della coda", "this track starts again, without the rest of the queue")
   : t("riparte da capo il brano o la radio", "the track or station starts again");
@@ -543,9 +565,9 @@ function pagina() {
 }
 /** scheda Home: solo quello che suona adesso (anche su questo dispositivo) */
 export function musicaCard() {
-  const P = tutti().filter(suona), q = brano() && QUI.stato !== "fine";
+  const P = tutti().filter(suona), q = brano() && QUI.stato !== "fine", N = inHome();
   if (!P.length && !q) return "";
-  return card("🎶 " + t("In riproduzione", "Now playing"), `<div class="stack">${q ? rigaQui(false) : ""}${P.slice(0, q ? 2 : 3).map(id => lettore(id, true)).join("")}</div>`, { link: [t("Musica", "Music"), "musica"] });
+  return card("🎶 " + t("In riproduzione", "Now playing"), `<div class="stack">${q ? rigaQui(false) : ""}${P.slice(0, q ? N - 1 : N).map(id => lettore(id, true)).join("")}</div>`, { link: [t("Musica", "Music"), "musica"] });
 }
 /* la pagina serve se ci sono lettori oppure musica da ascoltare su questo dispositivo (file in «media», radio…) */
 const fonti = () => cached("mu:fonti", 30 * 60000, async () => {
@@ -569,6 +591,9 @@ Object.assign(ACT, {
   muRepeat: el => { const r = attr(el.dataset.id, "repeat"); svc("media_player", "repeat_set", { repeat: r === "off" ? "all" : r === "all" ? "one" : "off" }, { entity_id: el.dataset.id }); },
   /* dove ascolti */
   mu1dove: el => { sSet("mu_dove", el.dataset.id); render(true); },
+  mu1cfg: () => openSheet(cfgMusica),
+  mu1cfgC: el => { const id = el.dataset.id, via = !tolta(id); salvaM(m => { const L = new Set(m.noDove || []); if (via) L.add(id); else L.delete(id); m.noDove = [...L]; }, (via ? "🙈 " : "👁 ") + nm(id)); },
+  mu1cfgMA: () => { const via = !MC().noMA; salvaM(m => { if (via) m.noMA = true; else delete m.noMA; }); },
   /* sfoglia */
   mu1apri: el => { const c = VISTI[+el.dataset.i]; if (!c) return; BR.pila.push({ id: c.media_content_id, type: c.media_content_type, title: pulisci(c.title) }); BR.quanti = 120; render(true); },
   mu1cr: el => { BR.pila.length = +el.dataset.i; BR.quanti = 120; render(true); },
@@ -625,6 +650,7 @@ document.addEventListener("input", e => { if (e.target.matches?.("[data-mu1in]")
 /* ricerca di Music Assistant: il testo resta mentre la pagina si ridisegna; Invio cerca */
 document.addEventListener("input", e => { if (e.target.id === "ma1q") MAS.q = e.target.value; });
 document.addEventListener("submit", e => { if (e.target.matches?.("[data-ma1f]")) { e.preventDefault(); MAS.q = document.getElementById("ma1q")?.value || ""; cercaMA(); } });
+CHG.mu1cfgH = el => { const n = +el.value; salvaM(m => { if (n === 3) delete m.inHome; else m.inHome = n; }, "🏠 " + t("In Home: ", "On Home: ") + n); };
 CHG.ma1cassa = el => { sSet("mu_ma", el.value); render(true); };
 CHG.mu1vol = el => { AU.volume = +el.value / 100; sSet("mu_vol", el.value); render(); };
 CHG.mu1seek = el => { if (!inDiretta() && isFinite(AU.duration)) AU.currentTime = +el.value; };

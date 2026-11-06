@@ -3,11 +3,15 @@
    I dati sono «della casa» (casa.js): uguali su tutti i dispositivi e li può cambiare qualsiasi utente, non solo gli amministratori.
    Sezione «faccende» = { lavori: [{ id, nome, icona, ogni, chi: [person…], modo: "turno"|"fisso", tocca, ultima, storia: [{ chi, quando, prima }] }] }
    In Home la scheda «Faccende di oggi» (HOME_EXTRA), nascondibile come le altre. */
-import { S, ACT, CHG, UI, HOME_EXTRA, IT, t, LOC, esc, nm, attr, ents, allEnts, card, page, toast, openSheet, closeSheet, render, sGet, sSet, sicuro } from "../core.js";
+import { S, ACT, CHG, UI, LAYOUT, HOME_EXTRA, IT, t, LOC, esc, nm, attr, ents, allEnts, card, page, toast, openSheet, closeSheet, render, sGet, sSet, sicuro, isAdmin } from "../core.js";
 import { casa, casaCambia, casaErrore } from "../casa.js";
+import { cambia } from "../edit.js";
 
 const SEZ = "faccende";
 const MAX_STORIA = 12, MAX_LAVORI = 150;
+/* scelte della scheda della Home (⚙️, solo amministratori, LAYOUT.faccende): se non scegli, 5 faccende, solo quelle di oggi e in ritardo */
+const inHome = () => { const v = +LAYOUT.faccende?.inHome; return v >= 1 && v <= 12 ? v : 5; };
+const anticipo = () => { const v = +LAYOUT.faccende?.anticipo; return v >= 1 && v <= 7 ? v : 0; };
 const ICONE = ["🧹", "🧽", "🚽", "🛁", "🧺", "👕", "🛏️", "🍽️", "🗑️", "♻️", "🪴", "🌿", "🐶", "🐱", "🐟", "🛒", "🍳", "🧊", "🪟", "🚗", "💡", "🔧", "📦", "🧴"];
 const ESEMPI = () => [
   ["🚽", t("Pulire il bagno", "Clean the bathroom"), 7],
@@ -158,7 +162,7 @@ function pagina() {
   const testa = `<section class="card span3 fkt1"><div class="ch"><h2>🧹 ${t("Faccende", "Chores")}
       ${tutti.length ? `<span class="tag ${R.length ? "bad" : O.length ? "warn" : "ok"}">${R.length ? R.length + " " + t("in ritardo", "overdue") : O.length ? O.length + " " + t("da fare oggi", "due today") : t("tutto in regola", "all on track")}</span>` : ""}</h2>
       <span class="row" style="gap:8px;flex-wrap:wrap;justify-content:flex-end">${io() && tutti.length ? `<span class="seg">${[["0", t("Tutte", "All")], ["1", t("Le mie", "Mine")]].map(([k, n]) => `<button class="${(mie() ? "1" : "0") === k ? "act" : ""}" data-act="faMie" data-v="${k}">${n}</button>`).join("")}</span>` : ""}
-      <button class="btn pri sm" data-act="faNuovo">＋ ${t("Nuova faccenda", "New chore")}</button></span></div>
+      <button class="btn pri sm" data-act="faNuovo">＋ ${t("Nuova faccenda", "New chore")}</button>${isAdmin() ? `<button class="btn sm" data-act="faCfg" title="${t("Impostazioni", "Settings")}" aria-label="${t("Impostazioni", "Settings")}">⚙️</button>` : ""}</span></div>
     <p class="small muted" style="margin:0">${t("Uguali su tutti i dispositivi: chiunque in casa può aggiungerle, cambiarle e segnarle come fatte.", "The same on every device: anyone at home can add, change and mark them done.")}</p></section>`;
   if (!tutti.length) return `<div class="g g3">${testa}${esempi()}</div>`;
   return `<div class="g g3">${testa}
@@ -168,18 +172,29 @@ function pagina() {
 
 /* ---------- Home: «Faccende di oggi» ---------- */
 function homeCard() {
-  const L = ordinati(lavori()), D = L.filter(l => mancano(l) <= 0), me = io();
-  D.sort((a, b) => (tocca(b) === me && !!me) - (tocca(a) === me && !!me) || mancano(a) - mancano(b));   // prima le mie
-  const prossima = L.find(l => mancano(l) > 0);
+  /* da fare oggi o in ritardo; con l'anticipo anche quelle dei prossimi giorni (non quelle appena fatte) */
+  const N = inHome(), A = anticipo(), L = ordinati(lavori()), D = L.filter(l => mancano(l) <= 0 || (mancano(l) <= A && !fattoOggi(l))), me = io();
+  D.sort((a, b) => (mancano(a) > 0) - (mancano(b) > 0) || (tocca(b) === me && !!me) - (tocca(a) === me && !!me) || mancano(a) - mancano(b));   // prima quelle di oggi, e tra queste le mie
+  const prossima = L.find(l => mancano(l) > 0 && !D.includes(l));
   const riga = l => { const p = tocca(l), st = statoDi(l);
-    return `<div class="fkh1 s-${st}"><span class="fki1">${esc(l.icona || "🧹")}</span><div class="tx"><b>${esc(l.nome)}</b><span><em>${esc(st === "ritardo" ? quando(l) : l.ultima ? t("oggi", "today") : t("mai fatto", "never done"))}</em>${p ? " · " + (p === me ? t("tocca a te", "your turn") : esc(nm(p))) : ""}</span></div>
+    return `<div class="fkh1 s-${st}"><span class="fki1">${esc(l.icona || "🧹")}</span><div class="tx"><b>${esc(l.nome)}</b><span><em>${esc(st === "oggi" ? (l.ultima ? t("oggi", "today") : t("mai fatto", "never done")) : quando(l))}</em>${p ? " · " + (p === me ? t("tocca a te", "your turn") : esc(nm(p))) : ""}</span></div>
       <button class="fkx1" data-act="faFatto" data-id="${esc(l.id)}" aria-label="${t("Fatto", "Done")}: ${esc(l.nome)}"><i>✓</i><span>${t("Fatto", "Done")}</span></button></div>`; };
   return card("🧹 " + t("Faccende di oggi", "Today's chores"), D.length
-    ? `<div class="fkhl1">${D.slice(0, 5).map(riga).join("")}</div>${D.length > 5 ? `<button class="btn sm" data-act="go" data-id="faccende" style="margin-top:10px">${t(`e altre ${D.length - 5}`, `and ${D.length - 5} more`)} ›</button>` : ""}`
+    ? `<div class="fkhl1">${D.slice(0, N).map(riga).join("")}</div>${D.length > N ? `<button class="btn sm" data-act="go" data-id="faccende" style="margin-top:10px">${t(`e altre ${D.length - N}`, `and ${D.length - N} more`)} ›</button>` : ""}`
     : `<div class="fkok1"><span>✓</span><div><b>${t("Tutto fatto per oggi", "All done for today")}</b>${prossima ? `<small>${t("Prossima: ", "Next: ")}${esc(prossima.icona || "")} ${esc(prossima.nome)} · ${esc(mancano(prossima) === 1 ? t("domani", "tomorrow") : giornoBreve(scadenza(prossima)))}</small>` : ""}</div></div>`,
     { link: [t("Tutte", "All"), "faccende"] });
 }
-HOME_EXTRA.faccende = { title: () => t("Faccende di oggi", "Today's chores"), render: homeCard, show: () => lavori().length > 0 };
+HOME_EXTRA.faccende = { title: () => t("Faccende di oggi", "Today's chores"), render: homeCard, show: () => lavori().length > 0, cfg: "faCfg" };
+
+/* ⚙️ (amministratori): la scheda della Home */
+const cfg = () => `<div class="sh-head"><div><h3>⚙️ ${t("Faccende", "Chores")}</h3><div class="small muted">${t("La scheda «Faccende di oggi» della Home. Vale per tutta la casa.", "The «Today's chores» card on Home. It applies to the whole home.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
+    <label class="fld1"><span>${t("Faccende nella scheda della Home", "Chores on the Home card")}</span><select data-chg="faInHome">${[1, 2, 3, 4, 5, 6, 8, 10, 12].map(n => `<option value="${n}" ${inHome() === n ? "selected" : ""}>${n}</option>`).join("")}</select></label>
+    <p class="small muted" style="margin:6px 0 0">${t("Le altre restano qui: in Home compare «e altre…». Prima quelle in ritardo e quelle che toccano a te.", "The others stay here: Home shows «and more…». Overdue ones and yours come first.")}</p>
+    <label class="fld1"><span>${t("Mostra in anticipo", "Show ahead")}</span><select data-chg="faAnticipo">${[0, 1, 2, 3, 7].map(n => `<option value="${n}" ${anticipo() === n ? "selected" : ""}>${n === 0 ? t("Solo oggi e in ritardo", "Only today and overdue") : n === 1 ? t("Anche quelle di domani", "Also tomorrow's") : t(`Anche quelle dei prossimi ${n} giorni`, `Also the next ${n} days`)}</option>`).join("")}</select></label>
+    <p class="small muted" style="margin:6px 0 0">${t("Per prepararsi prima: quelle in anticipo vengono dopo quelle di oggi. Quelle appena fatte non ricompaiono.", "To get ready early: chores ahead come after today's. The ones just done don't show again.")}</p>`;
+const faccSet = (k, v, def, msg) => cambia(l => { l.faccende = { ...(l.faccende || {}) }; if (v === def) delete l.faccende[k]; else l.faccende[k] = v; if (!Object.keys(l.faccende).length) delete l.faccende; }, msg);
+CHG.faInHome = el => faccSet("inHome", +el.value, 5, "🧹 " + t("In Home: ", "On Home: ") + el.value);
+CHG.faAnticipo = el => faccSet("anticipo", +el.value, 0, "🧹 " + el.selectedOptions[0]?.textContent);
 
 /* ---------- ＋ e ✏️: nome, icona, ogni quanto, a chi tocca, ultima volta ---------- */
 let F = null;
@@ -225,6 +240,7 @@ const leggiCampi = () => { const n = document.getElementById("fa1n"); if (F && n
 
 Object.assign(ACT, {
   faNuovo: () => apri(null),
+  faCfg: () => openSheet(cfg),
   faEdit: el => { const l = trova(el.dataset.id); if (l) apri(l); },
   faIco: el => { leggiCampi(); F.icona = el.dataset.v; render(); },
   faOgniV: el => { leggiCampi(); F.ogni = +el.dataset.v; const o = document.getElementById("fa1o"); if (o) o.value = F.ogni; render(); },

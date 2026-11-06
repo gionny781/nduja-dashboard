@@ -1,16 +1,17 @@
 /* Acqua e gas: pagina gemella di Energia con i consumi di acqua e gas.
    Da dove leggo (le scelte di ✏️ vincono): i contatori della configurazione Energia di Home Assistant (energy/get_prefs: «water» e «gas»),
    altrimenti il sensore più adatto (device_class water/gas, state_class total o total_increasing, niente contatori di oggi/mese o dell'irrigazione).
-   A) Oggi: consumo da mezzanotte (statistiche del recorder), confronto con la media degli ultimi 30 giorni, portata in tempo reale se c'è
+   A) Oggi: consumo da mezzanotte (statistiche del recorder), confronto con la media degli ultimi 30 giorni (o dei giorni scelti in ⚙️), portata in tempo reale se c'è
       un sensore di portata (volume_flow_rate); disegni di 'Nduja: contatore dell'acqua con le cifre che scorrono, contatore del gas con la fiamma.
    B) Storico e costi: settimana, mese, anno come lo storico di Energia; prezzi della configurazione Energia oppure scelti in ⚙️.
    C) Perdite: con un sensore di portata, avviso «Possibile perdita: l'acqua scorre da 2 ore» (minuti e portata minima in ⚙️); i sensori di perdita
       (binary_sensor moisture) con il loro stato; la valvola dell'acqua (valve) con «Chiudi l'acqua» a doppia conferma.
    D) In Home la scheda «Acqua e gas» (HOME_EXTRA) e negli Avvisi la possibile perdita (VISTE.acquaAvvisi).
    Scelte in LAYOUT.acqua = { acqua:[id] | "none", gas:[id] | "none", flussoAcqua: id | "none", flussoGas: id | "none", valvola: id | "none",
-     perditeExtra:[id], perditeTolte:[id], prezzoAcqua: €/unità, prezzoGas: €/unità, avviso:{ on, min, portata }, inUso: minuti } */
+     perditeExtra:[id], perditeTolte:[id], prezzoAcqua: €/unità, prezzoGas: €/unità, avviso:{ on, min, portata }, inUso: minuti, mediaGiorni: giorni }
+   La valuta è quella di Home Assistant; il periodo dello Storico si ricorda su ogni dispositivo (aqStor). */
 import { S, ACT, CHG, UI, LAYOUT, VISTE, HOME_EXTRA, PAGES, t, LOC, esc, fnum, nm, nmHA, ok, val, attr, unit, allEnts, deviceClass, card, page,
-  svc, ws, cached, toast, openSheet, closeSheet, render, isAdmin, utenteCfg, durata, ago, sicuro } from "../core.js";
+  svc, ws, cached, toast, openSheet, closeSheet, render, isAdmin, utenteCfg, durata, ago, sicuro, sGet, sSet } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 import { statistiche, barre } from "../grafici.js";
 
@@ -22,7 +23,10 @@ const testo = id => (id + " " + nmHA(id)).toLowerCase().replace(/[_.]/g, " ");
 const lista = v => (Array.isArray(v) ? v : v && v !== "none" ? [v] : []).filter(id => S[id]);
 const oggi0 = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
 const dataISO = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-const euro = v => v == null || isNaN(v) ? "—" : v.toLocaleString(LOC, { style: "currency", currency: "EUR" });
+/** valuta di Home Assistant (Impostazioni → Sistema → Generale); prima era sempre l'euro */
+const valuta = () => { const c = cached("haConfig", 3600e3, () => ws({ type: "get_config" }).catch(() => ({}))); return /^[A-Z]{3}$/.test(c?.currency || "") ? c.currency : "EUR"; };
+const euro = v => { if (v == null || isNaN(v)) return "—"; try { return v.toLocaleString(LOC, { style: "currency", currency: valuta() }); } catch { return v.toLocaleString(LOC, { style: "currency", currency: "EUR" }); } };
+const simbolo = () => { try { return (0).toLocaleString(LOC, { style: "currency", currency: valuta(), currencyDisplay: "narrowSymbol" }).replace(/[\d\s.,\u00a0]/g, "") || valuta(); } catch { return "€"; } };
 const KIND = { acqua: { tipo: "water", dc: "water", ic: "💧", col: "#64d2ff" }, gas: { tipo: "gas", dc: "gas", ic: "🔥", col: "#ff9f0a" } };
 const nomeK = k => k === "acqua" ? t("Acqua", "Water") : t("Gas", "Gas");
 
@@ -34,6 +38,9 @@ const minPerdita = () => clamp(Math.round(+(C().avviso?.min ?? 120)) || 120, 10,
 const portataMin = () => { const v = +(C().avviso?.portata ?? 0); return isNaN(v) ? 0 : clamp(v, 0, 50); };
 /** senza sensore di portata: acqua o gas «in uso» se il contatore è cambiato negli ultimi minuti (10 se non scegli) */
 const minInUso = () => clamp(Math.round(+(C().inUso ?? 10)) || 10, 1, 240);
+/** «giorno medio»: media degli ultimi N giorni interi (30 se non scegli) */
+const GG_MEDIA = [7, 14, 30, 60, 90];
+const ggMedia = () => GG_MEDIA.includes(+C().mediaGiorni) ? +C().mediaGiorni : 30;
 
 /* ---------- configurazione Energia ---------- */
 const prefs = () => cached("energy:prefs", 10 * MIN, () => ws({ type: "energy/get_prefs" }).catch(() => ({}))) || {};
@@ -135,9 +142,9 @@ function perPeriodo(ids, start, periodo, M) {
       const v = Math.max(0, +p.change || 0); q.base += v * f; q.valori[id] = (q.valori[id] || 0) + v; } }
   return Object.values(m).sort((a, b) => a.x - b.x);
 }
-/** media al giorno degli ultimi 30 giorni interi (senza oggi) */
+/** media al giorno degli ultimi 30 giorni interi (o di quelli scelti in ⚙️), senza oggi */
 function media(ids, M) {
-  const g0 = oggi0(), start = new Date(g0.getTime() - 30 * GIORNO);
+  const g0 = oggi0(), start = new Date(g0.getTime() - ggMedia() * GIORNO);
   const P = perPeriodo(ids, start, "day", M); if (P === undefined) return undefined;
   const L = P.filter(p => p.x < g0.getTime()); if (!L.length) return null;
   return L.reduce((a, p) => a + p.base, 0) / L.length;
@@ -361,7 +368,8 @@ function cardPerdite() {
 }
 
 /* B) storico e costi */
-const VS = { p: "settimana" };
+/* periodo dello Storico: ricordato su questo dispositivo (settimana se non scegli) */
+const VS = { get p() { const v = sGet("aqStor"); return ["settimana", "mese", "anno"].includes(v) ? v : "settimana"; } };
 function storicoDi(k, giorni, periodo, start) {
   const { ids } = contatori(k); if (!ids.length) return "";
   const M = misura(k, ids), P = perPeriodo(ids, start, periodo, M);
@@ -395,7 +403,8 @@ const VOCI = () => [
     t("In m³ o in kWh. Più contatori si sommano.", "In m³ or kWh. Several meters are added up.")],
   ["flussoAcqua", "🚿 " + t("Portata dell'acqua (adesso)", "Water flow (now)"), id => numerico(id) && (deviceClass(id) === "volume_flow_rate" || UF[uf(id)] != null), false,
     t("Litri al minuto o m³/h: serve per vedere se l'acqua scorre e per le perdite.", "Litres per minute or m³/h: used to see if water is flowing and for leaks.")],
-  ["flussoGas", "🔥 " + t("Portata del gas (adesso)", "Gas flow (now)"), id => numerico(id) && (deviceClass(id) === "volume_flow_rate" || UF[uf(id)] != null), false],
+  ["flussoGas", "🔥 " + t("Portata del gas (adesso)", "Gas flow (now)"), id => numerico(id) && (deviceClass(id) === "volume_flow_rate" || UF[uf(id)] != null), false,
+    t("Se c'è: la fiamma del disegno si accende quando il gas passa. Senza, guardo quando cambia il contatore.", "If you have one: the drawing's flame lights up when gas flows. Without it, I watch when the meter changes.")],
   ["valvola", "🚰 " + t("Valvola dell'acqua", "Water valve"), id => /^(valve|switch)\./.test(id), false,
     t("La valvola che chiude l'acqua di casa: valvola (valve) o interruttore (acceso = aperta).", "The valve that shuts off the house water: valve or switch (on = open).")],
 ];
@@ -427,9 +436,9 @@ function scelte() {
       <div class="stack" style="margin-top:8px">${SP.map(id => `<div class="li"><div class="tx"><b>${esc(nm(id))}</b><span>${esc(id)} · ${valoreDi(id)}</span></div><button class="x3" data-act="aqPTogli" data-id="${id}" aria-label="${t("Togli", "Remove")} · ${esc(nm(id))}">✕</button></div>`).join("")}
         ${tolte.map(id => `<div class="li"><div class="tx"><b>${esc(nm(id))}</b><span>${t("tolto da questa pagina", "removed from this page")}</span></div><button class="btn sm" data-act="aqPRimetti" data-id="${id}">↺ ${t("Rimetti", "Restore")}</button></div>`).join("")}
         <button class="add1" data-act="aqPAdd"><span>＋</span>${t("Aggiungi un sensore di perdita", "Add a leak sensor")}</button></div></div>
-    <div class="en2"><b>💶 ${t("Prezzi (facoltativi)", "Prices (optional)")}</b><small class="muted"> ${t("Vuoto = quelli della configurazione Energia.", "Empty = those of the Energy configuration.")}</small>
-      <div class="row aq1pr" style="gap:10px"><label class="fld1"><span>💧 ${t("Acqua", "Water")} €/${esc(MA.du)}</span>${nIn("aq1pa", c.prezzoAcqua, 0, 1000, "0.001", pP("acqua"), "aqPrezzo", 'data-k="prezzoAcqua"')}</label>
-        <label class="fld1"><span>🔥 ${t("Gas", "Gas")} €/${esc(MG.du)}</span>${nIn("aq1pg", c.prezzoGas, 0, 1000, "0.001", pP("gas"), "aqPrezzo", 'data-k="prezzoGas"')}</label></div></div>
+    <div class="en2"><b>💶 ${t("Prezzi (facoltativi)", "Prices (optional)")}</b><small class="muted"> ${t("Vuoto = quelli della configurazione Energia. La valuta è quella di Home Assistant (Impostazioni → Sistema → Generale): ", "Empty = those of the Energy configuration. The currency is Home Assistant's (Settings → System → General): ") + esc(valuta())}.</small>
+      <div class="row aq1pr" style="gap:10px"><label class="fld1"><span>💧 ${t("Acqua", "Water")} ${esc(simbolo())}/${esc(MA.du)}</span>${nIn("aq1pa", c.prezzoAcqua, 0, 1000, "0.001", pP("acqua"), "aqPrezzo", 'data-k="prezzoAcqua"')}</label>
+        <label class="fld1"><span>🔥 ${t("Gas", "Gas")} ${esc(simbolo())}/${esc(MG.du)}</span>${nIn("aq1pg", c.prezzoGas, 0, 1000, "0.001", pP("gas"), "aqPrezzo", 'data-k="prezzoGas"')}</label></div></div>
     <div class="en2"><div class="row between" style="gap:8px"><b>🔔 ${t("Avviso «Possibile perdita»", "«Possible leak» alert")}</b><button class="sw ${avvisoOn() ? "on" : ""}" data-act="aqAvOn" aria-pressed="${avvisoOn()}" aria-label="${t("Avviso nella Home", "Alert on Home")}"><i></i></button></div>
       <small class="muted">${t("Compare negli Avvisi della Home quando l'acqua scorre senza mai fermarsi (serve il sensore di portata).", "Shows in Home Alerts when water flows without ever stopping (needs the flow sensor).")}</small>
       <label class="fld1"><span>${t("Dopo quanti minuti di acqua che scorre", "After how many minutes of flowing water")}</span><span class="ar1in">${nIn("aq1am", minPerdita(), 10, 1440, 5, "", "aqNum", 'data-f="min"')}<em>min</em></span></label>
@@ -437,7 +446,10 @@ function scelte() {
       <small class="muted">${t("Alzala un poco se il contatore segna qualche goccia anche con i rubinetti chiusi.", "Raise it a little if the meter shows a few drops even with the taps closed.")}</small></div>
     <div class="en2"><b>⏱️ ${t("Senza sensore di portata", "Without a flow sensor")}</b>
       <label class="fld1"><span>${t("«In uso» se il contatore è cambiato negli ultimi", "«In use» if the meter changed in the last")}</span><span class="ar1in">${nIn("aq1iu", minInUso(), 1, 240, 1, "", "aqNum", 'data-f="inUso"')}<em>min</em></span></label>
-      <small class="muted">${t("Serve ai disegni: le cifre scorrono e la fiamma si accende. Alzalo se il tuo contatore si aggiorna di rado.", "Used by the drawings: digits roll and the flame lights up. Raise it if your meter updates rarely.")}</small></div></div>`;
+      <small class="muted">${t("Serve ai disegni: le cifre scorrono e la fiamma si accende. Alzalo se il tuo contatore si aggiorna di rado.", "Used by the drawings: digits roll and the flame lights up. Raise it if your meter updates rarely.")}</small></div>
+    <div class="en2"><b>📊 ${t("Giorno medio", "Average day")}</b>
+      <label class="fld1"><span>${t("Confronta oggi con la media degli ultimi", "Compare today with the average of the last")}</span><select data-chg="aqMedia">${GG_MEDIA.map(n => `<option value="${n}" ${ggMedia() === n ? "selected" : ""}>${t(`${n} giorni`, `${n} days`)}</option>`).join("")}</select></label>
+      <small class="muted">${t("Serve per «come un giorno medio» e la tacca sulla barra di oggi, qui e nella Home. Con meno giorni segue di più la stagione.", "Used for «like an average day» and the mark on today's bar, here and on Home. Fewer days follow the season more closely.")}</small></div></div>`;
 }
 let RIAPRI = false;
 const foglio = () => `<div class="sh-head"><div><h3>⚙️ ${t("Acqua e gas", "Water and gas")}</h3><div class="small muted">${t("Valgono per tutta la casa e solo nella plancia. Si salvano subito.", "They apply to the whole home and only in the dashboard. Saved immediately.")}</div></div><button class="x" data-act="sheetClose">×</button></div>${scelte()}`;
@@ -454,7 +466,7 @@ function pagina() {
 const dopo = () => { if (RIAPRI) setTimeout(() => openSheet(foglio), 60); };
 Object.assign(ACT, {
   aqCfg: () => openSheet(foglio),
-  aqStor: el => { VS.p = el.dataset.v; render(); },
+  aqStor: el => { sSet("aqStor", el.dataset.v); render(); },
   aqValv: el => {
     const id = el.dataset.id, apri = el.dataset.v === "apri";
     if (!sicuro(el, apri ? t("Tocca ancora per riaprire", "Tap again to turn on") : t("Tocca ancora: chiudo l'acqua", "Tap again: I'll shut off the water"))) return;
@@ -482,6 +494,7 @@ CHG.aqPrezzo = el => {
   if (v !== "" && (isNaN(+v) || +v < 0)) { toast(t("Scrivi un prezzo valido, per esempio 2,10", "Enter a valid price, e.g. 2.10"), true); el.value = C()[k] ?? ""; return; }
   aqCambia(c => { if (v === "") delete c[k]; else c[k] = Math.round(+v * 10000) / 10000; }, "💶 " + t("Salvato", "Saved"));
 };
+CHG.aqMedia = el => { const n = +el.value; aqCambia(c => { if (n === 30 || !GG_MEDIA.includes(n)) delete c.mediaGiorni; else c.mediaGiorni = n; }, "📊 " + t(`Media di ${n} giorni`, `${n}-day average`)); };
 CHG.aqNum = el => {
   const f = el.dataset.f, v = +String(el.value).replace(",", "."), lim = { min: [10, 1440], portata: [0, 50], inUso: [1, 240] }[f];
   const cur = { min: minPerdita(), portata: portataMin(), inUso: minInUso() }[f];

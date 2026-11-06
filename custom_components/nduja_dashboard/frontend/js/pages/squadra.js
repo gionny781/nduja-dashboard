@@ -1,11 +1,14 @@
 /* La mia squadra (calcio): la prossima partita con il conto alla rovescia, la partita in corso (risultato grande, minuto,
    gol e cartellini, con un'animazione al gol disegnata per 'Nduja), gli ultimi risultati e la classifica.
    I dati vengono solo da Home Assistant: Team Tracker (Marketplace), Calcio Live (Marketplace) oppure un calendario con le partite.
-   Le squadre si trovano da sole; in ⚙️ Impostazioni (e con ✏️) se ne aggiungono altre, si tolgono, si cambiano nome,
-   sigla e colori. I loghi sono solo quelli dell'integrazione: se mancano, uno stemma con le iniziali e i colori scelti.
+   Le squadre si trovano da sole; in ⚙️ (solo admin) se ne aggiungono altre, si tolgono, si sceglie cosa mostrare;
+   con ✏️ della squadra si cambiano nome, sigla e colori, le fonti (unirne o toglierne), la classifica e se va nella Home.
+   I loghi sono solo quelli dell'integrazione: se mancano, uno stemma con le iniziali e i colori scelti.
+   Sezione «squadra» di LAYOUT: { extra, tolte, nomiTolte, off:[sezioni], ultimi, finitaOre, righeCl, notif:{ servizi, gol, fine, no, firma },
+   cfg:{ chiave: { nome, sigla, c1, c2, classifica:"id|gruppo"|"none", home:false, con:[fonti unite], via:[fonti tolte] } } }.
    In Home la scheda «La mia squadra» (HOME_EXTRA). Facoltativa l'automazione «'Nduja · squadra»: avviso sul telefono
-   al gol o a fine partita, creata su richiesta. */
-import { S, REG, ACT, CHG, UI, LAYOUT, HOME_EXTRA, HOOKS, t, LOC, esc, nmHA, allEnts, card, page, render, go, isAdmin,
+   al gol o a fine partita, creata su richiesta; si riscrive da sola quando cambiano squadre e fonti. */
+import { S, REG, ACT, CHG, UI, LAYOUT, HOME_EXTRA, HOOKS, t, LOC, esc, nmHA, allEnts, card, page, render, go, isAdmin, ok, pronto,
   openSheet, closeSheet, toast, cached, svcResp, ws, api, attr, etichettaNduja, sGet, sSet, hhmm } from "../core.js";
 import { scegli, cambia } from "../edit.js";
 
@@ -29,14 +32,23 @@ const simili = (a, b) => { const x = norm(a), y = norm(b); return !!x && !!y && 
 
 const C = () => LAYOUT.squadra || {};
 const cfgDi = k => C().cfg?.[k] || {};
+/** quanti ultimi risultati: 5, o quelli scelti in ⚙️ */
+const quantiUltimi = () => { const v = +C().ultimi; return [3, 8, 10].includes(v) ? v : 5; };
+/** per quante ore dal calcio d'inizio la partita resta in alto e in Home come «appena finita»: 5, o quelle scelte in ⚙️ (0 = mai) */
+const oreFinita = () => { const v = C().finitaOre; return v === 0 ? 0 : [1, 2, 3, 8, 12, 24].includes(+v) ? +v : 5; };
+/** righe della classifica: tutta (0), o quelle scelte in ⚙️ intorno alla mia squadra */
+const righeCl = () => { const v = +C().righeCl; return [5, 7, 10].includes(v) ? v : 0; };
+/* sezioni della pagina che si possono nascondere in ⚙️ (la partita in alto resta sempre) */
+const SEZ = () => [["cronaca", "⚽ " + t("Gol e cartellini in diretta", "Live goals and cards")], ["ultimi", "🗓️ " + t("Ultimi risultati", "Recent results")], ["classifica", "📊 " + t("Classifica", "Table")]];
+const mostra = k => !(C().off || []).includes(k);
 
 /* le squadre: Team Tracker e Calcio Live con lo stesso nome diventano una squadra sola; i calendari solo se non c'è altro
-   (o se li aggiungi tu) */
+   (o se li aggiungi tu). Poi le correzioni di ✏️: fonti unite a mano (con) e fonti tolte (via) */
 let memoR = { k: "", L: [] };
 function rileva() {
-  const c = C(), k = Object.keys(S).length + "|" + Object.keys(REG).length + "|" + JSON.stringify([c.extra, c.tolte]);
+  const c = C(), k = Object.keys(S).length + "|" + Object.keys(REG).length + "|" + JSON.stringify([c.extra, c.tolte, Object.values(c.cfg || {}).map(o => [o.con, o.via])]);
   if (memoR.k === k) return memoR.L;
-  const T = [];
+  let T = [];
   const metti = (id, tipo, nomi, nome) => {
     nomi = nomi.map(norm).filter(Boolean);
     let q = tipo === "cal" ? null : T.find(x => x.tipo !== "cal" && nomi.some(n => x.nomi.has(n)));
@@ -49,6 +61,17 @@ function rileva() {
   cl.forEach(addCL); tt.forEach(addTT);
   extra.forEach(id => isCL(id) ? addCL(id) : isTT(id) ? addTT(id) : id.startsWith("calendar.") && metti(id, "cal", [], nmHA(id)));
   if (!T.length) allEnts("calendar", isCalSport).sort().forEach(id => metti(id, "cal", [], nmHA(id)));
+  /* un calendario a cui hai unito altre fonti resta una squadra anche quando non sarebbe più scelto da solo */
+  const cf = c.cfg || {};
+  for (const key of Object.keys(cf)) { const id = key.slice(4); if (key.startsWith("cal:") && (cf[key].con || []).length && S[id] && !T.some(q => q.key === key)) metti(id, "cal", [], nmHA(id)); }
+  for (const q of T) { const via = new Set(cf[q.key]?.via || []); for (const x of ["tt", "cl", "cal"]) q[x] = q[x].filter(id => !via.has(id)); }
+  for (const q of T) for (const id of (cf[q.key]?.con || []).filter(id => S[id] && fonteOk(id))) {
+    const tipo = isTT(id) ? "tt" : isCL(id) ? "cl" : "cal";
+    for (const x of T) if (x !== q) x[tipo] = x[tipo].filter(y => y !== id);   // una fonte sta in una squadra sola
+    if (!q[tipo].includes(id)) q[tipo].push(id);
+    (tipo === "cl" ? [A(id).team_name] : tipo === "tt" ? [A(id).team_long_name, A(id).team_name] : []).map(norm).filter(Boolean).forEach(n => q.nomi.add(n));
+  }
+  T = T.filter(q => q.tt.length + q.cl.length + q.cal.length);
   const tolte = new Set(c.tolte || []);
   memoR = { k, L: T.filter(q => !tolte.has(q.key)) };
   return memoR.L;
@@ -165,7 +188,7 @@ let memoD = { k: "", L: [] };
 /** le squadre con le partite: { key, nome, tt, cl, cal, partite, live, prossima, ultimi, finita, cfg } */
 export function squadre() {
   const R = rileva(), ids = R.flatMap(q => [...q.tt, ...q.cl]), cals = [...new Set(R.flatMap(q => q.cal))].sort(), CE = eventiCal(cals);
-  const k = R.map(q => q.key).join(",") + "|" + ids.map(id => S[id]?.last_updated + S[id]?.state).join(",") + "|" + CE.length + "|" + JSON.stringify(C().cfg || {}) + "|" + Math.floor(Date.now() / 2e4);
+  const k = R.map(q => q.key).join(",") + "|" + ids.map(id => S[id]?.last_updated + S[id]?.state).join(",") + "|" + CE.length + "|" + JSON.stringify([C().cfg || {}, quantiUltimi(), oreFinita()]) + "|" + Math.floor(Date.now() / 2e4);
   if (memoD.k === k) return memoD.L;
   const n = Date.now();
   const L = R.map(q => {
@@ -181,8 +204,8 @@ export function squadre() {
     tutte.forEach(p => { p.lato = eNoi(p.casa.nome) ? "casa" : eNoi(p.osp.nome) ? "osp" : null; });
     const live = tutte.find(p => p.stato === "in");
     const prossima = tutte.find(p => p.stato === "pre" && p.data > n - 4 * 36e5);
-    const ultimi = tutte.filter(p => p.stato === "post" && p.data > n - 150 * 864e5 && p.data < n).reverse().slice(0, 5);
-    const finita = ultimi[0] && n - ultimi[0].data < 5 * 36e5 ? ultimi[0] : null;
+    const ultimi = tutte.filter(p => p.stato === "post" && p.data > n - 150 * 864e5 && p.data < n).reverse().slice(0, quantiUltimi());
+    const finita = ultimi[0] && n - ultimi[0].data < oreFinita() * 36e5 ? ultimi[0] : null;
     const cfg = cfgDi(q.key);
     return { ...q, nome: cfg.nome || nomeQ, nomeDati: nomeQ, cfg, partite: tutte, live, prossima, ultimi, finita, eNoi };
   });
@@ -191,12 +214,17 @@ export function squadre() {
 }
 
 /* ================= classifica (Calcio Live) ================= */
+/** tutte le classifiche (un sensore può averne più gruppi): k = "sensore|gruppo" per sceglierla in ✏️ */
+const classifiche = () => Object.keys(S).filter(isClassifica).sort().flatMap(id => (A(id).standings_groups || []).map(g =>
+  ({ k: id + "|" + pulito(g.name), id, nome: pulito(A(id).season) || pulito(g.name), gruppo: pulito(g.name), righe: g.standings || [] })));
 function classifica(q) {
-  const cand = [];
-  for (const id of Object.keys(S).filter(isClassifica)) for (const g of A(id).standings_groups || []) {
-    const righe = g.standings || [];
-    if (righe.some(r => q.eNoi(r.team_name))) cand.push({ id, nome: pulito(A(id).season) || pulito(g.name), gruppo: pulito(g.name), righe });
-  }
+  /* scelta in ✏️ della squadra: una precisa o nessuna; se quella scelta sparisce torno alla scelta automatica */
+  const sc = q.cfg.classifica; if (sc === "none") return null;
+  if (sc) { const x = classifiche().find(c => c.k === sc); if (x) return x; }
+  return classificaAuto(q);
+}
+function classificaAuto(q) {
+  const cand = classifiche().filter(c => c.righe.some(r => q.eNoi(r.team_name)));
   if (!cand.length) return null;
   const lg = norm(q.live?.comp || q.prossima?.comp || q.ultimi[0]?.comp);
   return (lg && cand.find(c => norm(c.nome).includes(lg) || (norm(c.gruppo).includes(lg)))) || cand[0];
@@ -324,7 +352,7 @@ function eroe(q) {
   const p = q.live || q.prossima || q.finita, live = !!q.live, gol = p ? golDi(q, p) : null;
   const c1 = hex(q.cfg.c1) || (p && p.lato ? p[p.lato].col : null) || PAL[hash(q.nome) % PAL.length][0];
   const testa = `<div class="ch"><h2>⚽ ${esc(q.nome)}${live ? ` <span class="sq1lv">LIVE</span>` : ""}</h2><span class="grow"></span>
-    ${isAdmin() ? `<button class="btn sm" data-act="sqNotif" title="${t("Avvisi sul telefono", "Phone alerts")}">📱</button>` : ""}${isAdmin() && UI.edit ? `<button class="btn sm" data-act="sqTeam" data-id="${esc(q.key)}">✏️</button>` : ""}</div>`;
+    ${isAdmin() ? `<button class="btn sm" data-act="sqNotif" title="${t("Avvisi sul telefono", "Phone alerts")}" aria-label="${t("Avvisi sul telefono", "Phone alerts")}">📱</button><button class="btn sm" data-act="sqEdit" title="${t("Impostazioni", "Settings")}" aria-label="${t("Impostazioni", "Settings")}">⚙️</button>` : ""}${isAdmin() && UI.edit ? `<button class="btn sm" data-act="sqTeam" data-id="${esc(q.key)}" aria-label="${t("Modifica la squadra", "Edit the team")}">✏️</button>` : ""}</div>`;
   if (!p) {
     const u = q.ultimi[0];
     return `<section class="card span3 sq1h" style="--sqc:${c1}">${campo()}${testa}
@@ -336,33 +364,37 @@ function eroe(q) {
     ${tabellone(q, p, live)}
     ${p.stato === "pre" ? contoAllaRovescia(p) : ""}
     ${infoPartita(p)}
-    ${live ? cronaca(q, p) : ""}
+    ${live && mostra("cronaca") ? cronaca(q, p) : ""}
     ${gol ? animaGol(gol) : ""}
   </section>`;
 }
 /* righe del campo, appena accennate dietro il tabellone */
 const campo = () => `<svg class="sq1cp" viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><path d="M200 0v200M10 10h380v180H10zM10 55h55v90H10M390 55h-55v90h55"/><circle cx="200" cy="100" r="34"/><circle cx="200" cy="100" r="2.5"/></svg>`;
 function ultimiCard(q) {
-  if (!q.ultimi.length) return "";
+  if (!q.ultimi.length || !mostra("ultimi")) return "";
   return card("🗓️ " + t("Ultimi risultati", "Recent results"), `<div class="sq1ul">${q.ultimi.map(p => { const e = esito(p);
     return `<div class="sq1r"><small class="d">${esc(breve(p.data))}${p.comp ? `<em>${esc(p.comp)}</em>` : ""}</small>
       <div class="sq1rt ${p.lato === "casa" ? "noi" : ""}"><span>${esc(nomeDi(q, p, "casa"))}</span>${stemmaDi(q, p, "casa", "sm")}</div>
       <b class="sq1rs">${p.gc != null ? punteggio(p) : "–"}</b>
       <div class="sq1rt o ${p.lato === "osp" ? "noi" : ""}">${stemmaDi(q, p, "osp", "sm")}<span>${esc(nomeDi(q, p, "osp"))}</span></div>
-      ${e ? `<span class="sq1es ${e[0]}" title="${e[2]}">${e[1]}</span>` : `<span class="sq1es"></span>`}</div>`; }).join("")}</div>`, { cls: "sq1u" + (classifica(q) ? "" : " span3") });
+      ${e ? `<span class="sq1es ${e[0]}" title="${e[2]}">${e[1]}</span>` : `<span class="sq1es"></span>`}</div>`; }).join("")}</div>`, { cls: "sq1u" + (mostra("classifica") && classifica(q) ? "" : " span3") });
 }
 /** sigla, logo e colori delle squadre incontrate nelle partite (per avere in classifica lo stesso stemma) */
 function giaVisti(q) { const M = {}; for (const p of q.partite) for (const l of ["casa", "osp"]) { const k = norm(p[l].nome); if (k && !M[k]) M[k] = p[l]; } return M; }
+const VC = { tutta: false };
 function classificaCard(q) {
-  const c = classifica(q); if (!c) return "";
+  const c = mostra("classifica") ? classifica(q) : null; if (!c) return "";
   const n = c.righe.length, V = giaVisti(q);
+  /* righe scelte in ⚙️: una finestra intorno alla mia squadra, il resto dietro «Tutta la classifica» */
+  const N = righeCl(), io = c.righe.findIndex(r => q.eNoi(r.team_name)), tutta = !N || n <= N || VC.tutta;
+  const da = tutta ? 0 : Math.max(0, Math.min(n - N, Math.max(0, io) - Math.floor(N / 2))), a = tutta ? n : da + N;
   return card("📊 " + t("Classifica", "Table") + ` <span class="muted">${esc(c.nome)}</span>`, `<div class="sq1tb">
     <div class="sq1tr hd"><span>#</span><span>${t("Squadra", "Team")}</span><span>${t("G", "P")}</span><span class="sx">${t("V", "W")}</span><span class="sx">${t("N", "D")}</span><span class="sx">${t("P", "L")}</span><span>${t("DR", "GD")}</span><span>${t("Pt", "Pts")}</span></div>
-    ${c.righe.map((r, i) => { const noi = q.eNoi(r.team_name), v = x => vuoto(x) ? "–" : esc(x), info = noi ? noiDi(q) : V[norm(r.team_name)] || {};
+    ${c.righe.map((r, i) => { if (i < da || i >= a) return ""; const noi = q.eNoi(r.team_name), v = x => vuoto(x) ? "–" : esc(x), info = noi ? noiDi(q) : V[norm(r.team_name)] || {};
       return `<div class="sq1tr ${noi ? "noi" : ""} ${i < 4 && n > 10 ? "su" : ""} ${i >= n - 3 && n > 10 ? "giu" : ""}"><span>${v(r.rank ?? i + 1)}</span>
         <span class="tm">${stemma({ ...info, nome: r.team_name, logo: pulito(r.team_logo) || info.logo || "" }, "xs", noi ? q.cfg : null)}<b>${esc(r.team_name)}</b></span>
         <span>${v(r.games_played)}</span><span class="sx">${v(r.wins)}</span><span class="sx">${v(r.draws)}</span><span class="sx">${v(r.losses)}</span><span>${v(r.goal_difference)}</span><b>${v(r.points)}</b></div>`; }).join("")}
-  </div>`, { cls: (q.ultimi.length ? "span2" : "span3") + " sq1cl" });
+  </div>${N && n > N ? `<button class="btn sm ghost" data-act="sqClTutta" style="margin-top:10px">${VC.tutta ? t("Mostra meno", "Show less") : t("Tutta la classifica", "Full table") + ` (${n})`}</button>` : ""}`, { cls: (q.ultimi.length && mostra("ultimi") ? "span2" : "span3") + " sq1cl" });
 }
 function scelta(L, sel) {
   if (L.length < 2) return "";
@@ -372,8 +404,9 @@ function pagina() {
   const L = squadre();
   if (!L.length) return `<div class="g g3">${card("⚽ " + t("La mia squadra", "My team"), spiegazione(), { cls: "span3" })}</div>`;
   const q = selezionata(L);
+  if (isAdmin()) setTimeout(allinea, 0);   // squadre trovate o sparite da sole: l'automazione degli avvisi si aggiorna
   return `${scelta(L, q)}<div class="g g3">${eroe(q)}${ultimiCard(q)}${classificaCard(q)}
-    ${UI.edit && isAdmin() ? `<section class="card span3"><div class="row" style="gap:8px;flex-wrap:wrap"><button class="add1" data-act="sqAdd"><span>＋</span>${t("Aggiungi squadra", "Add team")}</button><button class="btn" data-act="sqEdit">⚙️ ${t("Squadre e fonti", "Teams and sources")}</button></div></section>` : ""}
+    ${UI.edit && isAdmin() ? `<section class="card span3"><div class="row" style="gap:8px;flex-wrap:wrap"><button class="add1" data-act="sqAdd"><span>＋</span>${t("Aggiungi squadra", "Add team")}</button><button class="btn" data-act="sqEdit">⚙️ ${t("Squadre, fonti e cosa mostrare", "Teams, sources and what to show")}</button></div></section>` : ""}
     <p class="small muted sq1src span3">${t("Dati da ", "Data from ")}${esc(fonteTesto(q))}</p></div>`;
 }
 /* spiegazione quando non c'è niente */
@@ -386,8 +419,10 @@ function spiegazione(bottone = true) {
 }
 
 /* ================= Home ================= */
+/* in Home solo le squadre che non hai tolto in ✏️ («Mostra nella Home») */
+const inHome = () => squadre().filter(q => q.cfg.home !== false);
 function homeCard() {
-  const L = squadre(); if (!L.length) return "";
+  const L = inHome(); if (!L.length) return "";
   const righe = [...L].sort((a, b) => !!b.live - !!a.live).map(q => {
     const p = q.live || q.finita || q.prossima; if (!p) return "";
     const live = p.stato === "in", gol = golDi(q, p);
@@ -399,7 +434,7 @@ function homeCard() {
   if (!righe.length) return card("⚽ " + t("La mia squadra", "My team"), `<div class="small muted">${t("Nessuna partita in programma.", "No match scheduled.")}</div>`, { link: [t("Squadra", "Team"), "squadra"] });
   return card("⚽ " + t("La mia squadra", "My team"), `<div class="stack">${righe.join("")}</div>`, { link: [t("Squadra", "Team"), "squadra"] });
 }
-HOME_EXTRA.squadra = { title: () => t("La mia squadra", "My team"), render: homeCard, show: () => squadre().length > 0 };
+HOME_EXTRA.squadra = { title: () => t("La mia squadra", "My team"), render: homeCard, show: () => inHome().length > 0 };
 
 /* conto alla rovescia ai secondi nell'ultima ora */
 setInterval(() => {
@@ -408,39 +443,74 @@ setInterval(() => {
   if (q && !q.live && q.prossima && q.prossima.data - Date.now() < 36e5) render();
 }, 1000);
 
-/* ================= ⚙️ squadre e fonti ================= */
-const salvaSq = (fn, msg) => cambia(l => { l.squadra = JSON.parse(JSON.stringify(l.squadra || {})); fn(l.squadra); }, msg);
+/* ================= ⚙️ squadre, fonti e cosa mostrare ================= */
+/* dopo ogni salvataggio, se gli avvisi sono attivi, l'automazione si riscrive da sola con le squadre e le fonti nuove */
+const salvaSq = (fn, msg) => cambia(l => { l.squadra = JSON.parse(JSON.stringify(l.squadra || {})); fn(l.squadra); }, msg).then(() => riscrivi());
+/** salva una scelta della squadra (✏️): se torna quella di partenza la chiave si cancella */
+const salvaCfg = (key, fn, msg) => salvaSq(s => { s.cfg = s.cfg || {}; const o = s.cfg[key] = { ...(s.cfg[key] || {}) }; fn(o);
+  for (const k of Object.keys(o)) if (o[k] == null || (Array.isArray(o[k]) && !o[k].length)) delete o[k]; if (!Object.keys(o).length) delete s.cfg[key]; if (!Object.keys(s.cfg).length) delete s.cfg; }, msg);
 /** la mia squadra com'è nei dati (nome, sigla, logo, colori), dalla partita più vicina */
 function noiDi(q) { const L = [q.live, q.prossima, ...q.ultimi, ...q.partite].filter(p => p && p.lato); return L.length ? { ...L[0][L[0].lato], nome: L[0][L[0].lato].nome || q.nomeDati } : { nome: q.nomeDati }; }
 function nomeFonte(id) { return isTT(id) ? "Team Tracker" : isCL(id) ? "Calcio Live" : id.startsWith("calendar.") ? t("Calendario", "Calendar") : ""; }
 function schedaFonti() {
   const L = squadre(), tolte = (C().tolte || []);
-  return `<div class="sh-head"><div><h3>⚽ ${t("La mia squadra", "My team")}</h3><div class="small muted">${t("Le squadre che segui e da dove prendo i dati. Valgono per tutta la casa.", "The teams you follow and where the data comes from. They apply to the whole home.")}</div></div><button class="sx" data-act="sheetClose">×</button></div>
+  const sel = (chg, v, L) => `<select data-chg="${chg}">${L.map(([x, n]) => `<option value="${x}" ${v === x ? "selected" : ""}>${n}</option>`).join("")}</select>`;
+  return `<div class="sh-head"><div><h3>⚽ ${t("La mia squadra", "My team")}</h3><div class="small muted">${t("Le squadre che segui, da dove prendo i dati e cosa mostrare. Valgono per tutta la casa.", "The teams you follow, where the data comes from and what to show. They apply to the whole home.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
     ${L.length ? `<div class="stack">${L.map(q => `<div class="li sq1fl"><span class="sq1fi">${stemma(noiDi(q), "md", q.cfg)}</span>
-      <div class="tx"><b>${esc(q.nome)}</b><span>${[...q.tt, ...q.cl, ...q.cal].map(id => `${esc(nomeFonte(id))}: ${esc(nmHA(id))}`).join(" · ")}</span></div>
-      <button class="btn sm" data-act="sqTeam" data-id="${esc(q.key)}">✏️</button></div>`).join("")}</div>` : ""}
+      <div class="tx"><b>${esc(q.nome)}${q.cfg.home === false ? ` <span class="tag">${t("non in Home", "not on Home")}</span>` : ""}</b><span>${[...q.tt, ...q.cl, ...q.cal].map(id => `${esc(nomeFonte(id))}: ${esc(nmHA(id))}`).join(" · ")}</span></div>
+      <button class="btn sm" data-act="sqTeam" data-id="${esc(q.key)}" aria-label="${t("Modifica", "Edit")}">✏️</button></div>`).join("")}</div>
+      <p class="small muted" style="margin:8px 0 0;line-height:1.45">${t("Con ✏️ cambi nome, sigla e colori, unisci o togli le fonti, scegli la classifica e se la squadra va nella Home.", "With ✏️ you change name, initials and colours, join or remove sources, pick the table and whether the team goes on Home.")}</p>` : ""}
     ${!haIntegrazione() ? `<div class="sq1nt">${spiegazione(false)}</div>` : ""}
     <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn pri" data-act="sqAdd">＋ ${t("Aggiungi squadra", "Add team")}</button>${L.length ? `<button class="btn" data-act="sqNotif">📱 ${t("Avvisi sul telefono", "Phone alerts")}</button>` : ""}</div>
     ${tolte.length ? `<div class="fl1">${t("Tolte dalla plancia", "Removed from the dashboard")}</div><div class="stack">${tolte.map(k => `<div class="li"><span class="ic">🙈</span><div class="tx"><b>${esc(C().nomiTolte?.[k] || k.replace(/^(sq|cal):/, ""))}</b></div><button class="btn sm" data-act="sqRimetti" data-id="${esc(k)}">↺ ${t("Rimetti", "Restore")}</button></div>`).join("")}</div>` : ""}
-    <p class="small muted" style="margin-top:12px">${t("Puoi scegliere un sensore di Team Tracker o di Calcio Live, oppure un calendario con le partite (per esempio «Inter - Milan»). Più squadre? Aggiungine quante vuoi.", "Pick a Team Tracker or Calcio Live sensor, or a calendar with the matches (e.g. «Inter - Milan»). More teams? Add as many as you like.")}</p>`;
+    <p class="small muted" style="margin-top:12px">${t("Puoi scegliere un sensore di Team Tracker o di Calcio Live, oppure un calendario con le partite (per esempio «Inter - Milan»). Più squadre? Aggiungine quante vuoi.", "Pick a Team Tracker or Calcio Live sensor, or a calendar with the matches (e.g. «Inter - Milan»). More teams? Add as many as you like.")}</p>
+    ${L.length ? `<div class="fl1">👁 ${t("Cosa mostrare", "What to show")}</div>
+    <p class="small muted" style="margin:0 0 6px;line-height:1.45">${t("Togli il segno alle parti che non ti interessano. La partita in alto resta sempre.", "Untick the parts you don't care about. The match at the top always stays.")}</p>
+    <div class="cks1">${SEZ().map(([k, n]) => `<button class="ck1 ${mostra(k) ? "on" : ""}" data-act="sqSez" data-k="${k}"><span class="bx"></span><span class="tx"><b>${n}</b></span></button>`).join("")}</div>
+    <div class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-start">
+      <label class="fld1" style="flex:1;min-width:170px"><span>${t("Ultimi risultati", "Recent results")}</span>${sel("sqUltimi", quantiUltimi(), [3, 5, 8, 10].map(n => [n, n]))}</label>
+      <label class="fld1" style="flex:1;min-width:170px"><span>${t("Righe della classifica", "Table rows")}</span>${sel("sqRigheCl", righeCl(), [[0, t("Tutta", "All")], [5, 5], [7, 7], [10, 10]])}</label>
+      <label class="fld1" style="flex:1;min-width:170px"><span>${t("«Appena finita» resta per", "«Just finished» stays for")}</span>${sel("sqFinita", oreFinita(), [0, 1, 2, 3, 5, 8, 12, 24].map(n => [n, n ? (n === 1 ? t("1 ora", "1 hour") : t(`${n} ore`, `${n} hours`)) : t("Mai", "Never")]))}</label></div>
+    <p class="small muted" style="margin-top:6px;line-height:1.45">${t("Con meno righe la classifica mostra la tua squadra con quelle vicine; il resto è dietro «Tutta la classifica». «Appena finita»: dopo il fischio d'inizio la partita resta in alto e nella Home con il risultato per queste ore, poi arriva la prossima.", "With fewer rows the table shows your team with the ones around it; the rest is behind «Full table». «Just finished»: after kick-off the match stays at the top and on Home with the score for these hours, then the next one comes.")}</p>` : ""}`;
 }
 let ED = null;
 function schedaSquadra() {
   const q = squadre().find(x => x.key === ED?.key); if (!q) return "";
-  const base = noiDi(q);
+  const base = noiDi(q), fonti = [...q.tt, ...q.cl, ...q.cal], via = (q.cfg.via || []).filter(id => S[id]), con = q.cfg.con || [];
   const prova = { ...base, nome: ED.nome || q.nomeDati, logo: ED.logo ? base.logo : "" };
-  return `<div class="sh-head"><div><h3>✏️ ${esc(q.nome)}</h3><div class="small muted">${esc(fonteTesto(q))}</div></div><button class="sx" data-act="sheetClose">×</button></div>
+  const CL = classifiche(), auto = classificaAuto(q), nomeCl = c => c.nome + (c.gruppo && norm(c.gruppo) !== norm(c.nome) ? " · " + c.gruppo : "");
+  return `<div class="sh-head"><div><h3>✏️ ${esc(q.nome)}</h3><div class="small muted">${esc(fonteTesto(q))}</div></div><button class="x" data-act="sheetClose">×</button></div>
     <div class="sq1ed"><div class="sq1edp">${stemma(prova, "xl", ED)}</div>
       <div class="sq1edf"><label class="fld1"><span>${t("Nome", "Name")}</span><input type="text" data-chg="sqF" data-k="nome" value="${esc(ED.nome)}" placeholder="${esc(q.nomeDati)}"></label>
         <div class="sq1edr"><label class="fld1"><span>${t("Sigla", "Initials")}</span><input type="text" maxlength="4" data-chg="sqF" data-k="sigla" value="${esc(ED.sigla)}" placeholder="${esc(siglaDa(base))}"></label>
           <label class="fld1 sq1col"><span>${t("Colore 1", "Colour 1")}</span><input type="color" data-chg="sqF" data-k="c1" value="${esc(hex(ED.c1) || base.col || PAL[hash(base.nome) % PAL.length][0])}"></label>
           <label class="fld1 sq1col"><span>${t("Colore 2", "Colour 2")}</span><input type="color" data-chg="sqF" data-k="c2" value="${esc(hex(ED.c2) || base.col2 || PAL[hash(base.nome) % PAL.length][1])}"></label></div></div></div>
     <p class="small muted" style="margin-top:8px">${base.logo && !KO.has(base.logo) ? t("Il logo arriva dall'integrazione; sigla e colori servono quando il logo non c'è (sopra vedi lo stemma di riserva).", "The logo comes from the integration; initials and colours are used when there is no logo (above is the fallback badge).") : t("L'integrazione non dà il logo: uso lo stemma con la sigla e i colori che scegli.", "The integration gives no logo: I use the badge with the initials and colours you choose.")}</p>
-    <div class="fl1">${t("Fonti", "Sources")}</div><div class="stack">${[...q.tt, ...q.cl, ...q.cal].map(id => `<button class="li" data-act="more" data-id="${esc(id)}"><span class="ic">${id.startsWith("calendar.") ? "📅" : "📡"}</span><div class="tx"><b>${esc(nmHA(id))}</b><span>${esc(nomeFonte(id))} · ${esc(id)}</span></div><span class="st">›</span></button>`).join("")}</div>
-    <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn pri" data-act="sqSalva">💾 ${t("Salva", "Save")}</button><button class="btn" data-act="sqColAuto">↺ ${t("Colori automatici", "Automatic colours")}</button><button class="btn bad" data-act="sqTogli">✕ ${t("Togli dalla plancia", "Remove from dashboard")}</button></div>`;
+    <div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn pri" data-act="sqSalva">💾 ${t("Salva nome e colori", "Save name and colours")}</button><button class="btn" data-act="sqColAuto">↺ ${t("Colori automatici", "Automatic colours")}</button></div>
+    <div class="fl1">${t("Fonti", "Sources")}</div>
+    <p class="small muted" style="margin:0 0 6px;line-height:1.45">${t("Da dove prendo le partite. Quelle con lo stesso nome le unisco da sole; con ＋ ne aggiungi un'altra (per esempio un calendario con gli orari e la TV), con ✕ ne togli una.", "Where the matches come from. Those with the same name are joined by themselves; with ＋ you add another (e.g. a calendar with times and TV), with ✕ you remove one.")}</p>
+    <div class="stack">${fonti.map(id => `<div class="li"><span class="ic">${id.startsWith("calendar.") ? "📅" : "📡"}</span><div class="tx" data-act="more" data-id="${esc(id)}" role="button"><b>${esc(nmHA(id))}</b><span>${esc(nomeFonte(id))} · ${esc(id)}${con.includes(id) ? " · " + t("unita da te", "joined by you") : ""}</span></div>
+      ${fonti.length > 1 ? `<button class="btn sm" data-act="sqFVia" data-id="${esc(id)}" aria-label="${t("Togli questa fonte", "Remove this source")}">✕</button>` : ""}</div>`).join("")}
+      ${via.map(id => `<div class="li dis"><span class="ic">🙈</span><div class="tx"><b>${esc(nmHA(id))}</b><span>${esc(nomeFonte(id))} · ${t("tolta", "removed")}</span></div><button class="btn sm" data-act="sqFRimetti" data-id="${esc(id)}">↺ ${t("Rimetti", "Restore")}</button></div>`).join("")}
+      <button class="add1" data-act="sqUnisci"><span>＋</span>${t("Unisci un'altra fonte", "Join another source")}</button></div>
+    ${CL.length || q.cfg.classifica ? `<label class="fld1"><span>📊 ${t("Classifica", "Table")}</span><select data-chg="sqCl">
+      <option value="" ${!q.cfg.classifica ? "selected" : ""}>✨ ${t("Automatica", "Automatic")}${auto ? " (" + esc(nomeCl(auto)) + ")" : " (" + t("nessuna trovata", "none found") + ")"}</option>
+      ${CL.map(c => `<option value="${esc(c.k)}" ${q.cfg.classifica === c.k ? "selected" : ""}>${esc(nomeCl(c))}</option>`).join("")}
+      <option value="none" ${q.cfg.classifica === "none" ? "selected" : ""}>🚫 ${t("Nessuna", "None")}</option></select></label>
+    <p class="small muted" style="margin:6px 0 0;line-height:1.45">${t("Viene da Calcio Live. In automatico prendo quella in cui c'è la tua squadra, del campionato della prossima partita; se è sbagliata scegline un'altra.", "It comes from Calcio Live. Automatically I pick the one with your team, from the next match's league; if it's wrong pick another.")}</p>` : ""}
+    <label class="row" style="gap:8px;margin-top:14px"><input type="checkbox" data-chg="sqHome" ${q.cfg.home === false ? "" : "checked"}> 🏠 ${t("Mostra questa squadra nella scheda della Home", "Show this team on the Home card")}</label>
+    <p class="small muted" style="margin:10px 0 0">${t("Fonti, classifica e Home si salvano subito.", "Sources, table and Home are saved right away.")}</p>
+    <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn bad" data-act="sqTogli">✕ ${t("Togli la squadra dalla plancia", "Remove the team from the dashboard")}</button></div>`;
 }
 CHG.sqF = el => { if (!ED) return; ED[el.dataset.k] = el.value; render(); };
 document.addEventListener("input", e => { const el = e.target; if (el.dataset?.chg === "sqF" && ED && el.type === "color") { ED[el.dataset.k] = el.value; render(); } });
+/* scelte di ⚙️ e di ✏️ che si salvano subito (il valore di partenza cancella la chiave) */
+const salvaVista = (k, v, base, msg) => salvaSq(s => { if (v === base) delete s[k]; else s[k] = v; }, msg);
+CHG.sqUltimi = el => salvaVista("ultimi", +el.value, 5, "🗓️ " + el.value);
+CHG.sqRigheCl = el => salvaVista("righeCl", +el.value, 0, "📊 " + (+el.value || t("Tutta", "All")));
+CHG.sqFinita = el => salvaVista("finitaOre", +el.value, 5, "🏁 " + (+el.value ? el.value + " h" : t("Mai", "Never")));
+CHG.sqCl = el => { if (ED) salvaCfg(ED.key, o => { o.classifica = el.value || null; }, "📊 " + (el.selectedOptions[0]?.textContent || "")); };
+CHG.sqHome = el => { if (ED) salvaCfg(ED.key, o => { o.home = el.checked ? null : false; }, el.checked ? "🏠 " + t("Nella Home", "On Home") : t("Tolta dalla Home", "Removed from Home")); };
 
 /* ================= 📱 avvisi sul telefono: automazione «'Nduja · squadra» ================= */
 const AUT = "nduja_squadra";
@@ -449,11 +519,12 @@ let NB = null;
 function schedaNotifiche() {
   const c = NB, sv = servizi(), L = squadre(), conDati = L.filter(q => q.tt.length || q.cl.length), soloCal = L.filter(q => !q.tt.length && !q.cl.length);
   const ck = (on, act, k, n) => `<button class="ck1 ${on ? "on" : ""}" data-act="${act}" data-k="${esc(k)}"><span class="bx"></span><span class="tx"><b>${n}</b></span></button>`;
-  return `<div class="sh-head"><div><h3>📱 ${t("Avvisi della squadra", "Team alerts")}</h3><div class="small muted">${t("Creo in Home Assistant l'automazione «'Nduja · squadra»: funziona anche a plancia chiusa.", "I create the «'Nduja · team» automation in Home Assistant: it works even with the dashboard closed.")}</div></div><button class="sx" data-act="sheetClose">×</button></div>
+  return `<div class="sh-head"><div><h3>📱 ${t("Avvisi della squadra", "Team alerts")}</h3><div class="small muted">${t("Creo in Home Assistant l'automazione «'Nduja · squadra»: funziona anche a plancia chiusa.", "I create the «'Nduja · team» automation in Home Assistant: it works even with the dashboard closed.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
     <div class="fl1">${t("A chi", "To")}</div><div class="cks1">${sv.map(k => ck(c.servizi.includes(k), "sqnS", k, esc(k.replace(/^mobile_app_/, "📱 ").replace(/_/g, " ")))).join("") || `<div class="small muted">${t("Nessun telefono: installa l'app Home Assistant sul telefono.", "No phone: install the Home Assistant app on the phone.")}</div>`}</div>
     <div class="fl1">${t("Quando", "When")}</div><div class="cks1">${ck(c.gol !== false, "sqnT", "gol", "⚽ " + t("Gol (di tutte e due le squadre)", "Goals (both teams)"))}${ck(c.fine !== false, "sqnT", "fine", "🏁 " + t("Fine partita, con il risultato", "Full time, with the score"))}</div>
     <div class="fl1">${t("Squadre", "Teams")}</div><div class="cks1">${conDati.map(q => ck(!(c.no || []).includes(q.key), "sqnQ", q.key, "⚽ " + esc(q.nome))).join("")}</div>
     ${soloCal.length ? `<p class="small muted" style="margin-top:8px">${t("Per le squadre che vengono solo da un calendario non so quando segnano: servono Team Tracker o Calcio Live.", "For teams that come only from a calendar I can't know when they score: Team Tracker or Calcio Live are needed.")} (${soloCal.map(q => esc(q.nome)).join(", ")})</p>` : ""}
+    <p class="small muted" style="margin-top:8px;line-height:1.45">${t("Le squadre nuove sono avvisate da sole; se aggiungi, togli o cambi le fonti di una squadra, l'automazione si aggiorna da sola.", "New teams are alerted by themselves; if you add, remove or change a team's sources, the automation updates by itself.")}</p>
     <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn pri" data-act="sqnSave">💾 ${t("Salva in Home Assistant", "Save to Home Assistant")}</button>${C().notif?.servizi?.length ? `<button class="btn bad" data-act="sqnOff">${t("Spegni gli avvisi della squadra", "Turn off team alerts")}</button>` : ""}</div>`;
 }
 /** l'automazione: Team Tracker (punteggi e fine partita) e gli eventi di Calcio Live (calcio_live_goal, calcio_live_match_finished) */
@@ -480,6 +551,25 @@ function automazione(c) {
     actions: c.servizi.map(s => ({ action: "notify." + s, data: { title: "⚽ 'Nduja", message: msg } })), mode: "queued", max: 10 };
 }
 
+/** impronta di quello che fa l'automazione (senza i testi, che dipendono dalla lingua di chi la salva) */
+const firma = cfg => { let h = 7; for (const ch of JSON.stringify([cfg.triggers, cfg.conditions, cfg.actions.map(a => a.action)])) h = (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0; return h.toString(36); };
+let riscrivendo = false; const fallite = new Set();
+/** avvisi attivi e squadre o fonti cambiate: riscrivo l'automazione in Home Assistant */
+async function riscrivi() {
+  const c = C().notif; if (!isAdmin() || !c?.servizi?.length || riscrivendo) return;
+  const cfg = automazione(c), f = firma(cfg); if (f === c.firma || !cfg.triggers.length || fallite.has(f)) return;
+  riscrivendo = true;
+  try { await api("POST", "/api/config/automation/config/" + AUT, cfg); await cambia(l => { l.squadra = { ...(l.squadra || {}), notif: { ...(l.squadra?.notif || {}), firma: f } }; }); }
+  catch (e) { fallite.add(f); console.warn("nduja squadra avvisi", e); } finally { riscrivendo = false; }
+}
+/** guardando la pagina (amministratore): se una squadra è comparsa o sparita da sola, riscrivo l'automazione;
+    solo a dati fermi (pagine caricate, sensori di Team Tracker e Calcio Live raggiungibili), per non riscriverla durante un riavvio */
+function allinea() {
+  if (!pronto() || !C().notif?.servizi?.length) return;
+  if (Object.keys(S).some(id => /^(teamtracker|calcio_live)$/.test(REG[id]?.platform || "") && !ok(id))) return;
+  riscrivi();
+}
+
 Object.assign(ACT, {
   sqSel: el => { sSet("sq_sel", el.dataset.id); render(true); },
   sqGo: el => { sSet("sq_sel", el.dataset.id); go("squadra"); },
@@ -493,12 +583,22 @@ Object.assign(ACT, {
   sqTeam: el => { const k = el.dataset.id, c = cfgDi(k), q = squadre().find(x => x.key === k);
     ED = { key: k, nome: c.nome || "", sigla: c.sigla || "", c1: c.c1 || "", c2: c.c2 || "", logo: false }; if (q) openSheet(schedaSquadra); },
   sqColAuto: () => { if (ED) { ED.c1 = ""; ED.c2 = ""; render(); } },
+  /* nome, sigla e colori: le altre scelte della squadra (fonti, classifica, Home) restano */
   sqSalva: () => { const e = ED; if (!e) return; closeSheet();
-    salvaSq(s => { s.cfg = s.cfg || {}; const v = { nome: e.nome.trim(), sigla: e.sigla.trim().toUpperCase(), c1: hex(e.c1) || "", c2: hex(e.c2) || "" };
-      Object.keys(v).forEach(x => { if (!v[x]) delete v[x]; }); if (Object.keys(v).length) s.cfg[e.key] = v; else delete s.cfg[e.key]; }, "💾 " + (e.nome || t("Salvato", "Saved"))); },
+    salvaCfg(e.key, o => { const v = { nome: e.nome.trim(), sigla: e.sigla.trim().toUpperCase(), c1: hex(e.c1) || "", c2: hex(e.c2) || "" };
+      for (const x of Object.keys(v)) o[x] = v[x] || null; }, "💾 " + (e.nome || t("Salvato", "Saved"))); },
   sqTogli: () => { const e = ED; if (!e) return; const q = squadre().find(x => x.key === e.key); closeSheet();
     salvaSq(s => { s.tolte = [...new Set([...(s.tolte || []), e.key])]; s.nomiTolte = { ...(s.nomiTolte || {}), [e.key]: q?.nome || e.key }; const mie = q ? [...q.tt, ...q.cl, ...q.cal] : []; s.extra = (s.extra || []).filter(x => !mie.includes(x)); if (sGet("sq_sel") === e.key) sSet("sq_sel", ""); }, "✕ " + (q?.nome || "")); },
   sqRimetti: el => { const k = el.dataset.id; salvaSq(s => { s.tolte = (s.tolte || []).filter(x => x !== k); if (s.nomiTolte) delete s.nomiTolte[k]; }, "↺"); },
+  /* fonti della squadra (✏️): unirne una (anche presa da un'altra squadra), toglierne una, rimetterla */
+  sqUnisci: () => { const e = ED; if (!e) return; const q = squadre().find(x => x.key === e.key); if (!q) return; const mie = [...q.tt, ...q.cl, ...q.cal];
+    scegli({ titolo: "＋ " + t("Unisci una fonte a ", "Join a source to ") + q.nome, sotto: t("Un sensore di Team Tracker o di Calcio Live, o un calendario con le partite di questa squadra. Se è già di un'altra squadra, la sposto qui.", "A Team Tracker or Calcio Live sensor, or a calendar with this team's matches. If it already belongs to another team, I move it here."),
+      filtro: id => fonteOk(id) && !mie.includes(id), auto: false, attuale: null,
+      onPick: id => { if (!id || !S[id]) return openSheet(schedaSquadra); salvaCfg(e.key, o => { o.con = [...new Set([...(o.con || []), id])]; o.via = (o.via || []).filter(x => x !== id); }, "＋ " + nmHA(id)).then(() => openSheet(schedaSquadra)); } }); },
+  sqFVia: el => { const id = el.dataset.id; if (ED) salvaCfg(ED.key, o => { if ((o.con || []).includes(id)) o.con = o.con.filter(x => x !== id); else o.via = [...new Set([...(o.via || []), id])]; }, "✕ " + nmHA(id)); },
+  sqFRimetti: el => { const id = el.dataset.id; if (ED) salvaCfg(ED.key, o => { o.via = (o.via || []).filter(x => x !== id); }, "↺ " + nmHA(id)); },
+  sqSez: el => { const k = el.dataset.k; salvaSq(s => { const o = new Set(s.off || []); o.has(k) ? o.delete(k) : o.add(k); if (o.size) s.off = [...o]; else delete s.off; }); },
+  sqClTutta: () => { VC.tutta = !VC.tutta; render(true); },
   sqNotif: () => { NB = JSON.parse(JSON.stringify(C().notif || { servizi: [] })); NB.servizi = NB.servizi || []; openSheet(schedaNotifiche); },
   sqnS: el => { const k = el.dataset.k, i = NB.servizi.indexOf(k); i < 0 ? NB.servizi.push(k) : NB.servizi.splice(i, 1); render(); },
   sqnT: el => { const k = el.dataset.k; NB[k] = NB[k] === false; render(); },
@@ -509,7 +609,7 @@ Object.assign(ACT, {
     const nuova = !C().notif?.servizi?.length;
     try { await api("POST", "/api/config/automation/config/" + AUT, cfg);
       if (nuova) etichettaNduja(() => Object.keys(S).find(e => e.startsWith("automation.") && attr(e, "id") === AUT));   // nuova: etichetta «'Nduja»
-      const c = NB; await salvaSq(s => { s.notif = c; }); closeSheet(); toast("📱 " + t("Avvisi della squadra attivi", "Team alerts on")); }
+      const c = { ...NB, firma: firma(cfg) }; await salvaSq(s => { s.notif = c; }); closeSheet(); toast("📱 " + t("Avvisi della squadra attivi", "Team alerts on")); }
     catch (e) { toast(t("Non salvato: ", "Not saved: ") + (e.message || e), true); }
   },
   sqnOff: async () => { try { await api("DELETE", "/api/config/automation/config/" + AUT); } catch {} await salvaSq(s => { delete s.notif; }); closeSheet(); toast(t("Avvisi della squadra spenti", "Team alerts off")); },

@@ -156,7 +156,9 @@ function schedaNotifiche() {
 }
 function automazione(c) {
   const T = [], tipo = k => c.tipi[k] !== false, R = regole();
-  const danger = allEnts("binary_sensor", id => ["smoke", "gas", "carbon_monoxide", "moisture", "tamper", "safety"].includes(deviceClass(id)));
+  /* pericoli: per tipo, corretti dalle scelte della pagina Sicurezza → ⚙️ (LAYOUT.sicurezza: noPericoli tolti, pericoli aggiunti) */
+  const sic = LAYOUT.sicurezza || {}, noP = new Set(sic.noPericoli || []);
+  const danger = [...new Set([...allEnts("binary_sensor", id => ["smoke", "gas", "carbon_monoxide", "moisture", "tamper", "safety"].includes(deviceClass(id))), ...(sic.pericoli || []).filter(id => S[id])])].filter(id => !noP.has(id));
   if (tipo("pericolo") && danger.length) T.push({ trigger: "state", entity_id: danger, to: "on", id: "pericolo" });
   const al = allEnts("alarm_control_panel"); if (tipo("allarme") && al.length) T.push({ trigger: "state", entity_id: al, to: "triggered", id: "allarme" });
   const op = ents("binary_sensor", id => ["door", "window", "garage_door", "opening"].includes(deviceClass(id))); if (tipo("porta") && op.length) T.push({ trigger: "state", entity_id: op, to: "on", for: { minutes: R.portaMin }, id: "porta" });

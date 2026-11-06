@@ -203,3 +203,10 @@ LS='{"mockPianteDemo":"1","mockPioggiaDomani":"1"}' node tools/mock/shot.mjs pia
 LS='{"mockLayout":"{\"configured\":true,\"avvisi\":{\"portaMin\":60,\"off\":[\"aggiornamenti\"]}}"}' node tools/mock/shot.mjs home 1280 1100 avvisi.png '[data-act="avRegole"]'
 LS='{"mockValuta":"USD"}' node tools/mock/shot.mjs energia 1280 1100 usd.png
 ```
+
+**Autonomia, parte 2** (0.7.48): le scelte nuove stanno in `mockLayout`: `irrig` (`pioggiaPr`, `pioggiaMm`, `pioggiaOre`, `icona`, `pausaGiorni`, `pausaOra`, `durata`, `durate`, `rapidi`, `secco`, `zuppo`, `terreno`, `noTerreno`, `calendari`, `noCal`), `acqua.mediaGiorni`, `f1` (`sensori`, `off`, `righe`, `rc`, `notif.min`), `squadra` (`off`, `ultimi`, `finitaOre`, `righeCl`, `cfg.<squadra>.con|via|classifica|home`), `sicurezza` (`noPericoli`, `pericoli`, `movimenti`, `camere`), `accessi.voci.<id>` (`impulso`, `home`), `tapparelle.auto.caldo.rot`, `home` (`scene`, `meteoGiorni`), `roomSens`, `lightScenes`, `mapShow`, `faccende` (`inHome`, `anticipo`), `cars.<dispositivo>` (`noGomme`, `noHome`, `sensori.ricCmd`), `liste` (`inHome`, `base`), `mdTv`, `mdApp`, `meteo.pioggiaPr`, `musica` (`noDove`, `inHome`, `noMA`), `piante.pioggia.slitta`, `rete` (`soglie`, `avvisa`, `sens.<d>.accendi|riavvia|spegni|tensione`, `inet.maxDown|maxUp|daQuando`), `vacuums.<id>` (`passate`, `ricambi`, `noManut`), `scadenze` (`inHome`, `avvisi`). Per dispositivo: `nduja_aqStor`, `nduja_rtSpGiorni`.
+Le configurazioni mandate con POST a `/api/config/(script|automation)/config/…` ora si rileggono con GET (e DELETE le toglie): serve a provare le automazioni che si riscrivono da sole. Un sensore di manomissione che sbaglia si prova con `mockEnt`, es. `{"binary_sensor.fumo_cucina_tamper":["on",{"device_class":"tamper"}]}`.
+```bash
+LS='{"mockLayout":"{\"configured\":true,\"irrig\":{\"pioggiaOre\":12,\"rapidi\":[5,20,45]}}"}' node tools/mock/shot.mjs irrigazione 1280 1100 irr.png
+LS='{"mockF1Live":"gara","mockLayout":"{\"configured\":true,\"f1\":{\"righe\":5,\"off\":[\"programma\"]}}"}' node tools/mock/shot.mjs formula1 1280 1500 f1.png
+```

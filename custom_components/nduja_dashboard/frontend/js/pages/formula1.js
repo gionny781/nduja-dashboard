@@ -2,10 +2,13 @@
    in corso (sessione, bandiere e safety car, ordine in pista, direzione gara), le classifiche piloti e costruttori con il pilota
    e il team preferiti evidenziati, l'ultima gara con il podio.
    I dati vengono solo da Home Assistant: F1 Sensor (Marketplace), un calendario della F1 oppure Team Tracker (racing).
-   Si trova tutto da solo; in ⚙️ Impostazioni (e con ✏️) si aggiungono fonti, si scelgono pilota e team preferiti.
+   Si trova tutto da solo; in ⚙️ (solo admin) si correggono i sensori, si aggiungono o tolgono calendari e Team Tracker,
+   si scelgono pilota e team preferiti, le sezioni da mostrare e quante righe. Sezione «f1» di LAYOUT:
+   { extra, tolte, sensori:{ruolo:id|"none"}, pilota, team, off:[sezioni], righe, rc, notif:{ servizi, tipi, min, firma } }.
    Il tracciato è l'immagine dell'integrazione; se manca, un circuito astratto disegnato per 'Nduja.
-   In Home la scheda «Formula 1» (HOME_EXTRA). Facoltativa l'automazione «'Nduja · Formula 1»: «Tra 15 minuti partono…». */
-import { S, REG, ACT, UI, LAYOUT, HOME_EXTRA, t, LOC, esc, nmHA, ok, card, page, render, isAdmin,
+   In Home la scheda «Formula 1» (HOME_EXTRA). Facoltativa l'automazione «'Nduja · Formula 1»: «Tra 15 minuti partono…»
+   (i minuti si scelgono; si riscrive da sola quando cambiano fonti, sensori o minuti). */
+import { S, REG, ACT, CHG, UI, LAYOUT, HOME_EXTRA, t, LOC, esc, nmHA, ok, card, page, render, isAdmin,
   openSheet, closeSheet, toast, cached, svcResp, ws, api, attr, etichettaNduja } from "../core.js";
 import { scegli, cambia } from "../edit.js";
 
@@ -28,11 +31,38 @@ const isTT = id => id.startsWith("sensor.") && !!S[id] && (REG[id]?.platform ===
 const isTTF1 = id => isTT(id) && /racing/i.test(A(id).sport || A(id).sport_path || "") && /\bf1\b|formula/i.test((A(id).league || "") + " " + (A(id).league_name || "") + " " + (A(id).league_path || ""));
 const fonteOk = id => isCalF1(id) || id.startsWith("calendar.") || isTT(id) || (id.startsWith("sensor.") && isF1(id));
 
+/* sensori di F1 Sensor che si correggono in ⚙️ → Sensori: [ruolo, nome, filtro] (✨ automatico, uno scelto, 🚫 nessuno) */
+const conLista = k => id => id.startsWith("sensor.") && Array.isArray(A(id)[k]);
+const sensore = id => id.startsWith("sensor.");
+const RUOLI = () => [
+  ["next", t("Prossima gara (orari delle sessioni)", "Next race (session times)"), id => sensore(id) && !!A(id).race_name],
+  ["piloti", t("Classifica piloti", "Driver standings"), conLista("driver_standings")],
+  ["costr", t("Classifica costruttori", "Constructor standings"), conLista("constructor_standings")],
+  ["ultima", t("Risultati dell'ultima gara", "Last race results"), conLista("results")],
+  ["lista", t("Lista piloti (nomi e colori dei team)", "Driver list (names and team colours)"), conLista("drivers")],
+  ["pos", t("Ordine in pista", "Running order"), conLista("drivers")],
+  ["stato", t("Stato della sessione", "Session status"), sensore],
+  ["sess", t("Sessione in corso", "Current session"), sensore],
+  ["pista", t("Bandiere in pista", "Track flags"), sensore],
+  ["sc", "Safety Car", id => id.startsWith("binary_sensor.")],
+  ["giro", t("Giro", "Lap"), sensore],
+  ["resta", t("Tempo che manca", "Time left"), sensore],
+  ["rc", t("Direzione gara", "Race control"), sensore],
+];
+/** quante righe in classifica piloti, in pista e nell'ultima gara (podio compreso): 10, o quelle scelte in ⚙️ (0 = tutte) */
+const quanteRighe = () => { const v = C().righe; return v === 0 ? 0 : [5, 8, 15, 20].includes(+v) ? +v : 10; };
+/** quanti messaggi della direzione gara: 3, o quelli scelti in ⚙️ */
+const msgRc = () => { const v = +C().rc; return [1, 5, 10].includes(v) ? v : 3; };
+/* sezioni della pagina che si possono nascondere in ⚙️ (il Gran Premio in alto resta sempre) */
+const SEZ = () => [["programma", "📅 " + t("Programma del weekend", "Weekend schedule")], ["pista", "🔴 " + t("In pista, durante le sessioni", "On track, during sessions")],
+  ["piloti", "🏆 " + t("Classifica piloti", "Driver standings")], ["costr", "🛠️ " + t("Classifica costruttori", "Constructor standings")], ["ultima", "🏁 " + t("Ultima gara", "Last race")]];
+const mostra = k => !(C().off || []).includes(k);
+
 let memoF = { k: "", F: null };
 /** le entità della F1: prossima gara, classifiche, ultima gara, dati in diretta (F1 Sensor), calendari e Team Tracker */
 function fonti() {
   /* ricontrollo ogni 30 secondi: un sensore che torna disponibile porta i suoi attributi senza cambiare il numero di entità */
-  const c = C(), k = Object.keys(S).length + "|" + Object.keys(REG).length + "|" + JSON.stringify([c.extra, c.tolte]) + "|" + Math.floor(Date.now() / 3e4);
+  const c = C(), k = Object.keys(S).length + "|" + Object.keys(REG).length + "|" + JSON.stringify([c.extra, c.tolte, c.sensori]) + "|" + Math.floor(Date.now() / 3e4);
   if (memoF.k === k) return memoF.F;
   const ids = Object.keys(S).sort(), via = new Set(c.tolte || []), extra = (c.extra || []).filter(id => S[id]);
   const find = f => ids.find(id => !via.has(id) && f(id, A(id))) || null;
@@ -49,6 +79,9 @@ function fonti() {
     giro: suf("sensor", "race_lap_count"), sc: suf("binary_sensor", "safety_car"), rc: suf("sensor", "race_control"), resta: suf("sensor", "session_time_remaining"),
     top: [1, 2, 3].map(n => suf("sensor", "top_three_p" + n)).filter(Boolean),
   };
+  /* correzioni dell'utente (⚙️ → Sensori): F.auto tiene quelli trovati da soli, per mostrarli accanto a «✨ Automatico» */
+  const sc = c.sensori || {}; F.auto = {};
+  for (const [r] of RUOLI()) { F.auto[r] = F[r]; if (sc[r] === "none") F[r] = null; else if (sc[r] && S[sc[r]]) F[r] = sc[r]; }
   F.cal = [...new Set([...ids.filter(id => isCalF1(id) && !via.has(id)), ...extra.filter(id => id.startsWith("calendar."))])];
   F.tt = [...new Set([...ids.filter(id => isTTF1(id) && !via.has(id)), ...extra.filter(isTT)])];
   F.trovato = !!(F.next || F.piloti || F.costr || F.ultima || F.stato || F.cal.length || F.tt.length);
@@ -227,7 +260,7 @@ const V = { tutti: {} };
 function eroe(D) {
   const { gp, L, ora, prossima } = D, F = D.F;
   const testa = `<div class="ch"><h2>🏎️ Formula 1${D.live ? ` <span class="fo1lv">LIVE</span>` : ""}</h2><span class="grow"></span>
-    ${isAdmin() ? `<button class="btn sm" data-act="f1Notif" title="${t("Avvisi sul telefono", "Phone alerts")}">📱</button>` : ""}${isAdmin() && UI.edit ? `<button class="btn sm" data-act="f1Edit">✏️</button>` : ""}</div>`;
+    ${isAdmin() ? `<button class="btn sm" data-act="f1Notif" title="${t("Avvisi sul telefono", "Phone alerts")}" aria-label="${t("Avvisi sul telefono", "Phone alerts")}">📱</button><button class="btn sm" data-act="f1Edit" title="${t("Impostazioni", "Settings")}" aria-label="${t("Impostazioni", "Settings")}">⚙️</button>` : ""}</div>`;
   const col = teamPref() ? coloreTeam(F, teamPref().nome || teamPref().id) : "#e10600";
   if (!gp) return `<section class="card span3 fo1h" style="--foc:${col}">${testa}<div class="fo1vuoto"><span>🗓️</span><div><b>${t("Nessun Gran Premio in programma", "No Grand Prix scheduled")}</b><small>${t("Appena l'integrazione pubblica il prossimo, compare qui.", "As soon as the integration publishes the next one, it shows up here.")}</small></div></div></section>`;
   const N = NOMI(), cur = ora || (L.attiva ? { k: L.k, fine: null } : null), fin = !cur && !prossima;
@@ -242,7 +275,7 @@ function eroe(D) {
   else corpo = `<div class="fo1fin">${bandiera("scacchi")}<span>${t("Le sessioni di questo weekend sono finite.", "This weekend's sessions are over.")}</span></div>`;
   const sx = ora || prossima, gara = gp.sessioni.find(s => s.k === "r" && s !== sx && s.stato === "pre"), inPistaOra = gp.tz ? ore(new Date(), gp.tz) : "";
   const inf = [sx && ["📅", `${giorno(sx.inizio)} · ${ore(sx.inizio)}`], gara && ["🏁", `${t("Gara", "Race")} · ${giorno(gara.inizio)} · ${ore(gara.inizio)}`], inPistaOra && ["🕐", t("in pista sono le ", "track time ") + inPistaOra], gp.giri && ["🔁", gp.giri + " " + t("giri", "laps")]].filter(Boolean);
-  return `<section class="card span2 fo1h ${D.live ? "live" : ""}" style="--foc:${col}"><svg class="fo1sp" viewBox="0 0 400 200" preserveAspectRatio="none" aria-hidden="true"><path d="M-10 150 410 40M-10 175 410 65M-10 200 410 90"/></svg>${testa}
+  return `<section class="card ${mostra("programma") ? "span2" : "span3"} fo1h ${D.live ? "live" : ""}" style="--foc:${col}"><svg class="fo1sp" viewBox="0 0 400 200" preserveAspectRatio="none" aria-hidden="true"><path d="M-10 150 410 40M-10 175 410 65M-10 200 410 90"/></svg>${testa}
     <div class="fo1top"><div class="fo1gp">
       <div class="fo1rd">${bandieraImg(gp)}${[gp.round && t("Round ", "Round ") + esc(gp.round), esc(gp.stagione || "")].filter(Boolean).join(" · ") || "Formula 1"}</div>
       <h3 class="fo1nm">${esc(gp.nome)}</h3>
@@ -283,16 +316,16 @@ function rigaPista(D, d, i, gara) {
 function weekendCard(D) {
   const L = D.L; if (!L.attiva && !(L.finita && L.ordine.length)) return "";
   const N = NOMI(), sp = statoPista(L), gara = L.k === "r" || L.k === "s";
-  const tutti = V.tutti.pista, base = L.ordine.slice(0, 10), extra = L.ordine.filter((d, i) => i >= 10 && ePilota(d.tla, d.last_name)), R = tutti ? L.ordine : [...base, ...extra];
+  const NR = quanteRighe() || Infinity, tutti = V.tutti.pista || NR === Infinity, base = L.ordine.slice(0, NR), extra = L.ordine.filter((d, i) => i >= NR && ePilota(d.tla, d.last_name)), R = tutti ? L.ordine : [...base, ...extra];
   const titolo = `🔴 ${t("In pista", "On track")} <span class="muted">${esc(N[L.k] || L.nome || "")}${L.qPart ? " · Q" + esc(L.qPart) : ""}</span>`;
   const testa = `<div class="fo1wk">${sp ? `<div class="fo1ban ${sp[0]}">${sp[0] ? bandiera(sp[0]) : ""}<b>${esc(sp[1])}</b></div>` : ""}
     ${L.giro ? `<div class="fo1kv"><small>${t("Giro", "Lap")}</small><b>${esc(L.giro)}${L.giri ? `<span>/${esc(L.giri)}</span>` : ""}</b></div>` : ""}
     ${L.resta ? `<div class="fo1kv"><small>${t("Tempo che manca", "Time left")}</small><b>${esc(L.resta)}</b></div>` : ""}
     ${L.veloce?.tla ? `<div class="fo1kv"><small>⏱ ${t("Giro veloce", "Fastest lap")}</small><b>${esc(L.veloce.tla)} <span>${esc(L.veloce.time || "")}</span></b></div>` : ""}</div>`;
   const ord = R.length ? `<div class="fo1ord">${R.map(d => rigaPista(D, d, L.ordine.indexOf(d), gara)).join("")}</div>
-    ${L.ordine.length > 10 ? `<button class="btn sm ghost fo1mo" data-act="f1Tutti" data-k="pista">${tutti ? t("Mostra meno", "Show less") : t("Mostra tutti", "Show all") + ` (${L.ordine.length})`}</button>` : ""}`
+    ${L.ordine.length > NR ? `<button class="btn sm ghost fo1mo" data-act="f1Tutti" data-k="pista">${tutti ? t("Mostra meno", "Show less") : t("Mostra tutti", "Show all") + ` (${L.ordine.length})`}</button>` : ""}`
     : L.top.length ? `<div class="fo1ord">${L.top.map((x, i) => rigaPista(D, { ...x, current_position: x.position || i + 1, best_lap_time: x.lap_time }, i, false)).join("")}</div>` : `<div class="small muted">${t("L'ordine in pista compare appena l'integrazione lo manda.", "The running order shows up as soon as the integration sends it.")}</div>`;
-  const rc = L.rc ? `<div class="fo1rc"><div class="fl1">📣 ${t("Direzione gara", "Race control")}</div>${[{ message: L.rc.msg, utc: L.rc.quando, flag: L.rc.flag }, ...L.rc.storia.filter(h => h.message && h.message !== L.rc.msg)].slice(0, 3)
+  const rc = L.rc ? `<div class="fo1rc"><div class="fl1">📣 ${t("Direzione gara", "Race control")}</div>${[{ message: L.rc.msg, utc: L.rc.quando, flag: L.rc.flag }, ...L.rc.storia.filter(h => h.message && h.message !== L.rc.msg)].slice(0, msgRc())
     .map(h => `<div class="fo1rm ${esc(norm(h.flag).replace(/ /g, "_"))}">${h.utc ? `<small>${esc(ore(new Date(h.utc)))}</small>` : ""}<span>${esc(h.message)}</span></div>`).join("")}</div>` : "";
   return card(titolo, testa + ord + rc, { cls: "span3 fo1live" });
 }
@@ -303,16 +336,16 @@ function stella(tipo, id, nome, on) {
 }
 function pilotiCard(D) {
   const F = D.F, R = A(F.piloti).driver_standings; if (!Array.isArray(R) || !R.length) return "";
-  const a = anagrafe(F).P, max = Math.max(1, +R[0].points || 0), tutti = V.tutti.piloti;
+  const a = anagrafe(F).P, max = Math.max(1, +R[0].points || 0), N = quanteRighe() || Infinity, tutti = V.tutti.piloti || N === Infinity;
   const righe = R.map((r, i) => {
     const d = r.Driver || {}, code = pulito(d.code).toUpperCase(), team = a[code]?.team || (r.Constructors || []).at(-1)?.name || "", pref = ePilota(code, d.familyName);
     return { i, pref, html: `<div class="fo1cr ${pref ? "pref" : ""} ${eTeam(team) ? "tpref" : ""}" style="--tc:${coloreTeam(F, team)};--pc:${Math.round(100 * (+r.points || 0) / max)}%"><span class="p">${esc(r.position || i + 1)}</span><i class="tb"></i>
       <span class="nm"><b>${esc([pulito(d.givenName).slice(0, 1) && pulito(d.givenName).slice(0, 1) + ".", pulito(d.familyName)].filter(Boolean).join(" ") || code)}</b><small>${esc(team)}${+r.wins ? ` · ${esc(r.wins)} ${+r.wins === 1 ? t("vittoria", "win") : t("vittorie", "wins")}` : ""}</small></span>
       ${stella("p", code, pulito(d.familyName), pref)}<span class="pt"><b>${esc(r.points)}</b><i></i></span></div>` };
   });
-  const L = tutti ? righe : righe.filter(r => r.i < 10 || r.pref);
+  const L = tutti ? righe : righe.filter(r => r.i < N || r.pref);
   return card("🏆 " + t("Piloti", "Drivers") + ` <span class="muted">${esc(A(F.piloti).season || "")}</span>`, `<div class="fo1cl">${L.map(r => r.html).join("")}</div>
-    ${righe.length > 10 ? `<button class="btn sm ghost fo1mo" data-act="f1Tutti" data-k="piloti">${tutti ? t("Mostra meno", "Show less") : t("Mostra tutti", "Show all") + ` (${righe.length})`}</button>` : ""}`, { cls: "fo1cc" });
+    ${righe.length > N ? `<button class="btn sm ghost fo1mo" data-act="f1Tutti" data-k="piloti">${tutti ? t("Mostra meno", "Show less") : t("Mostra tutti", "Show all") + ` (${righe.length})`}</button>` : ""}`, { cls: "fo1cc" });
 }
 function costruttoriCard(D) {
   const F = D.F, R = A(F.costr).constructor_standings; if (!Array.isArray(R) || !R.length) return "";
@@ -326,27 +359,29 @@ function costruttoriCard(D) {
 /* ---------- ultima gara ---------- */
 function ultimaCard(D) {
   const F = D.F, a = A(F.ultima), R = Array.isArray(a.results) ? [...a.results].sort((x, y) => (+x.position || 99) - (+y.position || 99)) : []; if (!R.length) return "";
-  const an = anagrafe(F).P, quando = data(a.race_start) || data(a.race_start_utc), tutti = V.tutti.ultima;
+  const an = anagrafe(F).P, quando = data(a.race_start) || data(a.race_start_utc), N = quanteRighe() ? Math.max(0, quanteRighe() - 3) : Infinity, tutti = V.tutti.ultima || N === Infinity;
   const info = r => { const d = r.driver || r.Driver || {}, code = pulito(d.code).toUpperCase(), team = pulito((r.constructor || r.Constructor || {}).name);
     return { code, cognome: pulito(d.familyName) || an[code]?.cognome || code, nome: pulito(d.givenName), team, col: coloreTeam(F, team || an[code]?.team), pref: ePilota(code, d.familyName) }; };
   const podio = [2, 1, 3].map(p => { const r = R[p - 1]; if (!r) return ""; const x = info(r);
     return `<div class="fo1pp p${p} ${x.pref ? "pref" : ""}" style="--tc:${x.col}"><b class="tla">${esc(x.code || "?")}</b><span class="cg">${esc(x.cognome)}</span><small>${esc(x.team)}</small>
       <div class="blk"><em>${p}</em><small>${esc(pulito(r.time) || pulito(r.status))}</small></div></div>`; }).join("");
-  const resto = R.slice(3).map(r => ({ r, x: info(r) })), L = tutti ? resto : resto.filter(({ x }, i) => i < 7 || x.pref);
+  const resto = R.slice(3).map(r => ({ r, x: info(r) })), L = tutti ? resto : resto.filter(({ x }, i) => i < N || x.pref);
   const fin = r => /finish|lapped|^\+\d+ lap/i.test(pulito(r.status)) || !pulito(r.status);
   return card(`🏁 ${t("Ultima gara", "Last race")} <span class="muted">${esc(pulito(a.race_name))}</span>`, `${quando ? `<div class="small muted fo1ud">${esc(giorno(quando, true))}${a.circuit_name ? " · " + esc(a.circuit_name) : ""}</div>` : ""}
     <div class="fo1pd">${podio}</div>
     <div class="fo1cl fo1rs">${L.map(({ r, x }) => `<div class="fo1cr ${x.pref ? "pref" : ""} ${eTeam(x.team) ? "tpref" : ""} ${fin(r) ? "" : "ko"}" style="--tc:${x.col}"><span class="p">${esc(r.position)}</span><i class="tb"></i>
       <span class="nm"><b>${esc(x.cognome)}</b><small>${esc(x.team)}</small></span><span class="tt">${esc(fin(r) ? pulito(r.time) || pulito(r.status) : t("Ritirato", "Retired"))}</span><span class="pt"><b>${+r.points ? "+" + esc(r.points) : ""}</b></span></div>`).join("")}</div>
-    ${resto.length > 7 ? `<button class="btn sm ghost fo1mo" data-act="f1Tutti" data-k="ultima">${tutti ? t("Mostra meno", "Show less") : t("Tutti i risultati", "All results") + ` (${R.length})`}</button>` : ""}`, { cls: "fo1uc" });
+    ${resto.length > N ? `<button class="btn sm ghost fo1mo" data-act="f1Tutti" data-k="ultima">${tutti ? t("Mostra meno", "Show less") : t("Tutti i risultati", "All results") + ` (${R.length})`}</button>` : ""}`, { cls: "fo1uc" });
 }
 const fonteTesto = F => [(F.next || F.piloti || F.stato) && "F1 Sensor", F.cal.length && !F.next && t("calendario", "calendar"), F.tt.length && "Team Tracker"].filter(Boolean).join(" · ");
 function pagina() {
   const D = dati();
   if (!D.F.trovato) return `<div class="g g3">${card("🏎️ Formula 1", spiegazione(), { cls: "span3" })}</div>`;
   const pref = [pilotaPref() && "⭐ " + esc(pilotaPref().nome || pilotaPref().code), teamPref() && "⭐ " + esc(teamPref().nome)].filter(Boolean);
-  return `<div class="g g3">${eroe(D)}${programma(D)}${weekendCard(D)}${pilotiCard(D)}${costruttoriCard(D)}${ultimaCard(D)}
-    ${UI.edit && isAdmin() ? `<section class="card span3"><div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn" data-act="f1Edit">⚙️ ${t("Fonti e preferiti", "Sources and favourites")}</button><button class="add1" data-act="f1Add"><span>＋</span>${t("Aggiungi una fonte", "Add a source")}</button></div>
+  /* le sezioni tolte in ⚙️ → Cosa mostrare non si disegnano (il Gran Premio in alto resta sempre) */
+  const se = (k, f) => mostra(k) ? f(D) : "";
+  return `<div class="g g3">${eroe(D)}${se("programma", programma)}${se("pista", weekendCard)}${se("piloti", pilotiCard)}${se("costr", costruttoriCard)}${se("ultima", ultimaCard)}
+    ${UI.edit && isAdmin() ? `<section class="card span3"><div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn" data-act="f1Edit">⚙️ ${t("Fonti, preferiti e cosa mostrare", "Sources, favourites and what to show")}</button><button class="add1" data-act="f1Add"><span>＋</span>${t("Aggiungi una fonte", "Add a source")}</button></div>
       <p class="small muted" style="margin-top:10px">${t("Tocca ☆ nelle classifiche per scegliere il pilota e il team preferiti.", "Tap ☆ in the standings to pick your favourite driver and team.")}</p></section>` : ""}
     <p class="small muted fo1src span3">${pref.length ? pref.join(" · ") + " · " : ""}${t("Dati da ", "Data from ")}${esc(fonteTesto(D.F))}</p></div>`;
 }
@@ -389,67 +424,107 @@ setInterval(() => {
   try { const D = dati(); if (D.prossima && D.prossima.inizio - Date.now() < 36e5) render(); } catch {}
 }, 1000);
 
-/* ================= ⚙️ fonti e preferiti ================= */
-const salva = (fn, msg) => cambia(l => { l.f1 = JSON.parse(JSON.stringify(l.f1 || {})); fn(l.f1); }, msg);
+/* ================= ⚙️ fonti, preferiti e cosa mostrare ================= */
+/* dopo ogni salvataggio, se gli avvisi sono attivi, l'automazione si riscrive da sola con le fonti e i minuti nuovi */
+const salva = (fn, msg) => cambia(l => { l.f1 = JSON.parse(JSON.stringify(l.f1 || {})); fn(l.f1); }, msg).then(() => riscrivi());
 function nomeFonte(id) { return id.startsWith("calendar.") ? t("Calendario", "Calendar") : isTT(id) ? "Team Tracker" : "F1 Sensor"; }
+/** valore di adesso accanto al sensore (le date nell'ora di casa) */
+const valore = id => { if (!S[id]) return ""; if (!ok(id)) return t("non disponibile", "unavailable");
+  const s = String(S[id].state), d = /^\d{4}-\d\d-\d\dT/.test(s) ? data(s) : null; return d ? giorno(d) + " " + ore(d) : s.slice(0, 24); };
 function schedaFonti() {
-  const F = fonti(), c = C(), D = dati();
-  const auto = [F.next, F.piloti, F.costr, F.ultima, F.stato].filter(Boolean), altre = [...F.cal, ...F.tt];
+  const F = fonti(), c = C(), D = dati(), sc = c.sensori || {};
+  const altre = [...F.cal, ...F.tt], conSensori = RUOLI().some(([r]) => F.auto[r]) || Object.keys(sc).length;
   const an = anagrafe(F).P, piloti = (A(F.piloti).driver_standings || []).map(r => [pulito(r.Driver?.code).toUpperCase(), pulito(r.Driver?.familyName), [pulito(r.Driver?.givenName), pulito(r.Driver?.familyName)].join(" ")]);
   if (!piloti.length) Object.values(an).forEach(p => piloti.push([p.tla, p.cognome, p.nome + " " + p.cognome]));
   const team = (A(F.costr).constructor_standings || []).map(r => [pulito(r.Constructor?.constructorId), pulito(r.Constructor?.name)]);
   if (!team.length) anagrafe(F).T.forEach(([n]) => team.push([n, n]));
-  const pp = pilotaPref(), tp = teamPref();
-  return `<div class="sh-head"><div><h3>🏎️ Formula 1</h3><div class="small muted">${t("Da dove prendo i dati e chi tifi. Valgono per tutta la casa.", "Where the data comes from and who you support. They apply to the whole home.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
-    ${auto.length ? `<div class="fl1">F1 Sensor</div><div class="stack">${auto.map(id => `<button class="li" data-act="more" data-id="${esc(id)}"><span class="ic">📡</span><div class="tx"><b>${esc(nmHA(id))}</b><span>${esc(id)}</span></div><span class="st">›</span></button>`).join("")}</div>` : ""}
-    ${altre.length ? `<div class="fl1">${t("Altre fonti", "Other sources")}</div><div class="stack">${altre.map(id => `<div class="li"><span class="ic">${id.startsWith("calendar.") ? "📅" : "📡"}</span><div class="tx"><b>${esc(nmHA(id))}</b><span>${esc(nomeFonte(id))} · ${esc(id)}</span></div><button class="btn sm" data-act="f1Togli" data-id="${esc(id)}">✕</button></div>`).join("")}</div>` : ""}
+  const pp = pilotaPref(), tp = teamPref(), N = quanteRighe();
+  return `<div class="sh-head"><div><h3>🏎️ Formula 1</h3><div class="small muted">${t("Da dove prendo i dati, chi tifi e cosa mostrare. Valgono per tutta la casa.", "Where the data comes from, who you support and what to show. They apply to the whole home.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
+    ${conSensori ? `<details class="car-x" ${Object.keys(sc).length ? "open" : ""}><summary>📡 ${t("Sensori di F1 Sensor", "F1 Sensor sensors")} <small>${Object.keys(sc).length ? t("corretti da te", "corrected by you") : t("trovati da soli", "found automatically")}</small></summary>
+      <p class="small muted" style="margin:8px 0 6px;line-height:1.45">${t("Li trovo da soli. Se uno è sbagliato o manca, toccalo e scegli quello giusto; con «🚫 Nessuno» quella parte sparisce.", "I find them by myself. If one is wrong or missing, tap it and pick the right one; with «🚫 None» that part disappears.")}</p>
+      <div class="stack">${RUOLI().map(([r, n]) => { const x = sc[r], id = F[r];
+        return `<button class="li" data-act="f1Ruolo" data-k="${r}"><div class="tx"><b>${esc(n)}</b><span>${x === "none" ? "🚫 " + t("nessuno", "none") : id ? (x ? "✋ " : "✨ ") + esc(nmHA(id)) : "✨ " + t("non trovato", "not found")}</span></div>
+          <span class="st">${id ? esc(valore(id)) : "›"}</span></button>`; }).join("")}</div></details>` : ""}
+    <div class="fl1">📅 ${t("Calendari e Team Tracker", "Calendars and Team Tracker")}</div>
+    <p class="small muted" style="margin:0 0 6px;line-height:1.45">${t("Li trovo dal nome («F1», «Formula 1», «Gran Premio»). Con ✕ togli quelli sbagliati, con ＋ aggiungi un calendario o un sensore qualsiasi. Servono quando manca F1 Sensor.", "I find them by name («F1», «Formula 1», «Grand Prix»). Remove wrong ones with ✕, add any calendar or sensor with ＋. They're used when F1 Sensor is missing.")}</p>
+    ${altre.length ? `<div class="stack">${altre.map(id => `<div class="li"><span class="ic">${id.startsWith("calendar.") ? "📅" : "📡"}</span><div class="tx"><b>${esc(nmHA(id))}</b><span>${esc(nomeFonte(id))} · ${esc(id)}${(c.extra || []).includes(id) ? " · " + t("aggiunto da te", "added by you") : ""}</span></div><button class="btn sm" data-act="f1Togli" data-id="${esc(id)}" aria-label="${t("Togli", "Remove")}">✕</button></div>`).join("")}</div>` : `<div class="small muted">${t("Nessuno.", "None.")}</div>`}
     ${!F.next && !F.piloti ? `<div class="fo1nt">${spiegazione(false)}</div>` : ""}
     <div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn" data-act="f1Add">＋ ${t("Aggiungi una fonte", "Add a source")}</button>${D.gp || F.cal.length || F.tt.length ? `<button class="btn" data-act="f1Notif">📱 ${t("Avvisi sul telefono", "Phone alerts")}</button>` : ""}</div>
     ${(c.tolte || []).length ? `<div class="fl1">${t("Tolte", "Removed")}</div><div class="stack">${c.tolte.map(id => `<div class="li"><span class="ic">🙈</span><div class="tx"><b>${esc(S[id] ? nmHA(id) : id)}</b><span>${esc(id)}</span></div><button class="btn sm" data-act="f1Rimetti" data-id="${esc(id)}">↺ ${t("Rimetti", "Restore")}</button></div>`).join("")}</div>` : ""}
     ${piloti.length ? `<div class="fl1">⭐ ${t("Pilota preferito", "Favourite driver")}</div><div class="fo1ch">${[["", "", t("Nessuno", "None")], ...piloti].map(([code, cg, n]) => `<button class="${(pp?.code || "") === code && (code || !pp) ? "act" : ""}" data-act="f1Pref" data-t="p" data-id="${esc(code)}" data-n="${esc(cg)}" ${code ? `style="--tc:${an[code]?.col || "#8e8e93"}"` : ""}>${code ? `<i></i>` : ""}${esc(n.trim() || code)}</button>`).join("")}</div>` : ""}
     ${team.length ? `<div class="fl1">⭐ ${t("Team preferito", "Favourite team")}</div><div class="fo1ch">${[["", t("Nessuno", "None")], ...team].map(([id, n]) => `<button class="${(tp?.id || "") === id && (id || !tp) ? "act" : ""}" data-act="f1Pref" data-t="t" data-id="${esc(id)}" data-n="${esc(id ? n : "")}" ${id ? `style="--tc:${coloreTeam(F, n)}"` : ""}>${id ? `<i></i>` : ""}${esc(n)}</button>`).join("")}</div>` : ""}
-    <p class="small muted" style="margin-top:12px">${t("Il pilota e il team preferiti sono evidenziati in classifica, in pista e nei risultati.", "Your favourite driver and team are highlighted in the standings, on track and in the results.")}</p>`;
+    ${piloti.length || team.length ? `<p class="small muted" style="margin-top:8px">${t("Il pilota e il team preferiti sono evidenziati in classifica, in pista e nei risultati; il pilota resta visibile anche oltre le righe scelte qui sotto.", "Your favourite driver and team are highlighted in the standings, on track and in the results; the driver stays visible even beyond the rows chosen below.")}</p>` : ""}
+    <div class="fl1">👁 ${t("Cosa mostrare", "What to show")}</div>
+    <p class="small muted" style="margin:0 0 6px;line-height:1.45">${t("Togli il segno alle parti che non ti interessano. Il Gran Premio in alto e la scheda della Home restano.", "Untick the parts you don't care about. The Grand Prix at the top and the Home card stay.")}</p>
+    <div class="cks1">${SEZ().map(([k, n]) => `<button class="ck1 ${mostra(k) ? "on" : ""}" data-act="f1Sez" data-k="${k}"><span class="bx"></span><span class="tx"><b>${n}</b></span></button>`).join("")}</div>
+    <div class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-start">
+      <label class="fld1" style="flex:1;min-width:200px"><span>${t("Righe in classifica, in pista e nei risultati", "Rows in standings, on track and in results")}</span><select data-chg="f1Righe">${[5, 8, 10, 15, 20, 0].map(n => `<option value="${n}" ${N === n ? "selected" : ""}>${n || t("Tutte", "All")}</option>`).join("")}</select></label>
+      <label class="fld1" style="flex:1;min-width:200px"><span>${t("Messaggi della direzione gara", "Race control messages")}</span><select data-chg="f1Rc">${[1, 3, 5, 10].map(n => `<option value="${n}" ${msgRc() === n ? "selected" : ""}>${n}</option>`).join("")}</select></label></div>
+    <p class="small muted" style="margin-top:6px;line-height:1.45">${t("Le altre righe restano dietro «Mostra tutti». Nell'ultima gara il podio conta come 3 righe. La direzione gara compare solo durante le sessioni.", "The other rows stay behind «Show all». In the last race the podium counts as 3 rows. Race control shows only during sessions.")}</p>`;
 }
 
 /* ================= 📱 avvisi: automazione «'Nduja · Formula 1» ================= */
 const AUT = "nduja_f1";
 const servizi = () => { const s = cached("services", 3600e3, () => ws({ type: "get_services" })) || {}; return Object.keys(s.notify || {}).filter(k => !["send_message", "persistent_notification", "notify"].includes(k)).sort(); };
 const TIPI_AV = () => [["fp", "⏱️ " + t("Prove libere", "Practice")], ["q", "🎯 " + t("Qualifiche (anche quelle sprint)", "Qualifying (sprint too)")], ["s", "⚡ Sprint"], ["r", "🏁 " + t("Gara", "Race")]];
-const MSG = () => ({ fp1: t("Tra 15 minuti partono le prove libere 1", "Practice 1 starts in 15 minutes"), fp2: t("Tra 15 minuti partono le prove libere 2", "Practice 2 starts in 15 minutes"),
-  fp3: t("Tra 15 minuti partono le prove libere 3", "Practice 3 starts in 15 minutes"), sq: t("Tra 15 minuti partono le qualifiche sprint", "Sprint qualifying starts in 15 minutes"),
-  s: t("Tra 15 minuti parte la sprint", "The sprint starts in 15 minutes"), q: t("Tra 15 minuti partono le qualifiche", "Qualifying starts in 15 minutes"), r: t("Tra 15 minuti parte la gara", "The race starts in 15 minutes") });
+/** quanti minuti prima avvisare: 15, o quelli scelti in 📱 (1–180) */
+const minuti = c => { const v = Math.round(+c?.min); return v >= 1 && v <= 180 ? v : 15; };
+const MSG = m => { const it = m === 1 ? "Tra un minuto" : `Tra ${m} minuti`, en = m === 1 ? "in 1 minute" : `in ${m} minutes`;
+  return { fp1: t(`${it} partono le prove libere 1`, `Practice 1 starts ${en}`), fp2: t(`${it} partono le prove libere 2`, `Practice 2 starts ${en}`),
+    fp3: t(`${it} partono le prove libere 3`, `Practice 3 starts ${en}`), sq: t(`${it} partono le qualifiche sprint`, `Sprint qualifying starts ${en}`),
+    s: t(`${it} parte la sprint`, `The sprint starts ${en}`), q: t(`${it} partono le qualifiche`, `Qualifying starts ${en}`), r: t(`${it} parte la gara`, `The race starts ${en}`) }; };
 const gruppo = k => k.startsWith("fp") ? "fp" : k === "sq" ? "q" : k;
 let NB = null;
 function schedaNotifiche() {
-  const c = NB, sv = servizi(), F = fonti(), via = F.next ? "F1 Sensor" : F.cal.length ? t("il calendario", "the calendar") + " «" + nmHA(F.cal[0]) + "»" : "Team Tracker";
+  const c = NB, sv = servizi(), F = fonti(), m = minuti({ min: c.minTxt ?? c.min });
+  const via = F.next ? "F1 Sensor (" + nmHA(F.next) + ")" : F.cal.length ? (F.cal.length > 1 ? t("i calendari ", "the calendars ") : t("il calendario ", "the calendar ")) + F.cal.map(id => "«" + nmHA(id) + "»").join(", ") : "Team Tracker";
   const ck = (on, act, k, n) => `<button class="ck1 ${on ? "on" : ""}" data-act="${act}" data-k="${esc(k)}"><span class="bx"></span><span class="tx"><b>${n}</b></span></button>`;
-  return `<div class="sh-head"><div><h3>📱 ${t("Avvisi della Formula 1", "Formula 1 alerts")}</h3><div class="small muted">${t("Creo in Home Assistant l'automazione «'Nduja · Formula 1»: avvisa 15 minuti prima, anche a plancia chiusa.", "I create the «'Nduja · Formula 1» automation in Home Assistant: it alerts 15 minutes before, even with the dashboard closed.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
+  return `<div class="sh-head"><div><h3>📱 ${t("Avvisi della Formula 1", "Formula 1 alerts")}</h3><div class="small muted">${t(`Creo in Home Assistant l'automazione «'Nduja · Formula 1»: avvisa ${m} minuti prima, anche a plancia chiusa.`, `I create the «'Nduja · Formula 1» automation in Home Assistant: it alerts ${m} minutes before, even with the dashboard closed.`)}</div></div><button class="x" data-act="sheetClose">×</button></div>
     <div class="fl1">${t("A chi", "To")}</div><div class="cks1">${sv.map(k => ck(c.servizi.includes(k), "f1nS", k, esc(k.replace(/^mobile_app_/, "📱 ").replace(/_/g, " ")))).join("") || `<div class="small muted">${t("Nessun telefono: installa l'app Home Assistant sul telefono.", "No phone: install the Home Assistant app on the phone.")}</div>`}</div>
     <div class="fl1">${t("Quando", "When")}</div><div class="cks1">${TIPI_AV().filter(([k]) => F.next || F.cal.length || k === "r").map(([k, n]) => ck(c.tipi.includes(k), "f1nT", k, n)).join("")}</div>
-    <p class="small muted" style="margin-top:8px">${t("Gli orari vengono da ", "Times come from ")}${esc(via)}.</p>
+    <label class="fld1"><span>⏰ ${t("Quanti minuti prima dell'inizio", "How many minutes before the start")}</span><input id="fo1min" type="number" min="1" max="180" step="1" inputmode="numeric" value="${esc(c.minTxt ?? m)}" style="width:120px"></label>
+    <p class="small muted" style="margin:6px 0 0;line-height:1.45">${t("Da 1 a 180 (predefinito: 15). Vale per ogni sessione scelta.", "From 1 to 180 (default 15). It applies to every chosen session.")}</p>
+    <p class="small muted" style="margin-top:8px;line-height:1.45">${t("Gli orari vengono da ", "Times come from ")}${esc(via)}. ${t("Se cambi le fonti o i sensori in ⚙️, l'automazione si aggiorna da sola.", "If you change sources or sensors in ⚙️, the automation updates by itself.")}</p>
     <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn pri" data-act="f1nSave">💾 ${t("Salva in Home Assistant", "Save to Home Assistant")}</button>${C().notif?.servizi?.length ? `<button class="btn bad" data-act="f1nOff">${t("Spegni gli avvisi della F1", "Turn off F1 alerts")}</button>` : ""}</div>`;
 }
-/** l'automazione: con F1 Sensor 15 minuti prima di ogni sessione scelta (orari del sensore «prossima gara»);
-    altrimenti con il calendario (inizio dell'evento meno 15 minuti) o con Team Tracker (solo la gara) */
+document.addEventListener("input", e => { if (e.target.id === "fo1min" && NB) { NB.minTxt = e.target.value; render(); } });
+/** l'automazione: con F1 Sensor N minuti prima di ogni sessione scelta (orari del sensore «prossima gara»);
+    altrimenti con i calendari (inizio dell'evento meno N minuti) o con Team Tracker (solo la gara) */
 function automazione(c) {
-  const F = fonti(), M = MSG(), T = [], tipi = new Set(c.tipi);
-  const finestra = (id, at) => `{% set s = state_attr('${id}', '${at}') %}{% set d = as_datetime(s) if s else none %}{{ d is not none and 0 < (d - now()).total_seconds() <= 900 }}`;
+  const F = fonti(), m = minuti(c), M = MSG(m), T = [], tipi = new Set(c.tipi || ["q", "s", "r"]);
+  const finestra = (id, at) => `{% set s = state_attr('${id}', '${at}') %}{% set d = as_datetime(s) if s else none %}{{ d is not none and 0 < (d - now()).total_seconds() <= ${m * 60} }}`;
   let msg, cond = [];
   if (F.next) {
     for (const [k, x] of SESS) if (tipi.has(gruppo(k))) T.push({ trigger: "template", value_template: finestra(F.next, x + "_start"), id: k });
     msg = `{% set m = ${JSON.stringify(M)} %}🏎️ {{ m[trigger.id] }} · {{ state_attr('${F.next}', 'race_name') }}`;
   } else if (F.cal.length) {
     const P = { fp: "practice|libere|fp ?[123]", q: "quali", s: "sprint(?!.*quali)(?!.*shootout)", r: "race|gara|grand prix$|gran premio$" };
-    T.push({ trigger: "calendar", event: "start", offset: "-0:15:0", entity_id: F.cal[0] });
+    F.cal.forEach(id => T.push({ trigger: "calendar", event: "start", offset: `-${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}:00`, entity_id: id }));
     cond = [{ condition: "template", value_template: `{{ trigger.calendar_event.summary | regex_search('${[...tipi].map(k => P[k]).join("|")}', ignorecase=True) }}` }];
-    msg = "🏎️ " + t("Tra 15 minuti: ", "In 15 minutes: ") + "{{ trigger.calendar_event.summary }}";
+    msg = "🏎️ " + (m === 1 ? t("Tra un minuto: ", "In 1 minute: ") : t(`Tra ${m} minuti: `, `In ${m} minutes: `)) + "{{ trigger.calendar_event.summary }}";
   } else if (F.tt.length && tipi.has("r")) {
     F.tt.forEach(id => T.push({ trigger: "template", value_template: finestra(id, "date"), id: "r" }));
     msg = `🏎️ ${M.r} · {{ state_attr(trigger.entity_id, 'event_name') or 'Formula 1' }}`;
   }
   return { id: AUT, alias: "'Nduja · Formula 1", description: t("Creata da 'Nduja Dashboard (Formula 1 → 📱)", "Created by 'Nduja Dashboard (Formula 1 → 📱)"),
-    triggers: T, conditions: cond, actions: c.servizi.map(s => ({ action: "notify." + s, data: { title: "🏎️ 'Nduja", message: msg } })), mode: "queued", max: 10 };
+    triggers: T, conditions: cond, actions: (c.servizi || []).map(s => ({ action: "notify." + s, data: { title: "🏎️ 'Nduja", message: msg } })), mode: "queued", max: 10 };
 }
+/** impronta di quello che fa l'automazione (senza i testi, che dipendono dalla lingua di chi la salva) */
+const firma = cfg => { let h = 7; for (const ch of JSON.stringify([cfg.triggers, cfg.conditions, cfg.actions.map(a => a.action)])) h = (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0; return h.toString(36); };
+let riscrivendo = false;
+/** avvisi attivi e scelte cambiate (fonti, sensori, calendari): riscrivo l'automazione in Home Assistant */
+async function riscrivi() {
+  const c = C().notif; if (!isAdmin() || !c?.servizi?.length || riscrivendo) return;
+  const cfg = automazione(c), f = firma(cfg); if (f === c.firma || !cfg.triggers.length) return;
+  riscrivendo = true;
+  try { await api("POST", "/api/config/automation/config/" + AUT, cfg); await cambia(l => { l.f1 = { ...(l.f1 || {}), notif: { ...(l.f1?.notif || {}), firma: f } }; }); }
+  catch (e) { console.warn("nduja f1 avvisi", e); } finally { riscrivendo = false; }
+}
+
+/** salva subito una scelta di «Cosa mostrare»: se torna quella di partenza la chiave si cancella */
+const salvaVista = (fn, msg) => cambia(l => { const f = l.f1 = { ...(l.f1 || {}) }; fn(f); if (!Object.keys(f).length) delete l.f1; }, msg);
+CHG.f1Righe = el => { const n = +el.value; salvaVista(f => { if (n === 10) delete f.righe; else f.righe = n; }, "🏆 " + t("Righe: ", "Rows: ") + (n || t("tutte", "all"))); };
+CHG.f1Rc = el => { const n = +el.value; salvaVista(f => { if (n === 3) delete f.rc; else f.rc = n; }, "📣 " + t("Messaggi: ", "Messages: ") + n); };
 
 Object.assign(ACT, {
   f1Tutti: el => { const k = el.dataset.k; V.tutti[k] = !V.tutti[k]; render(true); },
@@ -460,6 +535,12 @@ Object.assign(ACT, {
     onPick: id => id && salva(f => { f.extra = [...new Set([...(f.extra || []), id])]; f.tolte = (f.tolte || []).filter(x => x !== id); }, "🏎️ " + nmHA(id)).then(() => openSheet(schedaFonti)) }),
   f1Togli: el => { const id = el.dataset.id; salva(f => { f.extra = (f.extra || []).filter(x => x !== id); if (isCalF1(id) || isTTF1(id)) f.tolte = [...new Set([...(f.tolte || []), id])]; }, "✕ " + nmHA(id)); },
   f1Rimetti: el => { const id = el.dataset.id; salva(f => { f.tolte = (f.tolte || []).filter(x => x !== id); }, "↺"); },
+  f1Ruolo: el => { const r = el.dataset.k, R = RUOLI().find(x => x[0] === r), F = fonti(); if (!R) return;
+    scegli({ titolo: "📡 " + R[1], sotto: t("«✨ Automatico» usa quello che trovo da solo; «🚫 Nessuno» toglie questa parte dalla pagina.", "«✨ Automatic» uses the one I find by myself; «🚫 None» removes this part from the page."),
+      filtro: R[2], attuale: C().sensori?.[r] || null, auto: F.auto[r] || null, nessuno: true,
+      onPick: id => salva(f => { const s = f.sensori = { ...(f.sensori || {}) }; if (id) s[r] = id; else delete s[r]; if (!Object.keys(s).length) delete f.sensori; },
+        "📡 " + R[1] + ": " + (id === "none" ? t("nessuno", "none") : id ? nmHA(id) : t("automatico", "automatic"))).then(() => openSheet(schedaFonti)) }); },
+  f1Sez: el => { const k = el.dataset.k; salvaVista(f => { const o = new Set(f.off || []); o.has(k) ? o.delete(k) : o.add(k); if (o.size) f.off = [...o]; else delete f.off; }); },
   f1Pref: el => { if (!isAdmin()) return; const tp = el.dataset.t, id = el.dataset.id, n = el.dataset.n, k = tp === "p" ? "pilota" : "team";
     const gia = tp === "p" ? pilotaPref()?.code === id : teamPref()?.id === id;
     salva(f => { if (!id || gia) delete f[k]; else f[k] = tp === "p" ? { code: id, nome: n } : { id, nome: n }; }, id && !gia ? "⭐ " + n : t("Preferito tolto", "Favourite removed")); },
@@ -468,11 +549,14 @@ Object.assign(ACT, {
   f1nT: el => { const k = el.dataset.k, i = NB.tipi.indexOf(k); i < 0 ? NB.tipi.push(k) : NB.tipi.splice(i, 1); render(); },
   f1nSave: async () => {
     if (!NB.servizi.length) return toast(t("Scegli almeno un telefono", "Choose at least one phone"), true);
-    const cfg = automazione(NB); if (!cfg.triggers.length || !NB.tipi.length) return toast(t("Niente da avvisare: scegli almeno una sessione", "Nothing to alert: choose at least one session"), true);
+    const mt = String(document.getElementById("fo1min")?.value ?? NB.minTxt ?? minuti(NB)).trim(), mn = Math.round(+mt);
+    if (!mt || !(mn >= 1 && mn <= 180)) return toast(t("I minuti vanno da 1 a 180", "Minutes go from 1 to 180"), true);
+    const c = { ...NB }; delete c.minTxt; delete c.firma; if (mn === 15) delete c.min; else c.min = mn;
+    const cfg = automazione(c); if (!cfg.triggers.length || !c.tipi.length) return toast(t("Niente da avvisare: scegli almeno una sessione", "Nothing to alert: choose at least one session"), true);
     const nuova = !C().notif?.servizi?.length;
     try { await api("POST", "/api/config/automation/config/" + AUT, cfg);
       if (nuova) etichettaNduja(() => Object.keys(S).find(e => e.startsWith("automation.") && attr(e, "id") === AUT));
-      const c = NB; await salva(f => { f.notif = c; }); closeSheet(); toast("📱 " + t("Avvisi della F1 attivi", "F1 alerts on")); }
+      c.firma = firma(cfg); await salva(f => { f.notif = c; }); closeSheet(); toast("📱 " + t("Avvisi della F1 attivi", "F1 alerts on")); }
     catch (e) { toast(t("Non salvato: ", "Not saved: ") + (e.message || e), true); }
   },
   f1nOff: async () => { try { await api("DELETE", "/api/config/automation/config/" + AUT); } catch {} await salva(f => { delete f.notif; }); closeSheet(); toast(t("Avvisi della F1 spenti", "F1 alerts off")); },

@@ -2,19 +2,29 @@
    Con ✏️ Modifica: ＋ luci nascoste e interruttori che comandano una luce, ✕ toglie, ◀ ▶ ordine, ✏️ nome, stanza e icona. */
 import { S, AREAS, FLOORS, ACT, LAYOUT, UI, t, LOC, esc, nm, nmHA, ok, attr, ents, allEnts, areaOf, areasSorted, luci, luciContate, lightsOn, luciComando,
   isLightGroup, isLightSwitch, membriLuce, deviceClass, lightTile, card, empty, page, isAdmin, openSheet, closeSheet, render } from "../core.js";
-import { cambia, mostra } from "../edit.js";
+import { cambia, mostra, scegli } from "../edit.js";
 import { luciPerStanza, iconaPiccola, svgLuce, iconaAuto, coloreDi } from "../luce.js";
 
 const nomeStanza = a => a === "_" ? t("Senza stanza", "No room") : AREAS[a]?.name || a;
 
 /* ---------- scene di luce: quelle che comandano luci (o di Hue), o con un nome da luce ---------- */
 const LUCE_NOME = /luc[ei]|light|lamp|relax|lettur|reading|notte|night|cena|dinner|film|movie|tv|cinema|romant|soft|soffus|bright|dim|giorno|day|sera|evening|party|festa|concentra|focus|energ|tramonto|sunset|alba/i;
-function sceneLuce() {
+/** scene trovate da sole */
+function sceneAuto() {
   const L = new Set(luci());
   return ents("scene", id => { const E = attr(id, "entity_id");
     if (Array.isArray(E)) return E.some(x => x.startsWith("light.") || L.has(x));
-    return attr(id, "is_hue_scene") === true || LUCE_NOME.test(nm(id)); }).sort((a, b) => nm(a).localeCompare(nm(b), LOC));
+    return attr(id, "is_hue_scene") === true || LUCE_NOME.test(nm(id)); });
 }
+/** scene del riepilogo: quelle trovate da sole, meno quelle tolte, più quelle aggiunte in ✏️ Modifica (LAYOUT.lightScenes = { add, hide }) */
+const scConf = () => LAYOUT.lightScenes || {};
+function sceneLuce() {
+  const c = scConf(), via = new Set(c.hide || []);
+  return [...new Set([...sceneAuto().filter(id => !via.has(id)), ...(c.add || []).filter(id => S[id])])].sort((a, b) => nm(a).localeCompare(nm(b), LOC));
+}
+/** cambia le scene del riepilogo; liste vuote si cancellano */
+const scSet = (fn, msg) => cambia(l => { const c = JSON.parse(JSON.stringify(l.lightScenes || {})); fn(c);
+  for (const k of ["add", "hide"]) if (!(c[k] || []).length) delete c[k]; if (Object.keys(c).length) l.lightScenes = c; else delete l.lightScenes; }, msg);
 
 /* ---------- riepilogo in alto ---------- */
 function riepilogo() {
@@ -29,8 +39,15 @@ function riepilogo() {
       <div class="lu1d" aria-hidden="true">${on.slice(0, 24).map(id => iconaPiccola(id)).join("")}</div>
       ${on.length ? `<button class="btn warm lu1x" data-act="lightsOff">⏻ ${t("Spegni tutto", "Turn everything off")}</button>` : ""}</div>
     ${zone.length ? `<div class="lu1z">${zone.map(a => `<button data-act="luVai" data-id="${a}"><b>${dove[a]}</b>${esc(nomeStanza(a))}</button>`).join("")}</div>` : ""}
-    ${SC.length ? `<div class="lu1s"><span class="small muted">🎬 ${t("Scene", "Scenes")}</span>${SC.map(id => `<button class="btn sm" data-act="toggle" data-id="${id}">${esc(nm(id))}</button>`).join("")}</div>` : ""}
+    ${UI.edit ? sceneEd(SC) : SC.length ? `<div class="lu1s"><span class="small muted">🎬 ${t("Scene", "Scenes")}</span>${SC.map(id => `<button class="btn sm" data-act="toggle" data-id="${id}">${esc(nm(id))}</button>`).join("")}</div>` : ""}
   </section>`;
+}
+/* ✏️ Modifica: ✕ toglie una scena dal riepilogo, ＋ ne aggiunge una qualsiasi, ↩︎ rimette quelle tolte */
+function sceneEd(SC) {
+  const via = (scConf().hide || []).filter(id => S[id]);
+  return `<div class="lu1s"><span class="small muted">🎬 ${t("Scene", "Scenes")}</span>${SC.map(id => `<button class="btn sm" data-act="luScDel" data-id="${id}" title="${t("Togli dal riepilogo", "Remove from the summary")}">${esc(nm(id))} ✕</button>`).join("")}
+      <button class="btn sm" data-act="luScAdd">＋ ${t("Scena", "Scene")}</button>${via.map(id => `<button class="btn sm" data-act="luScShow" data-id="${id}">↩︎ ${esc(nm(id))}</button>`).join("")}</div>
+    <p class="small muted" style="margin:8px 0 0">${t("Le scene che comandano luci le trovo da sole (anche dal nome: «Relax», «Cena», «Film»…). ✕ toglie quelle che non c'entrano, ＋ aggiunge qualsiasi scena.", "Scenes that control lights are found automatically (also by name: «Relax», «Dinner», «Movie»…). ✕ removes the wrong ones, ＋ adds any scene.")}</p>`;
 }
 
 /* ---------- tessere, con i comandi di modifica ---------- */
@@ -93,6 +110,11 @@ Object.assign(ACT, {
   luStanza: el => { const a = el.dataset.id, on = el.dataset.v === "1";
     const L = a === "#g" ? luciPerStanza().gruppi : luciContate(a === "_" ? null : a).filter(id => a !== "_" || !areaOf(id) || !AREAS[areaOf(id)]);
     const da = L.filter(id => ok(id) && (S[id].state === "on") !== on); if (da.length) luciComando(da, on); },
+  luScDel: el => { const id = el.dataset.id; scSet(c => { if ((c.add || []).includes(id)) c.add = c.add.filter(x => x !== id); if (sceneAuto().includes(id)) c.hide = [...new Set([...(c.hide || []), id])]; }, "✕ " + nm(id)); },
+  luScShow: el => { const id = el.dataset.id; scSet(c => { c.hide = (c.hide || []).filter(x => x !== id); }, "↩︎ " + nm(id)); },
+  luScAdd: () => scegli({ titolo: "🎬 " + t("Scena nel riepilogo delle luci", "Scene in the lights summary"), sotto: t("Qualsiasi scena di Home Assistant.", "Any Home Assistant scene."), auto: false, attuale: null,
+    filtro: id => id.startsWith("scene.") && !sceneLuce().includes(id),
+    onPick: id => id && scSet(c => { c.add = [...new Set([...(c.add || []), id])]; c.hide = (c.hide || []).filter(x => x !== id); }, "＋ " + nm(id)) }),
   luAdd: el => { Object.assign(AG, { area: el.dataset.area || "", q: "" }); openSheet(foglioAggiungi); },
   luPick: el => { const id = el.dataset.id, sw = el.dataset.v === "sw";
     cambia(l => { if (sw) l.lightSwitches = [...new Set([...(l.lightSwitches || []), id])]; mostra(l, id, { area: AG.area }); }, "＋ " + nm(id)); },
