@@ -322,7 +322,8 @@ export const HOOKS = [];
 /** nomi delle stanze scelti nella plancia */
 export function nomiStanze() { for (const a in AREAS) AREAS[a].name = LAYOUT.areaNames?.[a] || AREAS[a].nameHA || AREAS[a].name; }
 HOOKS.push(nomiStanze);
-/** registra una pagina: { title, short, icon, render, badge, order, show } */
+/** registra una pagina: { title, short, icon, render, badge, order, show, richiede }
+    richiede (facoltativo, per le pagine che compaiono solo con certi dispositivi): cosa serve, letto da «✨ Cosa puoi aggiungere» (aggiungi.js) */
 export function page(id, def) { PAGES[id] = { order: 50, show: () => true, ...def }; if (conn) render(); }
 /** scelte per la persona che sta usando la plancia (pagine e schede della Home), decise dall'amministratore */
 export const utenteCfg = () => (UI.user?.id && LAYOUT.users?.[UI.user.id]) || {};
@@ -484,6 +485,24 @@ export const FISSI = [];
 export const STRIP = [];
 /** schede della Home aggiunte dalle altre pagine: { chiave: { title(), render(), show(), cfg? } } (compaiono solo se show() è vero; cfg() facoltativo mette ⚙️ sulla scheda in ✏️ Modifica) */
 export const HOME_EXTRA = {};
+
+/* ---------- «✨ Cosa puoi aggiungere» (aggiungi.js) ----------
+   Le pagine (e le schede di HOME_EXTRA) che compaiono solo con certi dispositivi dichiarano accanto a show() cosa serve:
+   richiede: { cosa: "una frase su cosa fa", serve: "cosa serve", passi: ["passo", …], link: [[testo, indirizzo], …],
+     scegli: [azione, testo] (c'è già un'entità: si sceglie subito), anteprima: [[icona, titolo, sotto, valore, %], …] (finto aspetto),
+     manca: () => vero se manca davvero qualcosa (facoltativo: altrimenti conta show() come la vede chi non è amministratore) } */
+/** link «my» di Home Assistant: apre la pagina giusta nel Home Assistant di chi lo tocca */
+export const myHA = (dove, q) => "https://my.home-assistant.io/redirect/" + dove + "/" + (q ? "?" + new URLSearchParams(q) : "");
+/** aggiunge un'integrazione ufficiale di Home Assistant (dominio) */
+export const linkIntegrazione = dominio => myHA("config_flow_start", { domain: dominio });
+/** apre un'integrazione di terzi in HACS (fino a Home Assistant 2026.10; dalla 2026.11 si cerca nel Marketplace) */
+export const linkHacs = (owner, repository) => myHA("hacs_repository", { owner, repository, category: "integration" });
+/** riga «manca qualcosa» dentro una pagina già visibile: testo e pulsanti (scegli l'entità, apri i passi) */
+export const manca = (testo, bottoni = "") => `<div class="ag1mc"><span class="ag1mci" aria-hidden="true">＋</span><span class="tx">${testo}</span>${bottoni ? `<span class="ag1mcb">${bottoni}</span>` : ""}</div>`;
+/** pulsante che apre i passi per avere quello che serve a una pagina (richiede) */
+export const comeFare = id => `<button class="btn sm" data-act="agPassi" data-id="${id}">📋 ${t("Come fare", "How to")}</button>`;
+/** pulsante-link verso Home Assistant o un repository, in una nuova scheda */
+export const linkBtn = (testo, url, cls = "") => `<a class="btn sm ${cls}" href="${esc(url)}" target="_blank" rel="noopener">↗ ${testo}</a>`;
 function renderStrip() {
   const w = weatherEnt(), home = ents("person").filter(p => S[p].state === "home").length, L = lightsOn().length;
   const extra = STRIP.map(f => { try { return f(); } catch { return ""; } }).join("");

@@ -255,5 +255,12 @@ function pagina() {
       ${Array.isArray(LAYOUT.appliances) ? `<button class="btn sm" data-act="apAuto">✨ ${t("Torna a quelli trovati da soli", "Back to auto-detected")}</button>` : ""}</section>` : ""}
   </div>`;
 }
-page("elettrodomestici", { title: t("Elettrodomestici", "Appliances"), short: t("Elettrod.", "Appliances"), icon: "🧺", order: 32, show: () => elenco().length > 0 || isAdmin(),
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("Lavatrice, asciugatrice e lavastoviglie: se stanno andando, quando finiscono e quanto consumano.", "Washer, dryer and dishwasher: whether they're running, when they finish and how much they use."),
+  serve: t("Una presa smart che misura i consumi, oppure l'integrazione del produttore dell'elettrodomestico.", "A smart plug that measures power, or the appliance maker's integration."),
+  passi: [t("Collega l'elettrodomestico a una presa smart che misura i consumi e aggiungila a Home Assistant.", "Plug the appliance into a smart plug that measures power and add it to Home Assistant."),
+    t("Se la presa si chiama come l'elettrodomestico («Lavatrice»…) lo trovo da solo; altrimenti Elettrodomestici → ＋.", "If the plug is named after the appliance («Washer»…) I find it by myself; otherwise Appliances → ＋.")],
+  anteprima: [["🧺", t("Lavatrice", "Washer"), t("finisce tra 25 min", "done in 25 min"), "1,9 kW"]] };
+page("elettrodomestici", { richiede: RICHIEDE, title: t("Elettrodomestici", "Appliances"), short: t("Elettrod.", "Appliances"), icon: "🧺", order: 32, show: () => elenco().length > 0 || isAdmin(),
   badge: () => elenco().some(a => stato(a).k === "done"), render: pagina });

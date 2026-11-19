@@ -20,7 +20,7 @@
    Umidità     %          40–60           35–65           30–70        fuori da 30–70     muffe e acari sopra, aria secca sotto
    Il giudizio della stanza è quello della misura peggiore. */
 import { S, AREAS, FLOORS, REG, DEVICES, ACT, CHG, LAYOUT, UI, VISTE, HOME_EXTRA, PAGES, t, LOC, esc, nm, nmHA, ok, attr, unit, fnum, ents, allEnts, areaOf, areasSorted,
-  deviceClass, card, page, svc, toast, openSheet, closeSheet, render, isAdmin, ws, cached, sGet, sSet, utenteCfg, openings, isOn, durata, shortName } from "../core.js";
+  deviceClass, card, page, svc, toast, openSheet, closeSheet, render, isAdmin, ws, cached, sGet, sSet, utenteCfg, openings, isOn, durata, shortName, myHA } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 import { grafico, periodi, FASCE } from "../grafici.js";
 
@@ -606,6 +606,11 @@ VISTE.ariaStanza = a => { if (!pagAttiva()) return ""; const M = perStanza()[a];
 /** purificatori e umidificatori della pagina (non si ripetono in Clima e in Prese) */
 VISTE.ariaDisp = () => pagAttiva() ? new Set(dispositivi()) : new Set();
 
-page("aria", { title: t("Qualità dell'aria", "Air quality"), short: t("Aria", "Air"), icon: "🍃", order: 22, editable: true,
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("La qualità dell'aria stanza per stanza (CO₂, polveri, umidità…), con i consigli e i purificatori.", "Air quality room by room (CO₂, particles, humidity…), with tips and purifiers."),
+  serve: t("Un sensore della qualità dell'aria (CO₂, PM2,5, VOC…) oppure un purificatore o un (de)umidificatore.", "An air quality sensor (CO₂, PM2.5, VOC…) or a purifier or (de)humidifier."),
+  passi: [t("Impostazioni → Dispositivi e servizi → ＋ Aggiungi integrazione: cerca la marca o il sistema del dispositivo e segui i passi.", "Settings → Devices & services → ＋ Add integration: search for the device's brand or system and follow the steps.")], link: [[t("Aggiungi un'integrazione", "Add an integration"), myHA("integrations")]], scegli: ["arSAdd", t("Ce l'ho già: scegli il sensore", "I have one: pick the sensor")] };
+page("aria", { richiede: RICHIEDE, title: t("Qualità dell'aria", "Air quality"), short: t("Aria", "Air"), icon: "🍃", order: 22, editable: true,
   show: () => sensori().some(s => !s.fuori) || dispositivi().length > 0,
   badge: () => { try { return scarseDaTempo().length > 0; } catch { return false; } }, render: pagina });

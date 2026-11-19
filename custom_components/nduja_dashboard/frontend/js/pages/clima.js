@@ -1,6 +1,6 @@
 /* Clima: termostati e condizionatori per stanza (animati o con le tue immagini, vedi climadisegni.js), più temperatura e umidità di ogni stanza.
    Purificatori, deumidificatori e umidificatori stanno nella pagina Aria, se c'è. */
-import { S, AREAS, UI, VISTE, t, esc, fnum, ok, ents, areaOf, areasSorted, roomTemp, roomHum, climateCard, entityRow, card, empty, page, isAdmin } from "../core.js";
+import { S, AREAS, UI, VISTE, t, esc, fnum, ok, ents, areaOf, areasSorted, roomTemp, roomHum, climateCard, entityRow, card, empty, page, isAdmin, myHA } from "../core.js";
 import { item, addBtn } from "../edit.js";
 
 /* la caldaia ha la sua pagina (pages/caldaia.js): se non la trovo da sola, in ✏️ la si aggiunge da qui */
@@ -22,4 +22,10 @@ function pagina() {
   </div>`;
 }
 const attivi = () => ents("climate", id => ok(id) && S[id].state !== "off").length;
-page("clima", { title: t("Clima", "Climate"), short: t("Clima", "Climate"), icon: "🌡️", order: 20, editable: true, show: () => isAdmin() || ents("climate").length > 0 || ents("sensor", id => S[id].attributes.device_class === "temperature").length > 0, badge: () => attivi() > 0, render: pagina });
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("Termostati e condizionatori con la temperatura di ogni stanza, animati o con le tue immagini.", "Thermostats and air conditioners with each room's temperature, animated or with your own images."),
+  serve: t("Un termostato o un climatizzatore in Home Assistant, oppure un sensore di temperatura.", "A thermostat or air conditioner in Home Assistant, or a temperature sensor."),
+  passi: [t("Impostazioni → Dispositivi e servizi → ＋ Aggiungi integrazione: cerca la marca o il sistema del dispositivo e segui i passi.", "Settings → Devices & services → ＋ Add integration: search for the device's brand or system and follow the steps."), t("Ventilatori e umidificatori: Clima → ✏️ Modifica → ＋.", "Fans and humidifiers: Climate → ✏️ Edit → ＋.")],
+  link: [[t("Aggiungi un'integrazione", "Add an integration"), myHA("integrations")]] };
+page("clima", { richiede: RICHIEDE, title: t("Clima", "Climate"), short: t("Clima", "Climate"), icon: "🌡️", order: 20, editable: true, show: () => isAdmin() || ents("climate").length > 0 || ents("sensor", id => S[id].attributes.device_class === "temperature").length > 0, badge: () => attivi() > 0, render: pagina });

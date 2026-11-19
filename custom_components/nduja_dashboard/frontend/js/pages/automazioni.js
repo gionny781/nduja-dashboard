@@ -4,7 +4,7 @@
    QUANDO (ora, un dispositivo cambia, alba/tramonto, qualcuno arriva o esce) → SOLO SE (facoltativo) → ALLORA (azioni).
    Le automazioni create qui si salvano in Home Assistant (automations.yaml) e si possono modificare anche qui. */
 import { S, ACT, CHG, LAYOUT, UI, HOME_EXTRA, t, esc, nm, ok, attr, ents, allEnts, ago, hhmm, card, empty, page, svc, toast, openSheet, closeSheet,
-  render, isAdmin, api, apriHA, ws, cached, LOC, etichettaNduja } from "../core.js";
+  render, isAdmin, api, apriHA, ws, cached, LOC, etichettaNduja, myHA } from "../core.js";
 import { casa, casaCambia } from "../casa.js";
 import { scegli, cambia } from "../edit.js";
 
@@ -259,4 +259,10 @@ Object.assign(ACT, {
   },
 });
 
-page("automazioni", { title: t("Automazioni", "Automations"), short: t("Automaz.", "Automations"), icon: "🔁", order: 80, show: () => allEnts("automation").length > 0 || isAdmin(), render: pagina });
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("Le automazioni come tasti, con la pausa, e un modo semplice per crearne di nuove.", "Automations as buttons, with a pause, and a simple way to create new ones."),
+  serve: t("Almeno un'automazione in Home Assistant: la puoi creare anche dalla plancia.", "At least one automation in Home Assistant: you can create it from the dashboard too."),
+  passi: [t("Apri Automazioni e premi ＋, oppure creala in Impostazioni → Automazioni e scene.", "Open Automations and press ＋, or create it in Settings → Automations & scenes.")],
+  link: [[t("Automazioni", "Automations"), myHA("automations")]] };
+page("automazioni", { richiede: RICHIEDE, title: t("Automazioni", "Automations"), short: t("Automaz.", "Automations"), icon: "🔁", order: 80, show: () => allEnts("automation").length > 0 || isAdmin(), render: pagina });

@@ -515,6 +515,8 @@ if (!localStorage.getItem("mockNoStazione")) Object.assign(ENT, {
   ENT["binary_sensor.meteoalarm"] = st(al === "no" ? "off" : "on", { friendly_name: "Meteoalarm", attribution: "Information provided by MeteoAlarm", ...(al === "no" ? {} : { awareness_level: L[0], awareness_type: L[1], headline: L[2], description: L[3],
     event: L[2], severity: L[0].split("; ")[2], certainty: "Likely", onset: iso(Date.now() - 2 * h), effective: iso(Date.now() - 3 * h), expires: iso(Date.now() + 20 * h), sender_name: "Servizio meteo di prova" }) }); }
 if (!localStorage.getItem("mockNoRadar")) ENT["camera.radar_pioggia"] = st("idle", { friendly_name: "Radar pioggia", entity_picture: "/tools/mock/radar-demo.svg?token=finto", supported_features: 0 });
+/* LS mockVia = espressione regolare: toglie tutte le entità finte il cui id le somiglia (es. "^sensor\\.f1_|rain_bird"), per provare «Cosa puoi aggiungere» (0.7.49) */
+{ const v = localStorage.getItem("mockVia"); if (v) { const re = new RegExp(v); for (const id of Object.keys(ENT)) if (re.test(id)) delete ENT[id]; } }
 /* LS mockEnt = { entity_id: [stato, {attributi}] | null (la toglie) } cambia gli stati finti; "@+5h" / "@-30m" negli attributi = adesso + 5 ore / − 30 minuti */
 for (const [id, v] of Object.entries(JSON.parse(localStorage.getItem("mockEnt") || "{}"))) {
   if (!v) { delete ENT[id]; continue; }

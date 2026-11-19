@@ -623,7 +623,13 @@ function apriDaLink() {
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") apriDaLink(); });
 ready.then(apriDaLink).catch(() => {});
 
-page("scadenze", { title: t("Scadenze", "Deadlines"), short: t("Scadenze", "Deadlines"), icon: "⏰", order: 40.6,
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("Bollette, revisione, assicurazione e compleanni, con i promemoria sul telefono.", "Bills, car service, insurance and birthdays, with phone reminders."),
+  serve: t("Una lista «Scadenze» in Home Assistant (Local To-do): la plancia la crea per te.", "A «Deadlines» list in Home Assistant (Local To-do): the dashboard creates it for you."),
+  passi: [t("Premi «Crea la lista Scadenze» qui sotto, oppure aprila e sceglila con ✏️.", "Press «Create the Deadlines list» below, or open the page and pick it with ✏️.")],
+  scegli: ["scCrea", t("Crea la lista Scadenze", "Create the Deadlines list")] };
+page("scadenze", { richiede: RICHIEDE, title: t("Scadenze", "Deadlines"), short: t("Scadenze", "Deadlines"), icon: "⏰", order: 40.6,
   show: () => !!lista() || isAdmin(),
   badge: () => daFare().some(x => gruppo(x) === "scadute"),
   render: pagina });

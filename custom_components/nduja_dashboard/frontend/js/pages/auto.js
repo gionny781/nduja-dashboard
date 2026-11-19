@@ -3,7 +3,7 @@
    Tutto viene dal dispositivo dell'auto: batteria, autonomia, ricarica, clima, serrature, posizione e comandi.
    La foto è quella dell'integrazione; se non c'è, la cerco su Wikipedia con marca e modello. */
 import { S, REG, DEVICES, ACT, CHG, LAYOUT, UI, STRIP, HOME_EXTRA, DEFAULT_OFF, t, LOC, esc, fnum, nm, ok, val, attr, unit, W, card, empty, page,
-  svc, toast, go, isAdmin, shortName, deviceClass, km, ago, sGet, sSet, render, openSheet, closeSheet, sicuro } from "../core.js";
+  svc, toast, go, isAdmin, shortName, deviceClass, km, ago, sGet, sSet, render, openSheet, closeSheet, sicuro, myHA, manca } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 
 /* integrazioni delle auto più diffuse (dominio della piattaforma) */
@@ -176,6 +176,19 @@ function batteria(r, d) {
     <div class="car-bar"><i style="width:${Math.max(2, b || 0)}%;background:${col}" class="${ric ? "anim" : ""}"></i>${lim != null ? `<u style="left:${lim}%" title="${t("Limite", "Limit")} ${Math.round(lim)}%"></u>` : ""}</div>
   </div>`;
 }
+/* sensori importanti che non ho trovato (solo per l'amministratore): una riga con i pulsanti per sceglierli;
+   «🚫 Nessuno» nella scelta vuol dire «l'auto non ce l'ha» e la riga sparisce */
+function mancanti(d, r) {
+  if (!isAdmin()) return "";
+  const no = conf(d).sensori || {}, M = [
+    ["batt", t("batteria", "battery")],
+    ["statoRic", t("stato della ricarica", "charging state")],
+    ["pos", t("posizione", "location")],
+  ].filter(([k]) => !r[k] && no[k] !== "none" && !(k === "statoRic" && r.spina));
+  if (!M.length) return "";
+  return manca(t("Non ho trovato: ", "Not found: ") + M.map(([, n]) => n).join(", ") + t(". Se l'auto li ha, scegli il sensore; se non li ha, scegli «🚫 Nessuno» e questa riga sparisce.", ". If the car has them, pick the sensor; if it doesn't, pick «🚫 None» and this line goes away."),
+    M.map(([k, n]) => `<button class="btn sm" data-act="carRuolo" data-id="${d}" data-k="${k}">🔎 ${n[0].toUpperCase() + n.slice(1)}</button>`).join(""));
+}
 function scheda(d) {
   const r = ruoli(d), c = comandi(r, d), pos = dove(r), ric = inRicarica(r), sr = statoRicarica(r), G = conf(d).noGomme ? [] : r.gomme;
   const serrata = c.serr.length ? c.serr.every(x => S[x].state === "locked") : null;
@@ -202,6 +215,7 @@ function scheda(d) {
           ${serrata != null ? chip(serrata ? "🔒" : "🔓", serrata ? t("Chiusa", "Locked") : t("Aperta", "Unlocked")) : ""}
           ${climaOn ? chip("❄️", t("Clima acceso", "Climate on") + (attr(c.clima, "temperature") != null ? ` · ${fnum(attr(c.clima, "temperature"), 1)}°` : "")) : ""}
         </div>
+        ${mancanti(d, r)}
         <div class="car-cs">
           ${c.serr.length ? big("carLock", c.serr.join(","), serrata ? "🔓" : "🔒", serrata ? t("Apri", "Unlock") : t("Chiudi", "Lock"), !serrata, serrata ? "warn" : "") : ""}
           ${c.clima ? big("carClima", c.clima, "❄️", climaOn ? t("Spegni clima", "Climate off") : t("Accendi clima", "Climate on"), climaOn) : ""}
@@ -331,4 +345,12 @@ STRIP.push(() => auto().filter(pillola).map(d => {
   return `<span class="pillv" data-act="go" data-id="auto" title="${esc(nomeAuto(d))}">🚗 ${Math.round(b)}%${inRicarica(r) ? " ⚡" : ""}</span>`;
 }).join(""));
 /* la pagina c'è se c'è un'auto; per l'amministratore anche quando ha nascosto tutte quelle trovate (per poterle rimettere) */
-page("auto", { title: t("Auto", "Car"), short: "Auto", icon: "🚗", order: 33, show: () => auto().length > 0 || (isAdmin() && (LAYOUT.cars?._hide || []).some(d => DEVICES[d])), badge: () => auto().some(d => inRicarica(ruoli(d))), render: pagina });
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("La tua auto: batteria e autonomia, ricarica, clima, serrature e dov'è, con una scheda nella Home.", "Your car: battery and range, charging, climate, locks and where it is, with a Home card."),
+  serve: t("L'integrazione della tua auto in Home Assistant (Tesla, BMW, Volkswagen, Kia, Hyundai, Renault…).", "Your car's integration in Home Assistant (Tesla, BMW, Volkswagen, Kia, Hyundai, Renault…)."),
+  passi: [t("Impostazioni → Dispositivi e servizi → ＋ Aggiungi integrazione: cerca la marca dell'auto (alcune sono nel Marketplace).", "Settings → Devices & services → ＋ Add integration: search for your car's brand (some are in the Marketplace)."),
+    t("La trovo da sola quando ha la batteria e l'autonomia o la posizione; altrimenti sceglila qui sotto.", "I find it by myself when it has battery and range or location; otherwise pick it below.")],
+  link: [[t("Aggiungi un'integrazione", "Add an integration"), myHA("integrations")]], scegli: ["carAdd", t("Ce l'ho già: scegli l'auto", "I have one: pick the car")],
+  anteprima: [["🚗", "Auto", t("in carica · 312 km", "charging · 312 km"), "72%", 72]] };
+page("auto", { richiede: RICHIEDE, title: t("Auto", "Car"), short: "Auto", icon: "🚗", order: 33, show: () => auto().length > 0 || (isAdmin() && (LAYOUT.cars?._hide || []).some(d => DEVICES[d])), badge: () => auto().some(d => inRicarica(ruoli(d))), render: pagina });

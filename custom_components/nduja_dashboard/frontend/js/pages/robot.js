@@ -1,7 +1,7 @@
 /* Robot aspirapolvere: stato, batteria, mappa, comandi, pulizia per stanza, impostazioni rapide e manutenzione.
    Tutto viene dal dispositivo del robot; con ✏️ (amministratori) si scelgono, per ogni robot, in LAYOUT.vacuums[id]:
    { map: camera | "none", quick: [select], passate: 2|3 (pulizia per stanza), ricambi: % (rosso sotto), noManut: [sensori da non mostrare] } */
-import { S, REG, ACT, CHG, LAYOUT, render, openSheet, UI, t, esc, nm, ok, val, attr, ents, card, empty, page, svc, ws, cached, toast, isAdmin, shortName, deviceClass, DEFAULT_OFF } from "../core.js";
+import { S, REG, ACT, CHG, LAYOUT, render, openSheet, UI, t, esc, nm, ok, val, attr, ents, card, empty, page, svc, ws, cached, toast, isAdmin, shortName, deviceClass, DEFAULT_OFF, myHA } from "../core.js";
 import { item, addBtn, scegli, cambia } from "../edit.js";
 
 const conf = id => LAYOUT.vacuums?.[id] || {};
@@ -147,4 +147,10 @@ function pagina() {
   return `<div class="g g3">${V.map(id => item(id, robot(id))).join("")}
     ${!V.length ? card("🤖 " + t("Robot", "Vacuums"), empty(t("Nessun robot aspirapolvere.", "No robot vacuum.")) + addBtn(["vacuum"], { big: true }), { cls: "span3" }) : UI.edit ? `<section class="card span3">${addBtn(["vacuum"], { big: true })}</section>` : ""}</div>`;
 }
-page("robot", { title: t("Robot", "Vacuum"), short: "Robot", icon: "🤖", order: 35, editable: true, show: () => ents("vacuum").length > 0, badge: () => ents("vacuum").some(id => S[id].state === "cleaning" || S[id].state === "error"), render: pagina });
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("Il robot aspirapolvere: avvia, ferma, rimanda alla base, stanze, mappa e ricambi.", "Your robot vacuum: start, stop, send home, rooms, map and parts."),
+  serve: t("Un robot aspirapolvere in Home Assistant (per esempio Roborock o Dreame).", "A robot vacuum in Home Assistant (for example Roborock or Dreame)."),
+  passi: [t("Impostazioni → Dispositivi e servizi → ＋ Aggiungi integrazione: cerca la marca o il sistema del dispositivo e segui i passi.", "Settings → Devices & services → ＋ Add integration: search for the device's brand or system and follow the steps.")], link: [[t("Aggiungi un'integrazione", "Add an integration"), myHA("integrations")]],
+  anteprima: [["🤖", "Robot", t("pulisce la cucina", "cleaning the kitchen"), "81%", 81]] };
+page("robot", { richiede: RICHIEDE, title: t("Robot", "Vacuum"), short: "Robot", icon: "🤖", order: 35, editable: true, show: () => ents("vacuum").length > 0, badge: () => ents("vacuum").some(id => S[id].state === "cleaning" || S[id].state === "error"), render: pagina });

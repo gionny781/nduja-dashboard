@@ -1,7 +1,7 @@
 /* Luci: riepilogo (quante accese e dove, «Spegni tutto», scene di luce), poi le stanze per piano con le tessere grandi di luce.js.
    Con ✏️ Modifica: ＋ luci nascoste e interruttori che comandano una luce, ✕ toglie, ◀ ▶ ordine, ✏️ nome, stanza e icona. */
 import { S, AREAS, FLOORS, ACT, LAYOUT, UI, t, LOC, esc, nm, nmHA, ok, attr, ents, allEnts, areaOf, areasSorted, luci, luciContate, lightsOn, luciComando,
-  isLightGroup, isLightSwitch, membriLuce, deviceClass, lightTile, card, empty, page, isAdmin, openSheet, closeSheet, render } from "../core.js";
+  isLightGroup, isLightSwitch, membriLuce, deviceClass, lightTile, card, empty, page, isAdmin, openSheet, closeSheet, render, myHA } from "../core.js";
 import { cambia, mostra, scegli } from "../edit.js";
 import { luciPerStanza, iconaPiccola, svgLuce, iconaAuto, coloreDi } from "../luce.js";
 
@@ -131,4 +131,10 @@ ACT.edDel = el => {
   cambia(l => { l.lightSwitches = (l.lightSwitches || []).filter(x => x !== id); }, "🔌 " + nm(id) + t(" torna tra le prese", " is back in Plugs"));
 };
 
-page("luci", { title: t("Luci", "Lights"), short: t("Luci", "Lights"), icon: "💡", order: 10, editable: true, show: () => luci().length > 0 || isAdmin(), badge: () => lightsOn().length > 0, render: pagina });
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("Accendi, spegni e regola tutte le luci, stanza per stanza, con i colori e le scene.", "Turn on, off and dim every light, room by room, with colours and scenes."),
+  serve: t("Una luce in Home Assistant, oppure una presa o un interruttore che comanda una luce.", "A light in Home Assistant, or a plug or switch that drives a light."),
+  passi: [t("Impostazioni → Dispositivi e servizi → ＋ Aggiungi integrazione: cerca la marca o il sistema del dispositivo e segui i passi.", "Settings → Devices & services → ＋ Add integration: search for the device's brand or system and follow the steps."), t("Una luce attaccata a una presa o a un interruttore smart: apri Luci → ✏️ Modifica → ＋ e sceglila.", "A light on a smart plug or switch: open Lights → ✏️ Edit → ＋ and pick it.")],
+  link: [[t("Aggiungi un'integrazione", "Add an integration"), myHA("integrations")]] };
+page("luci", { richiede: RICHIEDE, title: t("Luci", "Lights"), short: t("Luci", "Lights"), icon: "💡", order: 10, editable: true, show: () => luci().length > 0 || isAdmin(), badge: () => lightsOn().length > 0, render: pagina });

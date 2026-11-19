@@ -8,7 +8,7 @@
    I circuiti della caldaia (clima che non sono il termostato di una stanza) escono dalla pagina Clima finché questa pagina
    è accesa; i termostati veri restano dove sono. In Home la scheda «Caldaia» (HOME_EXTRA). */
 import { S, REG, DEVICES, ACT, CHG, UI, LAYOUT, HOME_EXTRA, DEFAULT_OFF, VISTE, t, IT, LOC, esc, fnum, nm, nmHA, ok, val, attr, unit, card, page, svc, ws, cached,
-  toast, openSheet, closeSheet, render, isAdmin, deviceClass, domain, utenteCfg, sGet, sSet } from "../core.js";
+  toast, openSheet, closeSheet, render, isAdmin, deviceClass, domain, utenteCfg, sGet, sSet, myHA } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 import { statistiche, barre } from "../grafici.js";
 
@@ -646,5 +646,10 @@ DEFAULT_OFF.push(id => id.startsWith("climate.") && circuiti().has(id));
 /** nella pagina Clima (✏️) un pulsante per aggiungere la caldaia quando non la trovo da solo */
 VISTE.caldaiaTrovata = haCaldaia;
 
-page("caldaia", { title: t("Caldaia", "Boiler"), short: t("Caldaia", "Boiler"), icon: "🔥", order: 21, editable: true,
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("La caldaia: fiamma, pressione, acqua calda, errori e manutenzione.", "Your boiler: flame, pressure, hot water, errors and service."),
+  serve: t("La caldaia collegata a Home Assistant: integrazione della marca (Ariston, Vaillant, Viessmann, Bosch…), OpenTherm o ebusd, oppure uno scaldabagno.", "Your boiler connected to Home Assistant: its brand's integration (Ariston, Vaillant, Viessmann, Bosch…), OpenTherm or ebusd, or a water heater."),
+  passi: [t("Impostazioni → Dispositivi e servizi → ＋ Aggiungi integrazione: cerca la marca o il sistema del dispositivo e segui i passi.", "Settings → Devices & services → ＋ Add integration: search for the device's brand or system and follow the steps.")], link: [[t("Aggiungi un'integrazione", "Add an integration"), myHA("integrations")]], scegli: ["cdAggiungi", t("Ce l'ho già: scegli la caldaia", "I have one: pick the boiler")] };
+page("caldaia", { richiede: RICHIEDE, title: t("Caldaia", "Boiler"), short: t("Caldaia", "Boiler"), icon: "🔥", order: 21, editable: true,
   show: () => haCaldaia() || (conf().extra || []).length > 0, badge: () => { try { const p = problemi(); return p.err.length > 0 || p.press || p.scaduta; } catch { return false; } }, render: pagina });

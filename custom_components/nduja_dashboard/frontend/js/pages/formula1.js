@@ -9,7 +9,7 @@
    In Home la scheda «Formula 1» (HOME_EXTRA). Facoltativa l'automazione «'Nduja · Formula 1»: «Tra 15 minuti partono…»
    (i minuti si scelgono; si riscrive da sola quando cambiano fonti, sensori o minuti). */
 import { S, REG, ACT, CHG, UI, LAYOUT, HOME_EXTRA, t, LOC, esc, nmHA, ok, card, page, render, isAdmin,
-  openSheet, closeSheet, toast, cached, svcResp, ws, api, attr, etichettaNduja } from "../core.js";
+  openSheet, closeSheet, toast, cached, svcResp, ws, api, attr, etichettaNduja, linkHacs } from "../core.js";
 import { scegli, cambia } from "../edit.js";
 
 /* ================= valori ================= */
@@ -562,5 +562,15 @@ Object.assign(ACT, {
   f1nOff: async () => { try { await api("DELETE", "/api/config/automation/config/" + AUT); } catch {} await salva(f => { delete f.notif; }); closeSheet(); toast(t("Avvisi della F1 spenti", "F1 alerts off")); },
 });
 
-page("formula1", { title: "Formula 1", short: "F1", icon: "🏎️", order: 44, editable: true,
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("Il prossimo Gran Premio con gli orari, la gara in diretta, le classifiche e l'ultima gara.", "The next Grand Prix with session times, the live race, the standings and the last race."),
+  serve: t("F1 Sensor dal Marketplace, oppure un calendario della Formula 1 o Team Tracker (racing).", "F1 Sensor from the Marketplace, or a Formula 1 calendar or Team Tracker (racing)."),
+  passi: [t("Impostazioni → Marketplace: cerca «F1 Sensor», scaricalo e riavvia Home Assistant (fino alla 2026.10: in HACS).", "Settings → Marketplace: search «F1 Sensor», download it and restart Home Assistant (up to 2026.10: in HACS)."),
+    t("Impostazioni → Dispositivi e servizi → ＋ Aggiungi integrazione → «F1 Sensor» (per la diretta attiva anche i dati live).", "Settings → Devices & services → ＋ Add integration → «F1 Sensor» (turn on live data for the live part)."),
+    t("Hai già un calendario con le gare? Sceglilo qui sotto.", "Already have a calendar with the races? Pick it below.")],
+  link: [[t("F1 Sensor in HACS", "F1 Sensor in HACS"), linkHacs("Nicxe", "f1_sensor")], [t("Guida di F1 Sensor", "F1 Sensor guide"), DOC]],
+  scegli: ["f1Add", t("Scegli un calendario o un sensore", "Pick a calendar or a sensor")],
+  anteprima: [["🏁", t("Gran Premio", "Grand Prix"), t("qualifiche tra 2 h · gara domani", "qualifying in 2 h · race tomorrow")]] };
+page("formula1", { richiede: RICHIEDE, title: "Formula 1", short: "F1", icon: "🏎️", order: 44, editable: true,
   show: () => fonti().trovato, badge: () => { try { return dati().live; } catch { return false; } }, render: pagina });

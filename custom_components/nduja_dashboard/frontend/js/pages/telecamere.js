@@ -4,7 +4,7 @@
    flusso della diretta e dell'anteprima (con il metodo di ognuno) e 🗂 Gruppi (schede separate, facoltative).
    Tutto si salva nel layout (LAYOUT.telecamere, LAYOUT.camOrder, names, rooms): vale su tutti i dispositivi. */
 import { S, REG, ACT, CHG, UI, AREAS, FLOORS, LAYOUT, t, LOC, esc, nm, nmHA, ok, attr, card, empty, page, render, sGet, sSet, DEFAULT_OFF,
-  openSheet, closeSheet, cached, ws, areaOf, areasSorted, excluded, defaultOff } from "../core.js";
+  openSheet, closeSheet, cached, ws, areaOf, areasSorted, excluded, defaultOff, myHA, linkIntegrazione } from "../core.js";
 import { cambia, scegli, mostra } from "../edit.js";
 import { anteprima, telecamere, flussi, proposta, gruppiCam, gruppoDi, padreDi, fotoCam, METODI, NOME_METODO } from "../video.js";
 
@@ -206,5 +206,10 @@ Object.assign(ACT, {
 });
 CHG.camGRen = el => { const id = el.dataset.id, n = el.value.trim(); if (!n) { render(); return; } salvaCam(C => { const g = C.gruppi.find(x => x.id === id); if (g) g.nome = n; }); };
 
-page("telecamere", { title: t("Telecamere", "Cameras"), short: t("Telecam.", "Cameras"), icon: "📷", order: 50, editable: true, show: () => telecamere().length > 0 || isAdminSafe(), render: pagina });
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("Le telecamere in diretta, a gruppi, con la scelta del flusso.", "Your cameras live, in groups, with the stream you choose."),
+  serve: t("Una telecamera in Home Assistant (con l'integrazione della marca o ONVIF).", "A camera in Home Assistant (with its brand's integration or ONVIF)."),
+  passi: [t("Impostazioni → Dispositivi e servizi → ＋ Aggiungi integrazione: cerca la marca o il sistema del dispositivo e segui i passi.", "Settings → Devices & services → ＋ Add integration: search for the device's brand or system and follow the steps.")], link: [[t("Aggiungi un'integrazione", "Add an integration"), myHA("integrations")], [t("Aggiungi una telecamera ONVIF", "Add an ONVIF camera"), linkIntegrazione("onvif")]] };
+page("telecamere", { richiede: RICHIEDE, title: t("Telecamere", "Cameras"), short: t("Telecam.", "Cameras"), icon: "📷", order: 50, editable: true, show: () => telecamere().length > 0 || isAdminSafe(), render: pagina });
 function isAdminSafe() { try { return UI.user?.is_admin && Object.keys(S).some(id => id.startsWith("camera.")); } catch { return false; } }

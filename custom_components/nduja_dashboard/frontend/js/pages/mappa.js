@@ -2,7 +2,7 @@
    clima, movimento e temperatura. Si costruisce da sola dalle aree; con ✏️ Modifica sposti e ridimensioni
    le stanze (frecce e ＋/−) e puoi mettere sotto la piantina vera (un'immagine in /local/…). */
 import { S, AREAS, FLOORS, ACT, CHG, LAYOUT, UI, t, esc, fnum, ok, isOn, inArea, areaOf, areasSorted, roomTemp, roomHum, lightsOn, luciContate, luciComando, isLightSwitch,
-  deviceClass, svc, toast, card, empty, page, sGet, sSet, render, isAdmin, attr, openSheet, closeSheet, nm, moreInfo, VISTE } from "../core.js";
+  deviceClass, svc, toast, card, empty, page, sGet, sSet, render, isAdmin, attr, openSheet, closeSheet, nm, moreInfo, VISTE, myHA, manca, linkBtn, comeFare } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 import { elettroMappa } from "./elettrodomestici.js";
 import { vistaClima, momentoClima } from "../climadisegni.js";
@@ -114,7 +114,7 @@ function stanza(a, p, f) {
 
 function pagina() {
   const P = piani();
-  if (!P.length) return `<div class="g">${card("🗺️ " + t("Mappa", "Map"), empty(t("Crea le aree in Home Assistant (Impostazioni → Aree) e assegna i dispositivi: la mappa si disegna da sola.", "Create areas in Home Assistant (Settings → Areas) and assign devices: the map draws itself.")))}</div>`;
+  if (!P.length) return `<div class="g">${card("🗺️ " + t("Mappa", "Map"), empty(t("Crea le aree in Home Assistant (Impostazioni → Aree) e assegna i dispositivi: la mappa si disegna da sola.", "Create areas in Home Assistant (Settings → Areas) and assign devices: the map draws itself.")) + manca(t("Servono le aree di Home Assistant, una per stanza.", "It needs Home Assistant areas, one per room."), linkBtn(t("Aree di Home Assistant", "Home Assistant areas"), myHA("areas"), "pri") + comeFare("mappa")))}</div>`;
   const cur = P.find(p => p.f === sGet("mapFloor")) || P[0], pos = posizioni(cur.f, cur.stanze);
   const righe = Math.max(4, ...Object.values(pos).flatMap(p => pezzi(p).map(r => r.y + r.h))), img = LAYOUT.map?.[cur.f]?.img;
   return `<div class="g"><section class="card mp1">
@@ -224,4 +224,11 @@ CHG.mpShowK = el => { const k = el.dataset.k, on = el.checked;
   cambia(l => { const m = { ...(l.mapShow || {}) }; if (on) delete m[k]; else m[k] = false; if (Object.keys(m).length) l.mapShow = m; else delete l.mapShow; }, (on ? "👁 " : "🙈 ") + (MOSTRA().find(x => x[0] === k)?.[2] || "")); };
 CHG.mpImgSet = el => { const f = el.dataset.v, v = el.value.trim(); cambia(l => { l.map = { ...(l.map || {}) }; l.map[f] = { ...(l.map[f] || {}) }; if (v) l.map[f].img = v; else delete l.map[f].img; }, "🖼️ " + t("Salvato", "Saved")); };
 
-page("mappa", { title: t("Mappa", "Map"), short: t("Mappa", "Map"), icon: "🗺️", order: 5, editable: true, show: () => Object.keys(AREAS).length > 0 || isAdmin(), render: pagina });
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("La pianta della casa disegnata dalle stanze, con luci, temperatura e finestre aperte in ogni stanza.", "The floor plan drawn from your rooms, with lights, temperature and open windows in each room."),
+  serve: t("Le aree di Home Assistant (le stanze), con i dispositivi assegnati.", "Home Assistant areas (your rooms), with devices assigned."),
+  passi: [t("Impostazioni → Aree, etichette e zone → Crea area: una per stanza (e i piani, se la casa ne ha più d'uno).", "Settings → Areas, labels & zones → Create area: one per room (and the floors, if your home has more than one)."),
+    t("Apri ogni dispositivo e scegli la sua area: la mappa si disegna da sola.", "Open each device and choose its area: the map draws itself.")],
+  link: [[t("Aree di Home Assistant", "Home Assistant areas"), myHA("areas")]] };
+page("mappa", { richiede: RICHIEDE, title: t("Mappa", "Map"), short: t("Mappa", "Map"), icon: "🗺️", order: 5, editable: true, show: () => Object.keys(AREAS).length > 0 || isAdmin(), render: pagina });

@@ -65,7 +65,7 @@ it builds itself from your **areas, floors and devices**.
 - **Setup wizard** (⚙️ Settings, admins only): choose rooms and their order, lights, thermostats, the temperature sensor of each room, devices, people, weather, scenes and pages. Choices are saved in Home Assistant and apply to every device.
 - **🩺 Check Home Assistant** (⚙️ Settings, admins only): a plain-language check of rooms, floors, Energy, weather, people, devices that don't respond and the Home Assistant version, with a button to the right Home Assistant screen for each ⚠️. It only reads, it never changes anything.
 - If the dashboard can't connect or start, it shows **what to check**, «Try again» and the details for support instead of a blank page.
-- Pages show up only when you have the matching devices.
+- Pages show up only when you have the matching devices. **✨ What you can add** (⚙️ Settings, admins; also at the bottom of Home in ✏️ Edit) lists the pages and cards you don't have yet: what they do, what they need, the steps with Home Assistant links and, if the device is already there but wasn't recognised, a button to pick it. «Not interested» hides an item. Pages already shown but missing something (e.g. a car without the charging sensor) say what's missing right there.
 
 ### Installation
 **Home Assistant 2026.11 or newer (Marketplace):**
@@ -130,7 +130,7 @@ si costruisce da sola dalle tue **aree, piani e dispositivi**.
 - **Wizard di configurazione** (⚙️ Impostazioni, solo amministratori): scegli stanze e ordine, luci, termostati, il sensore di temperatura di ogni stanza, dispositivi, persone, meteo, scene e pagine. Le scelte si salvano in Home Assistant e valgono su tutti i dispositivi.
 - **🩺 Controlla Home Assistant** (⚙️ Impostazioni, solo amministratori): un controllo in parole semplici di stanze, piani, Energia, meteo, persone, dispositivi che non rispondono e versione di Home Assistant, con un pulsante che per ogni ⚠️ apre la schermata giusta di Home Assistant. Legge soltanto, non cambia niente.
 - Se la plancia non si collega o non parte, al posto della pagina bianca mostra **cosa controllare**, «Riprova» e i dettagli per l'assistenza.
-- Le pagine compaiono solo se hai i dispositivi giusti.
+- Le pagine compaiono solo se hai i dispositivi giusti. **✨ Cosa puoi aggiungere** (⚙️ Impostazioni, amministratori; anche in fondo alla Home in ✏️ Modifica) elenca le pagine e le schede che non hai ancora: cosa fanno, cosa serve, i passi con i link di Home Assistant e, se il dispositivo c'è già ma non l'ho riconosciuto, il pulsante per sceglierlo. «Non mi interessa» nasconde una voce. Le pagine che ci sono ma a cui manca qualcosa (per esempio un'auto senza il sensore della ricarica) lo dicono lì dove manca.
 
 ### Installazione
 **Home Assistant 2026.11 o successivo (Marketplace):**

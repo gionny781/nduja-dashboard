@@ -5,7 +5,7 @@
    Si condividono in un tocco: la propria posizione, una foto da una telecamera di casa, una voce della lista della spesa.
    In Home: l'indicatore dei non letti in alto e la scheda «Chat» con l'ultimo messaggio (HOME_EXTRA). */
 import { S, ACT, CHG, UI, HOME_EXTRA, STRIP, t, LOC, esc, nm, attr, ok, allEnts, ents, card, page, toast, openSheet, closeSheet, render, go,
-  sicuro, ws, conn, ready, km, fnum, hhmm, ago } from "../core.js";
+  sicuro, ws, conn, ready, km, fnum, hhmm, ago, myHA } from "../core.js";
 import { telecamere as camPlancia, flussi, fotoCam } from "../video.js";
 
 const FAM = "famiglia";
@@ -506,4 +506,11 @@ STRIP.push(() => { const n = UI.page === "home" && C.stato === "ok" ? nonLetti()
 
 /* la pagina c'è quando in casa ci sono almeno due persone con un utente */
 const PAGE_OK = () => (C.stato === "ok" ? C.membri.length : allEnts("person", id => !!attr(id, "user_id")).length) >= 2;
-page("chat", { title: t("Chat", "Chat"), short: "Chat", icon: "💬", order: 43, show: PAGE_OK, badge: () => nonLetti() > 0, render: pagina, after: dopo });
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("La chat di famiglia: messaggi, foto e posizione tra le persone di casa.", "The family chat: messages, photos and location between the people at home."),
+  serve: t("Almeno due persone di Home Assistant che possono accedere, ognuna con il suo utente.", "At least two Home Assistant people who can log in, each with their own user."),
+  passi: [t("Impostazioni → Persone: aggiungi le persone di casa.", "Settings → People: add the people at home."),
+    t("In ogni persona attiva «Consenti l'accesso»: diventa un utente con nome e password.", "In each person turn on «Allow login»: they become a user with a name and password.")],
+  link: [[t("Persone", "People"), myHA("people")]] };
+page("chat", { richiede: RICHIEDE, title: t("Chat", "Chat"), short: "Chat", icon: "💬", order: 43, show: PAGE_OK, badge: () => nonLetti() > 0, render: pagina, after: dopo });

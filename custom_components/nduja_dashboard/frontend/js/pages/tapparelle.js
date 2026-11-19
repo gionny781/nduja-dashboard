@@ -5,7 +5,7 @@
    Scelte in LAYOUT.tapparelle = { extra:[], tolte:[], lati:{id:"n|e|s|o"}, aspetto:{id:tipo}, finestre:{id:sensore|"none"},
    meta: %, scenari:[{ id, nome, icona, passi:[{ dove, cosa:"su|giu|pos", pos }] }], auto:{ sole, caldo (rot = casa girata di ± gradi), finestra }, firme:{ id: impronta } } */
 import { S, AREAS, FLOORS, REG, ACT, CHG, LAYOUT, UI, VISTE, HOME_EXTRA, HOOKS, t, LOC, esc, nm, nmHA, ok, attr, ents, allEnts, areaOf, areasSorted,
-  deviceClass, card, page, svc, toast, openSheet, closeSheet, render, isAdmin, api, etichettaNduja, sGet, sSet, go, weatherEnt, unit, fnum, pronto } from "../core.js";
+  deviceClass, card, page, svc, toast, openSheet, closeSheet, render, isAdmin, api, etichettaNduja, sGet, sSet, go, weatherEnt, unit, fnum, pronto, myHA } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 import { accessi } from "./sicurezza.js";
 import { sensore } from "./meteo.js";
@@ -637,5 +637,12 @@ document.addEventListener("keydown", e => {
   else if (e.key === "Home") { e.preventDefault(); muovi(id, "su"); } else if (e.key === "End") { e.preventDefault(); muovi(id, "giu"); }
 });
 
-page("tapparelle", { title: t("Tapparelle e tende", "Covers"), short: t("Tapparelle", "Covers"), icon: "🪟", order: 25, editable: true,
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("Tapparelle, tende e veneziane stanza per stanza, con gli scenari, il sole e il caldo.", "Shutters, curtains and blinds room by room, with scenes, sun and heat."),
+  serve: t("Una tapparella o una tenda motorizzata in Home Assistant.", "A motorised shutter or curtain in Home Assistant."),
+  passi: [t("Aggiungi l'integrazione del motore o del modulo che la comanda: Impostazioni → Dispositivi e servizi → ＋ Aggiungi integrazione.", "Add the integration of the motor or module that drives it: Settings → Devices & services → ＋ Add integration.")],
+  link: [[t("Aggiungi un'integrazione", "Add an integration"), myHA("integrations")]], scegli: ["tpAdd", t("Ce l'ho già: sceglila", "I have one: pick it")],
+  anteprima: [["🪟", t("Soggiorno", "Living room"), t("aperta", "open"), "60%", 60]] };
+page("tapparelle", { richiede: RICHIEDE, title: t("Tapparelle e tende", "Covers"), short: t("Tapparelle", "Covers"), icon: "🪟", order: 25, editable: true,
   show: () => tutte().length > 0, badge: () => tutte().some(muove), render: pagina });

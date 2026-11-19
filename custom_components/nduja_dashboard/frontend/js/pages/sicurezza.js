@@ -2,7 +2,7 @@
    telecamere (anteprime, diretta al tocco col lettore di video.js), porte e finestre aperte, fumo, gas, acqua, monossido, movimento. I sensori di pericolo accesi finiscono anche negli Avvisi della Home.
    ⚙️ (amministratori): LAYOUT.sicurezza = { noPericoli:[] (trovati da soli ma senza allarme), pericoli:[] (aggiunti a mano), movimenti: quanti (0 = scheda nascosta), camere: "no" | id di un gruppo } */
 import { S, ACT, CHG, UI, LAYOUT, HOME_EXTRA, t, LOC, esc, fnum, nm, nmHA, ok, attr, ents, isOn, ago, card, empty, page, svc, toast, openSheet, closeSheet, render,
-  deviceClass, openings, shortName, areaOf, AREAS, isAdmin, domain, sicuro, PAGES, excluded } from "../core.js";
+  deviceClass, openings, shortName, areaOf, AREAS, isAdmin, domain, sicuro, PAGES, excluded, myHA } from "../core.js";
 import { item, addBtn, scegli, cambia } from "../edit.js";
 import { anteprima, telecamere, gruppiCam, gruppoDi } from "../video.js";
 
@@ -234,7 +234,15 @@ function homeCard() {
     return `<div class="st-${st.k || "na"} ${raggiungibile(a.id) ? "" : "dis"}"><span class="aci1">${disegnoAccesso(formaDi(a), st.k)}</span><div class="tx"><b>${esc(nomeDi(a))}</b><span>${riassunto(a, st)}</span></div>${bottone(a, p)}</div>`; }).join("")}</div>`,
     { link: [t("Tutti", "All"), "sicurezza"] });
 }
-HOME_EXTRA.accessi = { title: () => t("Accessi", "Access"), render: homeCard, show: () => inHome().length > 0 };
+/* senza cancello, garage o portone la scheda non c'è: in «✨ Cosa puoi aggiungere» (aggiungi.js) spiego cosa serve; se gli accessi ci sono ma li hai tolti dalla Home è una scelta, non manca niente */
+HOME_EXTRA.accessi = { title: () => t("Accessi", "Access"), render: homeCard, show: () => inHome().length > 0,
+  richiede: { icona: "🚪", pagina: "sicurezza", manca: () => accessi().length === 0,
+    cosa: t("Cancello, cancelletto, garage e portone nella Home: un tocco per aprire, con lo stato aperto o chiuso.", "Gate, wicket, garage and front door on Home: one tap to open, with the open or closed state."),
+    serve: t("Una serratura, la cover del cancello o del garage, oppure l'interruttore (relè) che li apre.", "A lock, the gate or garage cover, or the switch (relay) that opens them."),
+    passi: [t("Se il cancello o il garage è in Home Assistant come cover o serratura, compare da solo.", "If the gate or garage is in Home Assistant as a cover or lock, it shows up by itself."),
+      t("Se lo apre un relè (interruttore, pulsante o script), sceglilo qui sotto: poi decidi il comando e l'icona.", "If a relay opens it (switch, button or script), pick it below: then choose the command and the icon.")],
+    scegli: ["acAdd", t("Scegli cosa apre", "Pick what opens it")],
+    anteprima: [["🚧", t("Cancello", "Gate"), t("chiuso", "closed"), t("Apri", "Open")]] } };
 
 /* ---------- telecamere: anteprime leggere, la diretta parte al tocco ---------- */
 /** telecamere da mostrare qui: tutte, nessuna ("no") o quelle di un gruppo della pagina Telecamere (scelta in ⚙️) */
@@ -315,6 +323,11 @@ Object.assign(ACT, {
   siRimetti: el => { const id = el.dataset.id; cambia(l => { l.exclude = (l.exclude || []).filter(x => x !== id); }, "↺ " + nm(id)); },
 });
 
-page("sicurezza", { title: t("Sicurezza", "Security"), short: t("Sicurezza", "Security"), icon: "🛡️", order: 45, editable: true,
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("Allarme, serrature, accessi, porte e finestre aperte e sensori di fumo, gas e allagamento.", "Alarm, locks, gates, open doors and windows and smoke, gas and leak sensors."),
+  serve: t("Un allarme, una serratura, sensori di porte e finestre o sensori di pericolo.", "An alarm, a lock, door and window sensors or danger sensors."),
+  passi: [t("Impostazioni → Dispositivi e servizi → ＋ Aggiungi integrazione: cerca la marca o il sistema del dispositivo e segui i passi.", "Settings → Devices & services → ＋ Add integration: search for the device's brand or system and follow the steps.")], link: [[t("Aggiungi un'integrazione", "Add an integration"), myHA("integrations")]] };
+page("sicurezza", { richiede: RICHIEDE, title: t("Sicurezza", "Security"), short: t("Sicurezza", "Security"), icon: "🛡️", order: 45, editable: true,
   show: () => ents("alarm_control_panel").length + accessi().length + openings().length > 0 || isAdmin(),
   badge: () => pericoli().length > 0 || ents("alarm_control_panel").some(id => S[id].state === "triggered"), render: pagina });

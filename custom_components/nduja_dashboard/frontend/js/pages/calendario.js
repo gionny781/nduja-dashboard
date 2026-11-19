@@ -1,5 +1,5 @@
 /* Calendario: gli eventi di oggi e dei prossimi giorni dai calendari di Home Assistant, con «＋ Evento». */
-import { S, ACT, CHG, LAYOUT, UI, t, LOC, esc, nm, ents, card, empty, page, svc, toast, openSheet, closeSheet, saveLayout, uncache, isAdmin, render, sGet, sSet } from "../core.js";
+import { S, ACT, CHG, LAYOUT, UI, t, LOC, esc, nm, ents, card, empty, page, svc, toast, openSheet, closeSheet, saveLayout, uncache, isAdmin, render, sGet, sSet, linkIntegrazione, manca, linkBtn } from "../core.js";
 import { calendari, colore, COLORI, puoScrivere, eventi, nelGiorno, ora, nomeGiorno, allDay, inizio } from "../agenda.js";
 
 /* giorni mostrati: scelta di questo dispositivo (oggi, settimana, mese) */
@@ -40,7 +40,8 @@ const oggiISO = () => new Date(Date.now() - new Date().getTimezoneOffset() * 6e4
 function nuovo() {
   const W = ents("calendar").filter(puoScrivere);
   F = F || { cal: W.find(id => calendari().includes(id)) || W[0], titolo: "", data: oggiISO(), da: "09:00", a: "10:00", tutto: false, dove: "" };
-  if (!W.length) return `<div class="sh-head"><h3>＋ ${t("Evento", "Event")}</h3><button class="x" data-act="sheetClose">×</button></div>${empty(t("Nessun calendario permette di aggiungere eventi (per esempio il calendario locale di Home Assistant o Google).", "No calendar accepts new events (e.g. Home Assistant's Local calendar or Google)."))}`;
+  if (!W.length) return `<div class="sh-head"><h3>＋ ${t("Evento", "Event")}</h3><button class="x" data-act="sheetClose">×</button></div>${empty(t("Nessun calendario permette di aggiungere eventi (per esempio il calendario locale di Home Assistant o Google).", "No calendar accepts new events (e.g. Home Assistant's Local calendar or Google)."))}
+    ${isAdmin() ? manca(t("Crea un Calendario locale in Home Assistant: compare qui e ci puoi scrivere.", "Create a Local Calendar in Home Assistant: it shows up here and you can write to it."), linkBtn(t("Crea un Calendario locale", "Create a Local Calendar"), linkIntegrazione("local_calendar"), "pri")) : ""}`;
   return `<div class="sh-head"><h3>＋ ${t("Nuovo evento", "New event")}</h3><button class="x" data-act="sheetClose">×</button></div>
     <label class="fld1"><span>${t("Titolo", "Title")}</span><input type="text" data-chg="evF" data-k="titolo" value="${esc(F.titolo)}" placeholder="${t("Dentista, cena da Caterina…", "Dentist, dinner…")}"></label>
     <label class="fld1"><span>${t("Calendario", "Calendar")}</span><select data-chg="evF" data-k="cal">${W.map(id => `<option value="${id}" ${F.cal === id ? "selected" : ""}>${esc(nm(id))}</option>`).join("")}</select></label>
@@ -96,7 +97,14 @@ Object.assign(ACT, {
   calAuto: () => salvaCal(null),
 });
 
-page("calendario", { title: t("Calendario", "Calendar"), short: t("Agenda", "Agenda"), icon: "📅", order: 40,
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("Gli impegni di casa di oggi, della settimana o del mese, e un evento nuovo in due tocchi.", "Your home's events today, this week or this month, and a new event in two taps."),
+  serve: t("Un calendario in Home Assistant (Calendario locale, Google Calendar…).", "A calendar in Home Assistant (Local Calendar, Google Calendar…)."),
+  passi: [t("Per cominciare basta un Calendario locale: Impostazioni → Dispositivi e servizi → ＋ Aggiungi integrazione → «Calendario locale».", "A Local Calendar is enough to start: Settings → Devices & services → ＋ Add integration → «Local Calendar».")],
+  link: [[t("Crea un Calendario locale", "Create a Local Calendar"), linkIntegrazione("local_calendar")], [t("Collega Google Calendar", "Connect Google Calendar"), linkIntegrazione("google")]],
+  anteprima: [["📅", t("Dentista", "Dentist"), t("domani alle 10:00", "tomorrow at 10:00")], ["🎂", t("Compleanno della nonna", "Grandma's birthday"), t("sabato", "Saturday")]] };
+page("calendario", { richiede: RICHIEDE, title: t("Calendario", "Calendar"), short: t("Agenda", "Agenda"), icon: "📅", order: 40,
   show: () => ents("calendar").length > 0,
   render: () => `<div class="g g3">${card("📅 " + t("Calendario", "Calendar"), `
       <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:6px"><div class="seg">${[[1, t("Oggi", "Today")], [7, t("Settimana", "Week")], [30, t("Mese", "Month")]].map(([v, n]) => `<button class="${V.giorni === v ? "act" : ""}" data-act="calDays" data-v="${v}">${n}</button>`).join("")}</div>

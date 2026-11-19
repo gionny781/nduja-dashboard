@@ -11,7 +11,7 @@
      perditeExtra:[id], perditeTolte:[id], prezzoAcqua: €/unità, prezzoGas: €/unità, avviso:{ on, min, portata }, inUso: minuti, mediaGiorni: giorni }
    La valuta è quella di Home Assistant; il periodo dello Storico si ricorda su ogni dispositivo (aqStor). */
 import { S, ACT, CHG, UI, LAYOUT, VISTE, HOME_EXTRA, PAGES, t, LOC, esc, fnum, nm, nmHA, ok, val, attr, unit, allEnts, deviceClass, card, page,
-  svc, ws, cached, toast, openSheet, closeSheet, render, isAdmin, utenteCfg, durata, ago, sicuro, sGet, sSet } from "../core.js";
+  svc, ws, cached, toast, openSheet, closeSheet, render, isAdmin, utenteCfg, durata, ago, sicuro, sGet, sSet, myHA } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 import { statistiche, barre } from "../grafici.js";
 
@@ -534,6 +534,13 @@ VISTE.acquaAvvisi = () => {
 /** la valvola dell'acqua sta in questa pagina (non si ripete nelle Prese) */
 VISTE.acquaDisp = () => { try { return pagAttiva() && valvola() ? new Set([valvola()]) : new Set(); } catch { return new Set(); } };
 
-page("acqua", { title: t("Acqua e gas", "Water and gas"), short: t("Acqua", "Water"), icon: "🚰", order: 16, editable: true,
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("I consumi di acqua e gas di oggi e dello storico, i costi, le possibili perdite e la valvola per chiudere l'acqua.", "Water and gas use today and over time, costs, possible leaks and the valve to shut off the water."),
+  serve: t("Un contatore dell'acqua o del gas in Home Assistant, oppure una valvola dell'acqua.", "A water or gas meter in Home Assistant, or a water valve."),
+  passi: [t("Impostazioni → Plance → Energia → Consumo d'acqua o Consumo di gas: aggiungi il contatore.", "Settings → Dashboards → Energy → Water consumption or Gas consumption: add the meter."),
+    t("Oppure scegli tu il sensore: Acqua e gas → ⚙️.", "Or pick the sensor yourself: Water and gas → ⚙️.")],
+  link: [[t("Configurazione Energia", "Energy configuration"), myHA("config_energy")]] };
+page("acqua", { richiede: RICHIEDE, title: t("Acqua e gas", "Water and gas"), short: t("Acqua", "Water"), icon: "🚰", order: 16, editable: true,
   show: () => haAcquaGas() || isAdmin(),
   badge: () => { try { return !!perdita() || sensoriPerdita().some(bagnato); } catch { return false; } }, render: pagina });

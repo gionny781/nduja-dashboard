@@ -7,7 +7,7 @@
    Scelte della casa (solo amministratori, con ✏️): mdTasti { schermo: { tasto: comando } }, mdTv { media_player: true|false } (TV o cassa,
    solo quando è diverso dal riconoscimento automatico), mdApp { schermo: [nomi delle app tolte] }. */
 import { S, REG, DEVICES, ACT, CHG, UI, LAYOUT, HOME_EXTRA, t, esc, nm, ok, attr, ents, areaOf, AREAS, card, empty, page, svc, sGet, sSet,
-  toast, render, go, isAdmin, openSheet, closeSheet, isTV, tvAuto, excluded, remotoDi, lettoreDi } from "../core.js";
+  toast, render, go, isAdmin, openSheet, closeSheet, isTV, tvAuto, excluded, remotoDi, lettoreDi, myHA } from "../core.js";
 import { item, addBtn, cambia, scegli, mostra } from "../edit.js";
 
 const F = { PAUSE: 1, VOL: 4, MUTE: 8, PREV: 16, NEXT: 32, ON: 128, OFF: 256, PLAY_MEDIA: 512, VSTEP: 1024, SOURCE: 2048, PLAY: 16384 };
@@ -346,5 +346,11 @@ document.addEventListener("keydown", e => {
   e.preventDefault(); f();
 });
 
-page("media", { title: "Media", short: "Media", icon: "📺", order: 34, editable: true,
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("Le TV con il telecomando virtuale e le app di streaming.", "Your TVs with a virtual remote and streaming apps."),
+  serve: t("Una TV, un decoder o un box in Home Assistant (Samsung, LG webOS, Android TV, Apple TV, Chromecast…).", "A TV, set-top box or streamer in Home Assistant (Samsung, LG webOS, Android TV, Apple TV, Chromecast…)."),
+  passi: [t("Impostazioni → Dispositivi e servizi → ＋ Aggiungi integrazione: cerca la marca o il sistema del dispositivo e segui i passi.", "Settings → Devices & services → ＋ Add integration: search for the device's brand or system and follow the steps."), t("Una TV presa per una cassa: sceglila qui sotto e passa dalla Musica a questa pagina.", "A TV taken for a speaker: pick it below and it moves from Music to this page.")],
+  link: [[t("Aggiungi un'integrazione", "Add an integration"), myHA("integrations")]], scegli: ["mdTvAdd", t("Una TV che non ho riconosciuto", "A TV I didn't recognise")] };
+page("media", { richiede: RICHIEDE, title: "Media", short: "Media", icon: "📺", order: 34, editable: true,
   show: () => chiavi().length > 0 || (isAdmin() && casse().length > 0), badge: () => schermi().some(id => S[id]?.state === "playing"), render: pagina });

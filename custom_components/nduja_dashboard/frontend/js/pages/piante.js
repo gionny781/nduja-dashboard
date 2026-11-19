@@ -784,6 +784,14 @@ function apriDaLink() {
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") apriDaLink(); });
 ready.then(apriDaLink).catch(() => {});
 
-page("piante", { title: t("Piante", "Plants"), short: t("Piante", "Plants"), icon: "🪴", order: 36.5,
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("Una scheda per pianta con foto o disegno, umidità del terreno e promemoria per annaffiare e concimare.", "A card per plant with a photo or drawing, soil moisture and reminders to water and feed."),
+  serve: t("Niente: le piante si aggiungono a mano. Con un sensore per piante (Mi Flora / Flower Care, umidità del terreno) o Plant Monitor arrivano anche le misure.", "Nothing: plants can be added by hand. With a plant sensor (Mi Flora / Flower Care, soil moisture) or Plant Monitor you also get readings."),
+  passi: [t("Apri Piante e premi ＋ per aggiungere una pianta.", "Open Plants and press ＋ to add a plant."),
+    t("Un sensore per piante: aggiungilo a Home Assistant e lo trovo da solo.", "A plant sensor: add it to Home Assistant and I find it by myself."),
+    t("Plant Monitor (soglie per ogni pianta): Impostazioni → Marketplace (fino alla 2026.10: HACS).", "Plant Monitor (thresholds per plant): Settings → Marketplace (up to 2026.10: HACS).")],
+  link: [["Plant Monitor", "https://github.com/Olen/homeassistant-plant"]] };
+page("piante", { richiede: RICHIEDE, title: t("Piante", "Plants"), short: t("Piante", "Plants"), icon: "🪴", order: 36.5,
   show: () => piante().length > 0 || isAdmin(),
   badge: () => { try { return oggi().some(x => x.s.m < 0) || piante().some(haSete); } catch { return false; } }, render: pagina });

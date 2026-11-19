@@ -210,3 +210,9 @@ Le configurazioni mandate con POST a `/api/config/(script|automation)/config/…
 LS='{"mockLayout":"{\"configured\":true,\"irrig\":{\"pioggiaOre\":12,\"rapidi\":[5,20,45]}}"}' node tools/mock/shot.mjs irrigazione 1280 1100 irr.png
 LS='{"mockF1Live":"gara","mockLayout":"{\"configured\":true,\"f1\":{\"righe\":5,\"off\":[\"programma\"]}}"}' node tools/mock/shot.mjs formula1 1280 1500 f1.png
 ```
+
+**Cosa puoi aggiungere** (0.7.49): con `mockVia` (espressione regolare sugli entity_id) togli in un colpo le entità finte che le somigliano; con `mockNoCar` l'auto. Le voci nascoste con «Non mi interessa» stanno in `aggiungi.via` dentro `mockLayout`.
+```bash
+LS='{"mockNoCar":"1","mockVia":"^(sensor|binary_sensor|calendar)\\.f1_|rain_bird|prato_dietro|orto_gocciolatore|zona_siepe"}' node tools/mock/shot.mjs impostazioni 1280 2600 aggiungi.png
+LS='{"mockEnt":"{\"sensor.model_3_charging\":null,\"binary_sensor.model_3_charge_cable\":null}"}' node tools/mock/shot.mjs auto 1280 1100 manca.png
+```

@@ -1,7 +1,7 @@
 /* Home: saluto e riepilogo, meteo, stanze (per piano), persone, scene, cose da sistemare.
    Tutto viene dalle aree e dai dispositivi di Home Assistant: niente da configurare. */
 import { S, HOME_EXTRA, PAGES, AREAS, FLOORS, UI, ACT, CHG, t, LOC, esc, fnum, attr, ok, val, nm, ents, inArea, areaOf, areasSorted, roomTemp, roomHum,
-  openings, lightsOn, luci, isLightSwitch, isOn, card, empty, lightTile, climateCard, entityRow, openSheet, closeSheet, page, WX, HVAC, forecast, deviceClass, shortName, svc, toast, ago, weatherEnt, LAYOUT, isAdmin, saveLayout, utenteCfg, VISTE } from "../core.js";
+  openings, lightsOn, luci, isLightSwitch, isOn, card, empty, lightTile, climateCard, entityRow, openSheet, closeSheet, page, WX, HVAC, forecast, deviceClass, shortName, svc, toast, ago, weatherEnt, LAYOUT, isAdmin, saveLayout, utenteCfg, VISTE, manca, linkBtn, myHA } from "../core.js";
 import { item, addBtn, scegli, isTemp, isHum, cambia } from "../edit.js";
 import { personeCard } from "../people.js";
 import { avvisiCard } from "../avvisi.js";
@@ -10,6 +10,7 @@ import { agendaCard } from "./calendario.js";
 import { momentiCard } from "../momenti.js";
 import { musicaCard } from "./musica.js";
 import { novitaHome } from "../novita.js";
+import { aggiungiHome } from "../aggiungi.js";
 import { vistaClima, momentoClima } from "../climadisegni.js";
 import { luciStanza } from "../luce.js";
 
@@ -64,7 +65,7 @@ function stanza(a) {
 }
 function stanze() {
   const A = areasSorted(UI.edit).filter(a => Object.keys(S).some(id => areaOf(id) === a));
-  if (!A.length) return card(t("🏠 Stanze", "🏠 Rooms"), empty(t("Nessuna area configurata in Home Assistant: crea le aree (Impostazioni → Aree) e assegna i dispositivi.", "No areas yet: create areas in Home Assistant (Settings → Areas) and assign your devices.")), { cls: "span3" });
+  if (!A.length) return card(t("🏠 Stanze", "🏠 Rooms"), empty(t("Nessuna area configurata in Home Assistant: crea le aree (Impostazioni → Aree) e assegna i dispositivi.", "No areas yet: create areas in Home Assistant (Settings → Areas) and assign your devices.")) + (isAdmin() ? manca(t("Con le aree la Home mostra le stanze e arriva la Mappa.", "With areas, Home shows your rooms and the Map arrives."), linkBtn(t("Aree di Home Assistant", "Home Assistant areas"), myHA("areas"), "pri")) : ""), { cls: "span3" });
   const perPiano = {}; A.forEach(a => (perPiano[AREAS[a].floor || "_"] = perPiano[AREAS[a].floor || "_"] || []).push(a));
   const piani = Object.keys(perPiano).sort((x, y) => (FLOORS[x]?.level ?? 99) - (FLOORS[y]?.level ?? 99));
   return card(t("🏠 Stanze", "🏠 Rooms"), piani.map(f => `${piani.length > 1 ? `<div class="fl1">${esc(FLOORS[f]?.name || t("Altre", "Other"))}</div>` : ""}<div class="rms1">${perPiano[f].map(a => UI.edit ? `<div class="ed1">${stanza(a)}<div class="edb"><button data-act="rmEdit" data-id="${a}" aria-label="${t("Modifica", "Edit")}">✏️</button></div></div>` : stanza(a)).join("")}</div>`).join(""), { cls: "span3" });
@@ -258,7 +259,7 @@ Object.assign(ACT, {
 function pagina() {
   const S1 = SCHEDE(), o = ordine();
   const corpo = UI.edit ? o.map((k, i) => attrezzi(k, S1[k][1](), i, o.length)).join("") : o.filter(k => !nascoste().includes(k)).map(k => S1[k][1]()).join("");
-  return `<div class="g g3">${benvenuto()}${novitaHome()}${corpo}${UI.edit && isAdmin() ? `<section class="card span3">${`<button class="add1 wide1" data-act="hlNew"><span>＋</span>${t("Nuova scheda con i dispositivi che vuoi", "New card with any devices")}</button>`}</section>` : ""}</div>`;
+  return `<div class="g g3">${benvenuto()}${novitaHome()}${corpo}${UI.edit && isAdmin() ? `<section class="card span3">${`<button class="add1 wide1" data-act="hlNew"><span>＋</span>${t("Nuova scheda con i dispositivi che vuoi", "New card with any devices")}</button>`}</section>` : ""}${aggiungiHome()}</div>`;
 }
 
 page("home", { title: "Home", short: "Home", icon: "🏠", order: 0, editable: true, render: pagina });

@@ -4,7 +4,7 @@
    Sotto, casse e lettori per stanza (le TV stanno nella pagina Media, se c'è: vedi tvInMedia in core.js).
    In Home la scheda «In riproduzione» mostra solo quello che sta suonando (anche su questo dispositivo). */
 import { S, ACT, CHG, UI, REG, DEVICES, LAYOUT, t, esc, nm, ok, attr, ents, areaOf, AREAS, areasSorted, card, empty, page, svc, svcResp, ws, sGet, sSet,
-  toast, render, cached, uncache, go, patch, FISSI, isAdmin, openSheet, closeSheet, PAGES, isTV, tvInMedia } from "../core.js";
+  toast, render, cached, uncache, go, patch, FISSI, isAdmin, openSheet, closeSheet, PAGES, isTV, tvInMedia, myHA } from "../core.js";
 import { item, addBtn, cambia } from "../edit.js";
 
 const F = { PAUSE: 1, SEEK: 2, VOL: 4, MUTE: 8, PREV: 16, NEXT: 32, ON: 128, OFF: 256, PLAY_MEDIA: 512, SOURCE: 2048, STOP: 4096, PLAY: 16384, SHUFFLE: 32768,
@@ -658,7 +658,12 @@ CHG.muVol = el => svc("media_player", "volume_set", { volume_level: +el.value / 
 CHG.muSrc = el => svc("media_player", "select_source", { source: el.value }, { entity_id: el.dataset.id });
 CHG.muSound = el => svc("media_player", "select_sound_mode", { sound_mode: el.value }, { entity_id: el.dataset.id });
 
-page("musica", { title: t("Musica e TV", "Music and TV"), short: t("Musica", "Music"), icon: "🎵", order: 33, editable: true,
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("Cosa suona in casa, con copertine, volume e «Sposta su…», e la musica da ascoltare su questo dispositivo.", "What's playing at home, with covers, volume and «Move to…», and music to play on this device."),
+  serve: t("Una cassa o un lettore in Home Assistant (Sonos, Google Cast, Music Assistant…), oppure musica e radio nei Media.", "A speaker or player in Home Assistant (Sonos, Google Cast, Music Assistant…), or music and radio in Media."),
+  passi: [t("Impostazioni → Dispositivi e servizi → ＋ Aggiungi integrazione: cerca la marca o il sistema del dispositivo e segui i passi.", "Settings → Devices & services → ＋ Add integration: search for the device's brand or system and follow the steps.")], link: [[t("Aggiungi un'integrazione", "Add an integration"), myHA("integrations")]] };
+page("musica", { richiede: RICHIEDE, title: t("Musica e TV", "Music and TV"), short: t("Musica", "Music"), icon: "🎵", order: 33, editable: true,
   show: () => tutti().length > 0 || !!brano() || fonti(), badge: () => tutti().some(suona) || QUI.stato === "play", render: pagina });
 /* con la pagina Media le TV sono là: il titolo diventa «Musica» */
 const titolo = () => tvInMedia() ? t("Musica", "Music") : t("Musica e TV", "Music and TV");

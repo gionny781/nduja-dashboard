@@ -11,7 +11,7 @@
    Scelte del dispositivo (sGet/sSet): la lista aperta, quella della Home, la vista per reparto o in ordine.
    In Home la scheda «Liste» (HOME_EXTRA) con la lista preferita e un campo per aggiungere al volo. */
 import { S, REG, ACT, CHG, UI, HOOKS, HOME_EXTRA, LAYOUT, t, LOC, esc, nm, ok, attr, allEnts, page, svc, ws, conn, ready, toast,
-  openSheet, closeSheet, render, sGet, sSet, sicuro, isAdmin, go, hhmm } from "../core.js";
+  openSheet, closeSheet, render, sGet, sSet, sicuro, isAdmin, go, hhmm, linkIntegrazione } from "../core.js";
 import { cambia } from "../edit.js";
 import { casa, casaCambia } from "../casa.js";
 import { REPARTI, reparto, repartoAuto, chiave } from "../reparti.js";
@@ -451,7 +451,14 @@ function dopo() {
   if (box.scrollWidth > box.clientWidth && (a.offsetLeft < box.scrollLeft || a.offsetLeft + a.offsetWidth > box.scrollLeft + box.clientWidth)) box.scrollLeft = a.offsetLeft - 12;
 }
 
-page("liste", { title: t("Liste", "Lists"), short: t("Liste", "Lists"), icon: "🛒", order: 40.5, after: dopo,
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("La lista della spesa e le cose da fare, condivise con tutta la casa.", "The shopping list and to-dos, shared with the whole home."),
+  serve: t("Una lista di Home Assistant: Lista della spesa, Local To-do, Bring!, Todoist, Google Tasks…", "A Home Assistant list: Shopping list, Local To-do, Bring!, Todoist, Google Tasks…"),
+  passi: [t("Impostazioni → Dispositivi e servizi → ＋ Aggiungi integrazione → «Lista della spesa» o «Local To-do».", "Settings → Devices & services → ＋ Add integration → «Shopping list» or «Local To-do».")],
+  link: [[t("Lista della spesa", "Shopping list"), linkIntegrazione("shopping_list")], ["Local To-do", linkIntegrazione("local_todo")]],
+  anteprima: [["☐", t("Latte", "Milk")], ["☑", t("Pane", "Bread")]] };
+page("liste", { richiede: RICHIEDE, title: t("Liste", "Lists"), short: t("Liste", "Lists"), icon: "🛒", order: 40.5, after: dopo,
   show: () => tutte().length > 0 && (liste().length > 0 || isAdmin()),
   badge: () => liste().some(id => daFare(V[id]?.voci).some(x => scad(x)?.cls === "ritardo")),
   render: pagina });

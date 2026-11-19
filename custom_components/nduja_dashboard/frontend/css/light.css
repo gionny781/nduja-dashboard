@@ -373,6 +373,13 @@ body.light .pi1up .ic{background:rgba(0,0,0,0.045)!important}
 body.light .pi1in{background:rgba(0,0,0,0.040)!important}
 body.light .pi1mb button{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.056)!important}
 body.light .pi1mb .th{background:rgba(0,0,0,0.030)!important}
+body.light .ag1n>div{background:rgba(0,0,0,0.030)!important}
+body.light .ag1v{background:linear-gradient(180deg,rgba(0,0,0,0.037),rgba(0,0,0,0.015))!important}
+body.light .ag1vi{background:rgba(0,0,0,0.045)!important;border:1px solid rgba(0,0,0,0.070)!important}
+body.light .ag1p{border:1px dashed rgba(0,0,0,0.126)!important;background:rgba(0,0,0,0.018)!important}
+body.light .ag1pi{background:rgba(0,0,0,0.040)!important}
+body.light .ag1pb{background:rgba(0,0,0,0.050)!important}
+body.light .ag1mc{border:1px dashed rgba(0,0,0,0.140)!important;background:rgba(0,0,0,0.020)!important}
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
 body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
@@ -610,4 +617,8 @@ body.light .vc1d g path{stroke:#ff6a3d}
 /* piante (0.7.46): testi azzurri più scuri sul chiaro */
 body.light .pi1r .tx .pi1rn,body.light .pi1ht .pi1pd{color:#0a7fb5}
 body.light .pi1s .om{opacity:.1}
+/* cosa puoi aggiungere (0.7.49): etichette e numeri più scuri sul chiaro, «esempio» sul fondo chiaro */
+body.light .ag1vs span,body.light .ag1st li::before,body.light .ag1mci{color:#0a63c9}
+body.light .ag1n .pi b{color:#a87900}
+body.light .ag1p em{background:#f2f5fa}
 

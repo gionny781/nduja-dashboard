@@ -6,7 +6,7 @@
    { nomi, tipi, sens: { dispositivo: { ruolo: id | "none" } }, inet, ospiti, extra, tolti, avvisa: { dispositivo: true|false }, soglie: { o, r } }.
    In Home la scheda «Rete» (HOME_EXTRA). La pagina compare solo se trova qualcosa. */
 import { S, REG, DEVICES, ACT, CHG, UI, LAYOUT, HOME_EXTRA, VISTE, t, LOC, esc, fnum, nm, nmHA, ok, val, attr, unit, card, empty, page, svc, ws, cached,
-  toast, openSheet, closeSheet, render, isAdmin, sicuro, deviceClass, domain, ago, durata, sGet, sSet } from "../core.js";
+  toast, openSheet, closeSheet, render, isAdmin, sicuro, deviceClass, domain, ago, durata, sGet, sSet, myHA, linkIntegrazione, manca, linkBtn, comeFare } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 import { statistiche, linea } from "../grafici.js";
 import { qrSvg, wifiQR } from "../qr.js";
@@ -409,10 +409,12 @@ function pagina() {
         <button class="btn" data-act="rtSoglie">📊 ${t("Soglie e avvisi", "Thresholds and alerts")}</button></div>
       ${nascosti.length ? `<div class="fl1">👁 ${t("Tolti dalla pagina", "Removed from the page")} (${nascosti.length})</div><div class="stack">${nascosti.map(k => `<div class="li"><span class="ic">🙈</span><div class="tx"><b>${esc(c0(k))}</b><span>${esc(DEVICES[k]?.model || k)}</span></div><button class="btn sm" data-act="rtRimetti" data-k="${esc(k)}">👁 ${t("Rimetti", "Restore")}</button></div>`).join("")}</div>` : ""}
     </section>` : "";
-  const vuoto = !haInternet && !D.length && !U.length ? card("🌐 " + t("Rete", "Network"), empty(t("Non ho trovato modem, server o gruppi di continuità in Home Assistant.", "I found no modem, server or UPS in Home Assistant.")), { cls: "span3" }) : "";
+  const vuoto = !haInternet && !D.length && !U.length ? card("🌐 " + t("Rete", "Network"), empty(t("Non ho trovato modem, server o gruppi di continuità in Home Assistant.", "I found no modem, server or UPS in Home Assistant."))
+    + (isAdmin() ? manca(t("Aggiungi l'integrazione del modem o del server, oppure scegli un dispositivo che c'è già.", "Add your modem or server integration, or pick a device that's already there."), comeFare("rete") + `<button class="btn sm" data-act="rtAggiungi">🔎 ${t("Scegli il dispositivo", "Pick the device")}</button>`) : ""), { cls: "span3" }) : "";
   const altro = [cardCollegati(I), cardOspiti(I), ...U.map(cardUps)].filter(Boolean).join("");
   return `<div class="g g3 rt1">
-    ${haInternet ? cardInternet(I) + (cardSpeedtest(I) || `<section class="card rt1st">${empty(t("Nessuno speedtest: aggiungi l'integrazione Speedtest.net in Home Assistant per misurare la linea.", "No speedtest: add the Speedtest.net integration in Home Assistant to measure your line."))}</section>`) : ""}
+    ${haInternet ? cardInternet(I) + (cardSpeedtest(I) || `<section class="card rt1st">${empty(t("Nessuno speedtest: aggiungi l'integrazione Speedtest.net in Home Assistant per misurare la linea.", "No speedtest: add the Speedtest.net integration in Home Assistant to measure your line."))}
+      ${isAdmin() ? manca(t("Se hai già un sensore della velocità, sceglilo tu.", "If you already have a speed sensor, pick it yourself."), linkBtn(t("Aggiungi Speedtest.net", "Add Speedtest.net"), linkIntegrazione("speedtestdotnet"), "pri") + `<button class="btn sm" data-act="rtInet">🔎 ${t("Scegli il sensore", "Pick the sensor")}</button>`) : ""}</section>`) : ""}
     ${vuoto}
     ${altro}
     ${sezione(`🖥️ ${t("Dispositivi e server", "Devices and servers")}`, D.map(cardDispositivo).join(""))}
@@ -587,5 +589,12 @@ VISTE.reteMostrati = () => { const I = internet(), S2 = new Set(); if (I.ospiti?
 /** l'aggiornamento è di un dispositivo di rete o di un server? (pagina Aggiornamenti) */
 VISTE.reteAgg = id => { const k = REG[id]?.device; return !!k && (dispositivi().some(d => d.k === k) || trovaTutto().U.includes(k)); };
 
-page("rete", { title: t("Rete e server", "Network and servers"), short: t("Rete", "Network"), icon: "🌐", order: 85, editable: true,
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("Internet, modem, server, NAS e gruppo di continuità: se sono accesi, la velocità della linea e il Wi-Fi ospiti.", "Internet, modem, servers, NAS and UPS: whether they're on, line speed and guest Wi-Fi."),
+  serve: t("L'integrazione del modem o router (FRITZ!Box, UniFi…), Speedtest.net, System Monitor, un NAS Synology o un UPS (NUT).", "Your modem or router integration (FRITZ!Box, UniFi…), Speedtest.net, System Monitor, a Synology NAS or a UPS (NUT)."),
+  passi: [t("Impostazioni → Dispositivi e servizi → ＋ Aggiungi integrazione: cerca la marca o il sistema del dispositivo e segui i passi.", "Settings → Devices & services → ＋ Add integration: search for the device's brand or system and follow the steps."), t("Per la velocità della linea basta Speedtest.net.", "For line speed, Speedtest.net is enough.")],
+  link: [[t("Aggiungi Speedtest.net", "Add Speedtest.net"), linkIntegrazione("speedtestdotnet")], [t("Aggiungi un'integrazione", "Add an integration"), myHA("integrations")]],
+  scegli: ["rtAggiungi", t("Ce l'ho già: scegli il dispositivo", "I have one: pick the device")] };
+page("rete", { richiede: RICHIEDE, title: t("Rete e server", "Network and servers"), short: t("Rete", "Network"), icon: "🌐", order: 85, editable: true,
   show: () => haRete() || (conf().extra || []).length > 0, badge: () => internet().collegato === false || dispositivi().some(d => d.on === false && avvisa(d)), render: pagina });

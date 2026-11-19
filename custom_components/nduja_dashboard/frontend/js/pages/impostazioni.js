@@ -6,6 +6,7 @@ import { ssMin, ssVoce } from "../salvaschermo.js";
 import { schedeHome } from "./home.js";
 import { controllaCard } from "../controlla.js";
 import { assistenteCard } from "../assistente.js";
+import { aggiungiCard } from "../aggiungi.js";
 import { S, UI, AREAS, FLOORS, REG, ACT, CHG, LAYOUT, PAGES, t, LOC, esc, nm, ok, attr, allEnts, shortName, climateSensors,
   saveLayout, render, toast, go, page, ws, openSheet, isAdmin, deviceClass, HVAC, manualKind, excluded, tema, navMode, chiosco, sGet, sSet, grafica, leggera, applyTheme } from "../core.js";
 
@@ -173,6 +174,7 @@ function pagina() {
       <div class="vr1">${utenti().map(u => `<button data-act="usEdit" data-id="${esc(u.id)}">${u.is_owner ? "👑" : u.group_ids?.includes("system-admin") ? "🛠️" : "👤"} ${esc(u.name)}${LAYOUT.users?.[u.id] ? " ✏️" : ""}</button>`).join("") || `<span class="small muted">${t("Carico gli utenti…", "Loading users…")}</span>`}</div></section>
     <section class="card"><div class="ch"><h2>🎨 ${t("Personalizza", "Customize")}</h2></div>${personalizza()}
       <p class="small muted" style="margin-top:10px">${t("In ogni pagina c'è ✏️ Modifica in alto: ＋ aggiungi, ✏️ cambia, ✕ togli.", "Every page has ✏️ Edit at the top: ＋ add, ✏️ change, ✕ remove.")}</p></section>
+    ${aggiungiCard()}
     ${controllaCard()}
 `;
   const guida = `<section class="card wz1">

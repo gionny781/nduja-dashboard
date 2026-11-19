@@ -9,7 +9,7 @@
    In Home la scheda «La mia squadra» (HOME_EXTRA). Facoltativa l'automazione «'Nduja · squadra»: avviso sul telefono
    al gol o a fine partita, creata su richiesta; si riscrive da sola quando cambiano squadre e fonti. */
 import { S, REG, ACT, CHG, UI, LAYOUT, HOME_EXTRA, HOOKS, t, LOC, esc, nmHA, allEnts, card, page, render, go, isAdmin, ok, pronto,
-  openSheet, closeSheet, toast, cached, svcResp, ws, api, attr, etichettaNduja, sGet, sSet, hhmm } from "../core.js";
+  openSheet, closeSheet, toast, cached, svcResp, ws, api, attr, etichettaNduja, sGet, sSet, hhmm, linkHacs } from "../core.js";
 import { scegli, cambia } from "../edit.js";
 
 /* ================= riconoscimento ================= */
@@ -615,5 +615,15 @@ Object.assign(ACT, {
   sqnOff: async () => { try { await api("DELETE", "/api/config/automation/config/" + AUT); } catch {} await salvaSq(s => { delete s.notif; }); closeSheet(); toast(t("Avvisi della squadra spenti", "Team alerts off")); },
 });
 
-page("squadra", { title: t("La mia squadra", "My team"), short: t("Squadra", "Team"), icon: "⚽", order: 43, editable: true,
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("La tua squadra: prossima partita, diretta con i gol, risultati e classifica.", "Your team: next match, live score with goals, results and table."),
+  serve: t("Team Tracker o Calcio Live dal Marketplace, oppure un calendario con le partite.", "Team Tracker or Calcio Live from the Marketplace, or a calendar with the matches."),
+  passi: [t("Impostazioni → Marketplace: cerca «Team Tracker», scaricalo e riavvia Home Assistant (fino alla 2026.10: in HACS).", "Settings → Marketplace: search «Team Tracker», download it and restart Home Assistant (up to 2026.10: in HACS)."),
+    t("Impostazioni → Dispositivi e servizi → ＋ Aggiungi integrazione → «Team Tracker»: scegli il campionato e la squadra.", "Settings → Devices & services → ＋ Add integration → «Team Tracker»: choose the league and the team."),
+    t("Hai già un calendario con le partite? Sceglilo qui sotto.", "Already have a calendar with the matches? Pick it below.")],
+  link: [[t("Team Tracker in HACS", "Team Tracker in HACS"), linkHacs("vasqued2", "ha-teamtracker")], [t("Guida di Team Tracker", "Team Tracker guide"), DOC_TT]],
+  scegli: ["sqAdd", t("Scegli un sensore o un calendario", "Pick a sensor or a calendar")],
+  anteprima: [["⚽", t("Casa – Ospiti", "Home – Away"), t("in diretta · 67'", "live · 67'"), "2–1"]] };
+page("squadra", { richiede: RICHIEDE, title: t("La mia squadra", "My team"), short: t("Squadra", "Team"), icon: "⚽", order: 43, editable: true,
   show: () => squadre().length > 0, badge: () => squadre().some(q => q.live), render: pagina });

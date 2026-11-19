@@ -4,7 +4,7 @@
    dell'integrazione, poi la configurazione «Energia» di Home Assistant, infine i nomi dei sensori.
    Segni: rete + = prelievo / − = immissione; batteria + = scarica / − = carica (come Home Assistant). */
 import { S, ACT, CHG, LAYOUT, UI, STRIP, t, LOC, esc, fnum, nm, ok, val, attr, W, watts, ws, cached, card, empty, page, isAdmin, sGet, sSet,
-  saveLayout, toast, openSheet, closeSheet, render, allEnts, deviceClass, REG, DEVICES, VISTE } from "../core.js";
+  saveLayout, toast, openSheet, closeSheet, render, allEnts, deviceClass, REG, DEVICES, VISTE, myHA, manca, linkBtn } from "../core.js";
 import { scegli, cambia } from "../edit.js";
 import { statistiche, barre } from "../grafici.js";
 import { scena, intestazione, etichette } from "../scenaenergia.js";
@@ -187,7 +187,8 @@ function adesso() {
     <div class="en7 ${stretto ? "tel" : ""}">${sc.html}${stretto ? "" : etichette(E, sc.g)}</div>
     ${stretto ? `<div class="en7t">${etichette(E, null)}</div>` : ""}
     ${accesi(casa)}
-    ${!haEnergia() ? `<div class="note1">${t("Non ho trovato i sensori dell'energia. Configurali in Home Assistant (Impostazioni → Plance → Energia) oppure con ✏️ Modifica → ⚙️ Sensori.", "No energy sensors found. Set them up in Home Assistant (Settings → Dashboards → Energy) or with ✏️ Edit → ⚙️ Sensors.")}</div>` : ""}</section>`;
+    ${!haEnergia() ? manca(t("Non ho trovato i sensori dell'energia. Configurali nella plancia Energia di Home Assistant, oppure scegli tu i sensori.", "No energy sensors found. Set them up in Home Assistant's Energy dashboard, or pick the sensors yourself."),
+      linkBtn(t("Configurazione Energia", "Energy configuration"), myHA("config_energy"), "pri") + (isAdmin() ? `<button class="btn sm" data-act="enSensors">⚙️ ${t("Scegli i sensori", "Pick the sensors")}</button>` : "")) : ""}</section>`;
 }
 window.addEventListener("resize", () => { clearTimeout(window.__enR); window.__enR = setTimeout(() => render(true), 300); });
 
@@ -344,7 +345,15 @@ function pagina() {
     ${adesso()}${cardStringhe()}${cardOggi()}${cardStorico()}${consumi()}
   </div>`;
 }
-page("energia", { title: t("Energia", "Energy"), short: t("Energia", "Energy"), icon: "⚡", order: 15, editable: true, show: () => haEnergia() || isAdmin(), render: pagina });
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("Quanto produce il fotovoltaico, quanto consuma la casa e quanto prende dalla rete, in una scena animata, con storico e costi.", "What your solar panels produce, what the house uses and what it takes from the grid, in an animated scene, with history and costs."),
+  serve: t("I sensori della rete, del fotovoltaico, della batteria o dei consumi di casa, meglio se nella configurazione Energia di Home Assistant.", "Grid, solar, battery or house consumption sensors, ideally in Home Assistant's Energy configuration."),
+  passi: [t("Impostazioni → Plance → Energia: aggiungi il consumo dalla rete e, se li hai, il fotovoltaico e la batteria.", "Settings → Dashboards → Energy: add grid consumption and, if you have them, solar and battery."),
+    t("Oppure scegli tu i sensori: Energia → ✏️ Modifica → ⚙️ Sensori.", "Or pick the sensors yourself: Energy → ✏️ Edit → ⚙️ Sensors.")],
+  link: [[t("Configurazione Energia", "Energy configuration"), myHA("config_energy")]],
+  anteprima: [["☀️", t("Fotovoltaico", "Solar"), t("la casa usa 0,8 kW", "the house uses 0.8 kW"), "2,4 kW", 70]] };
+page("energia", { richiede: RICHIEDE, title: t("Energia", "Energy"), short: t("Energia", "Energy"), icon: "⚡", order: 15, editable: true, show: () => haEnergia() || isAdmin(), render: pagina });
 
 /* pillole in alto: sole e rete */
 STRIP.push(() => {

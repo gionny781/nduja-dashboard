@@ -14,7 +14,7 @@
        radar: { cam: entity_id | "none", url: "", min: 5 }, pioggiaPr: % da cui la pioggia è «probabile» (senza = 50) }
    Scelte di questo dispositivo: nduja_meteoEnt (meteo da mostrare), nduja_meteoOre (24 | 48), nduja_meteoRadar (cam | url). */
 import { S, REG, AREAS, ACT, CHG, LAYOUT, VISTE, PAGES, utenteCfg, IT, t, LOC, esc, fnum, nm, nmHA, ok, attr, unit, deviceClass, allEnts, areaOf, page,
-  forecast, weatherEnt, WX, hhmm, sGet, sSet, render, openSheet, closeSheet, isAdmin, toast, durata } from "../core.js";
+  forecast, weatherEnt, WX, hhmm, sGet, sSet, render, openSheet, closeSheet, isAdmin, toast, durata, linkIntegrazione } from "../core.js";
 import { cambia, scegli, indirizzoLocale } from "../edit.js";
 import { scena, sole } from "../scenaenergia.js";
 
@@ -545,7 +545,14 @@ Object.assign(ACT, {
   mtRadVia: () => salvaMeteo(m => { m.radar = { ...(m.radar || {}) }; delete m.radar.url; }, t("Indirizzo tolto", "Address removed")),
 });
 
-page("meteo", { title: t("Meteo", "Weather"), short: t("Meteo", "Weather"), icon: "🌦️", order: 16,
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("Il tempo di casa con le previsioni ora per ora e per 10 giorni, le allerte, il radar e la tua stazione meteo.", "Your home's weather with hourly and 10-day forecasts, warnings, radar and your own weather station."),
+  serve: t("Un servizio meteo in Home Assistant, per esempio Meteorologisk institutt (Met.no), che è gratuito.", "A weather service in Home Assistant, for example the free Meteorologisk institutt (Met.no)."),
+  passi: [t("Impostazioni → Dispositivi e servizi → ＋ Aggiungi integrazione → «Meteorologisk institutt (Met.no)», con la posizione di casa.", "Settings → Devices & services → ＋ Add integration → «Meteorologisk institutt (Met.no)», with your home location.")],
+  link: [[t("Aggiungi Met.no", "Add Met.no"), linkIntegrazione("met")]],
+  anteprima: [["⛅", t("Poco nuvoloso", "Partly cloudy"), t("umidità 64% · vento 9 km/h", "humidity 64% · wind 9 km/h"), "18°"]] };
+page("meteo", { richiede: RICHIEDE, title: t("Meteo", "Weather"), short: t("Meteo", "Weather"), icon: "🌦️", order: 16,
   show: () => !!meteoPagina(),
   badge: () => { try { return allerte().some(a => a.lv >= 3); } catch { return false; } },
   render: pagina });

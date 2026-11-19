@@ -235,3 +235,7 @@ body.light .vc1d g path{stroke:#ff6a3d}
 /* piante (0.7.46): testi azzurri più scuri sul chiaro */
 body.light .pi1r .tx .pi1rn,body.light .pi1ht .pi1pd{color:#0a7fb5}
 body.light .pi1s .om{opacity:.1}
+/* cosa puoi aggiungere (0.7.49): etichette e numeri più scuri sul chiaro, «esempio» sul fondo chiaro */
+body.light .ag1vs span,body.light .ag1st li::before,body.light .ag1mci{color:#0a63c9}
+body.light .ag1n .pi b{color:#a87900}
+body.light .ag1p em{background:#f2f5fa}

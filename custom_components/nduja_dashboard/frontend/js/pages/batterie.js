@@ -207,6 +207,12 @@ Object.assign(ACT, {
     filtro: candidato, auto: false, onPick: id => { if (id && S[id]) salvaB(B => { B.extra = [...new Set([...(B.extra || []), id])]; B.nascosti = (B.nascosti || []).filter(x => x !== id); }, "＋ " + nm(id)); } }),
 });
 
-page("batterie", { title: t("Batterie", "Batteries"), short: t("Batterie", "Batteries"), icon: "🔋", order: 31, editable: true,
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("Tutte le pile della casa in un colpo d'occhio: quali cambiare, quali non danno notizie e che tipo comprare.", "Every battery in the house at a glance: which to replace, which went silent and which type to buy."),
+  serve: t("Dispositivi a pila con il livello della batteria (sensori, telecomandi, serrature…).", "Battery-powered devices that report their level (sensors, remotes, locks…)."),
+  passi: [t("Quasi tutti i dispositivi a pila lo danno da soli: quando li aggiungi a Home Assistant compare il loro livello della batteria.", "Almost every battery device reports it: once you add them to Home Assistant their battery level appears.")],
+  scegli: ["btAggiungi", t("Ce l'ho già: scegli il sensore", "I have one: pick the sensor")] };
+page("batterie", { richiede: RICHIEDE, title: t("Batterie", "Batteries"), short: t("Batterie", "Batteries"), icon: "🔋", order: 31, editable: true,
   /* finché non so cosa escludere (un attimo dopo l'avvio) basta che in casa ci sia una batteria qualsiasi */
   show: () => prontoBatt() ? batterie({ tutte: true }).length > 0 || (conf().extra || []).length > 0 : Object.keys(S).some(id => isSensBatt(id) || isBinBatt(id) || hasBattAttr(id)), badge: () => daCambiare().length > 0, render: pagina });

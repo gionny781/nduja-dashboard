@@ -1,5 +1,5 @@
 /* Prese e dispositivi: prese e interruttori, tapparelle (se non c'è la pagina Tapparelle), ventilatori, TV, serrature, robot… divisi per stanza. */
-import { AREAS, PAGES, LAYOUT, VISTE, t, esc, ents, isLightSwitch, areaOf, areasSorted, entityRow, card, empty, page, UI, isAdmin, utenteCfg } from "../core.js";
+import { AREAS, PAGES, LAYOUT, VISTE, t, esc, ents, isLightSwitch, areaOf, areasSorted, entityRow, card, empty, page, UI, isAdmin, utenteCfg, myHA } from "../core.js";
 import { item, addBtn } from "../edit.js";
 
 const DOM = ["switch", "cover", "fan", "lock", "humidifier", "valve", "siren", "input_boolean"];
@@ -30,5 +30,10 @@ function pagina() {
     ${UI.edit ? `<section class="card span3">${addBtn(DOM, { big: true, label: t("Aggiungi presa o dispositivo", "Add plug or device") })}</section>` : ""}
   </div>`;
 }
-page("dispositivi", { title: t("Prese e dispositivi", "Plugs and devices"), short: t("Prese", "Plugs"), icon: "🔌", order: 30, editable: true,
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("Prese, interruttori, ventilatori, serrature e gli altri dispositivi di casa, divisi per stanza.", "Plugs, switches, fans, locks and your other devices, by room."),
+  serve: t("Una presa o un interruttore smart, un ventilatore, una serratura o un altro dispositivo da accendere e spegnere.", "A smart plug or switch, a fan, a lock or another device to turn on and off."),
+  passi: [t("Impostazioni → Dispositivi e servizi → ＋ Aggiungi integrazione: cerca la marca o il sistema del dispositivo e segui i passi.", "Settings → Devices & services → ＋ Add integration: search for the device's brand or system and follow the steps.")], link: [[t("Aggiungi un'integrazione", "Add an integration"), myHA("integrations")]] };
+page("dispositivi", { richiede: RICHIEDE, title: t("Prese e dispositivi", "Plugs and devices"), short: t("Prese", "Plugs"), icon: "🔌", order: 30, editable: true,
   show: () => tutti().length > 0 || isAdmin(), badge: () => false, render: pagina });

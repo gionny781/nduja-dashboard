@@ -12,7 +12,7 @@
    (di partenza e pulsanti rapidi; per zona con ✏️), l'umidità del terreno (soglie e sensori) e i calendari dei programmi.
    Chi non tocca niente vede la pagina di sempre: 60%, 2 mm, domani; pausa fino a domani alle 23:59; 10 minuti; 5·10·15·30; secco sotto il 25%, bagnato sopra il 60%. */
 import { S, REG, ACT, CHG, UI, LAYOUT, HOME_EXTRA, VISTE, t, esc, nm, nmHA, ok, attr, ents, allEnts, areaOf, AREAS, card, page, svc, svcResp, ws, api,
-  sGet, sSet, toast, render, go, isAdmin, openSheet, closeSheet, cached, forecast, weatherEnt, WX, hhmm, LOC, deviceClass, domain, etichettaNduja } from "../core.js";
+  sGet, sSet, toast, render, go, isAdmin, openSheet, closeSheet, cached, forecast, weatherEnt, WX, hhmm, LOC, deviceClass, domain, etichettaNduja, myHA } from "../core.js";
 import { scegli, cambia } from "../edit.js";
 import { casa, casaCambia } from "../casa.js";
 
@@ -680,5 +680,13 @@ Object.assign(ACT, {
 });
 document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.id === "ir1m") { e.preventDefault(); ACT.irDurGo(); } });
 
-page("irrigazione", { title: t("Irrigazione", "Irrigation"), short: t("Irrigaz.", "Irrigation"), icon: "💧", order: 36, editable: true,
+/* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
+const RICHIEDE = {
+  cosa: t("Le zone del giardino animate, con i programmi, la pausa quando piove e il timer.", "Your garden zones, animated, with schedules, a rain pause and a timer."),
+  serve: t("Una centralina d'irrigazione (Rain Bird, Hydrawise, Rachio, b-hyve, OpenSprinkler, Gardena…) oppure una valvola o una presa che apre l'acqua.", "An irrigation controller (Rain Bird, Hydrawise, Rachio, b-hyve, OpenSprinkler, Gardena…) or a valve or plug that turns the water on."),
+  passi: [t("Aggiungi l'integrazione della centralina: Impostazioni → Dispositivi e servizi → ＋ Aggiungi integrazione.", "Add the controller's integration: Settings → Devices & services → ＋ Add integration."),
+    t("Una valvola o una presa smart: se il nome dice «irrigazione», «gocciolatore» o «zona» la trovo da sola, altrimenti sceglila qui sotto.", "A valve or smart plug: if its name says «irrigation», «drip» or «zone» I find it by myself, otherwise pick it below.")],
+  link: [[t("Aggiungi un'integrazione", "Add an integration"), myHA("integrations")]], scegli: ["irAdd", t("Ce l'ho già: scegli la valvola", "I have one: pick the valve")],
+  anteprima: [["💧", t("Prato", "Lawn"), t("irriga · ancora 12 min", "watering · 12 min left"), "", 60]] };
+page("irrigazione", { richiede: RICHIEDE, title: t("Irrigazione", "Irrigation"), short: t("Irrigaz.", "Irrigation"), icon: "💧", order: 36, editable: true,
   show: () => zone().length > 0, badge: () => zone().some(id => attiva(ctx(id))), render: pagina });
