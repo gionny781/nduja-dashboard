@@ -3,6 +3,7 @@
    (così funzionano anche da Alexa, Google, automazioni). In Home c'è la scheda «Momenti». */
 import { S, ACT, CHG, LAYOUT, UI, VISTE, t, esc, nm, card, svc, toast, openSheet, closeSheet, render, isAdmin, api, etichettaNduja } from "./core.js";
 import { cambia } from "./edit.js";
+import { TRASCINA } from "./trascina.js";
 import { editorAzioni, azioniHA, usaModello } from "./pages/automazioni.js";
 
 const elenco = () => (LAYOUT.momenti || []).filter(m => m && m.id);
@@ -34,11 +35,14 @@ function scenariTapparelle() {
 const apri = () => { usaModello(M, () => openSheet(scheda)); openSheet(scheda); };
 CHG.moF = el => { M[el.dataset.k] = el.value; };
 
+/* in ✏️ Modifica i momenti si trascinano per cambiarne l'ordine (vale per tutta la casa) */
+TRASCINA.momenti = { nome: id => elenco().find(m => m.id === id)?.nome || "",
+  salva: ({ ids }) => cambia(l => { l.momenti = (l.momenti || []).map((m, i) => [m, ids.indexOf(m?.id), i]).sort((a, b) => (a[1] < 0 ? 1e6 : a[1]) - (b[1] < 0 ? 1e6 : b[1]) || a[2] - b[2]).map(x => x[0]); }) };
 export function momentiCard() {
   const L = elenco();
   if (!L.length && !isAdmin()) return "";
-  return card("✨ " + t("Momenti", "Moments"), `<div class="mo1">${L.map((m, i) => `<button class="mob1 ${S[scriptId(m)]?.state === "on" ? "on" : ""}" data-act="moRun" data-i="${i}"><span>${esc(m.icona || "✨")}</span><b>${esc(m.nome)}</b>${UI.edit && isAdmin() ? `<i data-act="moEdit" data-i="${i}">✏️</i>` : ""}</button>`).join("")}
-    ${isAdmin() && (UI.edit || !L.length) ? `<button class="mob1 add" data-act="moNew"><span>＋</span><b>${t("Nuovo momento", "New moment")}</b></button>` : ""}</div>
+  return card("✨ " + t("Momenti", "Moments"), `<div class="mo1" ${UI.edit && isAdmin() ? `data-tr="momenti"` : ""}>${L.map((m, i) => `<button class="mob1 ${S[scriptId(m)]?.state === "on" ? "on" : ""}" data-act="moRun" data-i="${i}" data-tri="${esc(m.id)}"><span>${esc(m.icona || "✨")}</span><b>${esc(m.nome)}</b>${UI.edit && isAdmin() ? `<i data-act="moEdit" data-i="${i}">✏️</i>` : ""}</button>`).join("")}
+    ${isAdmin() && (UI.edit || !L.length) ? `<button class="mob1 add" data-act="moNew" data-trfine><span>＋</span><b>${t("Nuovo momento", "New moment")}</b></button>` : ""}</div>
     ${!L.length ? `<div class="small muted" style="margin-top:8px">${t("Esempi: «Esco» spegne tutte le luci e inserisce l'allarme; «Notte» abbassa le tapparelle e spegne la TV.", "E.g. «Leaving» turns off every light and arms the alarm; «Night» closes the covers and turns off the TV.")}</div>` : ""}`, { right: isAdmin() && L.length && !UI.edit ? `<button class="btn sm" data-act="moGestisci">✏️</button>` : "" });
 }
 

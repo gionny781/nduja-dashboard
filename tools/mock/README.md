@@ -216,3 +216,14 @@ LS='{"mockF1Live":"gara","mockLayout":"{\"configured\":true,\"f1\":{\"righe\":5,
 LS='{"mockNoCar":"1","mockVia":"^(sensor|binary_sensor|calendar)\\.f1_|rain_bird|prato_dietro|orto_gocciolatore|zona_siepe"}' node tools/mock/shot.mjs impostazioni 1280 2600 aggiungi.png
 LS='{"mockEnt":"{\"sensor.model_3_charging\":null,\"binary_sensor.model_3_charge_cable\":null}"}' node tools/mock/shot.mjs auto 1280 1100 manca.png
 ```
+
+**Trascina e sposta** (0.7.50): `trascina.mjs` apre una pagina (di solito in ✏️ Modifica), prende un elemento e lo porta su un altro col mouse o col dito (eventi touch veri via CDP, con la pressione lunga),
+fa lo screenshot **durante** (`<prefisso>-durante.png`, con il segnaposto) e **dopo**, e stampa se l'ordine è stato salvato in `mockLayout`. `<a>@prima` / `<a>@dopo` lascia sul bordo dell'elemento invece che al centro;
+i clic prima del trascinamento si separano con `|` («R:selettore» = clic destro, per esempio per aprire i dettagli di una luce). Variabili: `ANNULLA=1` tocca «Annulla» e controlla che `mockLayout` torni com'era,
+`ESC=1` preme Esc a metà, `SCORRI=1` (col dito) controlla che uno scorrimento normale NON prenda niente, `MODIFICA=0` non apre ✏️ Modifica. Con `mockPiani` le stanze sono su due piani (prova «solo nel suo piano»).
+```bash
+ANNULLA=1 node tools/mock/trascina.mjs home '.hc1[data-tri="meteo"] .hct1 b' '.hc1[data-tri="riepilogo"] .hct1 b' mouse 1280 1000 schede
+LS='{"mockPiani":"1"}' node tools/mock/trascina.mjs home '.rms1 [data-tri="cucina"]' '.rms1 [data-tri="lavanderia"]' mouse 1280 1000 piano
+node tools/mock/trascina.mjs home '#more [data-tri="clima"]' '#tabbar [data-tri="mappa"]@prima' dito 390 844 menu '#tabbar [data-act="more"]'
+SCORRI=1 node tools/mock/trascina.mjs home '.rms1 [data-tri="cucina"]' x dito 390 844 scorri
+```

@@ -5,7 +5,8 @@
    Aspetto per fermo, in funzione e finito: le animazioni della plancia (disegni.js), le tue immagini o GIF (/local/…) oppure l'icona.
    Lo stesso aspetto compare nella pagina, nella scheda della Home e nella mappa (nella stanza della presa o del sensore). */
 import { S, REG, ACT, CHG, LAYOUT, UI, HOME_EXTRA, VISTE, t, esc, nm, ok, val, attr, allEnts, deviceClass, watts, W, fnum, ago, hhmm, card, empty, page, svc, toast,
-  openSheet, closeSheet, render, isAdmin, LOC, areaOf, go } from "../core.js";
+  openSheet, closeSheet, render, isAdmin, LOC, areaOf, go, ordina } from "../core.js";
+import { TRASCINA } from "../trascina.js";
 import { scegli, cambia, fileEsiste, indirizzoLocale } from "../edit.js";
 import { disegno, DISEGNI, riconosci } from "../disegni.js";
 import { oggi } from "./energia.js";
@@ -81,7 +82,10 @@ function automatici() {
   }
   return out;
 }
-const elenco = () => Array.isArray(LAYOUT.appliances) ? LAYOUT.appliances : automatici();
+/** gli elettrodomestici, nell'ordine scelto trascinando le schede in ✏️ Modifica (LAYOUT.ordine.elettrodomestici) */
+const elenco = () => ordina(Array.isArray(LAYOUT.appliances) ? LAYOUT.appliances : automatici(), "elettrodomestici", a => a.id);
+TRASCINA.elettrodomestici = { nome: id => elenco().find(a => a.id === id)?.nome || "",
+  salva: ({ ids }) => cambia(l => { const o = l.ordine?.elettrodomestici || []; l.ordine = { ...(l.ordine || {}), elettrodomestici: [...ids, ...o.filter(x => !ids.includes(x))] }; }) };
 POTENZE_EXTRA.push(() => elenco().map(a => a.power).filter(Boolean));
 /* «ha finito» non ha senso per frigo e congelatore (il compressore si accende e spegne da solo): lì l'avviso parte spento */
 const avvisoDi = a => a.avviso ?? !/frigo|fridge|freez|congel|refrigerat/i.test(a.id + " " + (a.nome || ""));
@@ -111,7 +115,7 @@ function quandoFinisce(a) {
 function scheda(a, i) {
   const st = stato(a), fin = st.k === "on" ? quandoFinisce(a) : null, kwh = a.energy ? oggi(a.energy) : null;
   const sw = a.switch && S[a.switch];
-  return `<section class="card ap1 ${st.k}">
+  return `<section class="card ap1 ${st.k}" data-tri="${esc(a.id)}">
     <div class="ch"><h2>${esc(a.nome)}</h2>${isAdmin() ? `<button class="btn sm" data-act="apEdit" data-i="${i}">✏️</button>` : ""}</div>
     <div class="apr1">${vista(a, st.k, "pg" + i)}<div class="grow aps1"><b>${esc(st.n)}</b>${fin ? `<span>⏱ ${esc(fin)}</span>` : ""}</div></div>
     <div class="apg1">
@@ -249,10 +253,11 @@ export function elettroMappa(area) {
 
 function pagina() {
   const L = elenco();
-  return `<div class="g g3">${L.map(scheda).join("")}
+  return `<div class="g g3" ${UI.edit && isAdmin() ? `data-tr="elettrodomestici"` : ""}>${L.map(scheda).join("")}
     ${!L.length ? card("🧺 " + t("Elettrodomestici", "Appliances"), empty(t("Non ho trovato elettrodomestici. Aggiungili con ＋: basta una presa smart che misura i consumi.", "No appliances found. Add them with ＋: a smart plug with power metering is enough.")), { cls: "span3" }) : ""}
     ${isAdmin() ? `<section class="card span3 row" style="gap:8px;flex-wrap:wrap"><button class="add1" data-act="apNew" style="flex:1"><span>＋</span>${t("Aggiungi elettrodomestico", "Add appliance")}</button>
-      ${Array.isArray(LAYOUT.appliances) ? `<button class="btn sm" data-act="apAuto">✨ ${t("Torna a quelli trovati da soli", "Back to auto-detected")}</button>` : ""}</section>` : ""}
+      ${Array.isArray(LAYOUT.appliances) ? `<button class="btn sm" data-act="apAuto">✨ ${t("Torna a quelli trovati da soli", "Back to auto-detected")}</button>` : ""}
+      ${UI.edit && L.length > 1 ? `<p class="small muted" style="flex-basis:100%;margin:2px 0 0">${t("Trascina le schede per cambiarne l'ordine: vale anche nella Home.", "Drag the cards to change their order: it applies on Home too.")}</p>` : ""}</section>` : ""}
   </div>`;
 }
 /* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */
@@ -262,5 +267,5 @@ const RICHIEDE = {
   passi: [t("Collega l'elettrodomestico a una presa smart che misura i consumi e aggiungila a Home Assistant.", "Plug the appliance into a smart plug that measures power and add it to Home Assistant."),
     t("Se la presa si chiama come l'elettrodomestico («Lavatrice»…) lo trovo da solo; altrimenti Elettrodomestici → ＋.", "If the plug is named after the appliance («Washer»…) I find it by myself; otherwise Appliances → ＋.")],
   anteprima: [["🧺", t("Lavatrice", "Washer"), t("finisce tra 25 min", "done in 25 min"), "1,9 kW"]] };
-page("elettrodomestici", { richiede: RICHIEDE, title: t("Elettrodomestici", "Appliances"), short: t("Elettrod.", "Appliances"), icon: "🧺", order: 32, show: () => elenco().length > 0 || isAdmin(),
+page("elettrodomestici", { richiede: RICHIEDE, title: t("Elettrodomestici", "Appliances"), short: t("Elettrod.", "Appliances"), icon: "🧺", order: 32, editable: true, show: () => elenco().length > 0 || isAdmin(),
   badge: () => elenco().some(a => stato(a).k === "done"), render: pagina });

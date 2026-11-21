@@ -6,6 +6,7 @@
    meta: %, scenari:[{ id, nome, icona, passi:[{ dove, cosa:"su|giu|pos", pos }] }], auto:{ sole, caldo (rot = casa girata di ± gradi), finestra }, firme:{ id: impronta } } */
 import { S, AREAS, FLOORS, REG, ACT, CHG, LAYOUT, UI, VISTE, HOME_EXTRA, HOOKS, t, LOC, esc, nm, nmHA, ok, attr, ents, allEnts, areaOf, areasSorted,
   deviceClass, card, page, svc, toast, openSheet, closeSheet, render, isAdmin, api, etichettaNduja, sGet, sSet, go, weatherEnt, unit, fnum, pronto, myHA } from "../core.js";
+import { TRASCINA, salvaOrdine } from "../trascina.js";
 import { cambia, scegli } from "../edit.js";
 import { accessi } from "./sicurezza.js";
 import { sensore } from "./meteo.js";
@@ -30,15 +31,21 @@ const ordine = () => { const A = areasSorted(true); return id => { const i = A.i
     La Mappa, la Home e le Prese la chiedono molte volte per disegno: la tengo per un attimo, finché le scelte non cambiano. */
 let memo = { t: 0, k: null, v: [] };
 export function tutte() {
-  const k = [LAYOUT.tapparelle, LAYOUT.accessi, LAYOUT.include, LAYOUT.exclude, LAYOUT.show, LAYOUT.hiddenAreas, LAYOUT.rooms, LAYOUT.names, LAYOUT.mode, Object.keys(S).length];
+  const k = [LAYOUT.tapparelle, LAYOUT.accessi, LAYOUT.include, LAYOUT.exclude, LAYOUT.show, LAYOUT.hiddenAreas, LAYOUT.rooms, LAYOUT.names, LAYOUT.mode, LAYOUT.ordine, LAYOUT.areaOrder, Object.keys(S).length];
   if (Date.now() - memo.t < 400 && memo.k && k.every((x, i) => x === memo.k[i])) return memo.v;
   const c = C(), tolte = new Set(c.tolte || []), extra = (c.extra || []).filter(id => S[id]), acc = idAccessi();
   const L = [...new Set([...ents("cover", id => eTapparella(id) && !acc.has(id) && !tolte.has(id)), ...extra])];
-  const o = ordine();
-  memo = { t: Date.now(), k, v: L.sort((a, b) => o(a) - o(b) || nm(a).localeCompare(nm(b), LOC)) };
+  /* per stanza; dentro la stanza nell'ordine scelto trascinando in ✏️ Modifica (LAYOUT.ordine.tapparelle), poi per nome */
+  const o = ordine(), sc = LAYOUT.ordine?.tapparelle || [], ps = id => { const i = sc.indexOf(id); return i < 0 ? 1e6 : i; };
+  memo = { t: Date.now(), k, v: L.sort((a, b) => o(a) - o(b) || ps(a) - ps(b) || nm(a).localeCompare(nm(b), LOC)) };
   return memo.v;
 }
 VISTE.tapTutte = tutte;
+/* scenari: in ✏️ Modifica si trascinano per cambiarne l'ordine */
+TRASCINA.tpscenari = { nome: id => scenari().find(s => s.id === id)?.nome || "",
+  salva: ({ ids }) => cambia(l => { const c = JSON.parse(JSON.stringify(l.tapparelle || {})); c.scenari = (c.scenari || []).map((s, i) => [s, ids.indexOf(s?.id), i]).sort((a, b) => (a[1] < 0 ? 1e6 : a[1]) - (b[1] < 0 ? 1e6 : b[1]) || a[2] - b[2]).map(x => x[0]); l.tapparelle = c; }) };
+/* trascina dentro la stanza (✏️ Modifica): l'ordine vale anche nella Home e nella finestra della stanza */
+TRASCINA.tapparelle = { nome: nm, salva: ({ ids }) => salvaOrdine("tapparelle", [...tutte()], ids) };
 
 /* ================= stato ================= */
 const sf = id => +attr(id, "supported_features") || 0;
@@ -226,7 +233,7 @@ function tessera(id) {
     ${tl != null && !un ? `<label class="tp1tl"><span>${t("Lamelle", "Slats")}</span><input type="range" min="0" max="100" step="5" value="${tl}" data-chg="tpTilt" data-id="${id}" aria-label="${t("Lamelle", "Slats")} · ${esc(nm(id))}"><em>${tl}%</em></label>` : ""}
   </div>`;
   if (!UI.edit || !isAdmin()) return corpo;
-  return `<div class="ed1">${corpo}<div class="edb"><button data-act="tpEd" data-id="${id}" aria-label="${t("Modifica", "Edit")}">✏️</button><button data-act="tpTogli" data-id="${id}" aria-label="${t("Togli", "Remove")}">✕</button></div></div>`;
+  return `<div class="ed1" data-tri="${id}">${corpo}<div class="edb"><button data-act="tpEd" data-id="${id}" aria-label="${t("Modifica", "Edit")}">✏️</button><button data-act="tpTogli" data-id="${id}" aria-label="${t("Togli", "Remove")}">✕</button></div></div>`;
 }
 const rapidi = (dove, piccoli) => { const n = esc(nomeDove(dove)), b = (v, ic, testo, aria) => `<button data-act="tpGr" data-dove="${esc(dove)}" data-v="${v}" aria-label="${aria} · ${n}" title="${aria}">${ic}${piccoli || !testo ? "" : `<span>${testo}</span>`}</button>`;
   return `<div class="tp1q ${piccoli ? "sm" : ""}" role="group" aria-label="${n}">${b("su", ICO.su, t("Tutte su", "All up"), t("Tutte su", "All up"))}${b("meta", ICO.meta, t("Metà", "Half"), t("Tutte a metà", "All halfway"))}${b("giu", ICO.giu, t("Tutte giù", "All down"), t("Tutte giù", "All down"))}${piccoli ? "" : b("stop", ICO.stop, "", t("Ferma tutte", "Stop all"))}</div>`; };
@@ -261,7 +268,7 @@ function stanze() {
   return K.map(a => {
     const f = AREAS[a]?.floor || "_", tit = piani.length > 1 && f !== fp ? `<h3 class="tp1fl spanall">${esc(FLOORS[f]?.name || t("Altre stanze", "Other rooms"))}</h3>` : ""; fp = f;
     const I = per[a], n = conta(I);
-    return tit + card(`${esc(nomeDove("stanza:" + a))} <small class="tp1c">${esc(breve(n))}</small>`, `<div class="tp1g">${I.map(tessera).join("")}</div>`,
+    return tit + card(`${esc(nomeDove("stanza:" + a))} <small class="tp1c">${esc(breve(n))}</small>`, `<div class="tp1g" ${UI.edit && isAdmin() ? `data-tr="tapparelle"` : ""}>${I.map(tessera).join("")}</div>`,
       { cls: I.length >= 5 ? "span3" : I.length >= 3 ? "span2" : "", right: I.length > 1 ? rapidi("stanza:" + a, true) : "" });
   }).join("");
 }
@@ -298,10 +305,10 @@ function schedaScenari() {
   const L = scenari(), adm = isAdmin();
   if (!L.length && !adm) return "";
   const manca = s => adm && tolta(C().firme || {}, SCRIPT(s)) && !S["script." + SCRIPT(s)];
-  return card("🎬 " + t("Scenari", "Scenes"), `<div class="tp1sc">${L.map((s, i) => `<button class="tp1sb ${manca(s) ? "ko" : ""}" data-act="tpScRun" data-i="${i}"><span>${esc(s.icona || "🪟")}</span><b>${esc(s.nome)}</b>
+  return card("🎬 " + t("Scenari", "Scenes"), `<div class="tp1sc" ${UI.edit && adm ? `data-tr="tpscenari"` : ""}>${L.map((s, i) => `<button class="tp1sb ${manca(s) ? "ko" : ""}" data-act="tpScRun" data-i="${i}" data-tri="${esc(s.id)}"><span>${esc(s.icona || "🪟")}</span><b>${esc(s.nome)}</b>
       <small>${esc((s.passi || []).map(passoTesto).join(" · "))}</small>
       ${UI.edit && adm ? `<i data-act="tpScEd" data-i="${i}" role="button" aria-label="${t("Modifica", "Edit")}">✏️</i>` : ""}</button>`).join("")}
-    ${adm ? (L.length ? `<button class="tp1sb add" data-act="tpScNew"><span>＋</span><b>${t("Nuovo scenario", "New scene")}</b></button>`
+    ${adm ? (L.length ? `<button class="tp1sb add" data-act="tpScNew" data-trfine><span>＋</span><b>${t("Nuovo scenario", "New scene")}</b></button>`
       : PRONTI().map((p, i) => `<button class="tp1sb add" data-act="tpScNew" data-p="${i}"><span>${p.icona}</span><b>＋ ${esc(p.nome)}</b><small>${esc(p.passi.map(passoTesto).join(" · "))}</small></button>`).join("")) : ""}</div>
     ${adm ? `<p class="small muted tp1nt">${L.some(manca) ? "⚠️ " + t("Uno scenario non c'è più in Home Assistant: aprilo con ✏️ e premi Salva per ricrearlo. ", "A scene is missing from Home Assistant: open it with ✏️ and press Save to recreate it. ") : ""}${t("Ogni scenario è uno script di Home Assistant con l'etichetta «'Nduja»: lo puoi usare nei Momenti, nelle automazioni e con gli assistenti vocali.", "Each scene is a Home Assistant script with the «'Nduja» label: use it in Moments, automations and voice assistants.")}</p>` : ""}`,
     { cls: "span3", right: adm && L.length && !UI.edit ? `<button class="btn sm" data-act="edToggle" aria-label="${t("Modifica", "Edit")}">✏️</button>` : "" });

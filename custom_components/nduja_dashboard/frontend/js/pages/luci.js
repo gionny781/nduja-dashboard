@@ -1,9 +1,10 @@
 /* Luci: riepilogo (quante accese e dove, «Spegni tutto», scene di luce), poi le stanze per piano con le tessere grandi di luce.js.
-   Con ✏️ Modifica: ＋ luci nascoste e interruttori che comandano una luce, ✕ toglie, ◀ ▶ ordine, ✏️ nome, stanza e icona. */
+   Con ✏️ Modifica: ＋ luci nascoste e interruttori che comandano una luce, ✕ toglie, trascina (o ◀ ▶) per l'ordine, ✏️ nome, stanza e icona. */
 import { S, AREAS, FLOORS, ACT, LAYOUT, UI, t, LOC, esc, nm, nmHA, ok, attr, ents, allEnts, areaOf, areasSorted, luci, luciContate, lightsOn, luciComando,
   isLightGroup, isLightSwitch, membriLuce, deviceClass, lightTile, card, empty, page, isAdmin, openSheet, closeSheet, render, myHA } from "../core.js";
 import { cambia, mostra, scegli } from "../edit.js";
 import { luciPerStanza, iconaPiccola, svgLuce, iconaAuto, coloreDi } from "../luce.js";
+import { TRASCINA } from "../trascina.js";
 
 const nomeStanza = a => a === "_" ? t("Senza stanza", "No room") : AREAS[a]?.name || a;
 
@@ -54,7 +55,7 @@ function sceneEd(SC) {
 function tesseraEd(id, L, i) {
   const html = lightTile(id);
   if (!UI.edit) return html;
-  return `<div class="ed1">${html}<div class="edb">
+  return `<div class="ed1" data-tri="${id}">${html}<div class="edb">
     <button data-act="luMove" data-id="${id}" data-v="-1" ${i > 0 ? "" : "disabled"} aria-label="${t("Sposta prima", "Move earlier")}">◀</button><button data-act="luMove" data-id="${id}" data-v="1" ${i < L.length - 1 ? "" : "disabled"} aria-label="${t("Sposta dopo", "Move later")}">▶</button>
     <button data-act="edItem" data-id="${id}" data-page="${isLightSwitch(id) ? "lu:sw" : ""}" aria-label="${t("Modifica", "Edit")}">✏️</button><button data-act="edDel" data-id="${id}" data-page="${isLightSwitch(id) ? "lu:sw" : ""}" aria-label="${t("Togli", "Remove")}">✕</button></div></div>`;
 }
@@ -65,7 +66,7 @@ function stanza(a, L) {
     + (UI.edit ? "" : on ? `<button class="btn sm" data-act="luStanza" data-id="${a}" data-v="0">${t("Spegni", "Turn off")}</button>`
       : L.some(id => ok(id)) ? `<button class="btn sm" data-act="luStanza" data-id="${a}" data-v="1">${t("Accendi", "Turn on")}</button>` : "");
   return `<section class="card lu2 ${L.length > 4 ? "span2" : ""}" id="lu-${esc(a)}"><div class="ch"><h2>${a === "#g" ? "▦ " + t("Gruppi", "Groups") : esc(nomeStanza(a))} ${on ? `<span class="tag warn">${on}</span>` : ""}</h2>${destra}</div>
-    <div class="lts2">${L.map((id, i) => tesseraEd(id, L, i)).join("")}${a !== "#g" ? aggiungi(a) : ""}</div></section>`;
+    <div class="lts2" ${UI.edit ? `data-tr="luci" data-trc="${esc(a)}"` : ""}>${L.map((id, i) => tesseraEd(id, L, i)).join("")}${a !== "#g" ? aggiungi(a) : ""}</div></section>`;
 }
 
 function pagina() {
@@ -80,7 +81,7 @@ function pagina() {
     return intest + stanza(a, stanze[a]);
   });
   return `<div class="g g3">${riepilogo()}${gruppi.length ? stanza("#g", gruppi) : ""}${blocchi.join("")}
-    ${UI.edit ? `<section class="card span3">${aggiungi("", true)}<p class="small muted" style="margin-top:10px">${t("◀ ▶ cambia l'ordine, ✏️ nome, stanza e icona, ✕ toglie la luce dalla plancia. Con ＋ ritrovi le luci tolte e puoi aggiungere gli interruttori che comandano una luce. I gruppi di luci raccolgono da soli le loro luci: le trovi tenendo premuto sul gruppo.", "◀ ▶ changes the order, ✏️ name, room and icon, ✕ removes the light from the dashboard. With ＋ you get back removed lights and can add switches that control a light. Light groups gather their own lights: press and hold the group to see them.")}</p></section>` : ""}</div>`;
+    ${UI.edit ? `<section class="card span3">${aggiungi("", true)}<p class="small muted" style="margin-top:10px">${t("Trascina una luce per cambiarle posto (o usa ◀ ▶), ✏️ nome, stanza e icona, ✕ toglie la luce dalla plancia. Con ＋ ritrovi le luci tolte e puoi aggiungere gli interruttori che comandano una luce. I gruppi di luci raccolgono da soli le loro luci: le trovi tenendo premuto sul gruppo.", "Drag a light to move it (or use ◀ ▶), ✏️ name, room and icon, ✕ removes the light from the dashboard. With ＋ you get back removed lights and can add switches that control a light. Light groups gather their own lights: press and hold the group to see them.")}</p></section>` : ""}</div>`;
 }
 
 /* ---------- ＋ aggiungi: luci tolte e interruttori che comandano una luce ---------- */
@@ -123,6 +124,8 @@ Object.assign(ACT, {
     if (i < 0 || j < 0 || j >= R.length) return; [R[i], R[j]] = [R[j], R[i]];
     cambia(l => { l.lightOrder = [...R, ...(l.lightOrder || []).filter(x => !R.includes(x) && S[x])]; }); },
 });
+/* trascina una luce dentro la sua stanza (✏️ Modifica): stesso ordine di ◀ ▶ (LAYOUT.lightOrder) */
+TRASCINA.luci = { nome: nm, salva: ({ ids }) => cambia(l => { l.lightOrder = [...ids, ...(l.lightOrder || []).filter(x => !ids.includes(x) && S[x])]; }) };
 /* ✕ o «Togli» su un interruttore usato come luce: torna tra le prese, non sparisce dalla plancia */
 const edDel0 = ACT.edDel;
 ACT.edDel = el => {

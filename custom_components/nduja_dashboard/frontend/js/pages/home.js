@@ -1,7 +1,7 @@
 /* Home: saluto e riepilogo, meteo, stanze (per piano), persone, scene, cose da sistemare.
    Tutto viene dalle aree e dai dispositivi di Home Assistant: niente da configurare. */
 import { S, HOME_EXTRA, PAGES, AREAS, FLOORS, UI, ACT, CHG, t, LOC, esc, fnum, attr, ok, val, nm, ents, inArea, areaOf, areasSorted, roomTemp, roomHum,
-  openings, lightsOn, luci, isLightSwitch, isOn, card, empty, lightTile, climateCard, entityRow, openSheet, closeSheet, page, WX, HVAC, forecast, deviceClass, shortName, svc, toast, ago, weatherEnt, LAYOUT, isAdmin, saveLayout, utenteCfg, VISTE, manca, linkBtn, myHA } from "../core.js";
+  openings, lightsOn, luci, isLightSwitch, isOn, card, empty, lightTile, climateCard, entityRow, openSheet, closeSheet, page, WX, HVAC, forecast, deviceClass, shortName, svc, toast, ago, weatherEnt, LAYOUT, isAdmin, saveLayout, utenteCfg, VISTE, manca, linkBtn, myHA, ordina } from "../core.js";
 import { item, addBtn, scegli, isTemp, isHum, cambia } from "../edit.js";
 import { personeCard } from "../people.js";
 import { avvisiCard } from "../avvisi.js";
@@ -13,6 +13,7 @@ import { novitaHome } from "../novita.js";
 import { aggiungiHome } from "../aggiungi.js";
 import { vistaClima, momentoClima } from "../climadisegni.js";
 import { luciStanza } from "../luce.js";
+import { TRASCINA, riordina, salvaOrdine } from "../trascina.js";
 
 const saluto = () => { const h = new Date().getHours(); return h < 6 ? t("Buonanotte", "Good night") : h < 13 ? t("Buongiorno", "Good morning") : h < 18 ? t("Buon pomeriggio", "Good afternoon") : t("Buonasera", "Good evening"); };
 const climaAttivi = () => ents("climate", id => ok(id) && S[id].state !== "off");
@@ -37,12 +38,13 @@ function riepilogo() {
     <div class="small muted dt1">${new Date().toLocaleDateString(LOC, { weekday: "long", day: "numeric", month: "long" })}</div>
     <h2 class="hi1">${saluto()}${nome ? ", " + esc(nome) : ""}</h2>
     <p class="hs1">${frasi.join(" · ")}</p>
-    <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:12px">
+    <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:12px" ${UI.edit ? `data-tr="scene"` : ""}>
       ${L ? `<button class="btn sm" data-act="lightsOff">💡 ${t("Spegni tutte le luci", "Turn off all lights")}</button>` : ""}
       ${scene().slice(0, UI.edit ? 99 : nScene()).map(id => item(id, `<button class="btn sm" data-act="toggle" data-id="${id}">🎬 ${esc(nm(id))}</button>`)).join("")}${addBtn(["scene"])}
     </div></section>`;
 }
-const scene = () => ents("scene").sort((a, b) => nm(a).localeCompare(nm(b), LOC));
+/** scene del saluto: nell'ordine scelto trascinandole in ✏️ Modifica (LAYOUT.ordine.scene), le nuove per nome */
+const scene = () => ordina(ents("scene").sort((a, b) => nm(a).localeCompare(nm(b), LOC)), "scene");
 
 function meteo() {
   const w = weatherEnt(); if (!w) return UI.edit ? card(`🌤️ ${t("Meteo", "Weather")}`, `<div class="small muted">${t("Nessun meteo in Home Assistant.", "No weather in Home Assistant.")}</div>`) : "";
@@ -68,7 +70,7 @@ function stanze() {
   if (!A.length) return card(t("🏠 Stanze", "🏠 Rooms"), empty(t("Nessuna area configurata in Home Assistant: crea le aree (Impostazioni → Aree) e assegna i dispositivi.", "No areas yet: create areas in Home Assistant (Settings → Areas) and assign your devices.")) + (isAdmin() ? manca(t("Con le aree la Home mostra le stanze e arriva la Mappa.", "With areas, Home shows your rooms and the Map arrives."), linkBtn(t("Aree di Home Assistant", "Home Assistant areas"), myHA("areas"), "pri")) : ""), { cls: "span3" });
   const perPiano = {}; A.forEach(a => (perPiano[AREAS[a].floor || "_"] = perPiano[AREAS[a].floor || "_"] || []).push(a));
   const piani = Object.keys(perPiano).sort((x, y) => (FLOORS[x]?.level ?? 99) - (FLOORS[y]?.level ?? 99));
-  return card(t("🏠 Stanze", "🏠 Rooms"), piani.map(f => `${piani.length > 1 ? `<div class="fl1">${esc(FLOORS[f]?.name || t("Altre", "Other"))}</div>` : ""}<div class="rms1">${perPiano[f].map(a => UI.edit ? `<div class="ed1">${stanza(a)}<div class="edb"><button data-act="rmEdit" data-id="${a}" aria-label="${t("Modifica", "Edit")}">✏️</button></div></div>` : stanza(a)).join("")}</div>`).join(""), { cls: "span3" });
+  return card(t("🏠 Stanze", "🏠 Rooms"), piani.map(f => `${piani.length > 1 ? `<div class="fl1">${esc(FLOORS[f]?.name || t("Altre", "Other"))}</div>` : ""}<div class="rms1" ${UI.edit ? `data-tr="stanze" data-trc="${esc(f)}"` : ""}>${perPiano[f].map(a => UI.edit ? `<div class="ed1" data-tri="${a}">${stanza(a)}<div class="edb"><button data-act="rmEdit" data-id="${a}" aria-label="${t("Modifica", "Edit")}">✏️</button></div></div>` : stanza(a)).join("")}</div>`).join(""), { cls: "span3" });
 }
 
 /* ✏️ meteo: quale previsione usare */
@@ -86,7 +88,7 @@ CHG.wxGiorni = el => homeSet("meteoGiorni", +el.value, 5, "🌤️ " + t("Previs
 /* ⚙️ saluto e orologio: quante scene sotto il saluto */
 const cfgSaluto = () => `<div class="sh-head"><div><h3>⚙️ ${t("Saluto e orologio", "Greeting and clock")}</h3><div class="small muted">${t("Vale per tutta la casa.", "It applies to the whole home.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
     <label class="fld1"><span>${t("Scene sotto il saluto", "Scenes under the greeting")}</span><select data-chg="hmScene">${[0, 2, 3, 4, 6, 8, 10, 12].map(n => `<option value="${n}" ${nScene() === n ? "selected" : ""}>${n === 0 ? t("Nessuna", "None") : n}</option>`).join("")}</select></label>
-    <p class="small muted" style="margin:6px 0 0">${t("Le prime in ordine di nome", "The first ones by name")}${scene().length ? ` (${t("ne hai", "you have")} ${scene().length})` : ""}. ${t("Per togliere una scena usa ✕ sul suo pulsante in ✏️ Modifica, per rimetterla ＋.", "To remove a scene use ✕ on its button in ✏️ Edit, ＋ to bring it back.")}</p>`;
+    <p class="small muted" style="margin:6px 0 0">${t("Le prime nell'ordine che scegli: in ✏️ Modifica trascina i pulsanti delle scene", "The first ones in the order you choose: in ✏️ Edit drag the scene buttons")}${scene().length ? ` (${t("ne hai", "you have")} ${scene().length})` : ""}. ${t("Per togliere una scena usa ✕ sul suo pulsante in ✏️ Modifica, per rimetterla ＋.", "To remove a scene use ✕ on its button in ✏️ Edit, ＋ to bring it back.")}</p>`;
 ACT.hmCfg = () => openSheet(cfgSaluto);
 CHG.hmScene = el => homeSet("scene", +el.value, 6, "🎬 " + t("Scene nel saluto: ", "Scenes in the greeting: ") + el.value);
 ACT.wxSet = async el => {
@@ -210,9 +212,10 @@ function elemento(id) {
 function schedaLibera(c) {
   const L = (c.items || []).filter(id => S[id]);
   const luci = L.filter(id => id.startsWith("light.")), valori = L.filter(id => /^(sensor|binary_sensor|input_number|number)\./.test(id)), altri = L.filter(id => !luci.includes(id) && !valori.includes(id));
-  return card(`${esc(c.icona || "⭐")} ${esc(c.titolo || "")}`, `${valori.length ? `<div class="hlg1">${valori.map(id => item(id, elemento(id), "hc:" + c.id)).join("")}</div>` : ""}
-    ${luci.length ? `<div class="tiles" style="margin-top:8px">${luci.map(id => item(id, elemento(id), "hc:" + c.id)).join("")}</div>` : ""}
-    ${altri.length ? `<div class="stack" style="margin-top:8px">${altri.map(id => item(id, elemento(id), "hc:" + c.id)).join("")}</div>` : ""}
+  const tr = UI.edit ? ` data-tr="hl" data-trc="${esc(c.id)}"` : "";
+  return card(`${esc(c.icona || "⭐")} ${esc(c.titolo || "")}`, `${valori.length ? `<div class="hlg1"${tr}>${valori.map(id => item(id, elemento(id), "hc:" + c.id)).join("")}</div>` : ""}
+    ${luci.length ? `<div class="tiles" style="margin-top:8px"${tr}>${luci.map(id => item(id, elemento(id), "hc:" + c.id)).join("")}</div>` : ""}
+    ${altri.length ? `<div class="stack" style="margin-top:8px"${tr}>${altri.map(id => item(id, elemento(id), "hc:" + c.id)).join("")}</div>` : ""}
     ${UI.edit ? `<button class="add1" data-act="hlAdd" data-id="${c.id}" style="margin-top:8px"><span>＋</span>${t("Aggiungi dispositivo o sensore", "Add device or sensor")}</button>` : !L.length ? `<div class="small muted">${t("Vuota: premi ✏️ Modifica e ＋.", "Empty: press ✏️ Edit and ＋.")}</div>` : ""}`, { cls: c.larga ? "span2" : "" });
 }
 function nuovaScheda(id) {
@@ -250,7 +253,7 @@ function attrezzi(k, html, i, n) {
     <button data-act="hcMove" data-id="${k}" data-v="-1" ${i === 0 ? "disabled" : ""}>▲</button><button data-act="hcMove" data-id="${k}" data-v="1" ${i === n - 1 ? "disabled" : ""}>▼</button>
     <button data-act="hcHide" data-id="${k}">${off ? "👁 " + t("Mostra", "Show") : "🙈 " + t("Nascondi", "Hide")}</button></div>`;
   if (!html) html = card("", `<div class="small muted">${t("Niente da mostrare per ora.", "Nothing to show right now.")}</div>`);
-  return html.replace(/<section class="card([^"]*)"/, `<section class="card$1 hc1 ${off ? "off" : ""}"`).replace(/(<section[^>]*>)/, `$1${bar}`);
+  return html.replace(/<section class="card([^"]*)"/, `<section class="card$1 hc1 ${off ? "off" : ""}" data-tri="${k}"`).replace(/(<section[^>]*>)/, `$1${bar}`);
 }
 Object.assign(ACT, {
   hcMove: el => { const k = el.dataset.id, d = +el.dataset.v; cambia(l => { const o = ordine(), i = o.indexOf(k), j = i + d; if (j < 0 || j >= o.length) return; [o[i], o[j]] = [o[j], o[i]]; l.home = { ...(l.home || {}), order: o }; }); },
@@ -259,7 +262,21 @@ Object.assign(ACT, {
 function pagina() {
   const S1 = SCHEDE(), o = ordine();
   const corpo = UI.edit ? o.map((k, i) => attrezzi(k, S1[k][1](), i, o.length)).join("") : o.filter(k => !nascoste().includes(k)).map(k => S1[k][1]()).join("");
-  return `<div class="g g3">${benvenuto()}${novitaHome()}${corpo}${UI.edit && isAdmin() ? `<section class="card span3">${`<button class="add1 wide1" data-act="hlNew"><span>＋</span>${t("Nuova scheda con i dispositivi che vuoi", "New card with any devices")}</button>`}</section>` : ""}${aggiungiHome()}</div>`;
+  return `<div class="g g3" ${UI.edit ? `data-tr="home"` : ""}>${benvenuto()}${novitaHome()}${corpo}${UI.edit && isAdmin() ? `<section class="card span3">${`<button class="add1 wide1" data-act="hlNew"><span>＋</span>${t("Nuova scheda con i dispositivi che vuoi", "New card with any devices")}</button>`}
+      <p class="small muted" style="margin:10px 0 0;line-height:1.45">✋ ${t("Per cambiare l'ordine trascina: le schede dalla loro barra arancione, le stanze, le scene, le persone e le pagine del menu (anche sul telefono, tra la barra in basso e «Altro»). Col dito tieni premuto un attimo, poi sposta. Dopo ogni spostamento puoi toccare «Annulla».", "To change the order, drag: cards by their orange bar, rooms, scenes, people and the menu pages (on the phone too, between the bottom bar and «More»). With a finger, press and hold for a moment, then move. After each move you can tap «Undo».")}</p></section>` : ""}${aggiungiHome()}</div>`;
 }
 
 page("home", { title: "Home", short: "Home", icon: "🏠", order: 0, editable: true, render: pagina });
+
+/* ---------- trascina e sposta (✏️ Modifica, trascina.js) ---------- */
+/** schede della Home: si prendono dalla loro barra (quella con ▲▼) */
+TRASCINA.home = { maniglia: ".hct1", nome: k => SCHEDE()[k]?.[0] || k,
+  salva: ({ ids }) => cambia(l => { l.home = { ...(l.home || {}), order: riordina(ordine(), ids) }; }) };
+/** stanze: solo dentro lo stesso piano (il piano viene da Home Assistant) */
+TRASCINA.stanze = { gruppo: true, nome: a => AREAS[a]?.name || a,
+  puo: (da, a) => da === a || t("Le stanze si spostano solo nel loro piano: il piano si cambia in Home Assistant (Impostazioni → Aree).", "Rooms move only within their floor: the floor is set in Home Assistant (Settings → Areas)."),
+  salva: ({ ids }) => cambia(l => { l.areaOrder = riordina(areasSorted(true), ids); }) };
+/** scene del saluto */
+TRASCINA.scene = { nome: nm, salva: ({ ids }) => salvaOrdine("scene", scene(), ids) };
+/** dispositivi e sensori di una scheda libera */
+TRASCINA.hl = { nome: nm, salva: ({ a, ids }) => cardsSet(L => { const c = L.find(x => x.id === a); if (c) c.items = riordina(c.items || [], ids); }) };

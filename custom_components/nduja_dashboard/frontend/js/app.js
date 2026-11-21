@@ -2,6 +2,7 @@
    le altre pagine si caricano un attimo dopo, mentre la Home è già sullo schermo. */
 import { tuttePronte } from "./core.js";
 import "./edit.js";
+import "./trascina.js";
 import "./climadisegni.js";
 import "./luce.js";
 import "./salvaschermo.js";

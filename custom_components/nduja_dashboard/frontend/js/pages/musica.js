@@ -6,6 +6,7 @@
 import { S, ACT, CHG, UI, REG, DEVICES, LAYOUT, t, esc, nm, ok, attr, ents, areaOf, AREAS, areasSorted, card, empty, page, svc, svcResp, ws, sGet, sSet,
   toast, render, cached, uncache, go, patch, FISSI, isAdmin, openSheet, closeSheet, PAGES, isTV, tvInMedia, myHA } from "../core.js";
 import { item, addBtn, cambia } from "../edit.js";
+import { TRASCINA } from "../trascina.js";
 
 const F = { PAUSE: 1, SEEK: 2, VOL: 4, MUTE: 8, PREV: 16, NEXT: 32, ON: 128, OFF: 256, PLAY_MEDIA: 512, SOURCE: 2048, STOP: 4096, PLAY: 16384, SHUFFLE: 32768,
   SOUND: 65536, BROWSE: 131072, REPEAT: 262144, ENQUEUE: 2097152 };
@@ -520,11 +521,15 @@ const doveP = p => p.k === "cassa" ? nm(p.cassa) : p.k === "ma" ? "Music Assista
 function cardPreferiti() {
   const P = preferiti(), mod = UI.edit && isAdmin();
   if (!P.length) return mod ? card("⭐ " + t("Preferiti", "Favourites"), empty(t("Tocca ☆ su una playlist o una radio (in «Sfoglia» o nella ricerca di Music Assistant) per averla qui, per tutta la casa.", "Tap ☆ on a playlist or a station (in «Browse» or in the Music Assistant search) to keep it here, for the whole home.")), { cls: "span3 mu1fv" }) : "";
-  return card("⭐ " + t("Preferiti", "Favourites"), `<div class="mu1fs">${P.map((p, i) => { const u = p.img ? copertina(p.img) : null, ic = p.classe === "radio" ? "📻" : "📃";
-    return `<div class="mu1f"><button class="mu1fb" data-act="mu1pref" data-i="${i}"><span class="mu1ti sm"><span>${ic}</span>${u ? `<img src="${esc(u)}" alt="" loading="lazy" onerror="this.remove()">` : ""}</span>
+  return card("⭐ " + t("Preferiti", "Favourites"), `<div class="mu1fs" ${mod ? `data-tr="mupref"` : ""}>${P.map((p, i) => { const u = p.img ? copertina(p.img) : null, ic = p.classe === "radio" ? "📻" : "📃";
+    return `<div class="mu1f" data-tri="${esc(chiaveP(p))}"><button class="mu1fb" data-act="mu1pref" data-i="${i}"><span class="mu1ti sm"><span>${ic}</span>${u ? `<img src="${esc(u)}" alt="" loading="lazy" onerror="this.remove()">` : ""}</span>
       <span class="tx"><b>${esc(p.titolo)}</b><small>${[p.classe === "radio" ? "Radio" : "Playlist", doveP(p)].filter(Boolean).map(esc).join(" · ")}</small></span></button>
       ${mod ? `<button class="mu1fx" data-act="mu1prefx" data-i="${i}" aria-label="${t("Togli", "Remove")}: ${esc(p.titolo)}">✕</button>` : ""}</div>`; }).join("")}</div>`, { cls: "span3 mu1fv" });
 }
+/* preferiti: in ✏️ Modifica si trascinano per cambiarne l'ordine (vale per tutta la casa) */
+TRASCINA.mupref = { nome: k => preferiti().find(p => chiaveP(p) === k)?.titolo || "",
+  salva: ({ ids }) => cambia(l => { const L = (Array.isArray(l.muPreferiti) ? l.muPreferiti : []).filter(x => x && x.id && x.k), pos = k => { const i = ids.indexOf(chiaveP(k)); return i < 0 ? 1e6 : i; };
+    l.muPreferiti = L.map((x, i) => [x, pos(x), i]).sort((a, b) => a[1] - b[1] || a[2] - b[2]).map(a => a[0]); }) };
 /** suona un preferito dove ascolti; se lì non si può, dove si può (e «Dove ascolti» lo segue) */
 function suonaPref(p) {
   const chi = dove();

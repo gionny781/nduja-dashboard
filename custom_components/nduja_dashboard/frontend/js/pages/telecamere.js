@@ -1,11 +1,12 @@
 /* Telecamere: anteprime leggere aggiornate ogni pochi secondi; al tocco la diretta col lettore unico (video.js:
    WebRTC → HLS → MJPEG → foto). I doppioni (sub stream, transcodifiche, canali non raggiungibili) restano fuori finché non li aggiungi con ＋.
-   Con ✏️ Modifica: ＋ qualsiasi camera.* (anche nascosta), ✕ per toglierla, ◀ ▶ per l'ordine, ✏️ per nome, stanza, gruppo,
+   Con ✏️ Modifica: ＋ qualsiasi camera.* (anche nascosta), ✕ per toglierla, trascina (o ◀ ▶) per l'ordine e per cambiare gruppo, ✏️ per nome, stanza, gruppo,
    flusso della diretta e dell'anteprima (con il metodo di ognuno) e 🗂 Gruppi (schede separate, facoltative).
    Tutto si salva nel layout (LAYOUT.telecamere, LAYOUT.camOrder, names, rooms): vale su tutti i dispositivi. */
 import { S, REG, ACT, CHG, UI, AREAS, FLOORS, LAYOUT, t, LOC, esc, nm, nmHA, ok, attr, card, empty, page, render, sGet, sSet, DEFAULT_OFF,
   openSheet, closeSheet, cached, ws, areaOf, areasSorted, excluded, defaultOff, myHA, linkIntegrazione } from "../core.js";
 import { cambia, scegli, mostra } from "../edit.js";
+import { TRASCINA } from "../trascina.js";
 import { anteprima, telecamere, flussi, proposta, gruppiCam, gruppoDi, padreDi, fotoCam, METODI, NOME_METODO } from "../video.js";
 
 DEFAULT_OFF.push(id => id.startsWith("camera.") && (/sub_?stream|transcod|_ptz|snapshot/i.test(id) || S[id]?.state === "unavailable"));
@@ -25,7 +26,7 @@ function tessera(id, L) {
   const html = `<div class="cm1 ${ok(id) ? "" : "dis"}">${anteprima(id)}${UI.edit ? riassunto(id) : ""}</div>`;
   if (!UI.edit) return html;
   const G = L.filter(x => gruppoDi(x) === gruppoDi(id)), i = G.indexOf(id);
-  return `<div class="ed1">${html}<div class="edb">
+  return `<div class="ed1" data-tri="${id}">${html}<div class="edb">
     <button data-act="camMove" data-id="${id}" data-v="-1" ${i > 0 ? "" : "disabled"} aria-label="${t("Sposta prima", "Move earlier")}">◀</button><button data-act="camMove" data-id="${id}" data-v="1" ${i < G.length - 1 ? "" : "disabled"} aria-label="${t("Sposta dopo", "Move later")}">▶</button>
     <button data-act="camEdit" data-id="${id}" aria-label="${t("Modifica", "Edit")}">✏️</button><button data-act="edDel" data-id="${id}" data-page="" aria-label="${t("Togli", "Remove")}">✕</button></div></div>`;
 }
@@ -40,9 +41,9 @@ function pagina() {
     .filter(s => s.L.length || UI.edit);
   return `<div class="g">${sezioni.map((s, k) => `<section class="card"><div class="ch"><h2>📷 ${esc(s.nome)} <span class="tag info">${s.L.length}</span></h2>
       ${k ? "" : `<div class="row" style="gap:6px">${UI.edit ? `<button class="btn sm" data-act="camGruppi">🗂 ${t("Gruppi", "Groups")}</button>` : ""}<button class="btn sm" data-act="camBig">${V.big ? "▦ " + t("Piccole", "Small") : "▢ " + t("Grandi", "Large")}</button></div>`}</div>
-    <div class="cms1 ${V.big ? "big" : ""}">${s.L.map(id => tessera(id, L)).join("")}${s.id ? "" : aggiungiBtn()}</div>
+    <div class="cms1 ${V.big ? "big" : ""}" ${UI.edit ? `data-tr="cam" data-trc="${esc(s.id)}"` : ""}>${s.L.map(id => tessera(id, L)).join("")}${s.id ? "" : aggiungiBtn()}</div>
     ${UI.edit && s.id && !s.L.length ? `<p class="small muted">${t("Ancora vuoto: scegli le telecamere da 🗂 Gruppi o con ✏️ su ognuna.", "Still empty: pick the cameras from 🗂 Groups or with ✏️ on each one.")}</p>` : ""}
-    ${UI.edit && k === sezioni.length - 1 ? `<p class="small muted" style="margin-top:10px">${t("◀ ▶ cambia l'ordine, ✏️ nome, stanza, gruppo e flussi, ✕ toglie. Se una telecamera ha più flussi (principale e sub-stream, HD e SD) l'anteprima usa quello leggero e la diretta il principale: le coppie le trovo da solo. Con ＋ aggiungi qualsiasi telecamera, anche i doppioni nascosti.", "◀ ▶ changes the order, ✏️ name, room, group and streams, ✕ removes. If a camera has more than one stream (main and sub-stream, HD and SD) the preview uses the light one and the live view the main one: I find the pairs myself. With ＋ add any camera, even hidden duplicates.")}</p>` : ""}</section>`).join("")}</div>`;
+    ${UI.edit && k === sezioni.length - 1 ? `<p class="small muted" style="margin-top:10px">${t("Trascina una telecamera per cambiarle posto, anche in un altro gruppo (o usa ◀ ▶), ✏️ nome, stanza, gruppo e flussi, ✕ toglie. Se una telecamera ha più flussi (principale e sub-stream, HD e SD) l'anteprima usa quello leggero e la diretta il principale: le coppie le trovo da solo. Con ＋ aggiungi qualsiasi telecamera, anche i doppioni nascosti.", "Drag a camera to move it, even into another group (or use ◀ ▶), ✏️ name, room, group and streams, ✕ removes. If a camera has more than one stream (main and sub-stream, HD and SD) the preview uses the light one and the live view the main one: I find the pairs myself. With ＋ add any camera, even hidden duplicates.")}</p>` : ""}</section>`).join("")}</div>`;
 }
 
 /* ---------- ＋ aggiungi: qualsiasi camera.*, anche nascosta in Home Assistant, doppione o flusso di un'altra ---------- */
@@ -139,12 +140,12 @@ const NUOVI = () => [t("Esterno", "Outside"), t("Interno", "Inside"), t("Ingress
 function gruppi() {
   const G = gruppiCam(), L = telecamere(), sugg = NUOVI().filter(n => !G.some(g => g.nome.toLowerCase() === n.toLowerCase()));
   return `<div class="sh-head"><div><h3>🗂 ${t("Gruppi", "Groups")}</h3><div class="small muted">${t("Facoltativi: ogni gruppo è una scheda a parte (es. «Esterno», «Interno»). Tocca le telecamere per metterle nel gruppo o toglierle.", "Optional: every group is a separate card (e.g. «Outside», «Inside»). Tap the cameras to put them in the group or take them out.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
-    ${G.length ? G.map((g, i) => `<div class="cgr1">
+    ${G.length ? `<div data-tr="camg">` + G.map((g, i) => `<div class="cgr1" data-tri="${g.id}">
       <div class="row" style="gap:6px"><input class="pk1q cgi1" type="text" value="${esc(g.nome)}" data-chg="camGRen" data-id="${g.id}" aria-label="${t("Nome del gruppo", "Group name")}">
         <button class="btn sm" data-act="camGMove" data-id="${g.id}" data-v="-1" ${i ? "" : "disabled"} aria-label="${t("Sposta su", "Move up")}">▲</button><button class="btn sm" data-act="camGMove" data-id="${g.id}" data-v="1" ${i < G.length - 1 ? "" : "disabled"} aria-label="${t("Sposta giù", "Move down")}">▼</button>
         <button class="btn sm bad" data-act="camGDel" data-id="${g.id}" aria-label="${t("Elimina il gruppo", "Delete the group")}">✕</button></div>
       <div class="pkt1">${L.map(id => { const qui = gruppoDi(id) === g.id, altro = !qui && gruppoDi(id);
-        return `<button class="${qui ? "act" : ""}" data-act="camGTog" data-g="${g.id}" data-id="${id}" title="${altro ? esc(t("ora in ", "now in ") + (G.find(x => x.id === altro)?.nome || "")) : ""}">${qui ? "✓ " : ""}${esc(nm(id))}${altro ? ` <small>· ${esc(G.find(x => x.id === altro)?.nome || "")}</small>` : ""}</button>`; }).join("")}</div></div>`).join("")
+        return `<button class="${qui ? "act" : ""}" data-act="camGTog" data-g="${g.id}" data-id="${id}" title="${altro ? esc(t("ora in ", "now in ") + (G.find(x => x.id === altro)?.nome || "")) : ""}">${qui ? "✓ " : ""}${esc(nm(id))}${altro ? ` <small>· ${esc(G.find(x => x.id === altro)?.nome || "")}</small>` : ""}</button>`; }).join("")}</div></div>`).join("") + `</div>`
       : `<div class="empty">${t("Nessun gruppo: tutte le telecamere sono in un'unica scheda.", "No groups: all cameras are in a single card.")}</div>`}
     <div class="fl1">${t("Nuovo gruppo", "New group")}</div>
     <div class="row" style="gap:8px"><input id="cg1n" class="pk1q" type="text" placeholder="${t("Nome del gruppo", "Group name")}" autocomplete="off" style="flex:1;margin:0"><button class="btn pri" data-act="camGAdd">＋ ${t("Aggiungi", "Add")}</button></div>
@@ -204,6 +205,16 @@ Object.assign(ACT, {
   camGTog: el => { const g = el.dataset.g, id = el.dataset.id;
     salvaCam(C => { const v = C.voci[id] = C.voci[id] || {}; v.gruppo = v.gruppo === g ? "" : g; pulisci(C, id); }); },
 });
+/* trascina (✏️ Modifica): le telecamere cambiano posto e anche gruppo (portandole nella scheda di un altro gruppo); nel foglio 🗂 i gruppi cambiano ordine */
+TRASCINA.cam = { gruppo: true, nome: nm,
+  salva: ({ id, da, a, gruppi }) => cambia(l => {
+    const o = gruppi.flatMap(g => g.ids); l.camOrder = [...o, ...(l.camOrder || []).filter(x => !o.includes(x))];
+    if (da === a) return;
+    const C = JSON.parse(JSON.stringify(l.telecamere || {})); C.voci = C.voci || {}; C.gruppi = C.gruppi || [];
+    const v = C.voci[id] = C.voci[id] || {}; v.gruppo = C.gruppi.some(g => g.id === a) ? a : ""; pulisci(C, id); l.telecamere = C;
+  }) };
+TRASCINA.camg = { attivo: () => UI.edit, nome: id => gruppiCam().find(g => g.id === id)?.nome || "",
+  salva: ({ ids }) => salvaCam(C => { C.gruppi.sort((x, y) => ids.indexOf(x.id) - ids.indexOf(y.id)); }) };
 CHG.camGRen = el => { const id = el.dataset.id, n = el.value.trim(); if (!n) { render(); return; } salvaCam(C => { const g = C.gruppi.find(x => x.id === id); if (g) g.nome = n; }); };
 
 /* cosa serve per avere questa pagina («✨ Cosa puoi aggiungere», aggiungi.js) */

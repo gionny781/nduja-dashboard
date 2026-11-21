@@ -7,6 +7,7 @@ import { S, ACT, CHG, LAYOUT, UI, HOME_EXTRA, t, esc, nm, ok, attr, ents, allEnt
   render, isAdmin, api, apriHA, ws, cached, LOC, etichettaNduja, myHA } from "../core.js";
 import { casa, casaCambia } from "../casa.js";
 import { scegli, cambia } from "../edit.js";
+import { TRASCINA, riordina } from "../trascina.js";
 
 const V = { q: "", filtro: "tutte", nascoste: false, menu: null };
 const autos = () => allEnts("automation").sort((a, b) => nm(a).localeCompare(nm(b), LOC));
@@ -108,8 +109,14 @@ async function pausa(id, minuti) {
 /* Home: le automazioni preferite, come tasti */
 function homeCard() {
   const L = preferite(); if (!L.length) return "";
-  return card("🔁 " + t("Automazioni", "Automations"), `<div class="autg sm">${L.map(tasto).join("")}</div>`, { link: [t("Tutte", "All"), "automazioni"] });
+  return card("🔁 " + t("Automazioni", "Automations"), `<div class="autg sm" ${UI.edit ? `data-tr="autopref"` : ""}>${L.map(id => tasto(id).replace('<div class="aut ', `<div data-tri="${id}" class="aut `)).join("")}</div>`, { link: [t("Tutte", "All"), "automazioni"] });
 }
+/* in ✏️ Modifica della Home le automazioni preferite si trascinano per cambiarne l'ordine (vale per tutta la casa) */
+TRASCINA.autopref = { nome: nm, salva: async ({ ids }) => {
+  const prima = [...(scelte().preferite || [])];
+  await casaCambia("automazioni", d => { d.preferite = riordina(d.preferite || [], ids); });
+  return () => casaCambia("automazioni", d => { d.preferite = prima; }, "↶ " + t("Come prima", "Back as it was"));
+} };
 HOME_EXTRA.automazioni = { title: () => t("Automazioni", "Automations"), render: homeCard, show: () => preferite().length > 0 };
 document.addEventListener("input", e => { if (e.target.id === "au1q") { V.q = e.target.value; render(); } });
 

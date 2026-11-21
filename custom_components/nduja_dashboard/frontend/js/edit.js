@@ -24,10 +24,10 @@ export const TIPI = () => ({
 const custom = pid => (LAYOUT.customPages || []).find(p => p.id === pid);
 
 /* ---------- pezzi da usare nelle pagine ---------- */
-/** avvolge un elemento: in modifica mostra ✏️ e ✕ */
+/** avvolge un elemento: in modifica mostra ✏️ e ✕ (data-tri: si può trascinare se il suo elenco lo permette, vedi trascina.js) */
 export function item(id, html, pid = "") {
   if (!UI.edit) return html;
-  return `<div class="ed1">${html}<div class="edb"><button data-act="edItem" data-id="${id}" data-page="${pid}" aria-label="${t("Modifica", "Edit")}">✏️</button><button data-act="edDel" data-id="${id}" data-page="${pid}" aria-label="${t("Togli", "Remove")}">✕</button></div></div>`;
+  return `<div class="ed1" data-tri="${id}">${html}<div class="edb"><button data-act="edItem" data-id="${id}" data-page="${pid}" aria-label="${t("Modifica", "Edit")}">✏️</button><button data-act="edDel" data-id="${id}" data-page="${pid}" aria-label="${t("Togli", "Remove")}">✕</button></div></div>`;
 }
 /** pulsante «＋ Aggiungi …» (solo in modifica) */
 export function addBtn(doms, { area = "", page = "", label = "", big = false } = {}) {

@@ -3350,3 +3350,40 @@ body.lite .pi1s .fo{animation:none!important}
   .ag1vb .ag1no{margin-left:0}
   .ag1mcb{width:100%}
 }
+
+/* ===== trascina e sposta (0.7.50, trascina.js) ===== */
+/* in ✏️ Modifica gli elementi che si possono trascinare: cursore a mano, niente selezione del testo né menu della pressione lunga */
+body.editing [data-tr]>[data-tri],.navtr .nav[data-tri]{cursor:grab;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.hc1>.hct1{cursor:grab;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.hct1::before{content:"";flex:none;width:8px;height:16px;margin:0 2px 0 -2px;opacity:.7;background:radial-gradient(circle,var(--orange) 1.4px,transparent 1.7px) 0 0/4px 4px}
+.navtr .nav[data-tri]{outline:1px dashed rgba(255,255,255,.22);outline-offset:-3px}
+.navtr .nav[data-tri].act{outline-color:rgba(255,255,255,.35)}
+.nav.nw1{text-align:center;line-height:1.2}
+body.tr1on,body.tr1on *{cursor:grabbing!important;-webkit-user-select:none!important;user-select:none!important}
+/* il posto libero dove andrà */
+.tr1ph{box-sizing:border-box;border-radius:18px;border:1.5px dashed rgba(255,255,255,.34);background:rgba(255,255,255,.06);min-width:24px;pointer-events:none;
+  animation:tr1in .18s ease-out}
+@keyframes tr1in{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+section.tr1ph{padding:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+section.tr1ph::after{display:none}
+.tabbar .tr1ph,.rail .tr1ph,.more .tr1ph{border-radius:16px}
+/* l'elemento preso: si solleva, con l'ombra, e segue il dito */
+.tr1su{pointer-events:none;transform:scale(1.035);box-shadow:0 22px 44px -12px rgba(0,0,0,.6),0 0 0 1.5px rgba(10,132,255,.55);
+  transition:transform .16s cubic-bezier(.2,.9,.3,1.3),opacity .15s;will-change:left,top}
+.tr1su.tr1fuori{opacity:.72;transform:scale(1)}
+.tr1su.tr1fermo{transition:none;transform:none}
+.tr1no{position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);width:max-content;max-width:min(300px,80vw);padding:7px 11px;border-radius:12px;
+  background:rgba(120,30,30,.94);border:1px solid rgba(255,69,58,.55);color:#fff;font-size:12px;font-weight:600;line-height:1.35;white-space:normal;text-align:center;z-index:3;box-shadow:0 8px 20px rgba(0,0,0,.4)}
+.tr1su:has(.tr1no){box-shadow:0 22px 44px -12px rgba(0,0,0,.6),0 0 0 1.5px rgba(255,69,58,.7)}
+/* messaggio con «Annulla» */
+.toast.az{display:flex;align-items:center;gap:12px;padding:8px 8px 8px 18px;width:max-content;max-width:92vw}
+.toast .tst1b{flex:none;padding:7px 14px;border-radius:999px;background:rgba(10,132,255,.9);color:#fff;font-size:13px;font-weight:700}
+.toast .tst1b:hover{background:#0a84ff}
+@media (prefers-reduced-motion:reduce){.tr1su{transition:none;transform:none}.tr1ph{animation:none}}
+body.lite .tr1su{transition:none;transform:none;box-shadow:0 0 0 2px rgba(10,132,255,.7)}
+body.lite .tr1ph{animation:none}
+/* sotto l'elemento sollevato un fondo pieno: i vetri trasparenti non si mescolano con quello che c'è sotto */
+.tr1su{background-color:rgba(22,26,38,.97)}
+/* le schede che contengono l'elemento sollevato stanno sopra le altre (ognuna è un livello a sé per il vetro) */
+.tr1alto{z-index:30!important}
+.tr1alto:not(.rail):not(.tabbar):not(.more){position:relative}

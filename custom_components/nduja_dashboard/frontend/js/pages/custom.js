@@ -1,7 +1,8 @@
 /* Pagine create dall'utente: un nome, un'icona e dentro quello che vuole (luci, clima, prese, sensori, telecamere…). */
 import { S, ACT, LAYOUT, PAGES, HOOKS, UI, t, esc, nm, ok, attr, domain, card, empty, lightTile, climateCard, entityRow, page, isAdmin,
   saveLayout, toast, openSheet, closeSheet, go, render, moreInfo } from "../core.js";
-import { item, addBtn, TIPI } from "../edit.js";
+import { item, addBtn, TIPI, cambia } from "../edit.js";
+import { TRASCINA, riordina } from "../trascina.js";
 
 const ICONE = ["⭐", "🏠", "🛋️", "🍳", "🛏️", "🛁", "🧸", "💼", "🌳", "🚗", "🔌", "💡", "❄️", "🔥", "🎮", "📺", "🎵", "🔒", "📷", "🐶", "🌱", "⚡", "🧺", "🍷"];
 const TUTTI = () => Object.keys(TIPI());
@@ -15,16 +16,16 @@ function pagina(p) {
   const it = p.items.filter(id => S[id]), L = it.filter(id => domain(id) === "light"), C = it.filter(id => domain(id) === "climate");
   const V = it.filter(id => ["sensor", "binary_sensor"].includes(domain(id))), CAM = it.filter(id => domain(id) === "camera");
   const R = it.filter(id => !L.includes(id) && !C.includes(id) && !V.includes(id) && !CAM.includes(id));
-  const k = p.id;
+  const k = p.id, tr = UI.edit ? ` data-tr="pg" data-trc="${esc(k)}"` : "";
   return `<div class="g g3">
     ${UI.edit ? `<section class="card span3 row between" style="flex-wrap:wrap;gap:8px"><b>${esc(p.icon)} ${esc(p.title)}</b><span class="row" style="gap:8px">
       <button class="btn sm" data-act="pgEdit" data-id="${k}">✏️ ${t("Nome e icona", "Name and icon")}</button><button class="btn sm bad" data-act="pgDel" data-id="${k}">🗑 ${t("Elimina pagina", "Delete page")}</button></span></section>` : ""}
     ${!it.length && !UI.edit ? card("", empty(t("Pagina vuota: premi ✏️ Modifica in alto e poi ＋ Aggiungi.", "Empty page: press ✏️ Edit at the top, then ＋ Add.")), { cls: "span3" }) : ""}
-    ${L.length ? card("💡 " + t("Luci", "Lights"), `<div class="tiles">${L.map(id => item(id, lightTile(id), k)).join("")}</div>`, { cls: "span2" }) : ""}
-    ${C.length ? card("❄️ " + t("Clima", "Climate"), `<div class="stack">${C.map(id => item(id, climateCard(id), k)).join("")}</div>`) : ""}
-    ${R.length ? card("🔌 " + t("Dispositivi", "Devices"), `<div class="stack">${R.map(id => item(id, entityRow(id), k)).join("")}</div>`) : ""}
-    ${V.length ? card("📈 " + t("Sensori", "Sensors"), `<div class="sg1">${V.map(id => item(id, sensore(id), k)).join("")}</div>`) : ""}
-    ${CAM.length ? card("📷 " + t("Telecamere", "Cameras"), `<div class="cg1">${CAM.map(id => item(id, `<button class="cam1" data-act="camLive" data-id="${id}"><img src="${esc(attr(id, "entity_picture") || "")}" alt=""><span>${esc(nm(id))}</span></button>`, k)).join("")}</div>`, { cls: "span3" }) : ""}
+    ${L.length ? card("💡 " + t("Luci", "Lights"), `<div class="tiles"${tr}>${L.map(id => item(id, lightTile(id), k)).join("")}</div>`, { cls: "span2" }) : ""}
+    ${C.length ? card("❄️ " + t("Clima", "Climate"), `<div class="stack"${tr}>${C.map(id => item(id, climateCard(id), k)).join("")}</div>`) : ""}
+    ${R.length ? card("🔌 " + t("Dispositivi", "Devices"), `<div class="stack"${tr}>${R.map(id => item(id, entityRow(id), k)).join("")}</div>`) : ""}
+    ${V.length ? card("📈 " + t("Sensori", "Sensors"), `<div class="sg1"${tr}>${V.map(id => item(id, sensore(id), k)).join("")}</div>`) : ""}
+    ${CAM.length ? card("📷 " + t("Telecamere", "Cameras"), `<div class="cg1"${tr}>${CAM.map(id => item(id, `<button class="cam1" data-act="camLive" data-id="${id}"><img src="${esc(attr(id, "entity_picture") || "")}" alt=""><span>${esc(nm(id))}</span></button>`, k)).join("")}</div>`, { cls: "span3" }) : ""}
     ${UI.edit ? `<section class="card span3">${addBtn(TUTTI(), { page: k, label: t("Aggiungi a questa pagina", "Add to this page"), big: true })}</section>` : ""}
   </div>`;
 }
@@ -64,3 +65,6 @@ Object.assign(ACT, {
     await saveLayout(l).catch(() => {}); go("home"); toast("🗑 " + t("Pagina eliminata", "Page deleted"));
   },
 });
+
+/* trascina per cambiare l'ordine dentro una scheda della pagina (✏️ Modifica, trascina.js) */
+TRASCINA.pg = { nome: nm, salva: ({ a, ids }) => cambia(l => { const p = (l.customPages || []).find(x => x.id === a); if (p) p.items = riordina(p.items || [], ids); }) };

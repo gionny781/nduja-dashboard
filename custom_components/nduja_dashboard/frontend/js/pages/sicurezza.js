@@ -2,8 +2,9 @@
    telecamere (anteprime, diretta al tocco col lettore di video.js), porte e finestre aperte, fumo, gas, acqua, monossido, movimento. I sensori di pericolo accesi finiscono anche negli Avvisi della Home.
    ⚙️ (amministratori): LAYOUT.sicurezza = { noPericoli:[] (trovati da soli ma senza allarme), pericoli:[] (aggiunti a mano), movimenti: quanti (0 = scheda nascosta), camere: "no" | id di un gruppo } */
 import { S, ACT, CHG, UI, LAYOUT, HOME_EXTRA, t, LOC, esc, fnum, nm, nmHA, ok, attr, ents, isOn, ago, card, empty, page, svc, toast, openSheet, closeSheet, render,
-  deviceClass, openings, shortName, areaOf, AREAS, isAdmin, domain, sicuro, PAGES, excluded, myHA } from "../core.js";
+  deviceClass, openings, shortName, areaOf, AREAS, isAdmin, domain, sicuro, PAGES, excluded, myHA, ordina } from "../core.js";
 import { item, addBtn, scegli, cambia } from "../edit.js";
+import { TRASCINA, riordina, salvaOrdine } from "../trascina.js";
 import { anteprima, telecamere, gruppiCam, gruppoDi } from "../video.js";
 
 const sc = () => LAYOUT.sicurezza || {};
@@ -147,12 +148,12 @@ function accesso(a, i, n) {
     <div class="ac1h"><span class="aci1">${disegnoAccesso(formaDi(a), st.k)}</span><div class="tx"><b>${esc(nomeDi(a))}</b><span>${riassunto(a, st)}</span></div></div>
     <div class="acb1 ${P.length > 1 ? "tre" : ""}">${P.map(p => bottone(a, p)).join("")}</div></div>`;
   if (!UI.edit) return html;
-  return `<div class="ed1">${html}<div class="edb"><button data-act="acMove" data-id="${a.id}" data-v="-1" ${i ? "" : "disabled"} aria-label="${t("Sposta prima", "Move earlier")}">◀</button><button data-act="acMove" data-id="${a.id}" data-v="1" ${i < n - 1 ? "" : "disabled"} aria-label="${t("Sposta dopo", "Move later")}">▶</button>
+  return `<div class="ed1" data-tri="${a.id}">${html}<div class="edb"><button data-act="acMove" data-id="${a.id}" data-v="-1" ${i ? "" : "disabled"} aria-label="${t("Sposta prima", "Move earlier")}">◀</button><button data-act="acMove" data-id="${a.id}" data-v="1" ${i < n - 1 ? "" : "disabled"} aria-label="${t("Sposta dopo", "Move later")}">▶</button>
     <button data-act="acEdit" data-id="${a.id}" aria-label="${t("Modifica", "Edit")}">✏️</button><button data-act="acDel" data-id="${a.id}" aria-label="${t("Togli", "Remove")}">✕</button></div></div>`;
 }
 function accessiCard() {
   const L = accessi(); if (!L.length && !UI.edit) return "";
-  return card("🚪 " + t("Accessi", "Access"), `<div class="acg1">${L.map((a, i) => accesso(a, i, L.length)).join("")}
+  return card("🚪 " + t("Accessi", "Access"), `<div class="acg1" ${UI.edit ? `data-tr="accessi"` : ""}>${L.map((a, i) => accesso(a, i, L.length)).join("")}
     ${UI.edit ? `<button class="add1" data-act="acAdd"><span>＋</span>${t("Aggiungi accesso", "Add access")}</button>` : ""}</div>
     ${UI.edit && !L.length ? `<p class="small muted" style="margin-top:10px">${t("Cancello, cancelletto, porta del garage, portone: qualsiasi serratura, cover, interruttore, pulsante o script.", "Gate, pedestrian gate, garage door, main door: any lock, cover, switch, button or script.")}</p>` : ""}`, { cls: "span3" });
 }
@@ -265,24 +266,29 @@ const riga = (id, extra = "", quieto = false) => `<div class="li ${isOn(id) && !
 const cfgBtn = () => isAdmin() ? `<button class="btn sm" data-act="siCfg" title="${t("Impostazioni", "Settings")}" aria-label="${t("Impostazioni", "Settings")}">⚙️</button>` : "";
 
 function pagina() {
-  const A = ents("alarm_control_panel"), AC = accessi(), O = openings(), aperte = O.filter(isOn), no = new Set(sc().noPericoli || []);
-  const P = [...new Set([...ents("binary_sensor", id => ["smoke", "gas", "carbon_monoxide", "moisture"].includes(deviceClass(id))), ...aggiunti()])];
+  const A = ordina(ents("alarm_control_panel"), "allarmi"), AC = accessi(), O = openings(), aperte = O.filter(isOn), no = new Set(sc().noPericoli || []);
+  const P = ordina([...new Set([...ents("binary_sensor", id => ["smoke", "gas", "carbon_monoxide", "moisture"].includes(deviceClass(id))), ...aggiunti()])], "pericoli");
   const nM = quantiMov(), M = ents("binary_sensor", id => MOVIMENTO.includes(deviceClass(id))).sort((a, b) => new Date(S[b].last_changed) - new Date(S[a].last_changed)).slice(0, nM);
   const PB = pericoli();
-  return `<div class="g g3">
+  return `<div class="g g3" ${UI.edit && A.length > 1 ? `data-tr="allarmi"` : ""}>
     ${PB.length ? `<section class="card span3 al1 bad"><div class="ch"><h2>🚨 ${t("Attenzione", "Warning")}</h2>${cfgBtn()}</div><div class="stack">${PB.map(id => riga(id)).join("")}</div></section>` : ""}
     ${accessiCard()}
     ${telecamereCard()}
     ${A.map(id => item(id, allarme(id))).join("")}
     ${card(`🚪 ${t("Porte e finestre", "Doors and windows")} <span class="tag ${aperte.length ? "warn" : "ok"}">${aperte.length ? aperte.length + " " + t("aperte", "open") : t("tutte chiuse", "all closed")}</span>`,
       O.length ? `<div class="stack">${[...aperte, ...O.filter(id => !isOn(id))].map(id => item(id, riga(id, isOn(id) ? t("aperta", "open") : t("chiusa", "closed")))).join("")}</div>` : empty(t("Nessun sensore di porte o finestre.", "No door or window sensors.")))}
-    ${P.length ? card("🔥 " + t("Fumo, gas e acqua", "Smoke, gas and water"), `<div class="stack">${P.map(id => item(id, riga(id, "", no.has(id)))).join("")}</div>`, { right: cfgBtn() }) : ""}
+    ${P.length ? card("🔥 " + t("Fumo, gas e acqua", "Smoke, gas and water"), `<div class="stack" ${UI.edit ? `data-tr="pericoli"` : ""}>${P.map(id => item(id, riga(id, "", no.has(id)))).join("")}</div>`, { right: cfgBtn() }) : ""}
     ${M.length ? card("🏃 " + t("Movimento", "Motion"), `<div class="stack">${M.map(id => item(id, riga(id, isOn(id) ? t("movimento", "motion") : t("libero", "clear")))).join("")}</div>`, { right: cfgBtn() }) : ""}
     ${!A.length && !AC.length && !O.length && !P.length && !M.length && !UI.edit ? card("🛡️ " + t("Sicurezza", "Security"), empty(t("Nessun allarme, accesso o sensore di sicurezza.", "No alarm, access or security sensor.")), { cls: "span3" }) : ""}
     ${UI.edit ? `<section class="card span3">${addBtn(["alarm_control_panel", "lock", "binary_sensor"], { big: true, label: t("Aggiungi allarme, serratura o sensore", "Add alarm, lock or sensor") })}
       ${isAdmin() ? `<button class="add1 wide1" data-act="siCfg" style="margin-top:8px"><span>⚙️</span>${t("Sensori di pericolo, movimento e telecamere di questa pagina", "Danger sensors, motion and cameras on this page")}</button>` : ""}</section>` : ""}
   </div>`;
 }
+
+/* ---------- trascina e sposta (✏️ Modifica, trascina.js): accessi, allarmi, sensori di pericolo ---------- */
+TRASCINA.accessi = { nome: id => nomeDi({ ...(conf().voci?.[id] || {}), id }), salva: ({ ids }) => salvaAccessi(C => { C.ordine = riordina(accessi().map(a => a.id), ids); }) };
+TRASCINA.allarmi = { nome: nm, salva: ({ ids }) => salvaOrdine("allarmi", ordina(ents("alarm_control_panel"), "allarmi"), ids) };
+TRASCINA.pericoli = { nome: nm, salva: ({ ids }) => salvaOrdine("pericoli", ordina([...new Set([...ents("binary_sensor", id => ["smoke", "gas", "carbon_monoxide", "moisture"].includes(deviceClass(id))), ...aggiunti()])], "pericoli"), ids) };
 
 /* ---------- ⚙️ scelte della pagina (amministratori, valgono per tutta la casa) ---------- */
 const sicCambia = (fn, msg) => cambia(l => { const c = JSON.parse(JSON.stringify(l.sicurezza || {})); fn(c);

@@ -4,6 +4,7 @@
    La tessera compare ovunque ci sia una luce (pagina Luci, stanze della Home, pagine e schede create da te). */
 import { S, ACT, LAYOUT, UI, VISTE, t, esc, nm, ok, attr, areaOf, AREAS, shortName, svc, toast, openSheet, closeSheet, render, moreInfo,
   isAdmin, sGet, sSet, luci, membriLuce, isLightGroup, isLightSwitch, saveLayout } from "./core.js";
+import { TRASCINA } from "./trascina.js";
 
 /* ---------- icone (disegni originali, 24×24; la parte .g si accende col colore della lampada) ---------- */
 const P = {
@@ -205,6 +206,13 @@ ACT.luBack = () => { const x = PILA.pop(); if (!x) return closeSheet(); if (x.id
 const BIANCHI = () => [[2700, t("Calda", "Warm")], [4000, t("Naturale", "Neutral")], [6000, t("Fredda", "Cool")]];
 const COLORI = [[0, 1], [28, 1], [50, 1], [120, .9], [175, .85], [205, .85], [235, .9], [275, .8], [320, .7]];
 const preferiti = () => { if (isAdmin()) return LAYOUT.lightFav || []; try { return JSON.parse(sGet("lightFav") || "[]"); } catch { return []; } };
+/* i colori preferiti si trascinano per cambiarne l'ordine: per tutta la casa (amministratori) o su questo dispositivo */
+TRASCINA.lufav = { attivo: () => true, nome: () => t("colore preferito", "favourite colour"),
+  salva: async ({ ids }) => {
+    const prima = [...preferiti()], metti = async L => { if (isAdmin()) await saveLayout({ ...JSON.parse(JSON.stringify(LAYOUT)), lightFav: L }); else { sSet("lightFav", JSON.stringify(L)); render(true); } };
+    await metti(ids.filter(f => prima.includes(f)));
+    return () => metti(prima).then(() => toast("↶ " + t("Come prima", "Back as it was")));
+  } };
 const vicino = (st, f) => f.startsWith("k:") ? st.k && Math.abs(st.k - +f.slice(2)) < 120 : st.hs && (([h, s]) => Math.min(Math.abs(st.hs[0] - h), 360 - Math.abs(st.hs[0] - h)) < 6 && Math.abs(st.hs[1] - s) < .08)(f.split(",").map(Number));
 const voceCol = f => f.startsWith("k:") ? rgbKelvin(+f.slice(2)) : (([h, s]) => rgbHs(h, s))(f.split(",").map(Number));
 function dettaglio() {
@@ -228,12 +236,12 @@ function dettaglio() {
   if (haColori(id)) {
     const hs = st.hs || (st.on && !st.k ? hsRgb(st.rgb) : null), F = preferiti(), cur = hs ? `${Math.round(hs[0])},${Math.round(hs[1] * 100) / 100}` : st.k ? "k:" + Math.round(st.k / 50) * 50 : "";
     const giaFav = cur && F.some(f => vicino(st, f));
-    const sw = (f, cls = "") => `<button class="lu3s ${cls} ${vicino(st, f) ? "on" : ""}" data-act="luCol" data-id="${id}" data-v="${f}" style="background:${css(voceCol(f))}" aria-label="${esc(f)}"></button>`;
+    const sw = (f, cls = "") => `<button class="lu3s ${cls} ${vicino(st, f) ? "on" : ""}" data-act="luCol" data-id="${id}" data-v="${f}" ${cls === "fav" ? `data-tri="${esc(f)}"` : ""} style="background:${css(voceCol(f))}" aria-label="${esc(f)}"></button>`;
     parti.push(`<div class="fl1">${t("Colore", "Colour")}</div>
       <div class="lu3cw"><div class="lu3w" data-lug="w" data-id="${id}" aria-label="${t("Ruota dei colori", "Colour wheel")}">${hs ? `<i class="lu3wk" style="left:${(50 + hs[1] * Math.sin(hs[0] * Math.PI / 180) * 50).toFixed(2)}%;top:${(50 - hs[1] * Math.cos(hs[0] * Math.PI / 180) * 50).toFixed(2)}%;background:${css(rgbHs(hs[0], hs[1]))}"></i>` : ""}</div>
         <div class="lu3pal"><div class="lu3sg">${COLORI.map(([h, s]) => sw(h + "," + s)).join("")}</div>
           <div class="small muted" style="margin:10px 0 6px">⭐ ${t("Preferiti", "Favourites")}</div>
-          <div class="lu3sg">${F.map(f => sw(f, "fav")).join("")}${cur ? `<button class="lu3s add ${giaFav ? "on" : ""}" data-act="luFav" data-id="${id}" data-v="${cur}" aria-label="${giaFav ? t("Togli dai preferiti", "Remove from favourites") : t("Aggiungi ai preferiti", "Add to favourites")}">${giaFav ? "★" : "☆"}</button>` : ""}</div>
+          <div class="lu3sg" ${F.length > 1 ? `data-tr="lufav"` : ""}>${F.map(f => sw(f, "fav")).join("")}${cur ? `<button class="lu3s add ${giaFav ? "on" : ""}" data-trfine data-act="luFav" data-id="${id}" data-v="${cur}" aria-label="${giaFav ? t("Togli dai preferiti", "Remove from favourites") : t("Aggiungi ai preferiti", "Add to favourites")}">${giaFav ? "★" : "☆"}</button>` : ""}</div>
           <div class="small muted" style="margin-top:6px">${giaFav ? t("★ toglie questo colore dai preferiti.", "★ removes this colour from favourites.") : cur ? t("☆ salva il colore di adesso.", "☆ saves the current colour.") : t("Scegli un colore, poi ☆ per salvarlo.", "Pick a colour, then ☆ to save it.")}</div></div></div>`);
   }
   const E = a.effect_list || [];

@@ -380,6 +380,9 @@ body.light .ag1p{border:1px dashed rgba(0,0,0,0.126)!important;background:rgba(0
 body.light .ag1pi{background:rgba(0,0,0,0.040)!important}
 body.light .ag1pb{background:rgba(0,0,0,0.050)!important}
 body.light .ag1mc{border:1px dashed rgba(0,0,0,0.140)!important;background:rgba(0,0,0,0.020)!important}
+body.light .navtr .nav[data-tri]{outline:1px dashed rgba(0,0,0,0.154)!important}
+body.light .navtr .nav[data-tri].act{outline-color:rgba(0,0,0,0.245)!important}
+body.light .tr1ph{border:1.5px dashed rgba(0,0,0,0.238)!important;background:rgba(0,0,0,0.030)!important}
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
 body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
@@ -621,4 +624,5 @@ body.light .pi1s .om{opacity:.1}
 body.light .ag1vs span,body.light .ag1st li::before,body.light .ag1mci{color:#0a63c9}
 body.light .ag1n .pi b{color:#a87900}
 body.light .ag1p em{background:#f2f5fa}
+body.light .tr1su{background-color:rgba(250,251,253,.94)}
 

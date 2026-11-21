@@ -2,6 +2,7 @@
    Si parte da tutto acceso e si toglie quello che non serve; le scelte si salvano in Home Assistant
    (valgono su tutti i dispositivi) e solo un amministratore può cambiarle. */
 import { scegli, isTemp, isHum, cambia } from "../edit.js";
+import { TRASCINA, riordina } from "../trascina.js";
 import { ssMin, ssVoce } from "../salvaschermo.js";
 import { schedeHome } from "./home.js";
 import { controllaCard } from "../controlla.js";
@@ -85,14 +86,18 @@ function passoInizio() {
 function passoStanze() {
   const d = draft(), A = stanzeOrdinate();
   if (!A.length) return `<div class="small muted">${t("Nessuna stanza.", "No rooms.")}</div>`;
-  let piano = null;
-  return `<p class="wz-p">${t("Scegli le stanze da mostrare e mettile nell'ordine che preferisci. Le stanze nascoste spariscono da tutte le pagine, con i loro dispositivi.", "Choose which rooms to show and put them in your order. Hidden rooms disappear from every page, with their devices.")}</p>` + A.map(a => {
-    const f = AREAS[a].floor, head = f !== piano ? `<div class="fl1">${esc(FLOORS[f]?.name || t("Senza piano", "No floor"))}</div>` : ""; piano = f;
-    const on = !d.hiddenAreas.includes(a), n = Object.keys(S).filter(id => REG[id]?.area === a).length;
-    return `${head}<div class="ck1 ar ${on ? "on" : ""}"><button class="ckb" data-act="wzA" data-id="${a}"><span class="bx"></span><span class="tx"><b>${esc(AREAS[a].name)}</b><small>${n} ${t("entità", "entities")}</small></span></button>
-      <span class="row" style="gap:4px"><button class="btn sm" data-act="wzMove" data-id="${a}" data-v="-1" aria-label="su">▲</button><button class="btn sm" data-act="wzMove" data-id="${a}" data-v="1" aria-label="giù">▼</button></span></div>`;
-  }).join("");
+  /* le stanze di ogni piano in un elenco a sé: si trascinano (o ▲▼) solo dentro il loro piano */
+  const piani = [...new Set(A.map(a => AREAS[a].floor || ""))];
+  const riga = a => { const on = !d.hiddenAreas.includes(a), n = Object.keys(S).filter(id => REG[id]?.area === a).length;
+    return `<div class="ck1 ar ${on ? "on" : ""}" data-tri="${a}"><button class="ckb" data-act="wzA" data-id="${a}"><span class="bx"></span><span class="tx"><b>${esc(AREAS[a].name)}</b><small>${n} ${t("entità", "entities")}</small></span></button>
+      <span class="row" style="gap:4px"><button class="btn sm" data-act="wzMove" data-id="${a}" data-v="-1" aria-label="${t("Sposta su", "Move up")}">▲</button><button class="btn sm" data-act="wzMove" data-id="${a}" data-v="1" aria-label="${t("Sposta giù", "Move down")}">▼</button></span></div>`; };
+  return `<p class="wz-p">${t("Scegli le stanze da mostrare e trascinale nell'ordine che preferisci (o usa ▲▼). Le stanze nascoste spariscono da tutte le pagine, con i loro dispositivi.", "Choose which rooms to show and drag them into your order (or use ▲▼). Hidden rooms disappear from every page, with their devices.")}</p>`
+    + piani.map(f => `${piani.length > 1 || f ? `<div class="fl1">${esc(FLOORS[f]?.name || t("Senza piano", "No floor"))}</div>` : ""}<div class="wz1st" data-tr="wzstanze" data-trc="${esc(f)}">${A.filter(a => (AREAS[a].floor || "") === f).map(riga).join("")}</div>`).join("");
 }
+/* trascina le stanze nel wizard: cambia la bozza (si salva alla fine del wizard, come ▲▼); «Annulla» la rimette com'era */
+TRASCINA.wzstanze = { attivo: () => isAdmin(), gruppo: true, nome: a => AREAS[a]?.name || a,
+  puo: (da, a) => da === a || t("Le stanze si spostano solo nel loro piano: il piano si cambia in Home Assistant (Impostazioni → Aree).", "Rooms move only within their floor: the floor is set in Home Assistant (Settings → Areas)."),
+  salva: ({ ids }) => { const d = draft(), prima = [...(d.areaOrder || [])]; d.areaOrder = riordina(stanzeOrdinate(), ids); render(); return () => { draft().areaOrder = prima; render(); }; } };
 const passoLuci = () => `<p class="wz-p">${draft().mode === "manual" ? t("Tocca le luci che vuoi nella plancia: diventano verdi.", "Tap the lights you want on the dashboard: they turn green.") : t("Spegni le luci che non vuoi vedere (per esempio i doppioni dei gruppi o le luci tecniche).", "Switch off the lights you don't want to see (for example group duplicates or technical lights).")}</p>` + perStanza(allEnts("light"), t("Nessuna luce.", "No lights."));
 function passoClima() {
   const d = draft();
@@ -132,7 +137,7 @@ function passoFine() {
 function personalizza() {
   const b = (act, ic, n, s, id = "") => `<button class="li" data-act="${act}" ${id ? `data-id="${id}"` : ""}><span class="ic">${ic}</span><div class="tx"><b>${n}</b><span>${s}</span></div><span class="st">›</span></button>`;
   return `<div class="stack">
-    ${b("goEdit", "🏠", t("Home: schede, ordine, stanze", "Home: cards, order, rooms"), t("Apre la Home in modifica: sposta ▲▼, nascondi, ✏️ sulle stanze e sui sensori", "Opens Home in edit mode: move ▲▼, hide, ✏️ rooms and sensors"), "home")}
+    ${b("goEdit", "🏠", t("Home: schede, ordine, stanze", "Home: cards, order, rooms"), t("Apre la Home in modifica: trascina schede e stanze (o ▲▼), nascondi, ✏️ sulle stanze e sui sensori", "Opens Home in edit mode: drag cards and rooms (or ▲▼), hide, ✏️ rooms and sensors"), "home")}
     ${b("wxEdit", "🌤️", t("Meteo", "Weather"), t("Da dove prendo il meteo", "Weather source"))}
     ${b("rfEdit", "♻️", t("Raccolta differenziata", "Waste collection"), t("Sensori e calendari dei ritiri", "Pickup sensors and calendars"))}
     ${b("calEdit", "📅", t("Calendari", "Calendars"), t("Quali calendari mostrare", "Which calendars to show"))}

@@ -91,6 +91,13 @@ export function areasSorted(all) {
   return Object.keys(AREAS).filter(a => all || !(LAYOUT.hiddenAreas || []).includes(a))
     .sort((a, b) => fl(AREAS[a].floor) - fl(AREAS[b].floor) || pos(a) - pos(b) || AREAS[a].name.localeCompare(AREAS[b].name, LOC));
 }
+/** ordine scelto dall'utente per un elenco (LAYOUT.ordine[chiave], si sceglie trascinando in ✏️ Modifica):
+    prima quelli scelti, nel loro ordine, poi i nuovi nell'ordine di oggi. id(x) dà la chiave di un elemento (se non è già un id). */
+export function ordina(L, chiave, id = x => x) {
+  const o = LAYOUT.ordine?.[chiave]; if (!Array.isArray(o) || !o.length) return [...L];
+  const pos = new Map(o.map((k, i) => [k, i])), p = (x, i) => pos.has(id(x)) ? pos.get(id(x)) : 1e6 + i;
+  return L.map((x, i) => [x, p(x, i)]).sort((a, b) => a[1] - b[1]).map(a => a[0]);
+}
 /** temperatura e umidità di una stanza: il primo sensore adatto nell'area */
 export const climateSensors = (area, dc) => allEnts("sensor", id => areaOf(id) === area && deviceClass(id) === dc && ok(id));
 /* sensori che NON sono la temperatura della stanza: caldaie, interni dei dispositivi, CPU, batterie, esterni */
@@ -175,9 +182,12 @@ export function tvAuto(id) {
 export const tvInMedia = () => { try { return !!PAGES.media && PAGES.media.show() && LAYOUT.pages?.media !== false && utenteCfg().pages?.media !== false; } catch { return false; } };
 
 /* ================= servizi ================= */
-export function toast(msg, err) {
-  const el = $("#toast"); el.textContent = msg; el.className = "toast show" + (err ? " err" : "");
-  clearTimeout(toast._t); toast._t = setTimeout(() => el.className = "toast", 2800);
+/** messaggio a comparsa; azione = [testo, funzione] aggiunge un pulsante (es. «Annulla») e lo lascia qualche secondo in più */
+export function toast(msg, err, azione) {
+  const el = $("#toast"); toast._az = azione?.[1] || null;
+  if (azione) el.innerHTML = `<span>${esc(msg)}</span><button class="tst1b" data-act="toastAz">${esc(azione[0])}</button>`; else el.textContent = msg;
+  el.className = "toast show" + (err ? " err" : "") + (azione ? " az" : "");
+  clearTimeout(toast._t); toast._t = setTimeout(() => { el.className = "toast"; toast._az = null; }, azione ? 6500 : 2800);
 }
 export const ws = msg => conn.sendMessagePromise(msg);
 export async function svc(dom, service, data = {}, target) {
@@ -312,6 +322,7 @@ Object.assign(ACT, {
   more: el => el.dataset.id ? moreInfo(el.dataset.id) : $("#more").classList.toggle("open"),
   lightsOff: el => { const L = el.dataset.area ? lightsOn(el.dataset.area) : lightsOn(); if (L.length) luciComando(L, false).then(() => toast(t("Luci spente: ", "Lights off: ") + L.length)); },
   sheetClose: () => closeSheet(),
+  toastAz: () => { const f = toast._az; toast._az = null; clearTimeout(toast._t); $("#toast").className = "toast"; try { f?.(); } catch (e) { console.error(e); } },
 });
 CHG.bright = el => svc("light", "turn_on", { brightness_pct: +el.value }, { entity_id: el.dataset.id });
 
@@ -327,7 +338,16 @@ HOOKS.push(nomiStanze);
 export function page(id, def) { PAGES[id] = { order: 50, show: () => true, ...def }; if (conn) render(); }
 /** scelte per la persona che sta usando la plancia (pagine e schede della Home), decise dall'amministratore */
 export const utenteCfg = () => (UI.user?.id && LAYOUT.users?.[UI.user.id]) || {};
-const visible = () => Object.keys(PAGES).filter(k => !PAGES[k].hiddenNav && PAGES[k].show() && LAYOUT.pages?.[k] !== false && utenteCfg().pages?.[k] !== false && (!PAGES[k].admin || isAdmin())).sort((a, b) => PAGES[a].order - PAGES[b].order);
+/** ordine delle pagine nel menu: quello scelto trascinando in ✏️ Modifica (LAYOUT.navOrder, vale per tutti),
+    con le pagine nuove al loro posto naturale (dopo la pagina che le precede); senza scelte, quello di partenza */
+export function ordineNav() {
+  const K = Object.keys(PAGES).filter(k => !PAGES[k].hiddenNav).sort((a, b) => PAGES[a].order - PAGES[b].order);
+  const o = (Array.isArray(LAYOUT.navOrder) ? LAYOUT.navOrder : []).filter((k, i, A) => K.includes(k) && A.indexOf(k) === i);
+  if (!o.length) return K;
+  K.forEach((k, i) => { if (o.includes(k)) return; const prima = K.slice(0, i).reverse().find(x => o.includes(x)); o.splice(prima ? o.indexOf(prima) + 1 : 0, 0, k); });
+  return o;
+}
+export const visible = () => ordineNav().filter(k => PAGES[k].show() && LAYOUT.pages?.[k] !== false && utenteCfg().pages?.[k] !== false && (!PAGES[k].admin || isAdmin()));
 /* le pagine «secondarie» arrivano dopo la Home: se si apre direttamente una di queste, la mostro appena c'è */
 let pronte = false, attesa = null;
 export function tuttePronte() { pronte = true; if (attesa) { const a = attesa; attesa = null; go(a); } else render(true); }
@@ -357,7 +377,7 @@ function morph(a, b) {
   if (a.nodeType !== 1) return;
   if (a.hasAttribute("data-keep") && b.hasAttribute("data-keep")) return;
   if (a.getAttribute("data-sure") === "1") return;   // pulsante in attesa di conferma: non lo tocco finché non scade
-  if (a.getAttribute("data-drag") === "1") return;   // luce che si sta regolando col dito (luce.js)
+  if (a.getAttribute("data-drag") === "1") return;   // luce che si sta regolando col dito (luce.js) o elenco che si sta trascinando (trascina.js)
   /* un menu a tendina riusato per un'altra entità (o con altre voci): lo sostituisco, altrimenti mostrerebbe le voci vecchie */
   if (a.tagName === "SELECT" && a !== document.activeElement && a.innerHTML !== b.innerHTML) { a.replaceWith(b); return; }
   for (const at of [...a.attributes]) if (!b.hasAttribute(at.name)) a.removeAttribute(at.name);
@@ -369,6 +389,7 @@ function morph(a, b) {
   for (let i = bc.length; i < ac.length; i++) ac[i].remove();
 }
 export function patch(el, html) {
+  if (el.getAttribute("data-drag") === "1") return;   // elenco che si sta trascinando (trascina.js)
   if (!el.firstChild) { el.innerHTML = html; return; }
   const tmp = document.createElement(el.tagName); tmp.innerHTML = html;
   const ac = [...el.childNodes], bc = [...tmp.childNodes];
@@ -411,6 +432,12 @@ export function applyNav() {
 }
 ACT.navMode = el => { sSet("nav", el.dataset.v); applyNav(); render(true); toast(el.dataset.v === "auto" ? t("Barra a scomparsa: avvicinati al bordo per farla comparire", "Auto-hide bar: move to the edge to show it") : t("Barra sempre visibile", "Bar always visible")); };
 ACT.navPeek = () => navShow(5000);
+/* ↺ Ordine automatico delle pagine (✏️ Modifica): toglie l'ordine scelto, con «Annulla» */
+ACT.navAuto = async () => {
+  const prima = LAYOUT.navOrder, l = JSON.parse(JSON.stringify(LAYOUT)); delete l.navOrder;
+  try { await saveLayout(l); } catch (e) { return toast(t("Non salvato: ", "Not saved: ") + (e.message || e.code), true); }
+  toast("↺ " + t("Pagine nell'ordine automatico", "Pages in the default order"), false, [t("Annulla", "Undo"), () => { const m = JSON.parse(JSON.stringify(LAYOUT)); m.navOrder = prima; saveLayout(m).then(() => toast("↶ " + t("Come prima", "Back as it was"))).catch(() => {}); }]);
+};
 
 /* ---------- schermo intero e modalità chiosco (per ogni dispositivo) ----------
    ⛶ mette la plancia a tutto schermo (dove il browser lo permette, es. tablet, PC, Android);
@@ -469,12 +496,16 @@ export function render(now) {
   });
 }
 function renderNav() {
-  const v = visible();
-  const nav = k => `<button class="nav ${k === UI.page ? "act" : ""}" data-act="go" data-id="${k}"><span class="i">${PAGES[k].icon}</span>${PAGES[k].short || PAGES[k].title}${PAGES[k].badge?.() ? '<span class="dot"></span>' : ""}</button>`;
-  const nuova = isAdmin() && UI.edit ? `<button class="nav nw1" data-act="edNewPage"><span class="i">＋</span>${t("Pagina", "Page")}</button>` : "";
+  const v = visible(), mod = isAdmin() && UI.edit;
+  /* in ✏️ Modifica (amministratori) le pagine si trascinano: barra laterale, barra in basso del telefono e menu «Altro» (trascina.js) */
+  document.body.classList.toggle("navtr", mod);
+  [["rail", "rail"], ["tabbar", "bar"], ["more", "altro"]].forEach(([id, c]) => { const n = $("#" + id); if (n) { n.dataset.tr = "nav"; n.dataset.trc = c; } });
+  const nav = k => `<button class="nav ${k === UI.page ? "act" : ""}" data-act="go" data-id="${k}" data-tri="${k}"><span class="i">${PAGES[k].icon}</span>${PAGES[k].short || PAGES[k].title}${PAGES[k].badge?.() ? '<span class="dot"></span>' : ""}</button>`;
+  const nuova = mod ? `<button class="nav nw1" data-act="edNewPage" data-trfine><span class="i">＋</span>${t("Pagina", "Page")}</button>`
+    + (Array.isArray(LAYOUT.navOrder) ? `<button class="nav nw1" data-act="navAuto" title="${t("Torna all'ordine di partenza delle pagine", "Back to the default page order")}"><span class="i">↺</span>${t("Ordine automatico", "Default order")}</button>` : "") : "";
   patch($("#rail"), `<div class="logo" title="'Nduja ${esc(UI.version)}">🌶️</div><div class="beta1">BETA</div>` + v.map(nav).join("") + nuova);
   const main = v.slice(0, 4);
-  patch($("#tabbar"), main.map(nav).join("") + (v.length > 4 ? `<button class="nav ${main.includes(UI.page) ? "" : "act"}" data-act="more"><span class="i">☰</span>${t("Altro", "More")}</button>` : ""));
+  patch($("#tabbar"), main.map(nav).join("") + (v.length > 4 ? `<button class="nav ${main.includes(UI.page) ? "" : "act"}" data-act="more" data-trfine><span class="i">☰</span>${t("Altro", "More")}</button>` : ""));
   patch($("#more"), v.slice(4).map(nav).join("") + nuova);
   if (!$("#navh")) document.body.insertAdjacentHTML("beforeend", `<button id="navh" class="navh1" data-act="navPeek" aria-label="${t("Mostra il menu", "Show menu")}"></button>`);
 }

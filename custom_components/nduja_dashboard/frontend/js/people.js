@@ -1,8 +1,9 @@
 /* Persone: foto, dove sono e da quando, distanza da casa, batteria del telefono (e se è in carica).
    Il telefono si trova da solo tra i dispositivi della persona; con ✏️ si sceglie a mano. */
 import { S, REG, ACT, CHG, LAYOUT, UI, t, esc, fnum, nm, nmHA, ok, val, attr, ents, ago, km, card, saveLayout, toast, openSheet, closeSheet,
-  deviceClass, allEnts } from "./core.js";
+  deviceClass, allEnts, ordina } from "./core.js";
 import { item, addBtn } from "./edit.js";
+import { TRASCINA, salvaOrdine } from "./trascina.js";
 
 const TELEFONO = /iphone|phone|pixel|galaxy|sm_[a-z]|android|oneplus|xiaomi|redmi|huawei|motorola|moto_|nokia|oppo|realme|poco/i;
 const conf = pid => (LAYOUT.people || {})[pid] || {};
@@ -46,10 +47,13 @@ function scheda(i) {
     ${bat ? `<span class="bt2">📱 ${bat}</span>` : ""}
   </button>`;
 }
+/** persone nell'ordine scelto trascinandole in ✏️ Modifica (LAYOUT.ordine.persone) */
+const persone = () => ordina(ents("person"), "persone");
+TRASCINA.persone = { nome: nm, salva: ({ ids }) => salvaOrdine("persone", persone(), ids) };
 export function personeCard() {
-  const P = ents("person");
+  const P = persone();
   if (!P.length && !UI.edit) return "";
-  return card("👥 " + t("Persone", "People"), `<div class="pg2">${P.map(p => item(p, scheda(info(p)))).join("")}${addBtn(["person"], { label: t("Aggiungi persona", "Add person") })}</div>
+  return card("👥 " + t("Persone", "People"), `<div class="pg2" ${UI.edit ? `data-tr="persone"` : ""}>${P.map(p => item(p, scheda(info(p)))).join("")}${addBtn(["person"], { label: t("Aggiungi persona", "Add person") })}</div>
     ${UI.edit ? `<div class="small muted" style="margin-top:10px">${t("Le persone nuove si creano in Home Assistant: Impostazioni → Persone. Poi compaiono qui con ＋.", "New people are created in Home Assistant: Settings → People. Then add them here with ＋.")}</div>` : ""}`, { cls: P.length > 2 ? "span2" : "" });
 }
 
