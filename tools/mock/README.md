@@ -227,3 +227,11 @@ LS='{"mockPiani":"1"}' node tools/mock/trascina.mjs home '.rms1 [data-tri="cucin
 node tools/mock/trascina.mjs home '#more [data-tri="clima"]' '#tabbar [data-tri="mappa"]@prima' dito 390 844 menu '#tabbar [data-act="more"]'
 SCORRI=1 node tools/mock/trascina.mjs home '.rms1 [data-tri="cucina"]' x dito 390 844 scorri
 ```
+
+**Colpo d'occhio** (0.7.51): la vista di ognuno sta in `mockCasa` (sezione `colpo`, chiave = id utente: `u1` Mario amministratore, `u2` Anna con `mockNoAdmin`). Senza la sezione si vede la proposta automatica; con `mockNoCasa` la proposta e l'avviso «riavvia».
+```bash
+node tools/mock/shot.mjs colpo 1280 1000 proposta.png '[data-act="cdOk"]|[data-act="edToggle"]|[data-act="cdAdd"] >> nth=0'
+LS='{"mockNoAdmin":"1"}' node tools/mock/shot.mjs colpo 390 844 tel.png '[data-act="cdIo"]'
+LS='{"mockCasa":"{\"colpo\":{\"rev\":1,\"dati\":{\"u1\":{\"t\":[{\"id\":\"a\",\"k\":\"e\",\"x\":\"cover.cancello\",\"d\":\"s\"},{\"id\":\"b\",\"k\":\"g\",\"x\":\"luci|casa\",\"d\":\"m\"}]}}}}"}' node tools/mock/trascina.mjs colpo '.vq1g [data-tri="b"]' '.vq1g [data-tri="a"]' mouse 1280 1000 colpo
+```
+

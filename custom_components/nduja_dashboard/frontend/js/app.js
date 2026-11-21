@@ -10,6 +10,7 @@ import "./assistente.js";
 import "./grafici.js";
 import "./pages/benvenuto.js";
 import "./pages/home.js";
+import "./pages/colpo.js";
 import "./pages/custom.js";
 import "./pages/impostazioni.js";
 

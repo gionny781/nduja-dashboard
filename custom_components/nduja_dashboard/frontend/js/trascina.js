@@ -126,14 +126,15 @@ function alza() {
 /** come sta un elemento nel suo contenitore (colonne della griglia, flex, angoli): fotografato prima di sollevarlo */
 function foto(el) {
   const s = getComputedStyle(el);
-  return { colonne: s.gridColumnStart.startsWith("span") || s.gridColumnEnd.startsWith("span") ? s.gridColumn : "", flex: s.flex, raggio: s.borderRadius };
+  const span = (x, y) => x.startsWith("span") || y.startsWith("span");
+  return { colonne: span(s.gridColumnStart, s.gridColumnEnd) ? s.gridColumn : "", righe: span(s.gridRowStart, s.gridRowEnd) ? s.gridRow : "", flex: s.flex, raggio: s.borderRadius };
 }
 /** il segnaposto ha la misura dell'elemento: nelle griglie prende la cella (e le colonne), negli elenchi la larghezza */
 function misura(ph, box, w, h, cs) {
   const griglia = getComputedStyle(box).display.includes("grid");
   ph.style.height = h + "px";
   ph.style.width = griglia ? "" : w + "px";
-  if (cs) { ph.style.gridColumn = cs.colonne; ph.style.flex = cs.flex; }
+  if (cs) { ph.style.gridColumn = cs.colonne; ph.style.gridRow = cs.righe || ""; ph.style.flex = cs.flex; }   // righe: tessere alte più righe (Colpo d'occhio)
 }
 /** l'elemento segue il dito: è dentro il suo contenitore (position:absolute), così tiene il suo aspetto */
 function posiziona() {

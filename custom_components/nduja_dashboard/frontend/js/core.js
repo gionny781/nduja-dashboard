@@ -516,6 +516,10 @@ export const FISSI = [];
 export const STRIP = [];
 /** schede della Home aggiunte dalle altre pagine: { chiave: { title(), render(), show(), cfg? } } (compaiono solo se show() è vero; cfg() facoltativo mette ⚙️ sulla scheda in ✏️ Modifica) */
 export const HOME_EXTRA = {};
+/** blocchi pronti per 👁️ Colpo d'occhio (pages/colpo.js) che non sono già schede della Home:
+    { chiave: { title(), icon, render(dim), show(), pagina } }. dim = "s" | "m" | "l" (la misura della tessera);
+    pagina = la pagina che apre la pressione lunga (e che, se è spenta per quella persona, toglie il blocco). */
+export const COLPO = {};
 
 /* ---------- «✨ Cosa puoi aggiungere» (aggiungi.js) ----------
    Le pagine (e le schede di HOME_EXTRA) che compaiono solo con certi dispositivi dichiarano accanto a show() cosa serve:
@@ -537,7 +541,8 @@ export const linkBtn = (testo, url, cls = "") => `<a class="btn sm ${cls}" href=
 function renderStrip() {
   const w = weatherEnt(), home = ents("person").filter(p => S[p].state === "home").length, L = lightsOn().length;
   const extra = STRIP.map(f => { try { return f(); } catch { return ""; } }).join("");
-  const P = PAGES[UI.page], canEdit = isAdmin() && P?.editable;
+  /* editTutti: la pagina si modifica anche da chi non è amministratore (Colpo d'occhio: ognuno ha la sua vista) */
+  const P = PAGES[UI.page], canEdit = !!P?.editable && (isAdmin() || !!P.editTutti);
   if (P?.bare) { patch($("#strip"), ""); return; }   // benvenuto e configurazione: niente dati in alto
   patch($("#strip"), `${canEdit ? `<button class="pillv edt1 ${UI.edit ? "on" : ""}" data-act="edToggle">${UI.edit ? "✓ " + t("Fatto", "Done") : "✏️ " + t("Modifica", "Edit")}</button>` : ""}${extra}
     ${ents("person").length ? `<span class="pillv">🏠 ${home} ${t("in casa", "home")}</span>` : ""}
@@ -626,6 +631,9 @@ export async function saveLayout(layout) {
   await ws({ type: "nduja_dashboard/save_layout", layout });
   for (const k in LAYOUT) delete LAYOUT[k]; Object.assign(LAYOUT, layout); render();
 }
+/** pagina all'apertura della plancia, scelta per ogni dispositivo in ⚙️ Impostazioni (sGet "start"):
+    "home", "colpo" (Colpo d'occhio, per il tablet a muro) oppure, se non scegli, l'ultima aperta (come sempre) */
+export const paginaIniziale = () => ["home", "colpo"].includes(sGet("start")) ? sGet("start") : sGet("page") || "home";
 /* abbonamento agli stati in formato compatto (come fa Home Assistant stesso) */
 function toState(id, c) {
   const lc = c.lc ? new Date(c.lc * 1000).toISOString() : undefined;
@@ -645,7 +653,7 @@ function onEntities(m) {
     if (r?.a) for (const k of r.a) delete n.attributes[k];
     S[id] = n;
   }
-  if (!UI.page) { go(location.hash.slice(1) || sGet("page") || "home"); window.ndujaPronta?.(); } else renderDaStati();   // dati arrivati: niente schermata d'errore (errore.js)
+  if (!UI.page) { go(location.hash.slice(1) || paginaIniziale()); window.ndujaPronta?.(); } else renderDaStati();   // dati arrivati: niente schermata d'errore (errore.js)
 }
 /* Gli stati cambiano anche più volte al secondo (sensori di potenza, lettori…): ridisegnare tutta la pagina
    a ogni cambio fa scattare i telefoni. Qui ridisegno al massimo ogni 400 ms e mai mentre il dito è sullo schermo;

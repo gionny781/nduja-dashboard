@@ -2,7 +2,7 @@
    telecamere (anteprime, diretta al tocco col lettore di video.js), porte e finestre aperte, fumo, gas, acqua, monossido, movimento. I sensori di pericolo accesi finiscono anche negli Avvisi della Home.
    ⚙️ (amministratori): LAYOUT.sicurezza = { noPericoli:[] (trovati da soli ma senza allarme), pericoli:[] (aggiunti a mano), movimenti: quanti (0 = scheda nascosta), camere: "no" | id di un gruppo } */
 import { S, ACT, CHG, UI, LAYOUT, HOME_EXTRA, t, LOC, esc, fnum, nm, nmHA, ok, attr, ents, isOn, ago, card, empty, page, svc, toast, openSheet, closeSheet, render,
-  deviceClass, openings, shortName, areaOf, AREAS, isAdmin, domain, sicuro, PAGES, excluded, myHA, ordina } from "../core.js";
+  deviceClass, openings, shortName, areaOf, AREAS, isAdmin, domain, sicuro, PAGES, excluded, myHA, ordina, COLPO } from "../core.js";
 import { item, addBtn, scegli, cambia } from "../edit.js";
 import { TRASCINA, riordina, salvaOrdine } from "../trascina.js";
 import { anteprima, telecamere, gruppiCam, gruppoDi } from "../video.js";
@@ -287,6 +287,9 @@ function pagina() {
 
 /* ---------- trascina e sposta (✏️ Modifica, trascina.js): accessi, allarmi, sensori di pericolo ---------- */
 TRASCINA.accessi = { nome: id => nomeDi({ ...(conf().voci?.[id] || {}), id }), salva: ({ ids }) => salvaAccessi(C => { C.ordine = riordina(accessi().map(a => a.id), ids); }) };
+/* 👁️ Colpo d'occhio: gli allarmi con i loro pulsanti (inserisci, disinserisci col codice) */
+COLPO.allarme = { title: () => t("Allarme", "Alarm"), icon: "🛡️", pagina: "sicurezza", show: () => ents("alarm_control_panel").length > 0,
+  render: () => ordina(ents("alarm_control_panel"), "allarmi").map(allarme).join("") };
 TRASCINA.allarmi = { nome: nm, salva: ({ ids }) => salvaOrdine("allarmi", ordina(ents("alarm_control_panel"), "allarmi"), ids) };
 TRASCINA.pericoli = { nome: nm, salva: ({ ids }) => salvaOrdine("pericoli", ordina([...new Set([...ents("binary_sensor", id => ["smoke", "gas", "carbon_monoxide", "moisture"].includes(deviceClass(id))), ...aggiunti()])], "pericoli"), ids) };
 

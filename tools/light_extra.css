@@ -240,3 +240,13 @@ body.light .ag1vs span,body.light .ag1st li::before,body.light .ag1mci{color:#0a
 body.light .ag1n .pi b{color:#a87900}
 body.light .ag1p em{background:#f2f5fa}
 body.light .tr1su{background-color:rgba(250,251,253,.94)}
+/* colpo d'occhio (0.7.51): acceso, in casa, caldo, freddo e allarme restano colorati anche sul chiaro */
+body.light .vq1t.on{background:linear-gradient(180deg,rgba(255,204,0,.38),rgba(255,159,10,.14))!important;border:1px solid rgba(214,150,0,.45)!important}
+body.light .vq1t.on .vq1i{background:var(--yellow)!important}
+body.light .vq1t.on.casa{background:linear-gradient(180deg,rgba(48,209,88,.3),rgba(48,209,88,.1))!important;border:1px solid rgba(30,160,70,.45)!important}
+body.light .vq1t.on.casa .vq1i{background:var(--green)!important}
+body.light .vq1t.heat{background:linear-gradient(180deg,rgba(255,138,61,.34),rgba(255,95,31,.1))!important;border:1px solid rgba(230,110,40,.45)!important}
+body.light .vq1t.cool{background:linear-gradient(180deg,rgba(100,210,255,.36),rgba(10,132,255,.1))!important;border:1px solid rgba(10,132,255,.35)!important}
+body.light .vq1t.al{background:linear-gradient(180deg,rgba(255,69,58,.3),rgba(255,69,58,.1))!important;border:1px solid rgba(255,69,58,.5)!important}
+body.light .vq1t.al .vq1i{background:var(--red)!important}
+body.light .vq1i.ft{background-color:transparent!important}

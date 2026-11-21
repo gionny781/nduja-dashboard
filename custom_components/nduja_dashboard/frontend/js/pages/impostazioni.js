@@ -153,6 +153,8 @@ function dispositivo() {
   const seg = (act, cur, opts) => `<div class="seg">${opts.map(([k, n]) => `<button class="${cur === k ? "act" : ""}" data-act="${act}" data-v="${k}">${n}</button>`).join("")}</div>`;
   return `<section class="card dev1"><div class="ch"><h2>📱 ${t("Questo dispositivo", "This device")}</h2></div>
     <div class="dev1g"><div><b>${t("Tema", "Theme")}</b>${seg("themeSet", tema(), [["auto", "◐ " + t("Automatico", "Auto")], ["light", "☀︎ " + t("Chiaro", "Light")], ["dark", "☾ " + t("Scuro", "Dark")]])}</div>
+    <div><b>${t("Pagina iniziale", "Start page")}</b>${seg("startSet", ["home", "colpo"].includes(sGet("start")) ? sGet("start") : "", [["", t("L'ultima aperta", "The last one")], ["home", "🏠 Home"], ["colpo", "👁️ " + t("Colpo d'occhio", "At a glance")]])}
+      <small class="muted">${t("Cosa compare quando apri la plancia su questo dispositivo. «Colpo d'occhio» è l'ideale per il tablet a muro: le tue cose più importanti, grandi.", "What shows when you open the dashboard on this device. «At a glance» is ideal for a wall tablet: your most important things, big.")}</small></div>
     <div><b>${t("Barra di navigazione", "Navigation bar")}</b>${seg("navMode", navMode(), [["fixed", t("Sempre visibile", "Always visible")], ["auto", t("A scomparsa", "Auto-hide")]])}
       <small class="muted">${t("A scomparsa: compare avvicinandoti al bordo, toccando la linguetta o scorrendo verso l'alto.", "Auto-hide: it appears when you move to the edge, tap the handle or scroll up.")}</small></div>
     <div><b>${t("Salvaschermo", "Screensaver")}</b>${seg("ssMin", String(ssMin()), [["0", t("Spento", "Off")], ["1", "1 min"], ["5", "5 min"], ["10", "10 min"], ["30", "30 min"]])}
@@ -163,6 +165,7 @@ function dispositivo() {
     <div><b>${t("Modalità chiosco", "Kiosk mode")}</b>${seg("kioskSet", chiosco() ? "1" : "0", [["0", t("Spenta", "Off")], ["1", "🖥️ " + t("Attiva", "On")]])}
       <small class="muted">${t("Nasconde la barra laterale e l'intestazione di Home Assistant su questo dispositivo, a ogni apertura. Il pulsante ⛶ in alto mette a tutto schermo (dove il browser lo permette).", "Hides Home Assistant's sidebar and header on this device, every time. The ⛶ button at the top goes full screen (where the browser allows it).")}</small></div></div></section>`;
 }
+ACT.startSet = el => { sSet("start", el.dataset.v); render(true); toast(el.dataset.v === "colpo" ? "👁️ " + t("Si apre su Colpo d'occhio", "Opens on At a glance") : el.dataset.v === "home" ? "🏠 " + t("Si apre sulla Home", "Opens on Home") : t("Si apre sull'ultima pagina aperta", "Opens on the last page")); };
 ACT.liteSet = el => { sSet("lite", el.dataset.v); applyTheme(); render(true); };
 ACT.kioskSet = el => { if ((el.dataset.v === "1") !== chiosco()) ACT.kiosk(); };
 ACT.themeSet = el => { try { localStorage.setItem("nduja_theme", el.dataset.v); } catch {} ; ACT.theme && (document.body.classList.remove("light")); render(true); };
@@ -257,7 +260,7 @@ function schedaUtente() {
     <div class="fl1">${t("Pagine", "Pages")}</div><div class="cks1">${P.map(k => ck(c.pages?.[k] !== false, "usPage", k, PAGES[k].icon + " " + esc(PAGES[k].title))).join("")}</div>
     <div class="fl1">${t("Schede della Home", "Home cards")}</div><div class="cks1">${schedeHome().map(([k, n]) => ck(!(c.homeHidden || []).includes(k), "usHome", k, esc(n))).join("")}</div>
     <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn" data-act="usSemplice">🧸 ${t("Plancia semplice", "Simple dashboard")}</button><button class="btn" data-act="usReset">↺ ${t("Vede tutto", "Sees everything")}</button></div>
-    <p class="small muted" style="margin-top:10px">${t("«Plancia semplice»: solo Home, Luci, Clima e Musica; in Home saluto, meteo, stanze, momenti e persone.", "«Simple dashboard»: only Home, Lights, Climate and Music; on Home greeting, weather, rooms, moments and people.")}</p>`;
+    <p class="small muted" style="margin-top:10px">${t("«Plancia semplice»: solo Home, Colpo d'occhio, Luci, Clima e Musica; in Home saluto, meteo, stanze, momenti e persone.", "«Simple dashboard»: only Home, At a glance, Lights, Climate and Music; on Home greeting, weather, rooms, moments and people.")}</p>`;
 }
 const salvaU = fn => { const id = uSel; return cambia(l => { l.users = { ...(l.users || {}) }; const c = l.users[id] = JSON.parse(JSON.stringify(l.users[id] || {})); fn(c); if (!Object.keys(c.pages || {}).length && !(c.homeHidden || []).length) delete l.users[id]; }); };
 Object.assign(ACT, {
@@ -266,7 +269,7 @@ Object.assign(ACT, {
   usHome: el => salvaU(c => { const h = new Set(c.homeHidden || []), k = el.dataset.k; h.has(k) ? h.delete(k) : h.add(k); c.homeHidden = [...h]; }),
   usReset: () => salvaU(c => { delete c.pages; delete c.homeHidden; }),
   usSemplice: () => salvaU(c => {
-    const tieni = ["luci", "clima", "musica"]; c.pages = {};
+    const tieni = ["colpo", "luci", "clima", "musica"]; c.pages = {};
     Object.keys(PAGES).filter(k => !["home", "impostazioni", ...tieni].includes(k) && !PAGES[k].hiddenNav).forEach(k => c.pages[k] = false);
     c.homeHidden = schedeHome().map(([k]) => k).filter(k => !["riepilogo", "meteo", "stanze", "momenti", "persone"].includes(k));
   }),

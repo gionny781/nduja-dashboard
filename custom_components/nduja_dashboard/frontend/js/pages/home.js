@@ -247,6 +247,8 @@ const ordine = () => { const K = Object.keys(SCHEDE()), o = (LAYOUT.home?.order 
 const nascoste = () => UI.edit ? (LAYOUT.home?.hidden || []) : [...new Set([...(LAYOUT.home?.hidden || []), ...(utenteCfg().homeHidden || [])])];
 /** schede della Home (per le scelte per persona in Impostazioni) */
 export const schedeHome = () => Object.entries(SCHEDE()).map(([k, v]) => [k, v[0]]);
+/** schede della Home come blocchi pronti di 👁️ Colpo d'occhio: [chiave, titolo, disegno] */
+export const blocchiHome = () => Object.entries(SCHEDE()).map(([k, v]) => [k, v[0], v[1]]);
 function attrezzi(k, html, i, n) {
   const off = nascoste().includes(k), cfg = SCHEDE()[k][2];
   const bar = `<div class="hct1"><b>${esc(SCHEDE()[k][0])}</b><span class="grow"></span>${cfg ? `<button data-act="${cfg}" title="${t("Impostazioni", "Settings")}">⚙️</button>` : ""}

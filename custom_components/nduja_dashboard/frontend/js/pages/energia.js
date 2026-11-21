@@ -4,7 +4,7 @@
    dell'integrazione, poi la configurazione «Energia» di Home Assistant, infine i nomi dei sensori.
    Segni: rete + = prelievo / − = immissione; batteria + = scarica / − = carica (come Home Assistant). */
 import { S, ACT, CHG, LAYOUT, UI, STRIP, t, LOC, esc, fnum, nm, ok, val, attr, W, watts, ws, cached, card, empty, page, isAdmin, sGet, sSet,
-  saveLayout, toast, openSheet, closeSheet, render, allEnts, deviceClass, REG, DEVICES, VISTE, myHA, manca, linkBtn } from "../core.js";
+  saveLayout, toast, openSheet, closeSheet, render, allEnts, deviceClass, REG, DEVICES, VISTE, COLPO, myHA, manca, linkBtn } from "../core.js";
 import { scegli, cambia } from "../edit.js";
 import { statistiche, barre } from "../grafici.js";
 import { scena, intestazione, etichette } from "../scenaenergia.js";
@@ -166,9 +166,11 @@ function accesi(casa) {
     return `<button class="en7ai ${top ? "top" : ""}" data-act="apGo">${a.vista(top ? "md" : "sm", "en" + i)}<span class="tx"><b>${esc(a.nome)}</b>
       <span>${a.w != null ? `<em>${watts(a.w)}</em>${q != null ? ` · ${q}%<span class="en7q">${t(" della casa", " of the house")}</span>` : ""}` : t("in funzione", "running")}</span><i><u style="width:${barra}%"></u></i></span></button>`; }).join("")}</div></div>`;
 }
-function adesso() {
+/** stretto (facoltativo): disegno da telefono anche su uno schermo largo; compatto: solo la frase e i numeri, senza la scena
+    (le tessere di Colpo d'occhio) */
+function adesso(stretto = window.innerWidth < 700, compatto = false) {
   const Lt = letture(), { s, pv, rete, bat, casa, soc } = Lt, haPv = !!s.pv, haBat = !!(s.battery || s.soc), haRete = rete != null || !!s.grid;
-  const F = ripartisci(Lt), A = autoACasa(), stretto = window.innerWidth < 700;
+  const F = ripartisci(Lt), A = autoACasa();
   const { frase, altro } = riepilogo(Lt, F, A);
   const pvIds = haPv ? stringhe(s.pv) : [];
   const sc = scena({ stretto, pv, haPv, rete, haRete, bat, haBat, soc, casa, F, auto: A, picco: haPv ? picco(pvIds, pv) : 1, titolo: frase || t("Energia adesso", "Energy now") });
@@ -184,9 +186,9 @@ function adesso() {
   ].filter(Boolean);
   return `<section class="card span3 en7c"><div class="ch"><h2>⚡ ${t("Adesso", "Now")}</h2><span class="muted small">${esc(intestazione(sc.sole, sc.meteo))}</span></div>
     ${frase ? `<div class="en7r">${esc(frase)}${altro ? `<small>${esc(altro)}</small>` : ""}</div>` : ""}
-    <div class="en7 ${stretto ? "tel" : ""}">${sc.html}${stretto ? "" : etichette(E, sc.g)}</div>
-    ${stretto ? `<div class="en7t">${etichette(E, null)}</div>` : ""}
-    ${accesi(casa)}
+    ${compatto ? "" : `<div class="en7 ${stretto ? "tel" : ""}">${sc.html}${stretto ? "" : etichette(E, sc.g)}</div>`}
+    ${stretto || compatto ? `<div class="en7t">${etichette(E, null)}</div>` : ""}
+    ${compatto ? "" : accesi(casa)}
     ${!haEnergia() ? manca(t("Non ho trovato i sensori dell'energia. Configurali nella plancia Energia di Home Assistant, oppure scegli tu i sensori.", "No energy sensors found. Set them up in Home Assistant's Energy dashboard, or pick the sensors yourself."),
       linkBtn(t("Configurazione Energia", "Energy configuration"), myHA("config_energy"), "pri") + (isAdmin() ? `<button class="btn sm" data-act="enSensors">⚙️ ${t("Scegli i sensori", "Pick the sensors")}</button>` : "")) : ""}</section>`;
 }
@@ -354,6 +356,10 @@ const RICHIEDE = {
   link: [[t("Configurazione Energia", "Energy configuration"), myHA("config_energy")]],
   anteprima: [["☀️", t("Fotovoltaico", "Solar"), t("la casa usa 0,8 kW", "the house uses 0.8 kW"), "2,4 kW", 70]] };
 page("energia", { richiede: RICHIEDE, title: t("Energia", "Energy"), short: t("Energia", "Energy"), icon: "⚡", order: 15, editable: true, show: () => haEnergia() || isAdmin(), render: pagina });
+
+/* 👁️ Colpo d'occhio: «Adesso»; la scena animata solo nella tessera grande, nelle altre la frase e i numeri */
+COLPO.energia = { title: () => t("Energia adesso", "Energy now"), icon: "⚡", pagina: "energia", show: haEnergia,
+  render: dim => adesso(dim !== "l" || window.innerWidth < 700, dim !== "l") };
 
 /* pillole in alto: sole e rete */
 STRIP.push(() => {

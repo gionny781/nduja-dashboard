@@ -2,7 +2,7 @@
    Filtri tutte / da cambiare / per stanza, riepilogo «Ti servono: 3 × CR2032» per la spesa, «Ho cambiato la pila».
    Con ✏️ (solo admin): aggiungi un sensore, nascondi, soglie (di tutta la casa e per dispositivo), tipo di pila e nome.
    La logica (trovarle, escludere telefoni, auto e batteria di casa) è in ../batterie.js. */
-import { S, AREAS, ACT, UI, t, LOC, esc, nm, attr, areasSorted, card, empty, page, render, openSheet, closeSheet, toast, isAdmin, sGet, sSet, ago, domain } from "../core.js";
+import { S, AREAS, ACT, UI, t, LOC, esc, nm, attr, areasSorted, card, empty, page, render, openSheet, closeSheet, toast, isAdmin, sGet, sSet, ago, domain, COLPO } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 import { batterie, daCambiare, prontoBatt, ordine, spesa, sogliaGlobale, confDi, conf, MUTO_GG, SOGLIA, SOGLIA_TEL, mutoGG, sogliaTel, batterieTelefoni, TIPI_PILA, tTipo, isSensBatt, isBinBatt, hasBattAttr } from "../batterie.js";
 import { aggiornaAvvisiTelefono } from "../avvisi.js";
@@ -54,6 +54,13 @@ function riga(b, senzaStanza = false) {
     ? `<button class="bt1sh" data-act="btMostra" data-k="${esc(b.k)}" aria-label="${t("Mostra", "Show")}">👁</button>`
     : `<button data-act="btNascondi" data-k="${esc(b.k)}" aria-label="${t("Nascondi", "Hide")}">✕</button>`}</div></div>`;
 }
+
+/* 👁️ Colpo d'occhio: le pile da cambiare, con lo stesso disegno della pagina */
+COLPO.batterie = { title: () => t("Batterie scariche", "Low batteries"), icon: "🪫", pagina: "batterie", show: prontoBatt,
+  render: dim => { const D = daCambiare(), n = dim === "s" ? 3 : 6;
+    return card("🪫 " + t("Batterie scariche", "Low batteries") + (D.length ? ` <span class="tag bad">${D.length}</span>` : ""),
+      D.length ? `<div class="stack">${D.slice(0, n).map(b => riga(b)).join("")}</div>${D.length > n ? `<div class="small muted" style="margin-top:8px">${t("e altre", "and")} ${D.length - n}${t("", " more")}</div>` : ""}`
+        : empty("✅ " + t("Tutte a posto: nessuna pila da cambiare.", "All good: no battery to replace."))); } };
 
 function riepilogo(L, D) {
   const { pile, senza } = spesa(D), mg = mutoGG(), mute = L.filter(b => !b.on || (b.muto != null && b.muto >= mg)).length;
