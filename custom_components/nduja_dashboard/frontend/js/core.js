@@ -526,6 +526,9 @@ export const COLPO = {};
    richiede: { cosa: "una frase su cosa fa", serve: "cosa serve", passi: ["passo", …], link: [[testo, indirizzo], …],
      scegli: [azione, testo] (c'è già un'entità: si sceglie subito), anteprima: [[icona, titolo, sotto, valore, %], …] (finto aspetto),
      manca: () => vero se manca davvero qualcosa (facoltativo: altrimenti conta show() come la vede chi non è amministratore) } */
+/** altre cose che compaiono solo con certi dispositivi e non sono pagine né schede (per esempio il salvaschermo del fotovoltaico):
+    { chiave: { title(), icon, tipo() (cosa è, per esempio «Salvaschermo»), ord (dove metterla nell'elenco), richiede (con manca) } } */
+export const AGGIUNGI = {};
 /** link «my» di Home Assistant: apre la pagina giusta nel Home Assistant di chi lo tocca */
 export const myHA = (dove, q) => "https://my.home-assistant.io/redirect/" + dove + "/" + (q ? "?" + new URLSearchParams(q) : "");
 /** aggiunge un'integrazione ufficiale di Home Assistant (dominio) */

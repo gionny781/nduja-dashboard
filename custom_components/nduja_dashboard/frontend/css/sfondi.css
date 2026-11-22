@@ -1,0 +1,135 @@
+/* ===== Sfondi della plancia (js/sfondi.js) =====
+   Ogni sfondo è un .sf1 con dentro i suoi strati; le misure sono in unità del contenitore (cq*), così lo stesso disegno va
+   sullo schermo intero, nelle miniature della galleria e nell'anteprima. La versione chiara ha la classe .chiaro (la mette sfondi.js
+   seguendo il tema; il salvaschermo usa sempre quella scura). Animazioni solo con transform e opacity, lente; ferme con .fermo
+   (grafica leggera) e con «Riduci movimento». Velocità e intensità: --sv e --si (sfondi.js). */
+
+/* lo sfondo vero: .bg diventa solo il contenitore (lo sfondo classico di base.css resta se sfondi.js non si carica) */
+.bg.sf,body.light .bg.sf{background:none}
+.bg.sf::before,.bg.sf::after{content:none}
+body.ss-on .bg .sf1 *{animation-play-state:paused!important}
+
+.sf1{position:absolute;inset:0;overflow:hidden;container-type:size;--k:1;--sv:1;--si:1;--osc:0;--velo:#05070d;background:#05070d;isolation:isolate}
+.sf1.chiaro{--velo:#eef2f8}:where(.sf1.chiaro){background:#eef2f8}
+.sf1>i,.sf1>svg,.sf1>canvas,.sf1>div{position:absolute;display:block;pointer-events:none}
+.sf1 .sfv{inset:0;z-index:5;background:var(--velo);opacity:var(--osc)}
+.sf1.fermo *,.sf1.fermo *::before,.sf1.fermo *::after{animation-play-state:paused!important}
+@media (prefers-reduced-motion:reduce){.sf1 *,.sf1 *::before,.sf1 *::after{animation:none!important;transition:none!important}}
+
+/* ---------- 'Nduja classico (fermo e animato): come lo sfondo di sempre ---------- */
+.sf-classico,.sf-vivo{background:radial-gradient(120% 90% at 50% 0%,#0d1a33 0%,#070b14 55%,#05070d 100%)}
+.sf1 .sfc1,.sf1 .sfc2{width:70cqmax;height:70cqmax;border-radius:50%;filter:blur(calc(90px * var(--k)));opacity:calc(.55 * var(--si))}
+.sf1 .sfc1{left:-20cqmax;top:-25cqmax;background:radial-gradient(circle,#2c5bff 0%,transparent 65%)}
+.sf1 .sfc2{right:-25cqmax;bottom:-30cqmax;background:radial-gradient(circle,#7b3dff 0%,#0fb39a33 45%,transparent 70%)}
+.sf1 .sfch{right:-8cqmax;bottom:-10cqmax;width:64cqmax;height:64cqmax;background:url(../img/chili.svg) center/contain no-repeat;opacity:.2;filter:blur(calc(9px * var(--k))) saturate(1.1);transform:rotate(-14deg)}
+.sf-vivo .sfc1{animation:sfFloat calc(28s / var(--sv)) ease-in-out infinite alternate}
+.sf-vivo .sfc2{animation:sfFloat calc(36s / var(--sv)) ease-in-out infinite alternate}
+.sf-vivo .sfch{animation:sfChili calc(40s / var(--sv)) ease-in-out infinite alternate}
+@keyframes sfFloat{to{transform:translate(8cqmax,6cqmax) scale(1.12)}}
+@keyframes sfChili{to{transform:rotate(-8deg) translate(-2cqmax,-1.5cqmax) scale(1.04)}}
+@media (max-width:760px){.bg .sf1 .sfch{width:90cqmax;height:90cqmax;right:-30cqmax;bottom:-18cqmax;opacity:.15}}
+.sf-classico.chiaro,.sf-vivo.chiaro{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
+.sf1.chiaro .sfc1{opacity:calc(.22 * var(--si))}.sf1.chiaro .sfc2{opacity:calc(.18 * var(--si))}
+.sf1.chiaro .sfch{opacity:.14;filter:blur(calc(10px * var(--k))) saturate(1.05)}
+/* grafica leggera: niente sfocature (come prima) */
+body.lite .sf1 .sfc1,body.lite .sf1 .sfc2{filter:none;opacity:.35}body.lite .sf1.chiaro .sfc1,body.lite .sf1.chiaro .sfc2{opacity:.2}
+body.lite .sf1 .sfch{filter:none}
+
+/* ---------- tinta unita, sfumatura, carta ---------- */
+.sf-tinta{background:var(--c1)}
+.sf-sfumatura{background:var(--gr)}
+.sf-grana{background:radial-gradient(130% 100% at 50% 30%,transparent 40%,rgba(0,0,0,.28)),var(--c1)}
+.sf-grana.chiaro{background:radial-gradient(130% 100% at 50% 30%,transparent 45%,rgba(90,70,40,.12)),var(--c1)}
+.sf1 .sfg1{inset:0;background-size:180px 180px;opacity:.5;mix-blend-mode:overlay}
+.sf-grana.chiaro .sfg1{opacity:.42;mix-blend-mode:multiply}
+.sf1.mini .sfg1{background-size:90px 90px}
+
+/* ---------- notte: quasi nero, un filo di blu in basso ---------- */
+.sf-notte{background:#010205}
+.sf1 .sfn1{inset:0;background:radial-gradient(90% 55% at 50% 112%,#0b1430 0%,#050915 45%,transparent 75%),radial-gradient(60% 40% at 12% -8%,#0a0d18,transparent 70%)}
+.sf-notte.chiaro{background:linear-gradient(180deg,#d9dde5,#c6ccd7)}
+.sf-notte.chiaro .sfn1{background:radial-gradient(90% 55% at 50% 112%,#b3bccc 0%,transparent 70%)}
+
+/* ---------- la tua immagine ---------- */
+.sf-immagine{background:#0b0e15}.sf-immagine.chiaro{background:#dfe4ec}
+.sf1 .sfim{inset:calc(-1 * min(var(--bl), 30px) * 1.6);background:center/cover no-repeat;filter:blur(calc(var(--bl) * var(--k)));opacity:0;transition:opacity .8s}
+.sf-immagine.pronta .sfim{opacity:1}
+.sf-immagine.vuota::after{content:"🖼️";position:absolute;inset:0;display:grid;place-items:center;font-size:12cqmin;opacity:.35}
+
+/* ---------- aurora: veli di luce morbidi (gradienti, niente sfocature) ---------- */
+.sf-aurora{background:radial-gradient(120% 80% at 50% 0%,#0a1630 0%,#050a17 55%,#03050c 100%)}
+.sf1 .sfa1,.sf1 .sfa2,.sf1 .sfa3,.sf1 .sfa4{border-radius:50%;mix-blend-mode:screen;opacity:calc(.62 * var(--si));will-change:transform}
+.sf1 .sfa1{left:-25cqw;top:-28cqh;width:120cqw;height:62cqh;background:radial-gradient(closest-side,rgba(48,214,160,.75),rgba(48,214,160,.18) 55%,transparent);transform:rotate(-8deg);animation:sfAu1 calc(46s / var(--sv)) ease-in-out infinite alternate}
+.sf1 .sfa2{left:10cqw;top:-16cqh;width:105cqw;height:52cqh;background:radial-gradient(closest-side,rgba(43,150,255,.7),rgba(43,150,255,.15) 55%,transparent);animation:sfAu2 calc(58s / var(--sv)) ease-in-out infinite alternate}
+.sf1 .sfa3{left:35cqw;top:-24cqh;width:90cqw;height:58cqh;background:radial-gradient(closest-side,rgba(150,85,255,.62),rgba(150,85,255,.12) 55%,transparent);animation:sfAu3 calc(71s / var(--sv)) ease-in-out infinite alternate}
+.sf1 .sfa4{left:-10cqw;bottom:-40cqh;width:120cqw;height:70cqh;background:radial-gradient(closest-side,rgba(20,90,140,.45),transparent);opacity:calc(.55 * var(--si));animation:sfAu2 calc(80s / var(--sv)) ease-in-out infinite alternate-reverse}
+@keyframes sfAu1{to{transform:rotate(6deg) translate(14cqw,8cqh) scale(1.15,.9)}}
+@keyframes sfAu2{to{transform:translate(-18cqw,10cqh) scale(.9,1.2) rotate(-6deg)}}
+@keyframes sfAu3{to{transform:translate(-26cqw,14cqh) scale(1.2,.85) rotate(10deg)}}
+.sf-aurora.chiaro{background:linear-gradient(180deg,#eef3fb,#e6ecf6)}
+.sf-aurora.chiaro .sfa1,.sf-aurora.chiaro .sfa2,.sf-aurora.chiaro .sfa3,.sf-aurora.chiaro .sfa4{mix-blend-mode:normal;opacity:calc(.42 * var(--si))}
+
+/* ---------- onde ---------- */
+.sf-onde{background:linear-gradient(180deg,#07101f 0%,#081a2e 60%,#0a2338 100%)}
+.sf1 .sfw{left:0;bottom:0;width:200cqw;height:34cqh;will-change:transform;animation:sfOnda calc(44s / var(--sv)) linear infinite}
+.sf1 .sfw path{fill:rgba(43,111,255,calc(.22 * var(--si)))}
+.sf1 .sfw2{height:28cqh;animation-duration:calc(62s / var(--sv));animation-direction:reverse}.sf1 .sfw2 path{fill:rgba(15,179,154,calc(.2 * var(--si)))}
+.sf1 .sfw3{height:22cqh;animation-duration:calc(34s / var(--sv))}.sf1 .sfw3 path{fill:rgba(123,61,255,calc(.2 * var(--si)))}
+.sf1 .sfwl{left:-10cqw;right:-10cqw;top:-30cqh;height:70cqh;background:radial-gradient(closest-side,rgba(100,210,255,.12),transparent);opacity:var(--si)}
+@keyframes sfOnda{to{transform:translateX(-100cqw)}}
+.sf-onde.chiaro{background:linear-gradient(180deg,#f2f6fc 0%,#e7eff9 60%,#dde9f6 100%)}
+.sf-onde.chiaro .sfw path{fill:rgba(30,110,230,calc(.17 * var(--si)))}.sf-onde.chiaro .sfw2 path{fill:rgba(10,150,140,calc(.16 * var(--si)))}.sf-onde.chiaro .sfw3 path{fill:rgba(110,70,230,calc(.14 * var(--si)))}
+
+/* ---------- stelle (canvas) ---------- */
+.sf-stelle{background:radial-gradient(120% 90% at 50% 110%,#0c1530 0%,#050914 55%,#020308 100%)}
+.sf-stelle.chiaro{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 60%,#e3e8f1 100%)}
+.sf1 .sfcv{inset:0;width:100%;height:100%}
+
+/* ---------- bokeh ---------- */
+.sf-bokeh{background:radial-gradient(120% 90% at 30% 10%,#111a30 0%,#070a13 60%,#04060b 100%)}
+.sf1 .sfb{border-radius:50%;transform:translate(-50%,-50%);opacity:calc(.5 * var(--si));animation:sfBk ease-in-out infinite alternate;will-change:transform,opacity}
+.sf1 .sfb0{background:radial-gradient(circle,rgba(255,170,90,.55),rgba(255,170,90,.12) 55%,transparent 70%)}
+.sf1 .sfb1{background:radial-gradient(circle,rgba(90,160,255,.5),rgba(90,160,255,.1) 55%,transparent 70%)}
+.sf1 .sfb2{background:radial-gradient(circle,rgba(190,110,255,.45),rgba(190,110,255,.1) 55%,transparent 70%)}
+.sf1 .sfb3{background:radial-gradient(circle,rgba(80,220,190,.42),rgba(80,220,190,.08) 55%,transparent 70%)}
+@keyframes sfBk{0%{transform:translate(-50%,-50%) scale(.9);opacity:calc(.25 * var(--si))}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1.12);opacity:calc(.62 * var(--si))}}
+.sf-bokeh.chiaro{background:radial-gradient(120% 90% at 30% 10%,#ffffff 0%,#f0f3f8 60%,#e5eaf2 100%)}
+.sf-bokeh.chiaro .sfb{mix-blend-mode:multiply}
+
+/* ---------- cielo vivo (lo disegna salvaschermo.js) ---------- */
+.sf1 .sfsk{inset:0}
+.sf1 .sfsk .ssp2{opacity:.7}   /* come sfondo, la pioggia e la neve un po' più leggere */
+
+/* ===== Impostazioni → 🎨 Aspetto → Sfondo ===== */
+.sf1m{position:relative;display:block;flex:none;overflow:hidden;border-radius:12px;background:#05070d;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+body.light .sf1m{background:#e4e9f2;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.sf1mi{position:absolute;inset:0;display:block}
+.sf1r .sf1m{width:64px;height:44px;margin-right:2px}
+.sf1tag{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3);margin-left:4px}
+.sf1g{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:8px}
+.sf1g button{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:7px 7px 10px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);text-align:left;color:var(--tx)}
+.sf1g button.act{background:rgba(10,132,255,.2);border-color:#0a84ff}
+.sf1g button.dc{border:1px dashed rgba(10,132,255,.8)}
+.sf1g .sf1m{width:100%;height:64px;margin-bottom:4px;border-radius:11px}
+.sf1g b{font-size:13.5px;padding:0 2px}.sf1g small{font-size:11.5px;color:var(--tx3);line-height:1.3;padding:0 2px}
+body.light .sf1g button{background:rgba(0,0,0,.035);border-color:rgba(0,0,0,.08)}
+body.light .sf1g button.act{background:rgba(10,132,255,.12);border-color:#0a84ff}
+.sf1pv{position:relative;margin:12px 0 4px}
+.sf1pv .sf1m{width:100%;aspect-ratio:16/9;max-height:38vh;border-radius:18px;box-shadow:0 18px 40px -22px rgba(0,0,0,.6),inset 0 0 0 1px rgba(255,255,255,.1)}
+.sf1es{display:flex;flex-direction:column;gap:2px;padding:12px 16px;border-radius:18px;min-width:150px}
+.sf1es b{font-size:22px;font-weight:600;letter-spacing:-.02em}.sf1es span{font-size:12.5px;color:var(--tx2)}
+.sf1pv .sf1es{position:absolute;left:16px;top:16px;z-index:1;pointer-events:none}
+.sf1go{position:absolute;right:12px;bottom:12px;z-index:1}
+.sf1col{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--tx2)}
+.sf1col input{width:44px;height:32px;padding:0;border:1px solid var(--line);border-radius:10px;background:none;cursor:pointer}
+.sf1col input::-webkit-color-swatch-wrapper{padding:3px}.sf1col input::-webkit-color-swatch{border:0;border-radius:7px}
+.sf1rg{display:flex;align-items:center;gap:10px;flex:1;min-width:180px;max-width:360px}
+.sf1rg input{flex:1}.sf1rg b{min-width:46px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums}
+@media (max-width:560px){.sf1g{grid-template-columns:repeat(2,1fr)}.sf1pv .sf1es{left:10px;top:10px;padding:9px 12px;min-width:0}.sf1pv .sf1es b{font-size:18px}}
+/* prova a schermo intero */
+.sf1fs{position:fixed;inset:0;z-index:9998;opacity:0;transition:opacity .35s;cursor:pointer}
+.sf1fs.on{opacity:1}
+.sf1fsb{position:absolute;inset:0}
+.sf1fsc{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;padding:24px}
+.sf1fsc .sf1es{min-width:200px;padding:18px 22px}
+.sf1fsh{position:absolute;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translateX(-50%);padding:8px 14px;border-radius:999px;background:rgba(0,0,0,.45);color:#fff;font-size:13px}

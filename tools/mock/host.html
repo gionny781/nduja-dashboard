@@ -902,6 +902,14 @@ const SOCKET = { readyState: 1, send(b) {
   if (!run.vad && run.byte > 16000 * 2 * 0.3) { run.vad = true; run.ev("stt-vad-start", { timestamp: 300 }); }
   if (run.byte > 16000 * 2 * 2.5 && !run.vadFine && !localStorage.getItem("mockAssistLungo")) { run.vadFine = true; run.ev("stt-vad-end", { timestamp: 2500 }); }
 } };
+/* energia che cambia (0.7.52): con mockEnVivo ogni 3 secondi produzione, consumo, batteria (anche la %) e rete si muovono come dal vero
+   (casa = sole + rete + batteria; il sole va su e giù, la casa ha i suoi picchi, la batteria carica quando avanza e scarica quando manca) */
+if (localStorage.getItem("mockEnVivo")) { let k = 0; setInterval(() => { k++;
+  const sol = Math.max(0, 4200 + 1400 * Math.sin(k / 6) + 300 * Math.sin(k * 1.7)), casa = 900 + 700 * Math.abs(Math.sin(k / 4)) + (k % 9 < 3 ? 1800 : 0);
+  const soc = Math.max(5, Math.min(100, +ENT["sensor.battery_soc"].s + (sol > casa ? .4 : -.4))), bat = soc >= 100 ? 0 : sol > casa ? -Math.min(1500, sol - casa) : Math.min(1200, casa - sol), rete = Math.round(casa - sol - bat);
+  const v = { "sensor.inverter_pv1_power": String(Math.round(sol * .43)), "sensor.inverter_pv2_power": (sol * .34 / 1000).toFixed(2), "sensor.inverter_pv3_power": String(Math.round(sol * .23)),
+    "sensor.battery_power": String(Math.round(bat)), "sensor.grid_power": String(rete), "sensor.battery_soc": soc.toFixed(1), "sensor.lavatrice_power": String(Math.round(300 + 500 * Math.abs(Math.sin(k / 3)))) };
+  const c = {}; for (const [id, x] of Object.entries(v)) if (ENT[id]) { ENT[id].s = x; c[id] = { "+": { s: x, lc: Date.now() / 1000 } }; } window.mockStati?.({ c }); }, 3000); }
 const conn = {
   socket: SOCKET,
   addEventListener() {}, subscribeEvents() { return Promise.resolve(() => {}); },
@@ -975,6 +983,13 @@ const conn = {
         ...(localStorage.getItem("mockNoAcqua") || localStorage.getItem("mockAcquaNoPrefs") ? [] : [{ type: "water", stat_energy_from: "sensor.contatore_acqua", number_energy_price: 2.1 }])], device_consumption: [] };
       case "recorder/statistics_during_period": { const out = {}; const st = new Date(m.start_time).getTime(), step = m.period === "hour" ? 3600e3 : m.period === "month" ? 30*864e5 : 864e5;
         for (const id of m.statistic_ids) { out[id] = [];
+          /* potenze ogni 5 minuti (0.7.52, salvaschermo «Consumi della casa»): sole a campana, casa con i picchi, batteria e rete di conseguenza */
+          if (m.period === "5minute") { const kw = ENT[id]?.a?.unit_of_measurement === "kW" ? 1000 : 1, q = { inverter_pv1_power: .43, inverter_pv2_power: .34, inverter_pv3_power: .23 }[id.split(".")[1]];
+            for (let x = Math.floor(st / 3e5) * 3e5, i = 0; x < Date.now(); x += 3e5, i++) { const h = new Date(x).getHours() + new Date(x).getMinutes() / 60;
+              const sol = Math.max(0, Math.sin((h - 7) / 11 * Math.PI)) * 5200, casa = 380 + 260 * Math.sin(i / 5) ** 2 + (h > 12 && h < 13.5 ? 1900 : 0) + (h > 19 && h < 21 ? 1400 : 0) + (i % 17 === 3 ? 1200 : 0);
+              const bat = sol > casa ? -Math.min(1500, sol - casa) : Math.min(900, casa - sol) * (h > 18 || h < 2 ? 1 : 0), rete = casa - sol - bat;
+              const v = q ? sol * q : id === "sensor.grid_power" ? rete : id === "sensor.battery_power" ? bat : null;
+              if (v != null) out[id].push({ start: x, mean: +(v / kw).toFixed(3) }); } continue; }
           /* aria (0.7.43): andamento intorno al valore di adesso, con il giorno e la notte */
           if (ARIA_STORIA[id] || /^sensor\.(aria_|purificatore_|radon_|waqi_)/.test(id)) { const b = parseFloat(ENT[id]?.s) || 1; for (let x = st, i = 0; x < Date.now(); x += step, i++) { const h = new Date(x).getHours(), f = .72 + .22 * Math.sin((h - 14) / 24 * 2 * Math.PI) + .08 * Math.sin(i * 1.7);
             out[id].push({ start: x, mean: +(b * f).toFixed(3), min: +(b * f * .86).toFixed(3), max: +(b * f * 1.14).toFixed(3) }); } continue; } if (id.includes("acqua")) { for (let x = st, i = 0; x < Date.now(); x += step, i++) { const g = new Date(x).getDay(); out[id].push({ start: x, change: m.period === "month" ? 8.6 + 1.6 * Math.sin(i / 2) + (new Date(x).getMonth() > 4 && new Date(x).getMonth() < 9 ? 2.4 : 0) : +(.24 + .07 * Math.sin(i * 1.3) + (g === 0 || g === 6 ? .09 : 0)).toFixed(3) }); } continue; }

@@ -82,6 +82,12 @@ export function letture() {
   const socL = scelti("soc").length ? scelti("soc") : s.soc ? [s.soc] : [], socV = socL.map(val).filter(x => x != null);
   return { s, pv, pvL: s.pv ? stringhe(s.pv).map(id => ({ id, w: W(id) })) : [], rete, bat, casa, soc: socV.length ? socV.reduce((a, x) => a + x, 0) / socV.length : null };
 }
+/** i sensori di potenza di ogni ruolo, come li usa letture(): { pv:[], rete:[], bat:[], casa:[], gridInv, batInv }
+    (casa vuoto = la casa si calcola da sole + rete + batteria). Li usa il salvaschermo «Consumi della casa» per il grafico */
+export function idsPotenza() {
+  const s = sensori(), L = (k, primo) => scelti(k).length ? scelti(k) : primo ? [primo] : [];
+  return { pv: s.pv ? stringhe(s.pv) : [], rete: L("grid", s.grid), bat: L("battery", s.battery), casa: L("home", s.home), gridInv: s.gridInv, batInv: s.batInv };
+}
 export const haEnergia = () => { const s = sensori(); return !!(s.pv || s.grid || s.battery || s.home); };
 
 /* ---------- totali di oggi dalle statistiche ---------- */
@@ -166,14 +172,14 @@ function accesi(casa) {
     return `<button class="en7ai ${top ? "top" : ""}" data-act="apGo">${a.vista(top ? "md" : "sm", "en" + i)}<span class="tx"><b>${esc(a.nome)}</b>
       <span>${a.w != null ? `<em>${watts(a.w)}</em>${q != null ? ` · ${q}%<span class="en7q">${t(" della casa", " of the house")}</span>` : ""}` : t("in funzione", "running")}</span><i><u style="width:${barra}%"></u></i></span></button>`; }).join("")}</div></div>`;
 }
-/** stretto (facoltativo): disegno da telefono anche su uno schermo largo; compatto: solo la frase e i numeri, senza la scena
-    (le tessere di Colpo d'occhio) */
-function adesso(stretto = window.innerWidth < 700, compatto = false) {
+/** la scena di adesso e i suoi numeri, già pronti: { Lt, F, A, frase, altro, sc (scenaenergia.js), E (etichette) }.
+    La usa anche il salvaschermo «Fotovoltaico in tempo reale» (salvaschermo.js) */
+export function scenaAdesso(stretto = window.innerWidth < 700, idp) {
   const Lt = letture(), { s, pv, rete, bat, casa, soc } = Lt, haPv = !!s.pv, haBat = !!(s.battery || s.soc), haRete = rete != null || !!s.grid;
   const F = ripartisci(Lt), A = autoACasa();
   const { frase, altro } = riepilogo(Lt, F, A);
   const pvIds = haPv ? stringhe(s.pv) : [];
-  const sc = scena({ stretto, pv, haPv, rete, haRete, bat, haBat, soc, casa, F, auto: A, picco: haPv ? picco(pvIds, pv) : 1, titolo: frase || t("Energia adesso", "Energy now") });
+  const sc = scena({ stretto, pv, haPv, rete, haRete, bat, haBat, soc, casa, F, auto: A, picco: haPv ? picco(pvIds, pv) : 1, titolo: frase || t("Energia adesso", "Energy now"), idp });
   const soci = scelti("soc").length ? scelti("soc") : s.soc ? [s.soc] : [], primo = L => L[0] || null;
   const E = [
     haPv && { k: "pv", id: primo(pvIds), ic: "☀️", v: watts(pv), s: t("produzione", "solar"), cls: "sol" },
@@ -184,6 +190,12 @@ function adesso(stretto = window.innerWidth < 700, compatto = false) {
       s: bat < -20 ? t("in carica", "charging") + (soc != null ? " · " + watts(-bat) : "") : bat > 20 ? t("in uso", "in use") + (soc != null ? " · " + watts(bat) : "") : t("ferma", "idle"), cls: "bat" },
     A && { k: "auto", id: A.id, ic: "🚗", v: A.b != null ? Math.round(A.b) + "%" : esc(A.nome), s: A.ric ? "⚡ " + (A.w ? watts(A.w) : t("in carica", "charging")) : A.spina ? t("collegata", "plugged in") : t("a casa", "home"), cls: "ev" },
   ].filter(Boolean);
+  return { Lt, F, A, frase, altro, sc, E };
+}
+/** stretto (facoltativo): disegno da telefono anche su uno schermo largo; compatto: solo la frase e i numeri, senza la scena
+    (le tessere di Colpo d'occhio) */
+function adesso(stretto = window.innerWidth < 700, compatto = false) {
+  const { Lt: { casa }, frase, altro, sc, E } = scenaAdesso(stretto);
   return `<section class="card span3 en7c"><div class="ch"><h2>⚡ ${t("Adesso", "Now")}</h2><span class="muted small">${esc(intestazione(sc.sole, sc.meteo))}</span></div>
     ${frase ? `<div class="en7r">${esc(frase)}${altro ? `<small>${esc(altro)}</small>` : ""}</div>` : ""}
     ${compatto ? "" : `<div class="en7 ${stretto ? "tel" : ""}">${sc.html}${stretto ? "" : etichette(E, sc.g)}</div>`}
@@ -212,16 +224,20 @@ function cardOggi() {
 /** quante righe e da quanti W in su (⚙️ Sensori → Elenchi): prima 12 righe e 1 W, fissi */
 const righe = () => { const n = +(LAYOUT.energy || {}).righe; return n >= 1 ? Math.round(n) : 12; };
 const minW = () => { const n = +(LAYOUT.energy || {}).minW; return n >= 0 && (LAYOUT.energy || {}).minW != null && (LAYOUT.energy || {}).minW !== "" ? n : 1; };
+/** i dispositivi che consumano di più adesso (W), con le stesse scelte di «Chi consuma adesso»: [{ id, w }] */
+export function chiConsuma(n = righe()) {
+  const s = sensori(), escl = [s.pv, s.grid, s.battery, s.home].filter(Boolean);
+  const tolti = new Set((LAYOUT.energy || {}).nascosti || []), soglia = minW();
+  return (scelti("devW").length ? scelti("devW") : potenze().filter(id => !escl.includes(id) && !tolti.has(id) && !/inverter|grid|rete|solar|pv|batter|total|totale|house|casa_consumo|consumo_casa/i.test(id)))
+    .filter(id => ok(id) && (W(id) || 0) > soglia).map(id => ({ id, w: W(id) })).sort((a, b) => b.w - a.w).slice(0, n);
+}
 function consumi() {
   const P = prefs(), dc = scelti("devKwh").length ? scelti("devKwh") : (P.device_consumption || []).map(d => d.stat_consumption).filter(Boolean);
   const nomeD = id => esc(S[id] ? nm(id) : id.split(".").pop().replace(/_/g, " "));
   /* oggi in kWh (dalla configurazione Energia) */
   const giorno = dc.map(id => ({ id, v: oggi(id) })).filter(r => r.v != null && r.v > 0.005).sort((a, b) => b.v - a.v);
   /* adesso in W: sensori di potenza dei dispositivi (non quelli dell'impianto) */
-  const s = sensori(), escl = [s.pv, s.grid, s.battery, s.home].filter(Boolean);
-  const tolti = new Set((LAYOUT.energy || {}).nascosti || []), N = righe(), soglia = minW();
-  const ora = (scelti("devW").length ? scelti("devW") : potenze().filter(id => !escl.includes(id) && !tolti.has(id) && !/inverter|grid|rete|solar|pv|batter|total|totale|house|casa_consumo|consumo_casa/i.test(id)))
-    .filter(id => ok(id) && (W(id) || 0) > soglia).map(id => ({ id, w: W(id) })).sort((a, b) => b.w - a.w).slice(0, N);
+  const N = righe(), ora = chiConsuma(N);
   if (!giorno.length && !ora.length) return "";
   const maxG = Math.max(...giorno.map(r => r.v), 0.01), maxW = Math.max(...ora.map(r => r.w), 1);
   /* in ✏️ Modifica: ✕ toglie un sensore da «Chi consuma adesso» (si rimette in ⚙️ Sensori) */

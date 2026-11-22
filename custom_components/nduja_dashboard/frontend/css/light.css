@@ -105,6 +105,7 @@ body.light .m3l{color:#1c1c1e!important}
 body.light .au2{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.049)!important}
 body.light .sz1g button{background:rgba(0,0,0,0.030)!important;border:1px solid rgba(0,0,0,0.063)!important}
 body.light .sz1h select{background:rgba(0,0,0,0.040)!important}
+body.light .sz1w input{background:rgba(0,0,0,0.040)!important}
 body.light .fld1 textarea{background:rgba(0,0,0,0.040)!important}
 body.light .gg1{stroke:rgba(0,0,0,0.056)!important}
 body.light .gl1{fill:rgba(28,28,30,.5)!important}
@@ -638,4 +639,5 @@ body.light .vq1t.cool{background:linear-gradient(180deg,rgba(100,210,255,.36),rg
 body.light .vq1t.al{background:linear-gradient(180deg,rgba(255,69,58,.3),rgba(255,69,58,.1))!important;border:1px solid rgba(255,69,58,.5)!important}
 body.light .vq1t.al .vq1i{background:var(--red)!important}
 body.light .vq1i.ft{background-color:transparent!important}
+body.light .vr1 button.on{background:rgba(10,132,255,.16)!important;border-color:#0a84ff!important}
 

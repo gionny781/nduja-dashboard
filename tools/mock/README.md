@@ -235,3 +235,11 @@ LS='{"mockNoAdmin":"1"}' node tools/mock/shot.mjs colpo 390 844 tel.png '[data-a
 LS='{"mockCasa":"{\"colpo\":{\"rev\":1,\"dati\":{\"u1\":{\"t\":[{\"id\":\"a\",\"k\":\"e\",\"x\":\"cover.cancello\",\"d\":\"s\"},{\"id\":\"b\",\"k\":\"g\",\"x\":\"luci|casa\",\"d\":\"m\"}]}}}}"}' node tools/mock/trascina.mjs colpo '.vq1g [data-tri="b"]' '.vq1g [data-tri="a"]' mouse 1280 1000 colpo
 ```
 
+
+**Sfondi e salvaschermi** (0.7.52): lo sfondo del dispositivo è in `nduja_sfondo` (`{"id":"aurora","o":{"aurora":{"vel":3}}}`; id: `classico`, `tinta`, `sfumatura`, `grana`, `notte`, `immagine`, `vivo`, `aurora`, `onde`, `stelle`, `bokeh`, `cielo`), quello della casa in `aspetto.sfondo` dentro `mockLayout`, «animato anche in leggera» in `nduja_sfLite`.
+Per l'immagine va bene `/tools/mock/foto-mare.svg`. Con `mockEnVivo` produzione, consumo, batteria e rete cambiano ogni 3 secondi; le statistiche ogni 5 minuti (`period: "5minute"`) delle potenze disegnano il grafico dei consumi.
+Stili nuovi del salvaschermo (`nduja_ssStile`): `solare`, `consumi`, `analogico`, `meteo`, `giornata`, `sfondo`, `alterna`; in Automatico `nduja_ssGiorno`, `nduja_ssNotteStile`, `nduja_ssSolAuto`, `nduja_ssSolW`. Togliendo i pannelli (`mockVia` = `inverter_pv` e `mockLayout` senza `energy`) il fotovoltaico sparisce dalla scelta e compare in «Cosa puoi aggiungere».
+```bash
+LS='{"nduja_sfondo":"{\"id\":\"aurora\"}"}' node tools/mock/shot.mjs impostazioni 1280 1000 sfondo.png '[data-act="sfApri"] >> nth=0'
+LS='{"nduja_ssMin":"5","nduja_ssStile":"solare","mockEnVivo":"1"}' node tools/mock/shot.mjs impostazioni 1280 800 solare.png '[data-act="ssProva"] >> nth=0'
+```

@@ -4,6 +4,7 @@
 import { scegli, isTemp, isHum, cambia } from "../edit.js";
 import { TRASCINA, riordina } from "../trascina.js";
 import { ssMin, ssVoce } from "../salvaschermo.js";
+import { aspettoCard } from "../sfondi.js";
 import { schedeHome } from "./home.js";
 import { controllaCard } from "../controlla.js";
 import { assistenteCard } from "../assistente.js";
@@ -159,9 +160,9 @@ function dispositivo() {
       <small class="muted">${t("A scomparsa: compare avvicinandoti al bordo, toccando la linguetta o scorrendo verso l'alto.", "Auto-hide: it appears when you move to the edge, tap the handle or scroll up.")}</small></div>
     <div><b>${t("Salvaschermo", "Screensaver")}</b>${seg("ssMin", String(ssMin()), [["0", t("Spento", "Off")], ["1", "1 min"], ["5", "5 min"], ["10", "10 min"], ["30", "30 min"]])}
       ${ssMin() ? ssVoce() : ""}
-      <small class="muted">${t("Dopo qualche minuto senza tocchi: orologio, cielo vivo, la tua casa, un minimal per la notte o le tue foto, oppure «Automatico». Si sveglia al tocco.", "After a few minutes without touches: clock, live sky, your home, a night minimal or your photos, or «Automatic». Wakes on touch.")}</small></div>
+      <small class="muted">${t("Dopo qualche minuto senza tocchi: orologio, analogico, cielo vivo, fotovoltaico, consumi, meteo, la giornata, la tua casa, un minimal per la notte, le tue foto o uno sfondo animato; oppure «Automatico» o «Alterna». Si sveglia al tocco.", "After a few minutes without touches: clock, analog, live sky, solar, energy use, weather, your day, your home, a night minimal, your photos or an animated background; or «Automatic» or «Rotate». Wakes on touch.")}</small></div>
     <div><b>${t("Grafica", "Graphics")}</b>${seg("liteSet", grafica(), [["auto", t("Automatica", "Auto")], ["1", "⚡ " + t("Leggera", "Light")], ["0", "✨ " + t("Completa", "Full")]])}
-      <small class="muted">${t("Leggera: senza effetto vetro sfocato e senza luci in movimento sullo sfondo, molto più fluida su tablet Android e Fully Kiosk. «Automatica» la accende da sola sui dispositivi Android.", "Light: no blurred glass and no moving lights in the background, much smoother on Android tablets and Fully Kiosk. «Auto» turns it on by itself on Android devices.")}${leggera() ? " ✓ " + t("Ora è attiva.", "Now on.") : ""}</small></div>
+      <small class="muted">${t("Leggera: senza effetto vetro sfocato e con lo sfondo fermo (anche quelli animati, salvo che tu scelga altrimenti in 🎨 Aspetto), molto più fluida su tablet Android e Fully Kiosk. «Automatica» la accende da sola sui dispositivi Android.", "Light: no blurred glass and a still background (animated ones too, unless you choose otherwise in 🎨 Appearance), much smoother on Android tablets and Fully Kiosk. «Auto» turns it on by itself on Android devices.")}${leggera() ? " ✓ " + t("Ora è attiva.", "Now on.") : ""}</small></div>
     <div><b>${t("Modalità chiosco", "Kiosk mode")}</b>${seg("kioskSet", chiosco() ? "1" : "0", [["0", t("Spenta", "Off")], ["1", "🖥️ " + t("Attiva", "On")]])}
       <small class="muted">${t("Nasconde la barra laterale e l'intestazione di Home Assistant su questo dispositivo, a ogni apertura. Il pulsante ⛶ in alto mette a tutto schermo (dove il browser lo permette).", "Hides Home Assistant's sidebar and header on this device, every time. The ⛶ button at the top goes full screen (where the browser allows it).")}</small></div></div></section>`;
 }
@@ -172,9 +173,9 @@ ACT.themeSet = el => { try { localStorage.setItem("nduja_theme", el.dataset.v); 
 
 const inCorso = () => W.inCima && !!W.d;
 function pagina() {
-  if (!isAdmin()) return `<div class="g">${dispositivo()}${assistenteCard()}<section class="card small muted">${t("Le altre impostazioni le può cambiare solo un amministratore.", "Other settings can only be changed by an administrator.")}</section></div>`;
+  if (!isAdmin()) return `<div class="g">${dispositivo()}${aspettoCard()}${assistenteCard()}<section class="card small muted">${t("Le altre impostazioni le può cambiare solo un amministratore.", "Other settings can only be changed by an administrator.")}</section></div>`;
   const P = PASSI(), s = W.step, corpo = [passoInizio, passoStanze, passoLuci, passoClima, passoDispositivi, passoCasa, passoPagine, passoFine][s]();
-  const altre = `${dispositivo()}${assistenteCard()}<section class="card rst1"><div class="row" style="gap:12px;flex-wrap:wrap"><span style="font-size:28px">🌶️</span>
+  const altre = `${dispositivo()}${aspettoCard()}${assistenteCard()}<section class="card rst1"><div class="row" style="gap:12px;flex-wrap:wrap"><span style="font-size:28px">🌶️</span>
       <div style="flex:1;min-width:200px"><b>${t("Ricomincia dal benvenuto", "Restart from the welcome screen")}</b><div class="small muted">${t("Riparte la configurazione da zero: scegli di nuovo Automatica o Manuale. Le pagine create da te restano.", "Setup starts over: choose Automatic or Manual again. Pages you created are kept.")}</div></div>
       <button class="btn warm" data-act="wzRestart">🔄 ${t("Riavvia il wizard", "Restart the wizard")}</button></div></section>
     <section class="card"><div class="ch"><h2>👥 ${t("Plancia per persona", "Per-person dashboard")}</h2></div>

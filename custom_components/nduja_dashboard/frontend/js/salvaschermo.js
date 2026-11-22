@@ -1,28 +1,51 @@
 /* Salvaschermo per il tablet a muro: dopo X minuti senza tocchi copre la plancia con uno stile a scelta e si sveglia
    al primo tocco. Tutto si sceglie per ogni dispositivo (⚙️ Impostazioni → Questo dispositivo → Salvaschermo).
-   Stili «della plancia», disegnati qui in HTML/SVG/CSS (nduja.css, «salvaschermo»):
+   Stili «della plancia», disegnati qui in HTML/SVG/CSS (nduja.css e sfondi.css, «salvaschermo»):
    - orologio: ora grande, data e le informazioni scelte, che si sposta piano (niente segni sullo schermo);
+   - analogico: un orologio con le lancette, la data e la temperatura fuori;
    - cielo: il cielo di adesso — colori dal sole (sun.sun), sole o luna con la sua fase, stelle, nuvole, pioggia,
      neve, nebbia e lampi dal meteo di casa — sopra le colline con la casetta;
+   - solare: il fotovoltaico in tempo reale, con la scena dell'Energia (scenaenergia.js) in grande: sole, pannelli, casa,
+     batteria e rete con i flussi che seguono i watt veri; sotto prodotto oggi, autoconsumo, batteria e ora;
+   - consumi: la potenza della casa adesso, il grafico delle ultime ore e chi consuma di più;
+   - meteo: il tempo adesso e le prossime ore, grande e leggibile da lontano;
+   - giornata: la data, gli impegni di oggi, la raccolta da esporre e le scadenze;
    - casa: pannelli che si alternano con meteo, stanze, persone, prossimi impegni e consumi;
    - notte: ora grande e molto scura, per la camera da letto;
    - foto: una cartella dei Media, un indirizzo (anche una GIF) o un elenco di indirizzi, in dissolvenza o con il
      movimento lento (Ken Burns);
-   - auto: di giorno foto o cielo, di notte il minimal scuro, con l'orario scelto.
+   - sfondo: uno degli sfondi animati (sfondi.js) a tutto schermo, con l'ora piccola;
+   - alterna: gira tra gli stili scelti, con il tempo di cambio scelto;
+   - auto: di giorno lo stile scelto (e il fotovoltaico quando produce), di notte quello della notte, con l'orario scelto.
    Leggerezza: si ridisegna al massimo ogni 20 secondi (e al cambio del minuto), le animazioni sono solo CSS
    (transform e opacity), tutto si ferma quando la scheda non è visibile e con «Riduci movimento».
    Anteprima dal vivo nel foglio «Personalizza» (stesso disegno, in piccolo). */
-import { S, ACT, CHG, FISSI, UI, t, LOC, esc, fnum, attr, W, sGet, sSet, ws, toast, openSheet, closeSheet, render, patch,
-  weatherEnt, WX, ents, roomTemp, roomHum, areasSorted, AREAS, forecast } from "./core.js";
+import { S, ACT, CHG, FISSI, UI, AGGIUNGI, t, LOC, esc, fnum, attr, W, nm, watts, sGet, sSet, ws, toast, openSheet, closeSheet, render, patch, cached,
+  weatherEnt, WX, ents, roomTemp, roomHum, areasSorted, AREAS, forecast, myHA } from "./core.js";
 import { inDiretta } from "./video.js";
 import { indirizzoLocale, fileEsiste } from "./edit.js";
-import { calendari, eventi, inizio, fine, allDay, nomeGiorno, colore } from "./agenda.js";
+import { calendari, eventi, inizio, fine, allDay, nomeGiorno, colore, nelGiorno } from "./agenda.js";
 import { info as persona } from "./people.js";
-import { sole, mix } from "./scenaenergia.js";
+import { sole, mix, etichette } from "./scenaenergia.js";
+import { ritiri, haRaccolta } from "./raccolta.js";
+import { montaSfondo, SFONDI, opzioni as opzSfondo } from "./sfondi.js";
+
+/* ---------- pagine caricate dopo la Home (Energia, Scadenze): le prendo quando servono ---------- */
+const MOD = {};
+function modulo(nome) {
+  if (!(nome in MOD)) { MOD[nome] = null; import(`./pages/${nome}.js`).then(m => { MOD[nome] = m; render(); }).catch(() => {}); }
+  return MOD[nome];
+}
+const energia = () => modulo("energia");
+/** c'è il fotovoltaico? (null = non lo so ancora: la pagina Energia non è ancora caricata) */
+export function haSolare() { const en = energia(); if (!en) return null; try { return !!en.sensori().pv; } catch { return false; } }
+const haConsumi = () => { const en = energia(); if (!en) return null; try { return en.haEnergia() && en.letture().casa != null; } catch { return false; } };
 
 /* ================= scelte (di questo dispositivo) ================= */
 const J = (k, d) => { try { return JSON.parse(sGet(k) || "null") ?? d; } catch { return d; } };
-const STILI = ["auto", "orologio", "cielo", "casa", "notte", "foto"];
+const STILI = ["auto", "alterna", "orologio", "analogico", "cielo", "solare", "consumi", "meteo", "giornata", "casa", "notte", "foto", "sfondo"];
+/** stili che si possono mettere in Automatico (di giorno, di notte) e in Alterna */
+const SEMPLICI = STILI.filter(s => s !== "auto" && s !== "alterna");
 export const ssMin = () => +(sGet("ssMin") || 0);          // 0 = spento
 export const ssStile = () => { const s = sGet("ssStile") || "orologio"; return STILI.includes(s) ? s : "orologio"; };
 export const ssDir = () => sGet("ssDir") || "";
@@ -33,27 +56,66 @@ export const haFoto = () => fonte() === "media" ? !!ssDir() : fonte() === "url" 
 const notteDa = () => sGet("ssNotteDa") || "23:00";
 const notteA = () => sGet("ssNotteA") || "07:00";
 const attenua = () => sGet("ssAtt") !== "0";
-const giorno = () => sGet("ssGiorno") === "cielo" ? "cielo" : "foto";   // in Automatico, di giorno
+/** in Automatico: lo stile del giorno (prima solo foto o cielo) e quello della notte */
+const giorno = () => { const v = sGet("ssGiorno"); return SEMPLICI.includes(v) && v !== "notte" ? v : "foto"; };
+const notteStile = () => { const v = sGet("ssNotteStile"); return SEMPLICI.includes(v) ? v : "notte"; };
+/** in Automatico, di giorno: il fotovoltaico quando produce più di tanti watt (acceso di partenza, se c'è il fotovoltaico) */
+const solareAuto = () => sGet("ssSolAuto") !== "0";
+const solareW = () => { const v = +sGet("ssSolW"); return v > 0 ? Math.round(v) : 200; };
 const minuti = hm => { const [h, m] = String(hm).split(":").map(Number); return (h || 0) * 60 + (m || 0); };
 /** è l'orario della notte scelto (di solito dalle 23 alle 7)? */
 export function diNotte(d = new Date()) {
   const x = d.getHours() * 60 + d.getMinutes(), a = minuti(notteDa()), b = minuti(notteA());
   return a === b ? false : a < b ? x >= a && x < b : x >= a || x < b;
 }
-/* per ogni stile: velocità (1 lenta, 2 normale, 3 veloce), effetto (fade = dissolvenza, mov = movimento lento), informazioni sopra */
+/* per ogni stile: velocità (1 lenta, 2 normale, 3 veloce), effetto (fade = dissolvenza, mov = movimento lento), informazioni sopra,
+   e le scelte proprie (ore del grafico, ore del meteo, secondi, giorni delle scadenze, sfondo, elenco di Alterna) */
 const DEF = {
   orologio: { vel: 2, eff: "mov", info: ["meteo", "temp", "persone", "impegno"] },
+  analogico: { vel: 2, info: ["meteo", "temp"], sec: "liscia" },
   cielo: { vel: 2, eff: "mov", info: ["ora", "meteo", "temp"] },
+  solare: { vel: 2, info: ["meteo"] },
+  consumi: { vel: 2, info: ["ora", "meteo"], ore: 6 },
+  meteo: { vel: 2, info: ["ora", "temp"], ore: 12 },
+  giornata: { vel: 2, info: ["meteo", "temp"], giorni: 7 },
   casa: { vel: 2, eff: "fade", info: ["ora", "meteo"] },
   notte: { vel: 1, eff: "fade", info: [] },
   foto: { vel: 2, eff: "mov", info: ["ora", "meteo"] },
+  sfondo: { vel: 2, info: ["ora"], sf: "aurora", int: 2 },
+  alterna: { lista: ["orologio", "cielo", "meteo", "giornata"], min: 2 },
 };
 const cfg = s => ({ ...DEF[s], ...(J("ssCfg", {})[s] || {}) });
 function setCfg(s, k, v) { const a = J("ssCfg", {}); a[s] = { ...(a[s] || {}), [k]: v }; sSet("ssCfg", JSON.stringify(a)); }
-/** lo stile da disegnare adesso (Automatico sceglie da solo; le foto senza foto diventano l'orologio) */
+/** si può mostrare adesso? (null = non lo so ancora: lo provo) */
+function disponibile(s) {
+  if (s === "solare") return haSolare() !== false;
+  if (s === "consumi") return haConsumi() !== false;
+  if (s === "meteo") return !!weatherEnt();
+  return true;
+}
+/** il fotovoltaico «produce» (con un margine, così non salta avanti e indietro attorno alla soglia) */
+let produce = false;
+function staProducendo() {
+  const en = energia(); if (!en || !haSolare()) return (produce = false);
+  let pv = null; try { pv = en.letture().pv; } catch {}
+  const soglia = solareW();
+  produce = pv != null && (produce ? pv > soglia * .7 : pv > soglia);
+  return produce;
+}
+/** gli stili di Alterna che si possono mostrare */
+const giroAlterna = () => { const L = (cfg("alterna").lista || []).filter(s => SEMPLICI.includes(s) && disponibile(s) && (s !== "foto" || haFoto())); return L.length ? L : ["orologio"]; };
+const perAlterna = () => Math.max(1, +cfg("alterna").min || 2) * 60000;
+/** lo stile da disegnare adesso (Automatico e Alterna scelgono da soli; quello che manca diventa l'orologio) */
 function reale(stile, d = new Date()) {
-  if (stile === "auto") return diNotte(d) ? "notte" : giorno() === "foto" && haFoto() ? "foto" : "cielo";
+  if (stile === "auto") {
+    if (diNotte(d)) return reale(notteStile(), d);
+    if (solareAuto() && staProducendo()) return "solare";
+    const g = giorno();
+    return g === "foto" && !haFoto() ? "cielo" : reale(g, d);
+  }
+  if (stile === "alterna") { const L = giroAlterna(); return reale(L[Math.floor(d.getTime() / perAlterna()) % L.length], d); }
   if (stile === "foto" && !haFoto()) return "orologio";
+  if (!disponibile(stile)) return "orologio";
   return stile;
 }
 
@@ -203,9 +265,6 @@ function cielo(d, c, x) {
 }
 
 /* ---------- casa: pannelli che si alternano ---------- */
-let EN = null, enChiesto = false;
-/** energia.js (pagina Energia) si carica dopo la Home: lo prendo quando serve */
-function energia() { if (!enChiesto) { enChiesto = true; import("./pages/energia.js").then(m => { EN = m; }).catch(() => {}); } return EN; }
 const pan = (ic, tit, corpo, col) => ({ ic, tit, corpo, col });
 function pannelli(d) {
   const P = [], w = weatherEnt();
@@ -246,6 +305,195 @@ function casa(d, c, x) {
     <div class="ssg1 ${c.eff === "mov" ? "mov" : ""}">${P.map((p, k) => `<section class="ssk1 ${k === i ? "on" : P.length > 1 && k === prima ? "via" : ""}" style="--pc:${p.col}"><h3>${p.ic} ${esc(p.tit)}</h3>${p.corpo}</section>`).join("")}</div>
     ${P.length > 1 ? `<div class="ssdt">${P.map((_, k) => `<i class="${k === i ? "on" : ""}"></i>`).join("")}</div>` : ""}`;
 }
+
+/* ---------- spostamento lento contro i segni sullo schermo (fotovoltaico, consumi, analogico, meteo, giornata, sfondo) ---------- */
+const SPOSTA = new Set(["analogico", "solare", "consumi", "meteo", "giornata", "sfondo"]);
+/** pochissimo (±1,2 % dello schermo), a turni: con la transizione lunga non si nota */
+const spinta = c => { const [a, b] = posto(Math.floor(Date.now() / (PASSO[c.vel] || 60000)), .26); return `--dx:${r1(a - 1.2)}cqw;--dy:${r1(b + 1.3)}cqh`; };
+/** cielo dietro uno stile scuro: i colori di adesso, abbassati perché il testo si legga */
+function fondoCielo(k = .5) { const sl = sole(), m = meteoCielo(), [a, b, c] = colori(sl.el, sl.sale, m.grigio); return `linear-gradient(180deg,${mix(a, "#03050a", k)} 0%,${mix(b, "#03050a", k + .08)} 60%,${mix(c, "#03050a", k + .16)} 100%)`; }
+const testata = (d, c, ora = true) => `<div class="ssb2">${ora && c.info.includes("ora") ? `<div class="ssc2"><b>${oraTxt(d)}</b><span>${esc(dataTxt(d))}</span></div>` : "<span></span>"}<div class="ssi1">${pillole(c.info.filter(k => k !== "ora"))}</div></div>`;
+const kwhTxt = v => v == null ? "—" : fnum(v, v < 10 ? 1 : 0) + " kWh";
+
+/* ---------- ☀️ fotovoltaico in tempo reale ---------- */
+function solare(d, c, x) {
+  const en = energia();
+  if (!en) return `<div class="ssk3"></div><div class="ssw1"><div class="ssc1"><div class="ssd1">⚡ ${t("Carico i dati dell'energia…", "Loading energy data…")}</div></div></div>`;
+  const R = x.root.getBoundingClientRect(), stretto = R.width < R.height * 1.15;   // in verticale (telefono): il disegno stretto
+  const { Lt, sc, E, frase } = en.scenaAdesso(stretto, "ss" + x.id), T = en.totali() || {};
+  const notte = !sc.sole.su && (Lt.pv || 0) < 20, bat = Lt.soc != null || Lt.bat != null;
+  const auto = T.pv != null && T.pv > .05 ? Math.round(lim((T.pv - (T.exp || 0)) / T.pv) * 100) : null;
+  const batTx = Lt.soc != null ? fnum(Lt.soc, 0) + "%" : watts(Math.abs(Lt.bat || 0)), batSo = (Lt.bat || 0) < -20 ? t("in carica", "charging") + " · " + watts(-Lt.bat) : (Lt.bat || 0) > 20 ? t("in uso", "in use") + " · " + watts(Lt.bat) : t("ferma", "idle");
+  const box = (ic, n, v, s = "", cls = "") => `<div class="${cls}"><small>${ic} ${n}</small><b>${v}</b>${s ? `<span>${s}</span>` : ""}</div>`;
+  const dati = notte
+    ? [bat && box("🔋", t("Batteria", "Battery"), batTx, batSo, "bat"), box("🏠", t("Consumo adesso", "Using now"), watts(Lt.casa), "", "casa"), T.pv != null && box("☀️", t("Prodotto oggi", "Made today"), kwhTxt(T.pv), "", "sol"), box("🕐", esc(dataTxt(d)), oraTxt(d))]
+    : [box("☀️", t("Prodotto oggi", "Made today"), kwhTxt(T.pv), watts(Lt.pv) + " " + t("adesso", "now"), "sol"), auto != null && box("♻️", t("Autoconsumo", "Self-use"), auto + "%", t("del prodotto resta in casa", "of it stays at home")), bat && box("🔋", t("Batteria", "Battery"), batTx, batSo, "bat"), box("🕐", esc(dataTxt(d)), oraTxt(d))];
+  /* niente pulsanti sopra il salvaschermo: un tocco lo deve solo svegliare */
+  const E0 = E.map(e => ({ ...e, id: null }));
+  return `<div class="ssk4" style="background:${fondoCielo(.55)}"></div>
+    <div class="sspv1 ssmv" style="${spinta(c)}">
+      <div class="sspv2">${esc(frase || (notte ? t("Di notte la casa va con la batteria e con la rete.", "At night the house runs on the battery and the grid.") : t("Il fotovoltaico adesso", "Solar right now")))}</div>
+      <div class="en7 sspv ${stretto ? "tel" : ""}">${sc.html}${stretto ? "" : etichette(E0, sc.g)}</div>
+      ${stretto ? `<div class="en7t sspvt">${etichette(E0, null)}</div>` : ""}
+      <div class="sspv3">${dati.filter(Boolean).join("")}</div></div>
+    <div class="ssb2 ssb3"><span></span><div class="ssi1">${pillole(c.info.filter(k => k !== "ora"))}</div></div>`;
+}
+
+/* ---------- ⚡ consumi della casa ---------- */
+const colW = w => w == null ? "#8e8e93" : w < 500 ? "#30d158" : w < 1500 ? "#64d2ff" : w < 3000 ? "#ff9f0a" : "#ff453a";
+const kW = id => { const u = String(attr(id, "unit_of_measurement") || "").toLowerCase(); return u === "kw" ? 1000 : u === "mw" ? 1e6 : 1; };
+/** la potenza della casa nelle ultime ore, ogni 5 minuti, dalle statistiche (o da sole + rete + batteria): [{ x, y }]; null = sto caricando */
+function serieCasa(ore) {
+  const en = energia(); if (!en?.idsPotenza) return [];
+  const I = en.idsPotenza(), usa = I.casa.length ? { casa: I.casa } : { pv: I.pv, rete: I.rete, bat: I.bat };
+  const ids = [...new Set(Object.values(usa).flat())]; if (!ids.length) return [];
+  const st = new Date(Date.now() - ore * 3600e3); st.setMinutes(Math.floor(st.getMinutes() / 5) * 5, 0, 0);
+  const r = cached("ssCons:" + ids.join(",") + ":" + ore, 5 * 60000, () => ws({ type: "recorder/statistics_during_period", start_time: st.toISOString(), statistic_ids: ids, period: "5minute", types: ["mean"] }).catch(() => ({})));
+  if (r === undefined) return null;
+  const per = {};
+  for (const id of ids) for (const p of (r?.[id] || [])) if (p.mean != null) (per[p.start] = per[p.start] || {})[id] = p.mean * kW(id);
+  const somma = (o, L, inv) => !L?.length ? 0 : L.reduce((a, id) => a + (o[id] ?? NaN), 0) * (inv ? -1 : 1);
+  return Object.keys(per).map(Number).sort((a, b) => a - b).map(x => {
+    const o = per[x], y = usa.casa ? somma(o, usa.casa) : Math.max(0, Math.max(0, somma(o, usa.pv)) + somma(o, usa.rete, I.gridInv) + somma(o, usa.bat, I.batInv));
+    return { x: typeof x === "number" && x < 1e11 ? x * 1000 : x, y };
+  }).filter(p => isFinite(p.y));
+}
+/** un numero «tondo» sopra il massimo, per l'asse */
+const tondo = v => { const p = Math.pow(10, Math.floor(Math.log10(Math.max(v, 1)))), q = v / p; return (q <= 1 ? 1 : q <= 2 ? 2 : q <= 2.5 ? 2.5 : q <= 5 ? 5 : 10) * p; };
+function graficoCasa(P, ore, ora) {
+  if (P == null) return `<div class="sscg0">${t("Carico il grafico…", "Loading the chart…")}</div>`;
+  const L = [...P]; if (ora != null) L.push({ x: Date.now(), y: ora });
+  if (L.length < 2) return `<div class="sscg0">📈 ${t("Il grafico compare quando Home Assistant ha le statistiche della potenza (state_class: measurement).", "The chart shows up when Home Assistant has power statistics (state_class: measurement).")}</div>`;
+  const x1 = Date.now(), x0 = x1 - ore * 3600e3, mx = tondo(Math.max(...L.map(p => p.y)) * 1.08), X = x => r1((x - x0) / (x1 - x0) * 1000), Y = y => r1(300 - lim(y / mx) * 290);
+  const Q = L.filter(p => p.x >= x0);
+  const linea = Q.map((p, i) => `${i ? "L" : "M"}${X(p.x)} ${Y(p.y)}`).join("");
+  const area = `${linea}L${X(Q[Q.length - 1].x)} 300L${X(Q[0].x)} 300Z`;
+  const passoOre = ore <= 3 ? 1 : ore <= 6 ? 1 : ore <= 12 ? 2 : 4, tic = [];
+  const h0 = new Date(x0); h0.setMinutes(0, 0, 0);
+  for (let h = h0.getTime() + 3600e3; h < x1; h += 3600e3) if (new Date(h).getHours() % passoOre === 0) tic.push(h);
+  return `<div class="sscg"><svg viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="sscg${ore}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#64d2ff" stop-opacity=".42"/><stop offset="1" stop-color="#64d2ff" stop-opacity="0"/></linearGradient></defs>
+      ${[.5, 1].map(f => `<line x1="0" x2="1000" y1="${Y(mx * f)}" y2="${Y(mx * f)}" class="sscgl"/>`).join("")}
+      <path d="${area}" fill="url(#sscg${ore})"/><path d="${linea}" class="sscgp"/></svg>
+    ${[.5, 1].map(f => `<i class="sscgy" style="top:${r1(Y(mx * f) / 3)}%">${watts(mx * f)}</i>`).join("")}
+    <i class="sscgd" style="left:${r1(X(Q[Q.length - 1].x) / 10)}%;top:${r1(Y(Q[Q.length - 1].y) / 3)}%"></i>
+    <div class="sscgx">${tic.map(h => `<i style="left:${r1(X(h) / 10)}%">${new Date(h).toLocaleTimeString(LOC, { hour: "2-digit", minute: "2-digit" })}</i>`).join("")}</div></div>`;
+}
+function consumi(d, c, x) {
+  const en = energia();
+  if (!en) return `<div class="ssk3"></div><div class="ssw1"><div class="ssc1"><div class="ssd1">⚡ ${t("Carico i dati dell'energia…", "Loading energy data…")}</div></div></div>`;
+  const Lt = en.letture(), F = en.ripartisci(Lt), casa = Lt.casa, ore = [3, 6, 12, 24].includes(+c.ore) ? +c.ore : 6;
+  const pct = v => casa > 20 ? Math.round(lim(v / casa) * 100) : 0, da = [];
+  if ((Lt.pv || 0) > 20 && pct(F.solCasa)) da.push(`☀️ ${pct(F.solCasa)}% ${t("dal sole", "from the sun")}`);
+  if (pct(F.batCasa)) da.push(`🔋 ${pct(F.batCasa)}% ${t("dalla batteria", "from the battery")}`);
+  if (pct(F.reteCasa)) da.push(`🔌 ${pct(F.reteCasa)}% ${t("dalla rete", "from the grid")}`);
+  let top = []; try { top = en.chiConsuma(4); } catch {}
+  const mx = Math.max(casa || 0, ...top.map(r => r.w), 1);
+  return `<div class="ssk3"></div>${testata(d, c)}
+    <div class="sscn ssmv" style="${spinta(c)}">
+      <div class="sscn1" style="--wc:${colW(casa)}"><small>🏠 ${t("La casa adesso", "The house right now")}</small><b>${watts(casa)}</b>${da.length ? `<span>${da.join(" · ")}</span>` : ""}</div>
+      <div class="sscn3">${top.length ? `<h4>${t("Chi consuma di più", "Using the most")}</h4>${top.map(r => `<div><span>${esc(nm(r.id))}</span><i><u style="width:${r1(r.w / mx * 100)}%;background:${colW(r.w)}"></u></i><b>${watts(r.w)}</b></div>`).join("")}` : ""}</div>
+      <div class="sscn2"><h4>${t(`Ultime ${ore} ore`, `Last ${ore} hours`)}</h4>${graficoCasa(serieCasa(ore), ore, casa)}</div></div>`;
+}
+
+/* ---------- 🕰️ orologio analogico ---------- */
+/** angoli delle lancette in gradi, che crescono sempre (niente salti all'indietro a mezzanotte): base = mezzanotte di quando è partito */
+function angoli(base, sec) {
+  const s = (Date.now() - base) / 1000;
+  return { h: r1(s / 120), m: r1(s / 10), s: sec === "scatti" ? Math.floor(s) * 6 : r1(s * 6) };
+}
+const TACCHE = Array.from({ length: 60 }, (_, i) => { const a = i * 6 * Math.PI / 180, o = i % 5 === 0, r0 = o ? 80 : 86, r = 92;
+  return `<line x1="${r1(Math.sin(a) * r0)}" y1="${r1(-Math.cos(a) * r0)}" x2="${r1(Math.sin(a) * r)}" y2="${r1(-Math.cos(a) * r)}" class="${o ? "o" : ""}"/>`; }).join("");
+function analogico(d, c, x) {
+  if (!x.base) { const m = new Date(); m.setHours(0, 0, 0, 0); x.base = m.getTime(); }
+  const sl = sole(), el = sl.el, g = el < -8 ? "#1d2f6b" : el < 8 ? mix(el < 0 ? "#3b2a6b" : "#a2522c", el < 0 ? "#a2522c" : "#2b6f8f", (el + 8) / 16) : "#2b6f8f";
+  const A = angoli(x.base, c.sec), num = [12, 3, 6, 9].map((n, i) => { const a = i * Math.PI / 2; return `<text x="${r1(Math.sin(a) * 66)}" y="${r1(-Math.cos(a) * 66 + 6)}">${n}</text>`; }).join("");
+  return `<div class="sso1" style="--g:${g}"></div>
+    <div class="ssan ssmv" style="${spinta(c)}"><svg class="ssan1" viewBox="-100 -100 200 200" aria-hidden="true">
+      <circle r="97" class="fc"/><g class="tc">${TACCHE}</g><g class="nm">${num}</g>
+      <g class="ssanh sec-${c.sec}" data-keep><path class="h" d="M-3.4 12L-2.4 -48Q0 -54 2.4 -48L3.4 12Z" style="transform:rotate(${A.h}deg)"/>
+        <path class="m" d="M-2.4 14L-1.6 -74Q0 -79 1.6 -74L2.4 14Z" style="transform:rotate(${A.m}deg)"/>
+        ${c.sec === "no" ? "" : `<g class="s" style="transform:rotate(${A.s}deg)"><line y1="18" y2="-82"/><circle r="3.4"/></g>`}<circle r="4.6" class="cn"/></g></svg>
+      <div class="ssan2"><div class="ssd1">${esc(dataTxt(d))}</div><div class="ssi1">${pillole(c.info)}</div></div></div>`;
+}
+/** le lancette si muovono da sole, una volta al secondo (solo tre attributi: leggero) */
+function lancette(x) {
+  clearInterval(x.T4);
+  const muovi = () => {
+    if (!x.el?.isConnected || x.s !== "analogico") return clearInterval(x.T4);
+    if (inPausa(x)) return;
+    const g = x.el.querySelector(".ssanh"); if (!g) return;
+    const A = angoli(x.base, cfg("analogico").sec);
+    for (const k of ["h", "m", "s"]) { const e = g.querySelector("." + k); if (e) e.style.transform = `rotate(${A[k]}deg)`; }
+  };
+  x.T4 = setInterval(muovi, 1000);
+}
+
+/* ---------- 🌤️ meteo, grande ---------- */
+function meteoSS(d, c, x) {
+  const w = weatherEnt(); if (!w || !S[w]) return orologio(d, { ...cfg("orologio"), info: [] }, x);
+  const a = S[w].attributes, sl = sole(), st = S[w].state === "sunny" && !sl.su ? "clear-night" : S[w].state, [ic0, tx] = WX()[st] || ["🌡️", S[w].state];
+  const ic = sl.su ? ic0 : iconaMeteo(st, Date.now());   // di notte niente sole dietro le nuvole
+  const ore = [6, 12, 24].includes(+c.ore) ? +c.ore : 12, H = (forecast(w, "hourly") || []).filter(f => Date.parse(f.datetime) > Date.now() - 30 * 60000).slice(0, ore);
+  const D = forecast(w, "daily") || [], oggi = D[0], passo = Math.ceil(H.length / 12), HH = H.filter((_, i) => i % passo === 0);
+  const u = esc(a.temperature_unit || "°"), ve = a.wind_speed != null ? fnum(a.wind_speed, 0) + " " + esc(a.wind_speed_unit || "km/h") : null;
+  const pr = H[0]?.precipitation_probability ?? oggi?.precipitation_probability;
+  const det = [a.apparent_temperature != null && `🌡️ ${t("percepita", "feels like")} ${fnum(a.apparent_temperature, 0)}°`, a.humidity != null && `💧 ${fnum(a.humidity, 0)}%`, ve && `💨 ${ve}`, pr != null && `☔ ${fnum(pr, 0)}%`].filter(Boolean);
+  return `<div class="ssk4" style="background:${fondoCielo(.42)}"></div>${testata(d, c)}
+    <div class="ssmt ssmv" style="${spinta(c)}">
+      <div class="ssmt1"><span class="i">${ic}</span><div><b>${fnum(a.temperature, 0)}${u === "°C" || u === "°F" ? "°" : u}</b><span>${esc(tx)}</span>
+        ${oggi && oggi.temperature != null ? `<small>↑ ${fnum(oggi.temperature, 0)}°${oggi.templow != null ? ` · ↓ ${fnum(oggi.templow, 0)}°` : ""}</small>` : ""}</div>
+        ${det.length ? `<div class="ssmt2">${det.map(z => `<span>${z}</span>`).join("")}</div>` : ""}</div>
+      ${HH.length ? `<div class="ssmt3" style="--n:${HH.length}">${HH.map(f => { const p = f.precipitation_probability;
+        return `<div><small>${new Date(f.datetime).toLocaleTimeString(LOC, { hour: "2-digit", minute: "2-digit" })}</small><span>${iconaMeteo(f.condition, Date.parse(f.datetime))}</span><b>${fnum(f.temperature, 0)}°</b>
+          <i class="pr"><u style="height:${p != null ? lim(p / 100) * 100 : 0}%"></u></i><em>${p ? fnum(p, 0) + "%" : ""}</em></div>`; }).join("")}</div>`
+        : D.length > 1 ? `<div class="ssmt3" style="--n:${Math.min(6, D.length - 1)}">${D.slice(1, 7).map(f => `<div><small>${esc(new Date(f.datetime).toLocaleDateString(LOC, { weekday: "short" }))}</small><span>${(WX()[f.condition] || ["·"])[0]}</span><b>${fnum(f.temperature, 0)}°</b><em>${f.templow != null ? fnum(f.templow, 0) + "°" : ""}</em></div>`).join("")}</div>` : ""}
+    </div>`;
+}
+
+/** è notte a quell'ora? (dall'alba e dal tramonto di sun.sun; senza, dalle 18 alle 7) */
+function notteAlle(ms) {
+  const a = S["sun.sun"]?.attributes || {}, nr = Date.parse(a.next_rising), ns = Date.parse(a.next_setting);
+  if (isNaN(nr) || isNaN(ns)) { const h = new Date(ms).getHours(); return h < 7 || h >= 18; }
+  return ns < nr ? ms >= ns && ms < nr : ms < nr || ms >= ns;
+}
+/** l'icona del tempo, senza il sole di notte */
+const iconaMeteo = (cond, ms) => { const [ic] = WX()[cond] || ["·"]; return notteAlle(ms) ? ({ sunny: "🌙", rainy: "🌧️", partlycloudy: "☁️" }[cond] || ic) : ic; };
+
+/* ---------- 📅 la giornata ---------- */
+function giornata(d, c, x) {
+  const oggi = new Date(), dom = new Date(Date.now() + 864e5), E = calendari().length ? eventi(calendari(), 2) : [];
+  const L = Array.isArray(E) ? E : [], ancora = L.filter(ev => nelGiorno(ev, oggi) && fine(ev) > Date.now()), domani = L.filter(ev => nelGiorno(ev, dom));
+  const evs = (ancora.length ? ancora : domani).slice(0, 5);
+  const evRiga = ev => `<div style="--cc:${colore(ev.cal)}"><span>${allDay(ev) ? t("tutto il giorno", "all day") : inizio(ev) <= new Date() ? t("adesso", "now") : oraTxt(inizio(ev))}</span><b>${esc(corto(ev.summary, 46))}</b>${ev.location ? `<small>📍 ${esc(corto(ev.location, 40))}</small>` : ""}</div>`;
+  const sera = oggi.getHours() >= 12, R = haRaccolta() ? ritiri() : null, rf = R ? (sera ? R.domani : R.oggi) : [];
+  const sc = modulo("scadenze"), lst = sc?.lista?.(), N = [3, 7, 14, 30].includes(+c.giorni) ? +c.giorni : 7, SC = lst ? sc.prossime?.(N) : null;
+  const giornoTx = oggi.toLocaleDateString(LOC, { weekday: "long" }), dataTx = oggi.toLocaleDateString(LOC, { day: "numeric", month: "long" });
+  const pann = [
+    `<section class="ssgg1"><h3>📅 ${ancora.length || !domani.length ? t("Oggi", "Today") : t("Domani", "Tomorrow")}</h3>${evs.length ? `<div class="ssq5">${evs.map(evRiga).join("")}</div>`
+      : `<p class="ssgg0">${calendari().length ? t("Niente in programma: giornata libera.", "Nothing planned: a free day.") : t("Nessun calendario nella plancia.", "No calendars on the dashboard.")}</p>`}</section>`,
+    R ? `<section class="ssgg1"><h3>♻️ ${sera ? t("Stasera esponi", "Put out tonight") : t("Oggi si ritira", "Collected today")}</h3>${rf.length ? `<div class="ssgg2">${rf.map(z => `<span style="--c:${z.c}">${z.e} ${esc(z.n)}</span>`).join("")}</div>` : `<p class="ssgg0">${t("Niente da esporre.", "Nothing to put out.")}</p>`}</section>` : "",
+    lst ? `<section class="ssgg1"><h3>⏰ ${t("Scadenze", "Deadlines")}</h3>${SC == null ? `<p class="ssgg0">…</p>` : SC.length ? `<div class="ssgg3">${SC.slice(0, 4).map(z => `<div class="${z.cls}"><b>${esc(corto(z.titolo, 40))}</b><span>${esc(z.quando)}</span></div>`).join("")}</div>`
+      : `<p class="ssgg0">${t(`Niente nei prossimi ${N} giorni.`, `Nothing in the next ${N} days.`)}</p>`}</section>` : "",
+  ].filter(Boolean);
+  return `<div class="ssk3"></div>
+    <div class="ssgg ssmv" style="${spinta(c)}"><div class="ssgg4"><div><small>${esc(giornoTx)}</small><b>${esc(dataTx)}</b></div><div class="ssgg5"><b>${oraTxt(d)}</b><div class="ssi1">${pillole(c.info)}</div></div></div>
+      <div class="ssgg6 n${pann.length}">${pann.join("")}</div></div>`;
+}
+
+/* ---------- ✨ sfondo animato ---------- */
+const sfondoAnim = id => SFONDI().some(s => s[0] === id && s[4]) ? id : "aurora";
+function sfondoSS(d, c, x) {
+  return `<div class="sssf" data-keep></div><div class="ssv1 lieve"></div>
+    <div class="ssw1 sssf2"><div class="ssc1 ssmv" style="${spinta(c)}">${c.info.includes("ora") ? `<div class="ssh1">${oraTxt(d)}</div>` : ""}<div class="ssi1">${pillole(c.info.filter(k => k !== "ora"))}</div></div></div>`;
+}
+/** monta (o cambia) lo sfondo animato dentro il salvaschermo */
+function sfondoMonta(x, c) {
+  const id = sfondoAnim(c.sf), o = { ...opzSfondo(null, id), vel: +c.vel || 2, int: +c.int || 2, osc: 0 }, chiave = JSON.stringify([id, o]);
+  const box = x.el?.querySelector(".sssf"); if (!box) return;
+  if (x.sf && x.sf.chiave === chiave && x.sf.box === box) return;
+  x.sf?.stop(); x.sf = montaSfondo(box, id, o, { mini: x.mini, scuro: true }); x.sf.chiave = chiave; x.sf.box = box;
+}
+const fermaSfondo = x => { x.sf?.stop(); x.sf = null; };
 
 /* ---------- foto ---------- */
 const CAMBIO = { 1: 60000, 2: 20000, 3: 10000 };
@@ -301,21 +549,24 @@ function avviaFoto(x) {
 const fermaFoto = x => { if (x.foto) { x.foto.fermo = true; clearTimeout(x.foto.T); x.foto = null; } x.fotoErr = false; };
 
 /* ================= motore: disegna uno stile dentro un contenitore ================= */
-const STILE = { orologio, notte, cielo, casa, foto };
+const STILE = { orologio, notte, cielo, casa, foto, analogico, solare, consumi, meteo: meteoSS, giornata, sfondo: sfondoSS };
 const VIVI = new Set();
 let nid = 0;
-/** ferma tutto quando la scheda non si vede, o quando l'anteprima è coperta dal salvaschermo vero */
-const inPausa = x => document.hidden || (x.mini && attivo);
-/** monta uno stile nel contenitore (root): restituisce il controllo { stop } */
-function monta(root, stile, mini) {
-  const x = { id: ++nid, root, stile, mini, el: null, s: null, turno: 0, fuori: false, T: null, T2: null, foto: null, fotoErr: false, prossimo: null };
+/** ferma tutto quando la scheda non si vede, o quando l'anteprima (o lo sfondo della plancia) è coperta dal salvaschermo vero */
+const inPausa = x => document.hidden || ((x.mini || x.opz.sfondo) && attivo);
+/** monta uno stile nel contenitore (root): restituisce il controllo { stop }.
+    opz (facoltativo): { cfg: scelte che sostituiscono quelle salvate, sfondo: true se è lo sfondo della plancia (sfondi.js: niente attenuazione) } */
+function monta(root, stile, mini, opz = {}) {
+  const x = { id: ++nid, root, stile, mini, opz, el: null, s: null, turno: 0, fuori: false, T: null, T2: null, T4: null, foto: null, fotoErr: false, prossimo: null, sf: null, base: 0 };
   root.innerHTML = "";
-  x.stop = () => { clearTimeout(x.T); clearTimeout(x.T2); (x.T3 || []).forEach(clearTimeout); fermaFoto(x); VIVI.delete(x); };
+  x.stop = () => { clearTimeout(x.T); clearTimeout(x.T2); clearInterval(x.T4); (x.T3 || []).forEach(clearTimeout); fermaFoto(x); fermaSfondo(x); VIVI.delete(x); };
   VIVI.add(x); giro(x);
   /* calendari, previsioni e consumi arrivano un attimo dopo: ridisegno presto due volte */
   x.T3 = [1500, 4500].map(ms => setTimeout(() => { if (VIVI.has(x)) giro(x); }, ms));
   return x;
 }
+/** uno stile dentro un altro contenitore (lo sfondo «Cielo vivo» della plancia, sfondi.js) */
+export const montaStile = (root, stile, opz = {}) => monta(root, stile, true, opz);
 function giro(x) {
   clearTimeout(x.T);
   if (!x.root.isConnected) { x.stop(); return; }
@@ -328,14 +579,15 @@ function giro(x) {
 function riprendi() { for (const x of VIVI) giro(x); }
 document.addEventListener("visibilitychange", riprendi);
 function disegna(x) {
-  const d = new Date(), s = reale(x.stile, d), c = cfg(s);
+  const d = new Date(), s = reale(x.stile, d), c = { ...cfg(s), ...(x.opz.cfg || {}) };
   if (s !== x.s) {
-    /* cambio di stile (Automatico all'inizio o alla fine della notte): il nuovo entra in dissolvenza sopra il vecchio */
-    fermaFoto(x);
+    /* cambio di stile (Automatico all'inizio o alla fine della notte, Alterna): il nuovo entra in dissolvenza sopra il vecchio */
+    fermaFoto(x); fermaSfondo(x); clearInterval(x.T4);
     const vecchio = x.el, el = document.createElement("div");
     el.className = "ssr1 st-" + s + (vecchio ? " entra" : "");
     x.root.appendChild(el); x.el = el; x.s = s; x.turno = Math.floor(Date.now() / (s === "notte" ? 180000 : PASSO[c.vel] || 60000)); x.fuori = false;
     if (vecchio) { requestAnimationFrame(() => requestAnimationFrame(() => el.classList.remove("entra"))); setTimeout(() => vecchio.remove(), 2200); }
+    if (s === "analogico") lancette(x);
   }
   /* orologio e notte cambiano posto a turni: con la dissolvenza spariscono, si spostano e ricompaiono */
   if (s === "orologio" || s === "notte") {
@@ -346,9 +598,15 @@ function disegna(x) {
       else x.turno = n;
     }
   }
-  const dim = attenua() && s !== "notte" && diNotte(d);
+  /* gli altri si spostano di pochissimo a turni (spinta), senza sparire */
+  if (SPOSTA.has(s)) { const per = PASSO[c.vel] || 60000; x.prossimo = Math.min(x.prossimo || Infinity, per - (Date.now() % per) + 40); }
+  /* attenuazione di notte: la scelta dello stile, altrimenti quella di sempre */
+  const dim = !x.opz.sfondo && s !== "notte" && (c.att != null ? !!c.att : attenua()) && diNotte(d);
   try { patch(x.el, STILE[s](d, c, x) + `<div class="ssdim ${dim ? "on" : ""}"></div>`); } catch (e) { console.error("salvaschermo", e); }
   if (s === "foto" && !x.foto) avviaFoto(x);
+  if (s === "sfondo") sfondoMonta(x, c);
+  /* Alterna: il prossimo giro arriva al cambio di stile */
+  if (x.stile === "alterna") { const per = perAlterna(); x.prossimo = Math.min(x.prossimo || Infinity, per - (Date.now() % per) + 60); }
 }
 
 /* ================= a tutto schermo ================= */
@@ -385,31 +643,48 @@ riarma();
 
 /* ================= Impostazioni ================= */
 const NOMI = () => ({
-  auto: ["✨", t("Automatico", "Automatic"), t("Di giorno foto o cielo, di notte scuro", "Photos or sky by day, dark at night")],
+  auto: ["✨", t("Automatico", "Automatic"), t("Di giorno lo stile che scegli, di notte quello della notte", "By day the style you pick, at night the night one")],
+  alterna: ["🔁", t("Alterna", "Rotate"), t("Gira tra gli stili che scegli", "Rotates the styles you pick")],
   orologio: ["🕐", t("Orologio", "Clock"), t("Ora grande, data e quello che scegli", "Big time, date and what you pick")],
+  analogico: ["🕰️", t("Orologio analogico", "Analog clock"), t("Lancette eleganti, data e temperatura fuori", "Elegant hands, date and outdoor temperature")],
   cielo: ["🌅", t("Cielo vivo", "Live sky"), t("Il cielo di adesso, con il meteo di casa", "Today's sky, with your home weather")],
+  solare: ["☀️", t("Fotovoltaico", "Solar"), t("Sole, pannelli, casa, batteria e rete in tempo reale", "Sun, panels, house, battery and grid in real time")],
+  consumi: ["⚡", t("Consumi della casa", "Home energy use"), t("La potenza adesso, le ultime ore e chi consuma di più", "Power now, the last hours and what uses the most")],
+  meteo: ["🌤️", t("Meteo", "Weather"), t("Il tempo adesso e le prossime ore, grande", "The weather now and the next hours, big")],
+  giornata: ["📅", t("La giornata", "Your day"), t("Data, impegni di oggi, raccolta e scadenze", "Date, today's events, waste collection and deadlines")],
   casa: ["🏠", t("Casa", "Home"), t("Meteo, stanze, persone, impegni e consumi", "Weather, rooms, people, events and energy")],
   notte: ["🌙", t("Minimal notturno", "Night minimal"), t("Ora grande e scurissima, per la camera", "Big, very dark time for the bedroom")],
   foto: ["🖼️", t("Foto", "Photos"), t("Le tue foto o una GIF", "Your photos or a GIF")],
+  sfondo: ["✨", t("Sfondo animato", "Animated background"), t("Uno sfondo animato, con l'ora piccola", "An animated background, with a small clock")],
 });
+/** lo stile del giorno come si vede davvero (le foto senza foto diventano il cielo) */
+const giornoVero = () => giorno() === "foto" && !haFoto() ? "cielo" : giorno();
+const conSolare = () => solareAuto() && haSolare() === true;
 /** riga del salvaschermo nella scheda «Questo dispositivo» */
 export function ssVoce() {
-  const s = ssStile(), [ic, n] = NOMI()[s];
-  const sotto = s === "auto" ? t(`Di giorno ${giorno() === "foto" && haFoto() ? "foto" : "cielo vivo"}, di notte minimal (${notteDa()}–${notteA()})`, `By day ${giorno() === "foto" && haFoto() ? "photos" : "live sky"}, at night minimal (${notteDa()}–${notteA()})`)
-    : s === "foto" && !haFoto() ? t("Scegli le foto", "Choose your photos") : NOMI()[s][2];
+  const s = ssStile(), N = NOMI(), [ic, n] = N[s];
+  const sotto = s === "auto" ? t(`Di giorno ${N[giornoVero()][1].toLowerCase()}${conSolare() ? " (o il fotovoltaico quando produce)" : ""}, di notte ${N[notteStile()][1].toLowerCase()} (${notteDa()}–${notteA()})`,
+      `By day ${N[giornoVero()][1].toLowerCase()}${conSolare() ? " (or solar while it produces)" : ""}, at night ${N[notteStile()][1].toLowerCase()} (${notteDa()}–${notteA()})`)
+    : s === "alterna" ? t(`Gira tra ${giroAlterna().map(k => N[k][1].toLowerCase()).join(", ")} · ogni ${cfg("alterna").min} min`, `Rotates ${giroAlterna().map(k => N[k][1].toLowerCase()).join(", ")} · every ${cfg("alterna").min} min`)
+    : s === "foto" && !haFoto() ? t("Scegli le foto", "Choose your photos") : !disponibile(s) ? t("Non disponibile qui: mostro l'orologio", "Not available here: showing the clock") : N[s][2];
   return `<button class="li sz1v" data-act="ssCfg"><span class="ic">${ic}</span><div class="tx"><b>${esc(n)}</b><span>${esc(sotto)}</span></div><span class="st">›</span></button>
     <div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn sm" data-act="ssCfg">🎨 ${t("Personalizza", "Customize")}</button><button class="btn sm" data-act="ssProva">▶ ${t("Prova", "Try")}</button></div>`;
 }
 /* foglio «Personalizza»: in alto l'anteprima dal vivo, poi lo stile e le sue opzioni */
 const ED = { sub: "giorno" };
 const seg = (act, cur, opts, x = "") => `<div class="seg">${opts.map(([k, n]) => `<button class="${String(cur) === String(k) ? "act" : ""}" data-act="${act}" data-v="${k}" ${x}>${n}</button>`).join("")}</div>`;
-/** lo stile di cui si vedono le opzioni (in Automatico: quello del giorno o della notte) */
-const inModifica = () => { const s = ssStile(); return s !== "auto" ? s : ED.sub === "notte" ? "notte" : giorno(); };
+/** lo stile di cui si vedono le opzioni (in Automatico: quello del giorno, della notte o il fotovoltaico) */
+const inModifica = () => { const s = ssStile(); if (s !== "auto") return s; return ED.sub === "notte" ? notteStile() : ED.sub === "solare" && conSolare() ? "solare" : giorno(); };
+/** lo stile dell'anteprima */
+const vistaAnteprima = () => { const s = ssStile(); if (s !== "auto") return s; return ED.sub === "notte" ? notteStile() : ED.sub === "solare" && conSolare() ? "solare" : giornoVero(); };
+const SPOSTA_TX = () => [t("Si sposta", "Shifts"), [t("ogni 5 min", "every 5 min"), t("ogni minuto", "every minute"), t("ogni 20 s", "every 20 s")]];
 const VEL = () => ({
   orologio: [t("Si sposta", "Moves"), [t("ogni 5 min", "every 5 min"), t("ogni minuto", "every minute"), t("ogni 20 s", "every 20 s")]],
   cielo: [t("Nuvole", "Clouds"), [t("lente", "slow"), t("normali", "normal"), t("veloci", "fast")]],
   casa: [t("Cambio pannello", "Next panel"), ["30 s", "15 s", "8 s"]],
   foto: [t("Cambio foto", "Next photo"), ["1 min", "20 s", "10 s"]],
+  analogico: SPOSTA_TX(), solare: SPOSTA_TX(), consumi: SPOSTA_TX(), meteo: SPOSTA_TX(), giornata: SPOSTA_TX(),
+  sfondo: [t("Velocità", "Speed"), [t("lenta", "slow"), t("normale", "normal"), t("veloce", "fast")]],
 });
 const EFF = () => ({
   orologio: [t("Dissolvenza", "Fade"), t("Movimento lento", "Slow drift")],
@@ -417,15 +692,34 @@ const EFF = () => ({
   foto: [t("Dissolvenza", "Fade"), t("Movimento lento (Ken Burns)", "Slow motion (Ken Burns)")],
 });
 const INFO = () => ({ ora: "🕐 " + t("Ora", "Time"), meteo: "🌤️ " + t("Meteo", "Weather"), temp: "🏠 " + t("Temperatura di casa", "Home temperature"), persone: "👥 " + t("Persone in casa", "People home"), impegno: "📅 " + t("Prossimo impegno", "Next event") });
-const INFO_DI = { orologio: ["meteo", "temp", "persone", "impegno"], notte: ["meteo", "temp", "impegno"], cielo: ["ora", "meteo", "temp", "persone", "impegno"], casa: ["ora", "meteo", "temp", "persone", "impegno"], foto: ["ora", "meteo", "temp", "persone", "impegno"] };
+const INFO_DI = { orologio: ["meteo", "temp", "persone", "impegno"], notte: ["meteo", "temp", "impegno"], cielo: ["ora", "meteo", "temp", "persone", "impegno"], casa: ["ora", "meteo", "temp", "persone", "impegno"], foto: ["ora", "meteo", "temp", "persone", "impegno"],
+  analogico: ["meteo", "temp", "persone", "impegno"], solare: ["meteo", "temp", "persone", "impegno"], consumi: ["ora", "meteo", "temp", "persone"], meteo: ["ora", "temp", "persone", "impegno"],
+  giornata: ["meteo", "temp", "persone"], sfondo: ["ora", "meteo", "temp", "persone", "impegno"], alterna: [] };
+/** le scelte proprie di uno stile: [chiave, nome, [[valore, testo], …], spiegazione] */
+const PROPRIE = () => ({
+  analogico: [["sec", t("Secondi", "Seconds"), [["liscia", t("Scorrevoli", "Smooth")], ["scatti", t("A scatti", "Ticking")], ["no", t("Senza", "None")]]]],
+  consumi: [["ore", t("Grafico", "Chart"), [[3, "3 h"], [6, "6 h"], [12, "12 h"], [24, "24 h"]], t("Quante ore indietro mostra il grafico della potenza.", "How many hours back the power chart goes.")]],
+  meteo: [["ore", t("Prossime ore", "Next hours"), [[6, "6 h"], [12, "12 h"], [24, "24 h"]]]],
+  giornata: [["giorni", t("Scadenze entro", "Deadlines within"), [[3, t("3 giorni", "3 days")], [7, t("7 giorni", "7 days")], [14, t("14 giorni", "14 days")], [30, t("30 giorni", "30 days")]]]],
+  sfondo: [["int", t("Intensità", "Intensity"), [[1, t("Tenue", "Soft")], [2, t("Normale", "Normal")], [3, t("Forte", "Strong")]]]],
+});
 function opzioni(s) {
-  const c = cfg(s), V = VEL()[s], E = EFF()[s], I = INFO();
-  return `${V ? `<div class="sz1o"><span>${V[0]}</span>${seg("ssVel", c.vel, V[1].map((n, i) => [i + 1, n]), `data-s="${s}"`)}</div>` : ""}
+  const c = cfg(s), V = VEL()[s], E = EFF()[s], I = INFO(), N = NOMI();
+  if (s === "alterna") return `<div class="sz1o"><span>${t("Stili", "Styles")}</span><div class="vr1">${SEMPLICI.filter(k => disponibile(k) || (c.lista || []).includes(k)).map(k => `<button class="${(c.lista || []).includes(k) ? "on" : ""}" data-act="ssAlt" data-v="${k}">${N[k][0]} ${esc(N[k][1])}</button>`).join("")}</div></div>
+    <div class="sz1o"><span>${t("Cambia ogni", "Changes every")}</span>${seg("ssOpz", c.min, [[1, "1 min"], [2, "2 min"], [5, "5 min"], [10, "10 min"], [30, "30 min"]], `data-s="alterna" data-k="min"`)}</div>
+    <p class="small muted">${t("Le opzioni di ogni stile (informazioni, velocità…) si scelgono mettendo quello stile da solo: valgono anche qui.", "Each style's options (info, speed…) are set by picking that style on its own: they apply here too.")}</p>`;
+  const P = PROPRIE()[s] || [];
+  return `${V ? `<div class="sz1o"><span>${V[0]}</span>${seg("ssVel", c.vel, V[1].map((n, i) => [i + 1, n]), `data-s="${s}"`)}</div>${SPOSTA.has(s) && s !== "sfondo" ? `<p class="small muted">${t("Di pochissimo, così lo schermo non si segna.", "Just a little, so the screen doesn't get marked.")}</p>` : ""}` : ""}
     ${E ? `<div class="sz1o"><span>${t("Passaggio", "Transition")}</span>${seg("ssEff", c.eff, [["fade", E[0]], ["mov", E[1]]], `data-s="${s}"`)}</div>` : ""}
-    <div class="sz1o"><span>${s === "casa" ? t("In alto", "On top") : t("Da mostrare sopra", "Shown on top")}</span><div class="vr1">${INFO_DI[s].map(k => `<button class="${c.info.includes(k) ? "on" : ""}" data-act="ssInfo" data-s="${s}" data-v="${k}">${I[k]}</button>`).join("")}</div></div>
+    ${s === "sfondo" ? `<div class="sz1o"><span>${t("Sfondo", "Background")}</span><div class="vr1">${SFONDI().filter(z => z[4]).map(([id, ic, n]) => `<button class="${sfondoAnim(c.sf) === id ? "on" : ""}" data-act="ssOpz" data-s="sfondo" data-k="sf" data-v="${id}">${ic} ${esc(n)}</button>`).join("")}</div></div>` : ""}
+    ${P.map(([k, n, L, sp]) => `<div class="sz1o"><span>${n}</span>${seg("ssOpz", c[k], L, `data-s="${s}" data-k="${k}"`)}</div>${sp ? `<p class="small muted">${sp}</p>` : ""}`).join("")}
+    ${INFO_DI[s]?.length ? `<div class="sz1o"><span>${s === "casa" ? t("In alto", "On top") : t("Da mostrare sopra", "Shown on top")}</span><div class="vr1">${INFO_DI[s].map(k => `<button class="${c.info.includes(k) ? "on" : ""}" data-act="ssInfo" data-s="${s}" data-v="${k}">${I[k]}</button>`).join("")}</div></div>` : ""}
+    ${s !== "notte" ? `<div class="sz1o"><span>${t("Di notte", "At night")}</span>${seg("ssOpz", (c.att != null ? !!c.att : attenua()) ? 1 : 0, [[1, t("Abbassa la luce", "Dim it")], [0, t("Come di giorno", "As by day")]], `data-s="${s}" data-k="att"`)}</div>` : ""}
     ${s === "foto" ? fotoScelta() : ""}
     ${s === "cielo" ? `<p class="small muted">${t("I colori seguono il sole, le nuvole e la pioggia il meteo di casa; di notte la luna ha la sua fase vera.", "Colours follow the sun, clouds and rain your home weather; at night the moon shows its real phase.")}</p>` : ""}
-    ${s === "notte" ? `<p class="small muted">${t("Nero, con l'ora in un arancio molto tenue che non abbaglia; cambia posto ogni pochi minuti.", "Black, with the time in a very soft orange that doesn't dazzle; it moves every few minutes.")}</p>` : ""}`;
+    ${s === "notte" ? `<p class="small muted">${t("Nero, con l'ora in un arancio molto tenue che non abbaglia; cambia posto ogni pochi minuti.", "Black, with the time in a very soft orange that doesn't dazzle; it moves every few minutes.")}</p>` : ""}
+    ${s === "solare" ? `<p class="small muted">${t("Usa gli stessi sensori della pagina Energia (si scelgono lì, in ✏️ Modifica → ⚙️ Sensori). I flussi vanno più veloci quando passano più watt.", "Uses the same sensors as the Energy page (pick them there, in ✏️ Edit → ⚙️ Sensors). Flows move faster when more watts pass.")}</p>` : ""}
+    ${s === "giornata" ? `<p class="small muted">${t("Impegni dei calendari della plancia, la raccolta (dopo mezzogiorno quella da esporre stasera) e le scadenze della lista Scadenze.", "Events from the dashboard's calendars, waste collection (after noon, what goes out tonight) and the Deadlines list.")}</p>` : ""}`;
 }
 function fotoScelta() {
   const f = fonte(), stato = u => { const s = fileEsiste(u); return s === "ok" ? "✅" : s === "no" ? "⚠️" : s === "?" ? "…" : ""; };
@@ -441,27 +735,34 @@ function fotoScelta() {
     ${f !== "media" ? `<p class="small muted">${t("Metti i file nella cartella www di Home Assistant: «/config/www/foto.jpg» diventa «/local/foto.jpg». Vanno bene anche le GIF animate.", "Put the files in Home Assistant's www folder: «/config/www/photo.jpg» becomes «/local/photo.jpg». Animated GIFs work too.")}</p>` : ""}`;
 }
 function foglio() {
-  const s = ssStile(), N = NOMI(), m = inModifica();
-  const vista = s === "auto" ? (ED.sub === "notte" ? "notte" : giorno() === "foto" && haFoto() ? "foto" : "cielo") : reale(s);
+  const s = ssStile(), N = NOMI(), m = inModifica(), vista = reale(vistaAnteprima());
   const ore = Array.from({ length: 48 }, (_, i) => `${String(Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}`);
   const sel = (chg, v) => `<select data-chg="${chg}">${[...new Set([...ore, v])].sort().map(o => `<option ${o === v ? "selected" : ""}>${o}</option>`).join("")}</select>`;
+  const scelta = (chg, v, L) => `<select data-chg="${chg}">${L.map(k => `<option value="${k}" ${k === v ? "selected" : ""}>${N[k][0]} ${esc(N[k][1])}</option>`).join("")}</select>`;
+  /* il fotovoltaico compare solo se c'è (manca: lo dice «✨ Cosa puoi aggiungere»); uno stile già scelto resta visibile */
+  const visibili = STILI.filter(k => disponibile(k) || k === s), diGiorno = SEMPLICI.filter(k => k !== "notte" && (disponibile(k) || k === giorno()));
+  const sub = [["giorno", "🌤️ " + esc(N[giorno()][1])], ...(conSolare() ? [["solare", N.solare[0] + " " + esc(N.solare[1])]] : []), ["notte", "🌙 " + esc(N[notteStile()][1])]];
+  if (s === "auto" && !sub.some(x => x[0] === ED.sub)) ED.sub = "giorno";
   return `<div class="sh-head"><div><h3>🌙 ${t("Salvaschermo", "Screensaver")}</h3><div class="small muted">${t("Scelte di questo dispositivo: gli altri tablet e telefoni non cambiano.", "Choices for this device: other tablets and phones don't change.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
     <div class="sz1p"><div class="ssp1" data-keep data-act="ssProva" role="button" aria-label="${t("Prova a tutto schermo", "Try full screen")}"></div>
       <div class="row between"><span class="small muted">${t("Anteprima dal vivo", "Live preview")} · ${esc(N[vista]?.[1] || "")}</span><button class="btn sm pri" data-act="ssProva">▶ ${t("Prova a tutto schermo", "Try full screen")}</button></div></div>
     <div class="fl1">${t("Stile", "Style")}</div>
-    <div class="sz1g">${STILI.map(k => `<button class="${k === s ? "act" : ""}" data-act="ssStile" data-v="${k}"><i class="sz1t t-${k}"></i><b>${N[k][0]} ${esc(N[k][1])}</b><small>${esc(N[k][2])}</small></button>`).join("")}</div>
+    <div class="sz1g">${visibili.map(k => `<button class="${k === s ? "act" : ""}" data-act="ssStile" data-v="${k}"><i class="sz1t t-${k}"></i><b>${N[k][0]} ${esc(N[k][1])}</b><small>${esc(N[k][2])}</small></button>`).join("")}</div>
     ${s === "auto" ? `<div class="fl1">✨ ${t("Automatico", "Automatic")}</div>
-      <div class="sz1o"><span>${t("Di giorno", "By day")}</span>${seg("ssGiorno", giorno(), [["foto", "🖼️ " + t("Foto", "Photos")], ["cielo", "🌅 " + t("Cielo vivo", "Live sky")]])}</div>
+      <div class="sz1o"><span>${t("Di giorno", "By day")}</span><div class="row sz1h">${scelta("ssGiornoSel", giorno(), diGiorno)}</div></div>
       ${giorno() === "foto" && !haFoto() ? `<div class="note1">${t("Scegli le foto qui sotto: finché mancano, di giorno mostro il cielo vivo.", "Choose the photos below: until then, by day I show the live sky.")}</div>` : ""}
-      <div class="sz1o"><span>${t("Di notte", "At night")}</span><span class="small muted">🌙 ${t("Minimal notturno, dalle", "Night minimal, from")} ${notteDa()} ${t("alle", "to")} ${notteA()}</span></div>
-      <div class="sz1o"><span>${t("Opzioni di", "Options for")}</span>${seg("ssSub", ED.sub, [["giorno", "☀️ " + esc(N[giorno()][1])], ["notte", "🌙 " + esc(N.notte[1])]])}</div>` : ""}
+      ${haSolare() ? `<div class="sz1o"><span>${t("Fotovoltaico", "Solar")}</span>${seg("ssSolAuto", solareAuto() ? "1" : "0", [["1", "☀️ " + t("Quando produce", "While it produces")], ["0", t("No", "No")]])}
+        ${solareAuto() ? `<label class="row sz1h sz1w">${t("più di", "over")} <input type="number" min="1" step="50" value="${solareW()}" data-chg="ssSolW" inputmode="numeric"> W</label>` : ""}</div>
+        <p class="small muted">${t("Di giorno, quando i pannelli producono più di questa potenza, compare il fotovoltaico in tempo reale; quando scendono torna lo stile del giorno.", "By day, when the panels produce more than this, the live solar view shows up; when they drop, the day style comes back.")}</p>` : ""}
+      <div class="sz1o"><span>${t("Di notte", "At night")}</span><div class="row sz1h">${scelta("ssNotteSel", notteStile(), SEMPLICI.filter(k => disponibile(k) || k === notteStile()))} ${t("dalle", "from")} ${notteDa()} ${t("alle", "to")} ${notteA()}</div></div>
+      <div class="sz1o"><span>${t("Opzioni di", "Options for")}</span>${seg("ssSub", ED.sub, sub)}</div>` : ""}
     <div class="fl1">${N[m][0]} ${esc(N[m][1])}</div>
     ${s === "foto" && !haFoto() ? `<div class="note1">${t("Scegli da dove prendere le foto: intanto mostro l'orologio.", "Choose where the photos come from: until then I show the clock.")}</div>` : ""}
+    ${!disponibile(m) ? `<div class="note1">${m === "solare" ? t("Non trovo il fotovoltaico: intanto mostro l'orologio. Guarda «✨ Cosa puoi aggiungere» in Impostazioni.", "I can't find solar panels: until then I show the clock. See «✨ What you can add» in Settings.") : t("Qui manca quello che serve: intanto mostro l'orologio.", "What this needs is missing here: until then I show the clock.")}</div>` : ""}
     ${opzioni(m)}
     <div class="fl1">🌙 ${t("Notte", "Night")}</div>
     <div class="sz1o"><span>${t("Orario", "Hours")}</span><div class="row sz1h">${t("dalle", "from")} ${sel("ssNotteDa", notteDa())} ${t("alle", "to")} ${sel("ssNotteA", notteA())}</div></div>
-    <div class="sz1o"><span>${t("Attenuazione", "Dimming")}</span>${seg("ssAtt", attenua() ? "1" : "0", [["1", t("Abbassa di notte", "Dim at night")], ["0", t("No", "No")]])}</div>
-    <p class="small muted">${t("Di notte gli stili chiari si abbassano; in Automatico di notte c'è il minimal scuro.", "At night bright styles are dimmed; in Automatic the dark minimal style is used at night.")}</p>
+    <p class="small muted">${t("In queste ore gli stili chiari si abbassano (si cambia in ogni stile, «Di notte»); in Automatico c'è lo stile della notte.", "During these hours bright styles are dimmed (change it in each style, «At night»); in Automatic the night style is used.")}</p>
     <div class="fl1">⏱️ ${t("Parte dopo", "Starts after")}</div>
     ${seg("ssMin", String(ssMin()), [["0", t("Spento", "Off")], ["1", "1 min"], ["5", "5 min"], ["10", "10 min"], ["30", "30 min"]])}
     <p class="small muted" style="margin-top:8px">${t("Senza tocchi per questo tempo. Si sveglia al primo tocco; non parte mentre guardi una telecamera.", "With no touches for this long. Wakes on the first touch; doesn't start while you watch a camera.")}</p>`;
@@ -471,8 +772,8 @@ let PV = null;
 function anteprima() {
   const box = document.querySelector(".ssp1");
   if (!box) { if (PV) { PV.stop(); PV = null; } return; }
-  const s = ssStile(), vista = s === "auto" ? (ED.sub === "notte" ? "notte" : giorno() === "foto" && haFoto() ? "foto" : "cielo") : s;
-  const chiave = JSON.stringify([vista, sGet("ssCfg"), fonte(), ssDir(), sGet("ssUrl"), sGet("ssLista"), attenua(), notteDa(), notteA()]);
+  const vista = vistaAnteprima();
+  const chiave = JSON.stringify([vista, sGet("ssCfg"), fonte(), ssDir(), sGet("ssUrl"), sGet("ssLista"), attenua(), notteDa(), notteA(), sGet("ssNotteStile"), sGet("ssGiorno"), sGet("ssSolAuto"), sGet("ssSolW")]);
   if (PV && PV.root === box && PV.chiave === chiave) return;
   PV?.stop(); PV = monta(box, vista, true); PV.chiave = chiave;
 }
@@ -503,6 +804,9 @@ Object.assign(ACT, {
   ssGiorno: el => { sSet("ssGiorno", el.dataset.v); render(); },
   ssVel: el => { setCfg(el.dataset.s, "vel", +el.dataset.v); render(); },
   ssEff: el => { setCfg(el.dataset.s, "eff", el.dataset.v); render(); },
+  ssOpz: el => { const k = el.dataset.k, v = el.dataset.v; setCfg(el.dataset.s, k, k === "att" ? v === "1" : ["sec", "sf"].includes(k) ? v : +v); render(); },
+  ssAlt: el => { const L = toggle(cfg("alterna").lista || [], el.dataset.v); if (!L.length) return toast(t("Lascia almeno uno stile", "Keep at least one style"), true); setCfg("alterna", "lista", SEMPLICI.filter(k => L.includes(k))); render(); },
+  ssSolAuto: el => { sSet("ssSolAuto", el.dataset.v); if (el.dataset.v !== "1" && ED.sub === "solare") ED.sub = "giorno"; render(); },
   ssInfo: el => { const s = el.dataset.s, I = INFO_DI[s]; setCfg(s, "info", I.filter(k => toggle(cfg(s).info, el.dataset.v).includes(k))); render(); },
   ssFonte: el => { sSet("ssFonte", el.dataset.v); render(); },
   ssAtt: el => { sSet("ssAtt", el.dataset.v); render(); },
@@ -516,4 +820,21 @@ Object.assign(CHG, {
   ssLista: el => { sSet("ssLista", el.value); render(); },
   ssNotteDa: el => { sSet("ssNotteDa", el.value); render(); },
   ssNotteA: el => { sSet("ssNotteA", el.value); render(); },
+  ssGiornoSel: el => { if (SEMPLICI.includes(el.value)) sSet("ssGiorno", el.value); render(); },
+  ssNotteSel: el => { if (SEMPLICI.includes(el.value)) sSet("ssNotteStile", el.value); render(); },
+  ssSolW: el => { const v = Math.round(+el.value); if (v > 0) sSet("ssSolW", String(v)); render(); },
 });
+
+/* «✨ Cosa puoi aggiungere» (aggiungi.js): il salvaschermo del fotovoltaico, quando in casa i pannelli non ci sono (o non li trovo) */
+AGGIUNGI.ssSolare = { title: () => t("Salvaschermo del fotovoltaico", "Solar screensaver"), icon: "☀️", tipo: () => t("Salvaschermo", "Screensaver"), ord: 15.5,
+  richiede: {
+    cosa: t("Sul tablet a muro, quando nessuno lo tocca: il sole, i pannelli, la casa, la batteria e la rete disegnati grandi, con i flussi che seguono i watt veri; sotto quanto hai prodotto oggi, l'autoconsumo e la batteria.", "On the wall tablet, when nobody touches it: the sun, panels, house, battery and grid drawn big, with flows that follow the real watts; below, what you made today, self-use and the battery."),
+    serve: t("Un sensore della potenza del fotovoltaico (W o kW), meglio se nella configurazione Energia di Home Assistant.", "A solar power sensor (W or kW), ideally in Home Assistant's Energy configuration."),
+    passi: [t("Collega l'inverter a Home Assistant (la sua integrazione: Fronius, SolarEdge, Huawei, ZCS, Victron…).", "Connect your inverter to Home Assistant (its integration: Fronius, SolarEdge, Huawei, ZCS, Victron…)."),
+      t("Impostazioni → Plance → Energia: aggiungi la produzione solare.", "Settings → Dashboards → Energy: add solar production."),
+      t("Oppure scegli tu il sensore: Energia → ✏️ Modifica → ⚙️ Sensori → Fotovoltaico.", "Or pick the sensor yourself: Energy → ✏️ Edit → ⚙️ Sensors → Solar.")],
+    link: [[t("Configurazione Energia", "Energy configuration"), myHA("config_energy")]],
+    quando: t("Quando c'è, lo trovi in ⚙️ Impostazioni → Questo dispositivo → Salvaschermo → 🎨 Personalizza.", "Once it's there, you'll find it in ⚙️ Settings → This device → Screensaver → 🎨 Customize."),
+    anteprima: [["☀️", t("Fotovoltaico", "Solar"), t("prodotto oggi 14,2 kWh · autoconsumo 71%", "made today 14.2 kWh · self-use 71%"), "2,4 kW", 70]],
+    manca: () => haSolare() === false,
+  } };

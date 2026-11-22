@@ -123,11 +123,13 @@ const traliccio = () => `<path class="tr" d="M-24 0L-7 -150M24 0L7 -150M-7 -150H
 
 /* ---------- la scena ---------- */
 /** d = { stretto, pv, haPv, rete, haRete, bat, haBat, soc, casa, F (ripartizione, energia.js), auto (ricarica, auto.js), picco (W), titolo,
-         meteo (pagina Meteo: niente cerchio dei consumi), w (entità meteo, se non è quella di casa) }
+         meteo (pagina Meteo: niente cerchio dei consumi), w (entità meteo, se non è quella di casa), idp (prefisso degli id, se c'è un'altra scena) }
     → { html, sole, meteo, g (geometria) } */
 export function scena(d) {
   const g = d.stretto ? GEO.stretto : GEO.largo, { W, H, hz, k } = g, c = g.casa;
   const sl = sole(), mt = meteo(d.w || weatherEnt()), el = sl.el, F = d.F || {};
+  /* prefisso degli id interni (ritagli e cielo): due scene nella stessa pagina (per esempio il salvaschermo sopra Colpo d'occhio) non si confondono */
+  const ip = d.idp || "en7";
   /* colori del cielo: notte → crepuscolo → alba o tramonto → giorno */
   const alto = scala([[-12, "#060d1f"], [-4, "#1d2a57"], [3, "#4a68b4"], [12, "#2f7ed8"]], el);
   const basso = scala([[-12, "#16223f"], [-4, sl.sale ? "#c98a73" : "#b8675d"], [3, sl.sale ? "#ffbf7d" : "#ff9563"], [12, "#a8dbff"]], el);
@@ -198,7 +200,7 @@ export function scena(d) {
     <path class="te" d="${tetto}"/><path class="gr" d="M${c.rb[0] - 4 * k} ${c.top}H${c.rb[1] + 4 * k}" stroke-width="${r1(5 * k)}"/>
     ${P ? `<g class="pan"><path class="ca2" d="${P.tutte}" style="stroke-width:${r1((3 + lv * 5) * k)};opacity:${r1(lv * .55 * 100) / 100}"/>
       <path class="ce" d="${P.tutte}" style="fill:${mix(cella, "#4b93ec", lv * .85)};stroke:${mix("#9dbcf2", "#ffe27a", lv)}"/><path class="ci" d="${P.righeInt}"/><path class="cg" d="${P.tutte}" style="opacity:${r1(lv * .22 * 100) / 100}"/>
-      ${lv > .04 && sl.su ? `<g clip-path="url(#en7pan)"><rect class="lu" x="${r1(P.x0 - 40 * k)}" y="${r1(c.ry)}" width="${r1(30 * k)}" height="${c.top - c.ry}" style="--da:${r1(P.x1 - P.x0 + 80 * k)}px;animation-duration:${lv > .6 ? 5 : lv > .3 ? 7 : 9}s"/></g>` : ""}</g>` : ""}
+      ${lv > .04 && sl.su ? `<g clip-path="url(#${ip}pan)"><rect class="lu" x="${r1(P.x0 - 40 * k)}" y="${r1(c.ry)}" width="${r1(30 * k)}" height="${c.top - c.ry}" style="--da:${r1(P.x1 - P.x0 + 80 * k)}px;animation-duration:${lv > .6 ? 5 : lv > .3 ? 7 : 9}s"/></g>` : ""}</g>` : ""}
     ${c.fin.map(([x, y, w, h]) => `<rect class="fi ${accesa ? "on" : ""}" x="${x}" y="${y}" width="${w}" height="${h}" rx="${r1(2 * k)}"/><path class="fx" d="M${x + w / 2} ${y}v${h}M${x} ${y + h / 2}h${w}"/>`).join("")}
     <rect class="po" x="${c.porta[0]}" y="${c.porta[1]}" width="${c.porta[2]}" height="${c.porta[3] + 1}" rx="${r1(2 * k)}"/><circle class="pm" cx="${r1(c.porta[0] + c.porta[2] * .78)}" cy="${r1(c.porta[1] + c.porta[3] * .55)}" r="${r1(1.6 * k + .4)}"/>`;
   const hubH = `<g class="hb ${consumo > 20 ? "on" : ""}" style="--hd:${r1(durata(consumo) * 2.2)}s"><circle class="hr" cx="${hub[0]}" cy="${hub[1]}" r="${hub[2]}"/><circle class="hc" cx="${hub[0]}" cy="${hub[1]}" r="${hub[2]}"/>
@@ -221,7 +223,7 @@ export function scena(d) {
   const batteria = d.haBat ? `<rect class="bt" x="${r1(qx + qw * .3)}" y="${r1(qy - 4 * k)}" width="${r1(qw * .4)}" height="${r1(5 * k)}" rx="${r1(1.5 * k)}"/>
     <rect class="bc" x="${qx}" y="${qy}" width="${qw}" height="${qh}" rx="${r1(6 * k)}"/>
     <rect x="${r1(qx + pad)}" y="${r1(qy + pad + hIn - hL)}" width="${r1(qw - pad * 2)}" height="${hL}" rx="${r1(3.5 * k)}" style="fill:${socC}" class="bl"/>
-    <g clip-path="url(#en7bat)">${carica || scarica ? `<g class="bv ${scarica ? "giu" : ""}" style="--bd:${r1(qh * .5)}px">${[0, 1, 2, 3].map(i => `<path d="M${r1(qx + qw * .28)} ${r1(qy + qh * (.2 + i * .25) + 4 * k)}l${r1(qw * .22)} ${r1((scarica ? 5 : -5) * k)}l${r1(qw * .22)} ${r1((scarica ? -5 : 5) * k)}"/>`).join("")}</g>` : ""}</g>` : "";
+    <g clip-path="url(#${ip}bat)">${carica || scarica ? `<g class="bv ${scarica ? "giu" : ""}" style="--bd:${r1(qh * .5)}px">${[0, 1, 2, 3].map(i => `<path d="M${r1(qx + qw * .28)} ${r1(qy + qh * (.2 + i * .25) + 4 * k)}l${r1(qw * .22)} ${r1((scarica ? 5 : -5) * k)}l${r1(qw * .22)} ${r1((scarica ? -5 : 5) * k)}"/>`).join("")}</g>` : ""}</g>` : "";
 
   /* auto e colonnina */
   const A = d.auto, au = g.auto, wb = g.wb;
@@ -245,21 +247,21 @@ export function scena(d) {
   const soleH = sl.su ? `<g transform="translate(${sx} ${sy})" style="opacity:${r1(soleVis * 100) / 100}"><circle class="sa" r="${g.rs * 3.2}" fill="url(#en7sole)"/>
     ${coperto < .5 ? `<g class="sr" stroke-width="${r1(3 * k + .6)}">${raggi}</g>` : ""}<circle class="sd" r="${g.rs}"/><circle class="sh" r="${r1(g.rs * .62)}" cx="${r1(-g.rs * .22)}" cy="${r1(-g.rs * .22)}"/></g>` : "";
   const lunaH = lunaVis > .02 ? `<g transform="translate(${pos(sl.f)[0]} ${pos(sl.f)[1]})" style="opacity:${r1(lunaVis * 100) / 100}"><circle r="${r1(R * 3)}" fill="url(#en7chiaro)"/><circle class="lo" r="${R}"/>
-    <path class="lil" d="${illuminata}"/><g clip-path="url(#en7luna)"><circle class="lc" cx="${r1(-R * .3)}" cy="${r1(-R * .2)}" r="${r1(R * .22)}"/><circle class="lc" cx="${r1(R * .28)}" cy="${r1(R * .35)}" r="${r1(R * .16)}"/><circle class="lc" cx="${r1(R * .1)}" cy="${r1(-R * .5)}" r="${r1(R * .1)}"/></g></g>` : "";
+    <path class="lil" d="${illuminata}"/><g clip-path="url(#${ip}luna)"><circle class="lc" cx="${r1(-R * .3)}" cy="${r1(-R * .2)}" r="${r1(R * .22)}"/><circle class="lc" cx="${r1(R * .28)}" cy="${r1(R * .35)}" r="${r1(R * .16)}"/><circle class="lc" cx="${r1(R * .1)}" cy="${r1(-R * .5)}" r="${r1(R * .1)}"/></g></g>` : "";
 
   /* colline e vialetto */
   const colline = `<path class="c2" d="M0 ${hz - 18 * k}Q${W * .18} ${hz - 44 * k} ${W * .38} ${hz - 14 * k}T${W * .78} ${hz - 22 * k}T${W} ${hz - 30 * k}V${hz + 1}H0Z"/>
     <path class="c1" d="M0 ${hz}Q${W * .25} ${hz - 9 * k} ${W * .5} ${hz}T${W} ${hz - 4 * k}V${H}H0Z"/>`;
 
   const html = `<svg class="en7s" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice" style="${vars}" role="img" aria-label="${esc(d.titolo || "")}">
-    <defs><linearGradient id="en7cielo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${cieloA}"/><stop offset="1" stop-color="${cieloB}"/></linearGradient>
+    <defs><linearGradient id="${ip}cielo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${cieloA}"/><stop offset="1" stop-color="${cieloB}"/></linearGradient>
       <radialGradient id="en7sole"><stop offset="0" stop-color="#ffe680" stop-opacity=".75"/><stop offset=".35" stop-color="#ffd24d" stop-opacity=".28"/><stop offset="1" stop-color="#ffc83c" stop-opacity="0"/></radialGradient>
       <linearGradient id="en7caldo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6c2"/><stop offset="1" stop-color="#ffc93a"/></linearGradient>
       <linearGradient id="en7nebbia" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef2f6" stop-opacity="0"/><stop offset=".5" stop-color="#eef2f6" stop-opacity=".5"/><stop offset="1" stop-color="#eef2f6" stop-opacity="0"/></linearGradient>
       <radialGradient id="en7chiaro"><stop offset=".3" stop-color="#e8eeff" stop-opacity=".2"/><stop offset="1" stop-color="#e8eeff" stop-opacity="0"/></radialGradient>
-      <clipPath id="en7pan"><path d="${P ? P.tutte : "M0 0"}"/></clipPath><clipPath id="en7luna"><path d="${illuminata}"/></clipPath>
-      <clipPath id="en7bat"><rect x="${qx}" y="${qy}" width="${qw}" height="${qh}" rx="${r1(6 * k)}"/></clipPath></defs>
-    <rect class="cie" width="${W}" height="${H}" fill="url(#en7cielo)"/>
+      <clipPath id="${ip}pan"><path d="${P ? P.tutte : "M0 0"}"/></clipPath><clipPath id="${ip}luna"><path d="${illuminata}"/></clipPath>
+      <clipPath id="${ip}bat"><rect x="${qx}" y="${qy}" width="${qw}" height="${qh}" rx="${r1(6 * k)}"/></clipPath></defs>
+    <rect class="cie" width="${W}" height="${H}" fill="url(#${ip}cielo)"/>
     <g class="stl" style="opacity:${r1(stelle * 100) / 100}">${stelle > .02 ? stelleH : ""}</g>
     <g class="lun">${lunaH}</g><g class="sol">${soleH}</g>
     <g class="nbs" style="fill:var(--nube)">${nuvole}</g>

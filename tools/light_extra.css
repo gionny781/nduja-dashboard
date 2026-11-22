@@ -250,3 +250,4 @@ body.light .vq1t.cool{background:linear-gradient(180deg,rgba(100,210,255,.36),rg
 body.light .vq1t.al{background:linear-gradient(180deg,rgba(255,69,58,.3),rgba(255,69,58,.1))!important;border:1px solid rgba(255,69,58,.5)!important}
 body.light .vq1t.al .vq1i{background:var(--red)!important}
 body.light .vq1i.ft{background-color:transparent!important}
+body.light .vr1 button.on{background:rgba(10,132,255,.16)!important;border-color:#0a84ff!important}

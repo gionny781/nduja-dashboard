@@ -159,6 +159,12 @@ function quando(x, { fatta = false } = {}) {
   if (g === 1) return { testo: t("domani", "tomorrow") + o, cls: "domani" };
   return { testo: (g < 7 ? x.d.toLocaleDateString(LOC, { weekday: "long" }) : t(`tra ${g} giorni`, `in ${g} days`) + " · " + data) + o, cls: "poi" };
 }
+/** scadenze da fare entro N giorni (anche quelle scadute), le più vicine prima: [{ titolo, quando, cls, giorni }]; null finché la lista non arriva.
+    La usa il salvaschermo «La giornata» (salvaschermo.js) */
+export function prossime(giorni = 7) {
+  if (!lista() || tutte() == null) return null;
+  return ordina(daFare().filter(x => { const g = gg(x); return g != null && g <= giorni; })).map(x => { const q = quando(x); return { titolo: x.titolo, quando: q.testo, cls: q.cls, giorni: gg(x) }; });
+}
 /** da mostrare negli Avvisi della Home: scadute e di oggi, o anche le prossime N giorni (⚙️) */
 const daAvvisare = () => { const N = entroAvvisi(); return N == null ? [] : daFare().filter(x => { const g = gg(x); return g != null && g <= N; }); };
 
