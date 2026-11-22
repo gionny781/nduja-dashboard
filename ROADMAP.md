@@ -76,11 +76,11 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.49-dev ✅ | gio 19 nov | «Cosa puoi aggiungere»: la plancia dice cosa manca e come attivarlo |
 | 0.7.50-dev ✅ | sab 21 nov | Trascina e sposta (drag & drop): menu, Home, stanze, elementi |
 | 0.7.51-dev ✅ | sab 21 nov | Colpo d'occhio: la tua vista con le cose più importanti |
-| 0.7.52-dev ✅ | lun 23 nov | Sfondi e salvaschermi da scegliere (anche fotovoltaico in tempo reale) |
-| 0.7.53-dev | mer 25 nov | La tua casa in 3D: piani, tetto, porte, finestre, luci e arredo |
-| 0.7.54-dev | ven 27 nov | Schede oggetto (1): cancello, porta, robot, clima, lavatrice |
-| 0.7.55-dev | dom 29 nov | Schede oggetto (2): musica, TV e frasi ovunque |
-| 0.7.56-dev | mar 1 dic | Guida all'installazione illustrata e controllo finale |
+| 0.7.52-dev ✅ | dom 22 nov | Sfondi e salvaschermi da scegliere (anche fotovoltaico in tempo reale) |
+| 0.7.53-dev | lun 23 nov | La tua casa in 3D: piani, tetto, porte, finestre, luci e arredo |
+| 0.7.54-dev | mer 25 nov | Schede oggetto (1): cancello, porta, robot, clima, lavatrice |
+| 0.7.55-dev | ven 27 nov | Schede oggetto (2): musica, TV e frasi ovunque |
+| 0.7.56-dev | dom 29 nov | Guida all'installazione illustrata e controllo finale |
 
 ⏸️ **In standby:** «In auto: comandi per CarPlay e Android Auto» — si farà ufficialmente con l'app 'Nduja; la scheda è in `docs/sviluppo/standby/in-auto-carplay.md`.
 
