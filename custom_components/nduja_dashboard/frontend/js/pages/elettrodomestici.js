@@ -246,9 +246,12 @@ VISTE.elettroAccesi = () => elenco().map(a => ({ a, st: stato(a) })).filter(x =>
 /** stanza di un elettrodomestico: quella della presa, altrimenti dei suoi sensori */
 const stanzaDi = a => [a.switch, a.power, a.status, a.energy, a.end].map(id => id && S[id] ? areaOf(id) : null).find(Boolean) || null;
 /** pallini degli elettrodomestici di una stanza, per la mappa */
-export function elettroMappa(area) {
+export function elettroMappa(area) { return elettroStanza(area).map(e => e.html).join(""); }
+/** elettrodomestici di una stanza, uno per uno (per metterli al loro posto nella mappa e nella casa in 3D): [{ id, nome, on, html }] */
+export function elettroStanza(area, pre = "mp") {
   return elenco().map((a, i) => [a, i]).filter(([a]) => a.mappa !== false && stanzaDi(a) === area).map(([a, i]) => { const st = stato(a);
-    return `<span class="mpd2 ap2 ${st.k}"><button data-act="apGo" title="${esc(a.nome)} · ${esc(st.n)}" aria-label="${esc(a.nome)} · ${esc(st.n)}">${vista(a, st.k, "mp" + i, "xs")}</button></span>`; }).join("");
+    return { id: a.id, nome: a.nome, on: st.k === "on",
+      html: `<span class="mpd2 ap2 ${st.k}"><button data-act="apGo" title="${esc(a.nome)} · ${esc(st.n)}" aria-label="${esc(a.nome)} · ${esc(st.n)}">${vista(a, st.k, pre + i, "xs")}</button></span>` }; });
 }
 
 function pagina() {

@@ -243,3 +243,10 @@ Stili nuovi del salvaschermo (`nduja_ssStile`): `solare`, `consumi`, `analogico`
 LS='{"nduja_sfondo":"{\"id\":\"aurora\"}"}' node tools/mock/shot.mjs impostazioni 1280 1000 sfondo.png '[data-act="sfApri"] >> nth=0'
 LS='{"nduja_ssMin":"5","nduja_ssStile":"solare","mockEnVivo":"1"}' node tools/mock/shot.mjs impostazioni 1280 800 solare.png '[data-act="ssProva"] >> nth=0'
 ```
+
+**Casa in 3D** (0.7.53): `casa3d.json` è una casa di prova su due piani (va con `mockPiani`) con porte, finestre (sensori e tapparelle), arredo e tetto.
+`nduja_map3` = 3D, `nduja_map3cut` = quanto è aperta (0 = piano terra, 1 = primo piano, 2 = col tetto), `nduja_mapTool` = strumento di ✏️ (`stanze`, `aperture`, `disp`, `arredo`), `nduja_lite` = grafica leggera.
+```bash
+LAYOUT="$(tr -d '\n' < tools/mock/casa3d.json)" LS='{"mockPiani":"1","nduja_map3":"1","nduja_map3cut":"0"}' node tools/mock/shot.mjs mappa 1280 1000 casa.png
+LAYOUT="$(tr -d '\n' < tools/mock/casa3d.json)" LS='{"mockPiani":"1","nduja_mapTool":"aperture"}' node tools/mock/shot.mjs mappa 1280 900 muri.png '[data-act="edToggle"]'
+```

@@ -1,0 +1,11 @@
+{"configured":true,"mode":"auto","energy":{"pv":["sensor.inverter_pv1_power","sensor.inverter_pv2_power","sensor.inverter_pv3_power"]},
+"map":{"terra":{"rooms":{"soggiorno":{"x":0,"y":0,"w":4,"h":3},"cucina":{"x":4,"y":0,"w":3,"h":3},"esterno":{"x":0,"y":3,"w":7,"h":2}},
+"aperture":[{"id":"a1","o":"h","x":1,"y":3,"w":2,"tipo":"finestra","ent":"binary_sensor.finestra_soggiorno","cover":"cover.tapparella_soggiorno"},
+{"id":"a2","o":"h","x":5,"y":3,"w":1,"tipo":"finestra","cover":"cover.tapparella_cucina"},
+{"id":"a3","o":"v","x":4,"y":1,"w":1,"tipo":"porta"},{"id":"a6","o":"h","x":3,"y":3,"w":1,"tipo":"porta","cover":"cover.garage"},
+{"id":"a7","o":"v","x":0,"y":1,"w":1,"tipo":"finestra"},{"id":"a8","o":"v","x":7,"y":1,"w":1,"tipo":"finestra"}],
+"arredo":[{"id":"m1","k":"divano","a":"soggiorno","x":0.5,"y":0,"r":0},{"id":"m2","k":"tappeto","a":"soggiorno","x":1,"y":0.9,"r":0},{"id":"m3","k":"tavolo","a":"cucina","x":1,"y":1,"r":0},{"id":"m4","k":"cucina","a":"cucina","x":0.75,"y":0,"r":0},{"id":"m5","k":"pianta","a":"esterno","x":0.2,"y":0.2,"r":0}]},
+"primo":{"rooms":{"corridoio":{"x":0,"y":0,"w":3,"h":3},"lavanderia":{"x":3,"y":0,"w":4,"h":3}},
+"aperture":[{"id":"b1","o":"h","x":1,"y":3,"w":1,"tipo":"finestra"},{"id":"b2","o":"h","x":4,"y":3,"w":2,"tipo":"finestra","cover":"cover.tenda_rullo_corridoio"},{"id":"b3","o":"v","x":3,"y":1,"w":1,"tipo":"porta","ent":"binary_sensor.porta_ingresso"}],
+"arredo":[{"id":"n1","k":"letto","a":"corridoio","x":0.9,"y":0,"r":0},{"id":"n2","k":"armadio","a":"corridoio","x":0,"y":2.6,"r":2},{"id":"n3","k":"doccia","a":"lavanderia","x":3.45,"y":0,"r":0},{"id":"n4","k":"wc","a":"lavanderia","x":2.8,"y":0,"r":0},{"id":"n5","k":"lavabo","a":"lavanderia","x":2.2,"y":0,"r":0}]},
+"casa":{"tetto":"due"}}}

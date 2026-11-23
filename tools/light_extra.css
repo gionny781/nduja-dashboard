@@ -251,3 +251,8 @@ body.light .vq1t.al{background:linear-gradient(180deg,rgba(255,69,58,.3),rgba(25
 body.light .vq1t.al .vq1i{background:var(--red)!important}
 body.light .vq1i.ft{background-color:transparent!important}
 body.light .vr1 button.on{background:rgba(10,132,255,.16)!important;border-color:#0a84ff!important}
+/* casa in 3D (0.7.53): fondo chiaro morbido, «Muri bassi» acceso resta arancio */
+body.light .m3c{background:radial-gradient(ellipse at 50% 35%,rgba(255,255,255,.6),rgba(0,0,0,.07) 80%)!important}
+body.light .m3b.on{background:rgba(255,159,10,.28)!important}
+body.light .mpm1 .mpo1.po{stroke:#b07a46!important}body.light .mpm1 .mpo1.fi{stroke:#4fb0ef!important}body.light .mpm1 .mpo1.fi2{stroke:rgba(255,255,255,.95)!important}
+body.light .mpm1 .mpo1.ap{stroke:#ff9f0a!important}body.light .mpm1 .mpo1.orf{stroke:#ff453a!important}
