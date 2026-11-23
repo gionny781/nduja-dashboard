@@ -100,6 +100,30 @@ body.lite .sf1 .sfch{filter:none}
 .sf1 .sfsk{inset:0}
 .sf1 .sfsk .ssp2{opacity:.7}   /* come sfondo, la pioggia e la neve un po' più leggere */
 
+/* ---------- 🎄 Natale: neve, luci di festa, notte di Natale ---------- */
+.sf-neve{background:linear-gradient(180deg,#060b1b 0%,#0b1630 55%,#13203d 100%)}
+.sf1 .sfnl{inset:0;opacity:calc(.85 * var(--si));background:radial-gradient(14cqmax 10cqmax at 12% 96%,rgba(255,170,80,.42),transparent 70%),radial-gradient(10cqmax 8cqmax at 34% 104%,rgba(255,90,70,.3),transparent 70%),
+  radial-gradient(16cqmax 11cqmax at 66% 100%,rgba(255,196,110,.36),transparent 70%),radial-gradient(9cqmax 7cqmax at 88% 94%,rgba(120,220,150,.26),transparent 70%),radial-gradient(60% 40% at 50% 120%,rgba(255,170,90,.18),transparent 70%);
+  animation:sfNl calc(14s / var(--sv)) ease-in-out infinite alternate}
+@keyframes sfNl{to{opacity:calc(.55 * var(--si));transform:translateY(-1.2cqh)}}
+.sf-neve.chiaro{background:linear-gradient(180deg,#b4c6dc 0%,#cad7e7 55%,#dfe6f0 100%)}
+.sf-neve.chiaro .sfnl{opacity:calc(.5 * var(--si))}
+.sf-lucifesta{background:radial-gradient(120% 90% at 50% 100%,#1a1020 0%,#0b0a14 55%,#05060b 100%)}
+.sf1 .sfx{border-radius:50%;transform:translate(-50%,-50%);opacity:calc(.4 * var(--si));animation:sfBr ease-in-out infinite alternate;will-change:transform,opacity}
+.sf1 .sfx0{background:radial-gradient(circle,rgba(255,70,70,.62),rgba(255,70,70,.14) 52%,transparent 70%)}
+.sf1 .sfx1{background:radial-gradient(circle,rgba(255,196,80,.62),rgba(255,196,80,.14) 52%,transparent 70%)}
+.sf1 .sfx2{background:radial-gradient(circle,rgba(70,210,120,.5),rgba(70,210,120,.12) 52%,transparent 70%)}
+.sf1 .sfxv{inset:0;background:radial-gradient(70% 60% at 50% 50%,transparent 40%,rgba(0,0,0,.35))}
+@keyframes sfBr{0%{transform:translate(-50%,-50%) scale(.86);opacity:calc(.2 * var(--si))}100%{transform:translate(-50%,-50%) scale(1.1);opacity:calc(.66 * var(--si))}}
+.sf-lucifesta.chiaro{background:radial-gradient(120% 90% at 50% 100%,#fff6ef 0%,#f6f0ec 55%,#efeae8 100%)}
+.sf-lucifesta.chiaro .sfx{mix-blend-mode:multiply;opacity:calc(.32 * var(--si))}.sf-lucifesta.chiaro .sfxv{background:none}
+.sf-nottenatale{background:#040817}.sf-nottenatale.chiaro{background:#e7e2ee}
+.sf1 .sfnn{inset:0;width:100%;height:100%}
+/* «Automatico a Natale» in Aspetto */
+.sf1nat{padding:12px 13px;border-radius:18px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.06)}
+.sf1nat .tx{display:flex;flex-direction:column;gap:2px;min-width:0}.sf1nat .tx span{font-size:12.5px;color:var(--tx3)}
+body.light .sf1nat{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.06)}
+
 /* ===== Impostazioni → 🎨 Aspetto → Sfondo ===== */
 .sf1m{position:relative;display:block;flex:none;overflow:hidden;border-radius:12px;background:#05070d;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
 body.light .sf1m{background:#e4e9f2;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}

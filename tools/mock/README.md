@@ -250,3 +250,12 @@ LS='{"nduja_ssMin":"5","nduja_ssStile":"solare","mockEnVivo":"1"}' node tools/mo
 LAYOUT="$(tr -d '\n' < tools/mock/casa3d.json)" LS='{"mockPiani":"1","nduja_map3":"1","nduja_map3cut":"0"}' node tools/mock/shot.mjs mappa 1280 1000 casa.png
 LAYOUT="$(tr -d '\n' < tools/mock/casa3d.json)" LS='{"mockPiani":"1","nduja_mapTool":"aperture"}' node tools/mock/shot.mjs mappa 1280 900 muri.png '[data-act="edToggle"]'
 ```
+
+**Natale** (0.7.54): `light.albero_di_natale_2` è un Twinkly (`twinkly`, in Soggiorno) acceso in «movie» con gli effetti, `select.albero_di_natale_modalita` la sua modalità
+(color, demo, effect, movie, off, playlist, rt): un effetto la porta in «movie», un colore in «color», spento in «off». `switch.presepe` e `light.stella_balcone` si trovano dal nome,
+`switch.presa_giardino` dall'etichetta «Natale». Il periodo si prova con `ORA`; l'albero staccato con `mockEnt` (stato `unavailable`). Le automazioni si vedono come `API` nella console.
+```bash
+ORA="2026-12-24T20:15" node tools/mock/shot.mjs natale 1280 1000 natale.png
+ORA="2026-11-30T12:00" node tools/mock/shot.mjs natale 390 844 fuori.png      # fuori periodo: non è nel menu, l'amministratore la apre da ⚙️
+LS='{"mockEnt":"{\"light.albero_di_natale_2\":[\"unavailable\",{\"friendly_name\":\"Albero di Natale\"}]}"}' ORA="2026-12-13T18:00" node tools/mock/shot.mjs natale 1280 1000 staccato.png
+```

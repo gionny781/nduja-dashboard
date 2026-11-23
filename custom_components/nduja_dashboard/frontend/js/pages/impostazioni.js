@@ -144,6 +144,7 @@ function personalizza() {
     ${b("calEdit", "📅", t("Calendari", "Calendars"), t("Quali calendari mostrare", "Which calendars to show"))}
     ${b("sqEdit", "⚽", t("La mia squadra", "My team"), t("Le squadre che segui: Team Tracker, Calcio Live o un calendario", "The teams you follow: Team Tracker, Calcio Live or a calendar"))}
     ${b("f1Edit", "🏎️", "Formula 1", t("F1 Sensor, un calendario o Team Tracker; pilota e team preferiti", "F1 Sensor, a calendar or Team Tracker; favourite driver and team"))}
+    ${b("natCfg", "🎄", t("Natale", "Christmas"), t("Il periodo di festa e quando compare la pagina delle luci; aprila per prepararla", "The festive season and when the lights page shows up; open it to get it ready"))}
     ${b("cfgExport", "⬇️", t("Esporta le impostazioni", "Export settings"), t("Scarica un file con tutte le scelte della plancia (backup o per un altro Home Assistant)", "Download a file with every dashboard choice (backup or another Home Assistant)"))}
     ${b("cfgImport", "⬆️", t("Importa le impostazioni", "Import settings"), t("Carica un file esportato prima: sostituisce le scelte attuali", "Load a previously exported file: replaces the current choices"))}
   </div>`;

@@ -1,0 +1,122 @@
+/* ===== 🎄 Natale (js/festa.js, js/pages/natale.js, salvaschermo «Natale») =====
+   L'albero è un SVG disegnato per 'Nduja: --b = luminosità (0–1), --tc = colore delle luci; ogni lucina ha --c (colore),
+   --dl e --du (ritardo e durata del luccichio, solo con un effetto attivo). Animazioni solo di opacity, ferme con «Riduci movimento».
+   Il tema chiaro è scritto qui a mano (body.light), solo per la pagina e la Home: il salvaschermo resta sempre scuro. */
+
+/* ---------- l'albero ---------- */
+.na-tree{display:block;width:100%;height:auto;overflow:visible}
+.na-tree .rami path{stroke:rgba(255,255,255,.07);stroke-width:1}
+.na-tree .tronco{fill:#6b4128}.na-tree .vaso{fill:#a8303a}.na-tree .vaso2{fill:#c8424b}.na-tree .omb{fill:rgba(0,0,0,.3)}
+.na-tree .fili path{fill:none;stroke:rgba(255,214,140,.26);stroke-width:1.1}
+.na-tree .alo{opacity:0;transition:opacity .8s}
+.na-tree.on .alo{opacity:calc(.8 * var(--b))}
+.na-tree .nb .h{fill:var(--c);opacity:0;transition:opacity .6s}
+.na-tree .nb .k{fill:#2a303d;transition:fill .6s,opacity .6s}
+.na-tree.on .nb .h{opacity:calc(.34 * var(--b))}
+.na-tree.on .nb .k{fill:var(--c);opacity:calc(.5 + .5 * var(--b))}
+.na-tree.anim .nb{animation:naTw var(--du,2s) ease-in-out var(--dl,0s) infinite alternate}
+@keyframes naTw{from{opacity:1}to{opacity:.22}}
+.na-tree .stl{filter:saturate(.15) brightness(.5);transition:filter .8s}
+.na-tree.on .stl{filter:none}
+.na-tree .sal{opacity:0;transition:opacity .8s}.na-tree.on .sal{opacity:calc(.4 + .6 * var(--b))}
+.na-tree .pa line{stroke:rgba(255,230,170,.5);stroke-width:.8}.na-tree .pa .lu{fill:rgba(255,255,255,.55)}
+.na-tree.off .pa,.na-tree.na .pa{opacity:.75}
+.na-tree.na{opacity:.55;filter:grayscale(.85)}
+.na-tree.na .nb .k{fill:none;stroke:rgba(255,255,255,.38);stroke-width:.8}
+@media (prefers-reduced-motion:reduce){.na-tree .nb{animation:none!important}.na-tree *{transition:none!important}}
+body.light .na1 .na-tree .omb,body.light .na1hm .na-tree .omb{fill:rgba(40,50,70,.14)}
+body.light .na1 .na-tree.off .nb .k,body.light .na1hm .na-tree.off .nb .k{fill:#a9b1bf}
+body.light .na1 .na-tree .fili path,body.light .na1hm .na-tree .fili path{stroke:rgba(160,110,30,.32)}
+body.light .na1 .na-tree.na .nb .k,body.light .na1hm .na-tree.na .nb .k{fill:none;stroke:rgba(40,50,70,.4)}
+
+/* ---------- la pagina ---------- */
+.na1h{padding:20px 22px}
+.na1t{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;position:relative;z-index:1}
+.na1t h2{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.na1t p{margin-top:3px;font-size:14px;color:var(--tx2)}
+.na1t p.na1off{color:var(--orange)}
+.na1cd{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;font-size:13px;font-weight:650;color:#ffd77a;background:rgba(255,196,80,.12);border:1px solid rgba(255,196,80,.22);white-space:nowrap}
+.na1cd.natale,.na1cd.feste{color:#ff8c82;background:rgba(255,69,58,.12);border-color:rgba(255,69,58,.25)}
+body.light .na1cd{color:#9a6400;background:rgba(255,170,0,.13);border-color:rgba(200,130,0,.25)}
+body.light .na1cd.natale,body.light .na1cd.feste{color:#c0271d;background:rgba(255,59,48,.1);border-color:rgba(200,40,30,.22)}
+.na1b{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:22px;align-items:center;margin-top:10px;position:relative;z-index:1}
+.na1sc{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px}
+.na1al{position:relative;max-width:300px;width:100%;margin:0 auto;border-radius:30px}
+.na1al[role=button]{cursor:pointer}
+.na1al[role=button]:active .na-tree{transform:scale(.985)}
+.na1al .na-tree{transition:transform .15s}
+.na1pl{position:absolute;right:14%;bottom:7%;width:40px;height:40px;display:grid;place-items:center;border-radius:50%;font-size:20px;background:rgba(255,159,10,.2);border:1px solid rgba(255,159,10,.45)}
+.na1cl{display:flex;flex-direction:column;gap:12px;min-width:66px}
+.na1ch{display:flex;flex-direction:column;align-items:center;gap:5px;width:70px;color:var(--tx2)}
+.na1ch .i{display:grid;place-items:center;width:50px;height:50px;border-radius:50%;font-size:23px;background:rgba(255,255,255,.07);border:1px solid var(--line);transition:box-shadow .4s,background .4s,border-color .4s}
+.na1ch small{font-size:11px;font-weight:600;max-width:70px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.na1ch.on .i{background:rgba(255,190,90,.18);border-color:rgba(255,196,110,.6);box-shadow:0 0 22px -2px rgba(255,180,80,.55)}
+.na1ch.on small{color:var(--tx)}
+.na1ch.na{opacity:.42}
+body.light .na1ch .i{background:rgba(0,0,0,.04)}
+body.light .na1ch.on .i{background:rgba(255,180,60,.2);border-color:rgba(220,140,20,.5);box-shadow:0 0 18px -4px rgba(230,150,30,.6)}
+.na1cm{display:flex;flex-direction:column;gap:14px;min-width:0}
+.na1gr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.na1big{padding:16px 14px;border-radius:20px;font-size:15px;white-space:normal;line-height:1.25;text-align:center}
+.na1big.on{background:linear-gradient(135deg,#ffb340,#ff5e3a);border-color:transparent;color:#fff;box-shadow:0 10px 26px -12px rgba(255,110,50,.85)}
+.na1n{margin-top:-6px}
+.na1rw{display:flex;align-items:center;gap:12px;min-height:40px}
+.na1rw>span{flex:none;min-width:112px;font-weight:600;font-size:14px}
+.na1rw input[type=range]{flex:1;min-width:0}
+.na1rw>b{min-width:44px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums}
+.na1rw .sw{margin-left:auto}
+.na1cw{align-items:flex-start}.na1cw>span{padding-top:6px}
+.na1sw{display:flex;flex-wrap:wrap;gap:9px}
+.na1sw button{width:32px;height:32px;border-radius:50%;background:var(--c);border:2px solid rgba(255,255,255,.22);box-shadow:0 0 14px -4px var(--c);transition:transform .15s}
+.na1sw button.on{border-color:#fff;box-shadow:0 0 0 3px rgba(10,132,255,.7),0 0 16px -2px var(--c)}
+.na1sw button:active{transform:scale(.92)}
+body.light .na1sw button{border-color:rgba(0,0,0,.15)}
+.na1vuoto{padding:14px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid var(--line);font-size:13.5px;line-height:1.45;color:var(--tx2)}
+body.light .na1vuoto{background:rgba(0,0,0,.03)}
+.na1ed{display:flex;flex-wrap:wrap;gap:8px;padding-top:12px;border-top:1px dashed var(--line2)}
+.na1md{display:flex;flex-wrap:wrap;gap:8px}
+.na1md button,.na1ef button{display:inline-flex;align-items:center;gap:7px;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);font-weight:600;font-size:13px;color:var(--tx);transition:background .2s,border-color .2s}
+.na1md button.on{background:rgba(10,132,255,.26);border-color:#0a84ff}
+.na1ef{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px}
+.na1ef button{justify-content:center;text-align:center;line-height:1.25;min-height:44px}
+.na1ef button.on{background:rgba(255,170,60,.22);border-color:rgba(255,180,80,.75)}
+.na1md button:disabled,.na1ef button:disabled{opacity:.4;cursor:default}
+body.light .na1md button,body.light .na1ef button{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08)}
+body.light .na1md button.on{background:rgba(10,132,255,.14);border-color:#0a84ff}
+body.light .na1ef button.on{background:rgba(255,160,30,.18);border-color:rgba(210,130,20,.7)}
+.na1hr{gap:8px;margin:2px 0 10px;flex-wrap:wrap}
+.na1hr label{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;color:var(--tx2)}
+.na1hr select,.na1hr input,.na1dt select{padding:8px 10px;border-radius:11px;background:rgba(118,118,128,.2);border:1px solid var(--line);font-size:14px}
+.na1st{margin-top:12px;font-size:13px;color:var(--tx2);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.na1or .sz1o{margin-top:6px}
+.na1fu{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;padding:14px 18px;background:linear-gradient(180deg,rgba(255,159,10,.14),rgba(255,159,10,.06));border-color:rgba(255,159,10,.3)}
+.na1fu b{font-size:14px}.na1fu span{flex:1;min-width:220px;font-size:13px;color:var(--tx2)}
+.na1pr{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px;color:var(--tx2)}
+.na1dt{display:inline-flex;gap:6px}
+@media (max-width:1180px){.na1.g3>.na1fx{grid-column:1/-1}}
+@media (max-width:860px){.na1b{grid-template-columns:1fr;gap:16px}.na1al{max-width:250px}}
+@media (max-width:420px){.na1h{padding:16px}.na1sc{gap:4px}.na1cl{min-width:58px}.na1ch{width:60px}.na1ch .i{width:44px;height:44px;font-size:20px}.na1ch small{max-width:60px}
+  .na1gr{grid-template-columns:1fr}.na1rw>span{min-width:96px}}
+
+/* ---------- scheda della Home ---------- */
+.na1hm{display:flex;align-items:center;gap:16px}
+.na1hmt{flex:none;width:88px}
+.na1hm .tx{min-width:0;display:flex;flex-direction:column;gap:3px}
+.na1hm .tx b{font-size:16px;font-weight:700}.na1hm .tx span{font-size:13px;color:var(--tx2)}
+
+/* ---------- salvaschermo «Natale» (sempre scuro) ---------- */
+.ssnt0{position:absolute;inset:0;background:radial-gradient(55% 45% at 28% 100%,rgba(255,170,80,.16),transparent 70%),linear-gradient(180deg,rgba(0,0,0,0) 50%,rgba(0,0,0,.35))}
+.ssnt0.nt{background:rgba(0,0,0,.5)}
+.ssnt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:6cqw;padding:6cqh 7cqw}
+.ssnt2{flex:none;height:76cqh;aspect-ratio:208/252}
+.ssnt2 .na-tree{height:100%;width:auto}
+.ssnt3{min-width:0;max-width:52cqw;color:#fff;text-shadow:0 2px 20px rgba(0,0,0,.5)}
+.ssnt3 .ssh1{font-size:21cqmin;font-weight:200}
+.ssnt3 .ssd1{font-size:max(14px,4cqmin)}
+.ssnt4{display:flex;align-items:center;gap:.5em;margin-top:3.4cqmin;font-size:max(15px,4.8cqmin);font-weight:500;color:#ffe2a8}
+.ssnt4.natale,.ssnt4.feste{color:#ffb3a8}
+.ssnt.nt .ssnt2{opacity:.5}.ssnt.nt .na-tree .nb,body.lite .ssnt .na-tree .nb{animation:none}.ssnt.nt .ssnt3{opacity:.7}.ssnt.nt .ssh1{color:rgba(255,186,140,.8)}.ssnt.nt .ssnt4{color:rgba(255,214,160,.6)}
+.ssnt.noal .ssnt3{max-width:80cqw;text-align:center}.ssnt.noal .ssnt4,.ssnt.noal .ssi1{justify-content:center}
+@container (orientation:portrait){.ssnt{flex-direction:column;gap:3cqh}.ssnt2{height:46cqh}.ssnt3{max-width:none;text-align:center}.ssnt4,.ssnt3 .ssi1{justify-content:center}.ssnt3 .ssh1{font-size:24cqmin}}
+.sz1t.t-natale{background:radial-gradient(60% 90% at 50% 110%,rgba(255,170,80,.45),transparent 70%),linear-gradient(180deg,#06102a,#13203d)}
+.sz1t.t-natale::after{content:"❄ 🎄 ❄";font-size:15px;letter-spacing:.1em}

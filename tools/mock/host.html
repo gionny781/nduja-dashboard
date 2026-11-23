@@ -55,6 +55,13 @@ const ENT = {
   "light.cucina": st("off", { friendly_name: "Luce cucina", supported_color_modes: ["onoff"] }),
   /* luci 0.7.27: colori, effetti, gruppo (giardino), interruttore che comanda una luce (cantina) */
   "light.led_tv_soggiorno": st("on", { friendly_name: "LED TV soggiorno", brightness: 150, color_mode: "hs", supported_color_modes: ["color_temp", "hs"], hs_color: [262, 69], rgb_color: [132, 80, 255], min_color_temp_kelvin: 2000, max_color_temp_kelvin: 6500, effect_list: ["Nessuno", "Arcobaleno", "Respiro", "Candela", "Onda"], effect: "Nessuno" }),
+  /* Natale (0.7.54): albero Twinkly (luce con gli effetti e la sua modalità), presepe, stella e una presa con l'etichetta «Natale» */
+  "light.albero_di_natale_2": st("on", { friendly_name: "Albero di Natale", supported_color_modes: ["rgb"], color_mode: "rgb", rgb_color: [255, 190, 110], brightness: 204, supported_features: 4,
+    effect_list: ["0 Snake", "1 Vertical Flag", "2 Candy Cane", "3 Diagonal", "4 UpDown", "5 Color Explosion", "6 Horizontal Flag", "7 Glow", "8 Neve lenta"], effect: "2 Candy Cane" }),
+  "select.albero_di_natale_modalita": st("movie", { friendly_name: "Albero di Natale Modalità", options: ["color", "demo", "effect", "movie", "off", "playlist", "rt"] }),
+  "switch.presepe": st("off", { friendly_name: "Presepe" }),
+  "light.stella_balcone": st("on", { friendly_name: "Stella cometa balcone", supported_color_modes: ["onoff"], color_mode: "onoff" }),
+  "switch.presa_giardino": st("off", { friendly_name: "Presa giardino" }),
   "light.giardino_vialetto": st("off", { friendly_name: "Vialetto giardino", supported_color_modes: ["brightness"] }),
   "light.giardino_portico": st("on", { friendly_name: "Portico", brightness: 255, color_mode: "brightness", supported_color_modes: ["brightness"] }),
   "light.giardino": st("on", { friendly_name: "Luci giardino", brightness: 255, color_mode: "brightness", supported_color_modes: ["brightness"], entity_id: ["light.giardino_vialetto", "light.giardino_portico"] }),
@@ -577,6 +584,12 @@ for (const e of REG.entities) {
   if (/^(plant|sensor|number)\.monstera/.test(e.ei)) { e.ai = "soggiorno"; e.di = "dev_pl_monstera"; e.pl = "plant"; }
   if (e.ei.startsWith("sensor.flower_care_")) { e.ai = "esterno"; e.di = "dev_flora"; e.pl = "xiaomi_ble"; if (e.ei.endsWith("_battery")) e.ec = 1; }
 }
+/* Natale (0.7.54): il Twinkly è un dispositivo in soggiorno; la presa del giardino ha l'etichetta «Natale» */
+for (const e of REG.entities) {
+  if (/albero_di_natale/.test(e.ei)) { e.pl = "twinkly"; e.di = "dev_twinkly"; e.ai = "soggiorno"; }
+  if (e.ei === "switch.presa_giardino") { e.ai = "esterno"; e.lb = ["festa"]; }
+  if (e.ei === "light.stella_balcone") e.ai = "esterno";
+}
 /* registro completo (data di creazione delle entità): il tablet ospite e un dispositivo disattivato sono nuovi di oggi */
 const REG_FULL = () => { const oggi = new Date(); oggi.setHours(0, 0, 0, 0); const prima = oggi.getTime() / 1000 - 40 * 86400;
   return [...REG.entities.map(e => ({ entity_id: e.ei, platform: e.pl || "demo", device_id: e.di, disabled_by: null, created_at: e.ei === "device_tracker.tablet_ospite" ? Date.now() / 1000 - 40 * 60 : prima })),
@@ -626,6 +639,7 @@ function mockLuci(m) {
       if (d.brightness_pct != null) a.brightness = Math.round(d.brightness_pct * 2.55); else if (id.startsWith("light.") && a.brightness == null && (a.supported_color_modes || ["brightness"]).some(x => x !== "onoff")) a.brightness = 255;
       if (d.color_temp_kelvin) Object.assign(a, { color_mode: "color_temp", color_temp_kelvin: d.color_temp_kelvin, hs_color: [30, 60], rgb_color: d.color_temp_kelvin < 3500 ? [255, 180, 107] : d.color_temp_kelvin < 5000 ? [255, 228, 206] : [235, 238, 255] });
       if (d.hs_color) Object.assign(a, { color_mode: "hs", hs_color: d.hs_color, rgb_color: hsRgb(d.hs_color[0], d.hs_color[1]), color_temp_kelvin: null });
+      if (d.rgb_color) Object.assign(a, { color_mode: "rgb", rgb_color: d.rgb_color, hs_color: null });
       if (d.effect) a.effect = d.effect;
       if (!a.color_mode && a.supported_color_modes) a.color_mode = a.supported_color_modes[0];
     } else { a.brightness = null; a.color_mode = null; }
@@ -633,6 +647,10 @@ function mockLuci(m) {
     (a.entity_id || []).forEach(x => fai(x, on));
   };
   ids.forEach(id => fai(id, m.service === "toggle" ? ENT[id]?.s !== "on" : m.service === "turn_on"));
+  /* Twinkly finto: un effetto passa in «movie», un colore in «color», spento in «off» */
+  const tw = ENT["select.albero_di_natale_modalita"];
+  if (tw && ids.includes("light.albero_di_natale_2") && ENT["light.albero_di_natale_2"].s !== "unavailable") {
+    tw.s = ENT["light.albero_di_natale_2"].s !== "on" ? "off" : d.effect ? "movie" : d.rgb_color ? "color" : tw.s === "off" ? "movie" : tw.s; ch["select.albero_di_natale_modalita"] = { "+": { s: tw.s } }; }
   setTimeout(() => window.mockStati?.({ c: ch }), 120);
 }
 /* musica (0.7.28): media di Home Assistant finti, brani generati qui (note semplici, in WAV) e copertine in tools/mock */
@@ -961,7 +979,7 @@ const conn = {
       case "nduja_dashboard/save_layout": LAYOUT = m.layout; localStorage.setItem("mockLayout", JSON.stringify(LAYOUT)); return { ok: true };
       case "config/entity_registry/list_for_display": return REG;
       case "config/entity_registry/list": return REG_FULL();
-      case "config/device_registry/list": return [{ id: "dev_cgrp", name: "Tutta la casa", manufacturer: "Google Inc.", model: "Google Cast Group" }, { id: "dev_g", name: "iPhone di Mario" }, { id: "dev_c", name: "iPhone di Anna" }, { id: "dev_a", name: "Ariston", manufacturer: "Ariston", model: "Caldaia demo" }, { id: "dev_otgw", name: "OpenTherm Gateway", manufacturer: "Demo", model: "OpenTherm Gateway" }, { id: "dev_tv", name: "TV soggiorno", manufacturer: "Samsung", model: "QE55 demo" }, { id: "dev_atv", name: "Apple TV soggiorno", manufacturer: "Apple", model: "Apple TV 4K" },
+      case "config/device_registry/list": return [{ id: "dev_twinkly", name: "Albero di Natale", manufacturer: "LEDWORKS", model: "Twinkly Strings" }, { id: "dev_cgrp", name: "Tutta la casa", manufacturer: "Google Inc.", model: "Google Cast Group" }, { id: "dev_g", name: "iPhone di Mario" }, { id: "dev_c", name: "iPhone di Anna" }, { id: "dev_a", name: "Ariston", manufacturer: "Ariston", model: "Caldaia demo" }, { id: "dev_otgw", name: "OpenTherm Gateway", manufacturer: "Demo", model: "OpenTherm Gateway" }, { id: "dev_tv", name: "TV soggiorno", manufacturer: "Samsung", model: "QE55 demo" }, { id: "dev_atv", name: "Apple TV soggiorno", manufacturer: "Apple", model: "Apple TV 4K" },
         { id: "dev_gtv", name: "Google TV cucina", manufacturer: "Google", model: "Chromecast with Google TV" }, { id: "dev_lg", name: "TV camera", manufacturer: "LG", model: "OLED demo" }, { id: "dev_rb", name: "Rain Bird", manufacturer: "Rain Bird", model: "ESP-ME demo" }, { id: "dev_hw", name: "Prato dietro", manufacturer: "Hunter", model: "Hydrawise zona" }, ...(localStorage.getItem("mockNoCar") ? [] : [{ id: "dev_car", name: "Model 3", manufacturer: "Tesla", model: "Model 3" }]),
         ...[["trv_soggiorno", "Termostatica soggiorno"], ["movimento_corridoio", "Sensore movimento corridoio"], ["fumo_cucina", "Rilevatore fumo cucina"], ["telecomando_ikea", "Telecomando IKEA"],
           ["serratura_ingresso", "Serratura ingresso"], ["allagamento_lavanderia", "Sensore allagamento lavanderia"], ["valvola_bagno", "Valvola termostatica bagno"], ["finestra", "Sensore finestra soggiorno"]].map(([k, name]) => ({ id: "dev_b_" + k, name })),
@@ -1011,8 +1029,8 @@ const conn = {
         return { url: brano(m.media_content_id), mime_type: "audio/wav" };
       case "auth/sign_path": return { path: /\/chat_foto\//.test(m.path) ? "/tools/mock/cam-hd.svg?authSig=finto" : m.path + "?authSig=finto" };
       case "get_config": return { version: "2026.10.1", location_name: "Casa", currency: localStorage.getItem("mockValuta") || "EUR" };
-      case "config/label_registry/list": return JSON.parse(localStorage.getItem("mockLabels") || "[]");
-      case "config/label_registry/create": { const L = JSON.parse(localStorage.getItem("mockLabels") || "[]"), l = { label_id: "nduja", name: m.name, icon: m.icon }; L.push(l); localStorage.setItem("mockLabels", JSON.stringify(L)); console.log("WS", JSON.stringify(m)); return l; }
+      case "config/label_registry/list": return JSON.parse(localStorage.getItem("mockLabels") || '[{"label_id":"festa","name":"Natale"}]');
+      case "config/label_registry/create": { const L = JSON.parse(localStorage.getItem("mockLabels") || '[{"label_id":"festa","name":"Natale"}]'), l = { label_id: "nduja", name: m.name, icon: m.icon }; L.push(l); localStorage.setItem("mockLabels", JSON.stringify(L)); console.log("WS", JSON.stringify(m)); return l; }
       case "config/entity_registry/get": return { entity_id: m.entity_id, labels: ["casa"], ...(m.entity_id.startsWith("media_player.ma_") ? { config_entry_id: "ma_finta", platform: "music_assistant" } : {}) };
       case "config/entity_registry/update": console.log("WS", JSON.stringify(m)); return { entity_entry: { entity_id: m.entity_id, labels: m.labels } };
       case "call_service":
@@ -1040,7 +1058,8 @@ const conn = {
         /* caldaia (0.7.37): acqua calda, modalità e circuito cambiano lo stato finto */
         if (["water_heater", "select", "climate"].includes(m.domain) && /^(set_temperature|set_operation_mode|select_option|set_hvac_mode|turn_on|turn_off)$/.test(m.service)) for (const id of [].concat(m.target?.entity_id || [])) { const e = ENT[id]; if (!e) continue; const d = m.service_data || {}, a = { ...e.a };
           if (m.service === "set_temperature") a.temperature = d.temperature; else if (m.service === "set_operation_mode") { a.operation_mode = d.operation_mode; e.s = d.operation_mode; }
-          else if (m.service === "select_option") e.s = d.option; else if (m.service === "set_hvac_mode") e.s = d.hvac_mode; else if (m.service === "turn_off") e.s = "off"; else if (m.service === "turn_on") e.s = m.domain === "climate" ? (a.hvac_modes || []).find(x => x !== "off") || "heat" : "on";
+          else if (m.service === "select_option") { e.s = d.option;
+            if (id === "select.albero_di_natale_modalita") { const L = ENT["light.albero_di_natale_2"]; L.s = d.option === "off" ? "off" : "on"; L.a = { ...L.a, brightness: d.option === "off" ? null : L.a.brightness || 204 }; setTimeout(() => window.mockStati?.({ c: { "light.albero_di_natale_2": { "+": { s: L.s, a: L.a } } } }), 120); } } else if (m.service === "set_hvac_mode") e.s = d.hvac_mode; else if (m.service === "turn_off") e.s = "off"; else if (m.service === "turn_on") e.s = m.domain === "climate" ? (a.hvac_modes || []).find(x => x !== "off") || "heat" : "on";
           e.a = a; setTimeout(() => window.mockStati?.({ c: { [id]: { "+": { s: e.s, a } } } }), 120); }
         /* Music Assistant finta: ricerca in un piccolo catalogo inventato, coda, riproduzione e passaggio della coda */
         if (m.domain === "music_assistant") { const r = mockMA(m); console.log("SVC", JSON.stringify(m)); return { response: r }; }

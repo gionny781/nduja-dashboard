@@ -15,6 +15,9 @@
    - foto: una cartella dei Media, un indirizzo (anche una GIF) o un elenco di indirizzi, in dissolvenza o con il
      movimento lento (Ken Burns);
    - sfondo: uno degli sfondi animati (sfondi.js) a tutto schermo, con l'ora piccola;
+   - natale: la neve, l'orologio, il conto alla rovescia a Natale e l'albero disegnato che segue il Twinkly vero (festa.js);
+     di notte più scuro e fermo. In Alterna e Automatico solo nel periodo di festa; «Automatico a Natale» lo mette al posto
+     dello stile scelto per tutto il periodo;
    - alterna: gira tra gli stili scelti, con il tempo di cambio scelto;
    - auto: di giorno lo stile scelto (e il fotovoltaico quando produce), di notte quello della notte, con l'orario scelto.
    Leggerezza: si ridisegna al massimo ogni 20 secondi (e al cambio del minuto), le animazioni sono solo CSS
@@ -29,6 +32,7 @@ import { info as persona } from "./people.js";
 import { sole, mix, etichette } from "./scenaenergia.js";
 import { ritiri, haRaccolta } from "./raccolta.js";
 import { montaSfondo, SFONDI, opzioni as opzSfondo } from "./sfondi.js";
+import { inPeriodo, conto, oreAlNatale, statoAlbero, alberoSVG, fine as fineFesta, dataTesto } from "./festa.js";
 
 /* ---------- pagine caricate dopo la Home (Energia, Scadenze): le prendo quando servono ---------- */
 const MOD = {};
@@ -43,7 +47,7 @@ const haConsumi = () => { const en = energia(); if (!en) return null; try { retu
 
 /* ================= scelte (di questo dispositivo) ================= */
 const J = (k, d) => { try { return JSON.parse(sGet(k) || "null") ?? d; } catch { return d; } };
-const STILI = ["auto", "alterna", "orologio", "analogico", "cielo", "solare", "consumi", "meteo", "giornata", "casa", "notte", "foto", "sfondo"];
+const STILI = ["auto", "alterna", "orologio", "analogico", "cielo", "solare", "consumi", "meteo", "giornata", "casa", "notte", "foto", "sfondo", "natale"];
 /** stili che si possono mettere in Automatico (di giorno, di notte) e in Alterna */
 const SEMPLICI = STILI.filter(s => s !== "auto" && s !== "alterna");
 export const ssMin = () => +(sGet("ssMin") || 0);          // 0 = spento
@@ -58,6 +62,10 @@ const notteA = () => sGet("ssNotteA") || "07:00";
 const attenua = () => sGet("ssAtt") !== "0";
 /** in Automatico: lo stile del giorno (prima solo foto o cielo) e quello della notte */
 const giorno = () => { const v = sGet("ssGiorno"); return SEMPLICI.includes(v) && v !== "notte" ? v : "foto"; };
+/** «🎄 Automatico a Natale»: nel periodo di festa il salvaschermo di Natale al posto di quello scelto */
+const natAuto = () => sGet("ssNatale") === "1";
+/** lo stile di Natale fuori dal periodo non entra in Alterna e Automatico */
+const fuoriFesta = (s, d) => s === "natale" && !inPeriodo(d);
 const notteStile = () => { const v = sGet("ssNotteStile"); return SEMPLICI.includes(v) ? v : "notte"; };
 /** in Automatico, di giorno: il fotovoltaico quando produce più di tanti watt (acceso di partenza, se c'è il fotovoltaico) */
 const solareAuto = () => sGet("ssSolAuto") !== "0";
@@ -82,6 +90,7 @@ const DEF = {
   notte: { vel: 1, eff: "fade", info: [] },
   foto: { vel: 2, eff: "mov", info: ["ora", "meteo"] },
   sfondo: { vel: 2, info: ["ora"], sf: "aurora", int: 2 },
+  natale: { vel: 2, info: ["meteo", "temp"], albero: 1 },
   alterna: { lista: ["orologio", "cielo", "meteo", "giornata"], min: 2 },
 };
 const cfg = s => ({ ...DEF[s], ...(J("ssCfg", {})[s] || {}) });
@@ -103,15 +112,16 @@ function staProducendo() {
   return produce;
 }
 /** gli stili di Alterna che si possono mostrare */
-const giroAlterna = () => { const L = (cfg("alterna").lista || []).filter(s => SEMPLICI.includes(s) && disponibile(s) && (s !== "foto" || haFoto())); return L.length ? L : ["orologio"]; };
+const giroAlterna = () => { const L = (cfg("alterna").lista || []).filter(s => SEMPLICI.includes(s) && disponibile(s) && (s !== "foto" || haFoto()) && !fuoriFesta(s)); return L.length ? L : ["orologio"]; };
 const perAlterna = () => Math.max(1, +cfg("alterna").min || 2) * 60000;
 /** lo stile da disegnare adesso (Automatico e Alterna scelgono da soli; quello che manca diventa l'orologio) */
 function reale(stile, d = new Date()) {
+  if (natAuto() && inPeriodo(d)) return "natale";
   if (stile === "auto") {
-    if (diNotte(d)) return reale(notteStile(), d);
+    if (diNotte(d)) { const n = notteStile(); return fuoriFesta(n, d) ? "notte" : reale(n, d); }
     if (solareAuto() && staProducendo()) return "solare";
     const g = giorno();
-    return g === "foto" && !haFoto() ? "cielo" : reale(g, d);
+    return g === "foto" && !haFoto() ? "cielo" : fuoriFesta(g, d) ? "cielo" : reale(g, d);
   }
   if (stile === "alterna") { const L = giroAlterna(); return reale(L[Math.floor(d.getTime() / perAlterna()) % L.length], d); }
   if (stile === "foto" && !haFoto()) return "orologio";
@@ -307,7 +317,7 @@ function casa(d, c, x) {
 }
 
 /* ---------- spostamento lento contro i segni sullo schermo (fotovoltaico, consumi, analogico, meteo, giornata, sfondo) ---------- */
-const SPOSTA = new Set(["analogico", "solare", "consumi", "meteo", "giornata", "sfondo"]);
+const SPOSTA = new Set(["analogico", "solare", "consumi", "meteo", "giornata", "sfondo", "natale"]);
 /** pochissimo (±1,2 % dello schermo), a turni: con la transizione lunga non si nota */
 const spinta = c => { const [a, b] = posto(Math.floor(Date.now() / (PASSO[c.vel] || 60000)), .26); return `--dx:${r1(a - 1.2)}cqw;--dy:${r1(b + 1.3)}cqh`; };
 /** cielo dietro uno stile scuro: i colori di adesso, abbassati perché il testo si legga */
@@ -495,6 +505,25 @@ function sfondoMonta(x, c) {
 }
 const fermaSfondo = x => { x.sf?.stop(); x.sf = null; };
 
+/* ---------- 🎄 Natale ---------- */
+function natale(d, c, x) {
+  const nt = diNotte(d), ct = conto(d), st = statoAlbero();
+  const testo = ct.k === "vigilia" && d.getHours() >= 18 ? oreAlNatale(ct.ms) : ct.testo;
+  const ic = ct.k === "natale" ? "🎁" : ct.k === "feste" ? "✨" : ct.k === "vigilia" ? "🌟" : "🎄";
+  return `<div class="sssf" data-keep></div><div class="ssnt0 ${nt ? "nt" : ""}"></div>
+    <div class="ssnt ${nt ? "nt" : ""} ${c.albero === 0 ? "noal" : ""} ssmv" style="${spinta(c)}">
+      ${c.albero === 0 ? "" : `<div class="ssnt2">${alberoSVG(st, { uid: "ss" + x.id })}</div>`}
+      <div class="ssnt3"><div class="ssh1">${oraTxt(d)}</div><div class="ssd1">${esc(dataTxt(d))}</div>
+        <div class="ssnt4 ${ct.k}"><span>${ic}</span>${esc(testo)}</div><div class="ssi1">${pillole(c.info)}</div></div></div>`;
+}
+/** la neve dietro: lo sfondo «Neve» (sfondi.js), scuro; di notte ferma */
+function natMonta(x, c) {
+  const nt = diNotte(), o = { ...opzSfondo(null, "neve"), vel: +c.vel || 2, int: nt ? 1 : 2, osc: 0 }, chiave = JSON.stringify(["neve", o, nt]);
+  const box = x.el?.querySelector(".sssf"); if (!box) return;
+  if (x.sf && x.sf.chiave === chiave && x.sf.box === box) return;
+  x.sf?.stop(); x.sf = montaSfondo(box, "neve", o, { mini: x.mini, scuro: true, fermo: nt }); x.sf.chiave = chiave; x.sf.box = box;
+}
+
 /* ---------- foto ---------- */
 const CAMBIO = { 1: 60000, 2: 20000, 3: 10000 };
 function foto(d, c, x) {
@@ -549,7 +578,7 @@ function avviaFoto(x) {
 const fermaFoto = x => { if (x.foto) { x.foto.fermo = true; clearTimeout(x.foto.T); x.foto = null; } x.fotoErr = false; };
 
 /* ================= motore: disegna uno stile dentro un contenitore ================= */
-const STILE = { orologio, notte, cielo, casa, foto, analogico, solare, consumi, meteo: meteoSS, giornata, sfondo: sfondoSS };
+const STILE = { orologio, notte, cielo, casa, foto, analogico, solare, consumi, meteo: meteoSS, giornata, sfondo: sfondoSS, natale };
 const VIVI = new Set();
 let nid = 0;
 /** ferma tutto quando la scheda non si vede, o quando l'anteprima (o lo sfondo della plancia) è coperta dal salvaschermo vero */
@@ -601,10 +630,11 @@ function disegna(x) {
   /* gli altri si spostano di pochissimo a turni (spinta), senza sparire */
   if (SPOSTA.has(s)) { const per = PASSO[c.vel] || 60000; x.prossimo = Math.min(x.prossimo || Infinity, per - (Date.now() % per) + 40); }
   /* attenuazione di notte: la scelta dello stile, altrimenti quella di sempre */
-  const dim = !x.opz.sfondo && s !== "notte" && (c.att != null ? !!c.att : attenua()) && diNotte(d);
+  const dim = !x.opz.sfondo && s !== "notte" && s !== "natale" && (c.att != null ? !!c.att : attenua()) && diNotte(d);
   try { patch(x.el, STILE[s](d, c, x) + `<div class="ssdim ${dim ? "on" : ""}"></div>`); } catch (e) { console.error("salvaschermo", e); }
   if (s === "foto" && !x.foto) avviaFoto(x);
   if (s === "sfondo") sfondoMonta(x, c);
+  if (s === "natale") natMonta(x, c);
   /* Alterna: il prossimo giro arriva al cambio di stile */
   if (x.stile === "alterna") { const per = perAlterna(); x.prossimo = Math.min(x.prossimo || Infinity, per - (Date.now() % per) + 60); }
 }
@@ -656,6 +686,7 @@ const NOMI = () => ({
   notte: ["🌙", t("Minimal notturno", "Night minimal"), t("Ora grande e scurissima, per la camera", "Big, very dark time for the bedroom")],
   foto: ["🖼️", t("Foto", "Photos"), t("Le tue foto o una GIF", "Your photos or a GIF")],
   sfondo: ["✨", t("Sfondo animato", "Animated background"), t("Uno sfondo animato, con l'ora piccola", "An animated background, with a small clock")],
+  natale: ["🎄", t("Natale", "Christmas"), t("Neve, orologio, conto alla rovescia e il tuo albero", "Snow, clock, countdown and your tree")],
 });
 /** lo stile del giorno come si vede davvero (le foto senza foto diventano il cielo) */
 const giornoVero = () => giorno() === "foto" && !haFoto() ? "cielo" : giorno();
@@ -663,7 +694,8 @@ const conSolare = () => solareAuto() && haSolare() === true;
 /** riga del salvaschermo nella scheda «Questo dispositivo» */
 export function ssVoce() {
   const s = ssStile(), N = NOMI(), [ic, n] = N[s];
-  const sotto = s === "auto" ? t(`Di giorno ${N[giornoVero()][1].toLowerCase()}${conSolare() ? " (o il fotovoltaico quando produce)" : ""}, di notte ${N[notteStile()][1].toLowerCase()} (${notteDa()}–${notteA()})`,
+  const sotto = natAuto() && inPeriodo() ? t(`🎄 Natale fino al ${dataTesto(fineFesta())}, poi ${N[s][1].toLowerCase()}`, `🎄 Christmas until ${dataTesto(fineFesta())}, then ${N[s][1].toLowerCase()}`)
+    : s === "auto" ? t(`Di giorno ${N[giornoVero()][1].toLowerCase()}${conSolare() ? " (o il fotovoltaico quando produce)" : ""}, di notte ${N[notteStile()][1].toLowerCase()} (${notteDa()}–${notteA()})`,
       `By day ${N[giornoVero()][1].toLowerCase()}${conSolare() ? " (or solar while it produces)" : ""}, at night ${N[notteStile()][1].toLowerCase()} (${notteDa()}–${notteA()})`)
     : s === "alterna" ? t(`Gira tra ${giroAlterna().map(k => N[k][1].toLowerCase()).join(", ")} · ogni ${cfg("alterna").min} min`, `Rotates ${giroAlterna().map(k => N[k][1].toLowerCase()).join(", ")} · every ${cfg("alterna").min} min`)
     : s === "foto" && !haFoto() ? t("Scegli le foto", "Choose your photos") : !disponibile(s) ? t("Non disponibile qui: mostro l'orologio", "Not available here: showing the clock") : N[s][2];
@@ -676,7 +708,7 @@ const seg = (act, cur, opts, x = "") => `<div class="seg">${opts.map(([k, n]) =>
 /** lo stile di cui si vedono le opzioni (in Automatico: quello del giorno, della notte o il fotovoltaico) */
 const inModifica = () => { const s = ssStile(); if (s !== "auto") return s; return ED.sub === "notte" ? notteStile() : ED.sub === "solare" && conSolare() ? "solare" : giorno(); };
 /** lo stile dell'anteprima */
-const vistaAnteprima = () => { const s = ssStile(); if (s !== "auto") return s; return ED.sub === "notte" ? notteStile() : ED.sub === "solare" && conSolare() ? "solare" : giornoVero(); };
+const vistaAnteprima = () => { const s = ssStile(); if (natAuto() && inPeriodo()) return "natale"; if (s !== "auto") return s; return ED.sub === "notte" ? notteStile() : ED.sub === "solare" && conSolare() ? "solare" : giornoVero(); };
 const SPOSTA_TX = () => [t("Si sposta", "Shifts"), [t("ogni 5 min", "every 5 min"), t("ogni minuto", "every minute"), t("ogni 20 s", "every 20 s")]];
 const VEL = () => ({
   orologio: [t("Si sposta", "Moves"), [t("ogni 5 min", "every 5 min"), t("ogni minuto", "every minute"), t("ogni 20 s", "every 20 s")]],
@@ -685,6 +717,7 @@ const VEL = () => ({
   foto: [t("Cambio foto", "Next photo"), ["1 min", "20 s", "10 s"]],
   analogico: SPOSTA_TX(), solare: SPOSTA_TX(), consumi: SPOSTA_TX(), meteo: SPOSTA_TX(), giornata: SPOSTA_TX(),
   sfondo: [t("Velocità", "Speed"), [t("lenta", "slow"), t("normale", "normal"), t("veloce", "fast")]],
+  natale: [t("Neve", "Snow"), [t("lenta", "slow"), t("normale", "normal"), t("veloce", "fast")]],
 });
 const EFF = () => ({
   orologio: [t("Dissolvenza", "Fade"), t("Movimento lento", "Slow drift")],
@@ -694,7 +727,7 @@ const EFF = () => ({
 const INFO = () => ({ ora: "🕐 " + t("Ora", "Time"), meteo: "🌤️ " + t("Meteo", "Weather"), temp: "🏠 " + t("Temperatura di casa", "Home temperature"), persone: "👥 " + t("Persone in casa", "People home"), impegno: "📅 " + t("Prossimo impegno", "Next event") });
 const INFO_DI = { orologio: ["meteo", "temp", "persone", "impegno"], notte: ["meteo", "temp", "impegno"], cielo: ["ora", "meteo", "temp", "persone", "impegno"], casa: ["ora", "meteo", "temp", "persone", "impegno"], foto: ["ora", "meteo", "temp", "persone", "impegno"],
   analogico: ["meteo", "temp", "persone", "impegno"], solare: ["meteo", "temp", "persone", "impegno"], consumi: ["ora", "meteo", "temp", "persone"], meteo: ["ora", "temp", "persone", "impegno"],
-  giornata: ["meteo", "temp", "persone"], sfondo: ["ora", "meteo", "temp", "persone", "impegno"], alterna: [] };
+  giornata: ["meteo", "temp", "persone"], sfondo: ["ora", "meteo", "temp", "persone", "impegno"], natale: ["meteo", "temp", "persone", "impegno"], alterna: [] };
 /** le scelte proprie di uno stile: [chiave, nome, [[valore, testo], …], spiegazione] */
 const PROPRIE = () => ({
   analogico: [["sec", t("Secondi", "Seconds"), [["liscia", t("Scorrevoli", "Smooth")], ["scatti", t("A scatti", "Ticking")], ["no", t("Senza", "None")]]]],
@@ -702,6 +735,7 @@ const PROPRIE = () => ({
   meteo: [["ore", t("Prossime ore", "Next hours"), [[6, "6 h"], [12, "12 h"], [24, "24 h"]]]],
   giornata: [["giorni", t("Scadenze entro", "Deadlines within"), [[3, t("3 giorni", "3 days")], [7, t("7 giorni", "7 days")], [14, t("14 giorni", "14 days")], [30, t("30 giorni", "30 days")]]]],
   sfondo: [["int", t("Intensità", "Intensity"), [[1, t("Tenue", "Soft")], [2, t("Normale", "Normal")], [3, t("Forte", "Strong")]]]],
+  natale: [["albero", t("L'albero", "The tree"), [[1, "🎄 " + t("Mostra", "Show")], [0, t("Nascondi", "Hide")]], t("L'albero disegnato si accende come quello vero (Twinkly): acceso, spento e colore. Senza albero smart resta acceso con luci calde. Toccarlo sveglia la plancia, non lo comanda.", "The drawn tree lights up like the real one (Twinkly): on, off and colour. Without a smart tree it stays lit with warm lights. Touching it wakes the dashboard, it doesn't control it.")]],
 });
 function opzioni(s) {
   const c = cfg(s), V = VEL()[s], E = EFF()[s], I = INFO(), N = NOMI();
@@ -714,7 +748,8 @@ function opzioni(s) {
     ${s === "sfondo" ? `<div class="sz1o"><span>${t("Sfondo", "Background")}</span><div class="vr1">${SFONDI().filter(z => z[4]).map(([id, ic, n]) => `<button class="${sfondoAnim(c.sf) === id ? "on" : ""}" data-act="ssOpz" data-s="sfondo" data-k="sf" data-v="${id}">${ic} ${esc(n)}</button>`).join("")}</div></div>` : ""}
     ${P.map(([k, n, L, sp]) => `<div class="sz1o"><span>${n}</span>${seg("ssOpz", c[k], L, `data-s="${s}" data-k="${k}"`)}</div>${sp ? `<p class="small muted">${sp}</p>` : ""}`).join("")}
     ${INFO_DI[s]?.length ? `<div class="sz1o"><span>${s === "casa" ? t("In alto", "On top") : t("Da mostrare sopra", "Shown on top")}</span><div class="vr1">${INFO_DI[s].map(k => `<button class="${c.info.includes(k) ? "on" : ""}" data-act="ssInfo" data-s="${s}" data-v="${k}">${I[k]}</button>`).join("")}</div></div>` : ""}
-    ${s !== "notte" ? `<div class="sz1o"><span>${t("Di notte", "At night")}</span>${seg("ssOpz", (c.att != null ? !!c.att : attenua()) ? 1 : 0, [[1, t("Abbassa la luce", "Dim it")], [0, t("Come di giorno", "As by day")]], `data-s="${s}" data-k="att"`)}</div>` : ""}
+    ${s === "natale" ? `<p class="small muted">${t("Il conto alla rovescia: i giorni che mancano, la vigilia sera le ore e i minuti, il 25 «Buon Natale» e fino all'Epifania «Buone feste». Di notte (orario qui sotto) è più scuro e la neve si ferma.", "The countdown: the days to go, on Christmas Eve evening hours and minutes, on the 25th «Merry Christmas» and until Epiphany «Happy holidays». At night (hours below) it's darker and the snow stops.")}</p>` : ""}
+    ${s !== "notte" && s !== "natale" ? `<div class="sz1o"><span>${t("Di notte", "At night")}</span>${seg("ssOpz", (c.att != null ? !!c.att : attenua()) ? 1 : 0, [[1, t("Abbassa la luce", "Dim it")], [0, t("Come di giorno", "As by day")]], `data-s="${s}" data-k="att"`)}</div>` : ""}
     ${s === "foto" ? fotoScelta() : ""}
     ${s === "cielo" ? `<p class="small muted">${t("I colori seguono il sole, le nuvole e la pioggia il meteo di casa; di notte la luna ha la sua fase vera.", "Colours follow the sun, clouds and rain your home weather; at night the moon shows its real phase.")}</p>` : ""}
     ${s === "notte" ? `<p class="small muted">${t("Nero, con l'ora in un arancio molto tenue che non abbaglia; cambia posto ogni pochi minuti.", "Black, with the time in a very soft orange that doesn't dazzle; it moves every few minutes.")}</p>` : ""}
@@ -748,6 +783,8 @@ function foglio() {
       <div class="row between"><span class="small muted">${t("Anteprima dal vivo", "Live preview")} · ${esc(N[vista]?.[1] || "")}</span><button class="btn sm pri" data-act="ssProva">▶ ${t("Prova a tutto schermo", "Try full screen")}</button></div></div>
     <div class="fl1">${t("Stile", "Style")}</div>
     <div class="sz1g">${visibili.map(k => `<button class="${k === s ? "act" : ""}" data-act="ssStile" data-v="${k}"><i class="sz1t t-${k}"></i><b>${N[k][0]} ${esc(N[k][1])}</b><small>${esc(N[k][2])}</small></button>`).join("")}</div>
+    <div class="sz1o"><span>🎄 ${t("Automatico a Natale", "Automatic at Christmas")}</span>${seg("ssNatale", natAuto() ? "1" : "0", [["0", t("No", "No")], ["1", "🎄 " + t("Sì", "Yes")]])}</div>
+    <p class="small muted">${t(`Nel periodo di festa (fino al ${dataTesto(fineFesta())}) mostro il salvaschermo di Natale al posto di questo; poi torna da solo. ${inPeriodo() ? "Adesso siamo nel periodo." : ""}`, `During the festive season (until ${dataTesto(fineFesta())}) I show the Christmas screensaver instead of this one; then it comes back by itself. ${inPeriodo() ? "We're in the season now." : ""}`)}${["auto", "alterna"].includes(s) ? " " + t("In Automatico e Alterna lo stile di Natale si usa solo nel periodo di festa.", "In Automatic and Rotate the Christmas style is only used during the festive season.") : ""}</p>
     ${s === "auto" ? `<div class="fl1">✨ ${t("Automatico", "Automatic")}</div>
       <div class="sz1o"><span>${t("Di giorno", "By day")}</span><div class="row sz1h">${scelta("ssGiornoSel", giorno(), diGiorno)}</div></div>
       ${giorno() === "foto" && !haFoto() ? `<div class="note1">${t("Scegli le foto qui sotto: finché mancano, di giorno mostro il cielo vivo.", "Choose the photos below: until then, by day I show the live sky.")}</div>` : ""}
@@ -773,7 +810,7 @@ function anteprima() {
   const box = document.querySelector(".ssp1");
   if (!box) { if (PV) { PV.stop(); PV = null; } return; }
   const vista = vistaAnteprima();
-  const chiave = JSON.stringify([vista, sGet("ssCfg"), fonte(), ssDir(), sGet("ssUrl"), sGet("ssLista"), attenua(), notteDa(), notteA(), sGet("ssNotteStile"), sGet("ssGiorno"), sGet("ssSolAuto"), sGet("ssSolW")]);
+  const chiave = JSON.stringify([vista, sGet("ssCfg"), fonte(), ssDir(), sGet("ssUrl"), sGet("ssLista"), attenua(), notteDa(), notteA(), sGet("ssNotteStile"), sGet("ssGiorno"), sGet("ssSolAuto"), sGet("ssSolW"), sGet("ssNatale")]);
   if (PV && PV.root === box && PV.chiave === chiave) return;
   PV?.stop(); PV = monta(box, vista, true); PV.chiave = chiave;
 }
@@ -798,6 +835,7 @@ const toggle = (L, v) => L.includes(v) ? L.filter(x => x !== v) : [...L, v];
 Object.assign(ACT, {
   ssMin: el => { sSet("ssMin", el.dataset.v); riarma(); render(); },
   ssStile: el => { sSet("ssStile", el.dataset.v); ED.sub = "giorno"; render(); },
+  ssNatale: el => { sSet("ssNatale", el.dataset.v); render(); },
   ssProva: () => { setTimeout(() => mostra(true), 150); },
   ssCfg: () => { daFoglio = false; openSheet(foglio); },
   ssSub: el => { ED.sub = el.dataset.v; render(); },

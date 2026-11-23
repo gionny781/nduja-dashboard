@@ -4,7 +4,7 @@
 
 /* ================= stato condiviso ================= */
 export const S = {};          // stati delle entità
-export const REG = {};        // entity_id -> { area, device, hidden, cat, platform }
+export const REG = {};        // entity_id -> { area, device, hidden, cat, platform, labels }
 export const AREAS = {};      // area_id -> { name, floor, icon }
 export const FLOORS = {};     // floor_id -> { name, level, icon }
 export const DEVICES = {};    // device_id -> { name, area, model, maker }
@@ -624,7 +624,7 @@ async function loadRegistry() {
   (fr || []).forEach(f => FLOORS[f.floor_id] = { name: f.name, level: f.level ?? 0, icon: f.icon });
   (ar || []).forEach(a => AREAS[a.area_id] = { name: LAYOUT.areaNames?.[a.area_id] || a.name, nameHA: a.name, floor: a.floor_id, icon: a.icon });
   (dr || []).forEach(d => DEVICES[d.id] = { name: d.name_by_user || d.name, area: d.area_id, model: d.model, maker: d.manufacturer, disabled: !!d.disabled_by });
-  (er?.entities || []).forEach(e => REG[e.ei] = { area: e.ai || (e.di && DEVICES[e.di]?.area) || null, device: e.di || null, hidden: !!e.hb, cat: e.ec ?? null, platform: e.pl });
+  (er?.entities || []).forEach(e => REG[e.ei] = { area: e.ai || (e.di && DEVICES[e.di]?.area) || null, device: e.di || null, hidden: !!e.hb, cat: e.ec ?? null, platform: e.pl, labels: e.lb || [] });
 }
 async function loadConfig() {
   try { const c = await ws({ type: "nduja_dashboard/config" }); UI.opt = c.options || {}; UI.version = c.version || ""; for (const k in LAYOUT) delete LAYOUT[k]; Object.assign(LAYOUT, c.layout || {}); } catch {}

@@ -12,9 +12,10 @@ import { ACT, CHG, FISSI, LAYOUT, UI, t, esc, sGet, sSet, ws, toast, openSheet, 
 import { cambia, indirizzoLocale, fileEsiste } from "./edit.js";
 import { mix } from "./scenaenergia.js";
 import { montaStile } from "./salvaschermo.js";
+import { inPeriodo, fine as fineFesta, dataTesto } from "./festa.js";
 
 /* ================= catalogo ================= */
-/** [id, icona, nome, descrizione, animato] */
+/** [id, icona, nome, descrizione, animato, gruppo] (gruppo «natale»: gli sfondi di Natale, in un gruppo a parte) */
 export const SFONDI = () => [
   ["classico", "🌶️", t("'Nduja classico", "'Nduja classic"), t("Le luci sfocate e il peperoncino, fermi", "Soft lights and the chili, still"), false],
   ["tinta", "🎨", t("Tinta unita", "Solid colour"), t("Un colore a scelta", "A colour you pick"), false],
@@ -28,7 +29,12 @@ export const SFONDI = () => [
   ["stelle", "✨", t("Stelle", "Stars"), t("Stelle che brillano (di giorno, pulviscolo)", "Twinkling stars (by day, floating specks)"), true],
   ["bokeh", "🫧", t("Bokeh", "Bokeh"), t("Luci fuori fuoco che galleggiano", "Out-of-focus lights drifting"), true],
   ["cielo", "🌅", t("Cielo vivo", "Live sky"), t("Il cielo di adesso, con l'ora e il meteo di casa", "The sky right now, from your home's time and weather"), true],
+  ["neve", "❄️", t("Neve", "Snow"), t("Fiocchi che scendono piano, con luci calde sfocate", "Flakes falling slowly, with soft warm lights"), true, "natale"],
+  ["lucifesta", "🎄", t("Luci di festa", "Festive lights"), t("Luci rosse, oro e verdi che respirano piano", "Red, gold and green lights gently breathing"), true, "natale"],
+  ["nottenatale", "🌟", t("Notte di Natale", "Christmas night"), t("Neve, stelle e finestre accese, ferma", "Snow, stars and lit windows, still"), false, "natale"],
 ];
+/** gli sfondi di Natale (per «Automatico a Natale») */
+export const NATALIZI = ["neve", "lucifesta", "nottenatale"];
 const INFO = id => SFONDI().find(s => s[0] === id) || SFONDI()[6];
 export const animato = id => !!INFO(id)[4];
 const ID = new Set(SFONDI().map(s => s[0]));
@@ -43,6 +49,7 @@ const DEF = {
   immagine: { osc: .35, fonte: "url", url: "", media: "", nome: "", sfoca: 0 },
   aurora: { osc: .05, vel: 2, int: 2 }, onde: { osc: 0, vel: 2, int: 2 }, stelle: { osc: 0, vel: 2, int: 2 },
   bokeh: { osc: .05, vel: 2, int: 2 }, cielo: { osc: .25, vel: 2 },
+  neve: { osc: .05, vel: 2, int: 2 }, lucifesta: { osc: .05, vel: 2, int: 2 }, nottenatale: { osc: 0 },
 };
 export const opzioni = (c, id) => ({ ...DEF[id], ...(c?.o?.[id] || {}) });
 
@@ -53,8 +60,15 @@ const valido = c => c && ID.has(c.id) ? c : null;
 export const diCasa = () => valido(LAYOUT.aspetto?.sfondo) || { id: "vivo" };
 /** la scelta di questo dispositivo: null = usa quello della casa */
 export const diDispositivo = () => valido(J("sfondo", null));
-/** quello che si vede adesso su questo dispositivo */
-export const attuale = () => diDispositivo() || diCasa();
+/** «Automatico a Natale» su questo dispositivo: nel periodo di festa uno sfondo di Natale, poi torna da solo quello scelto */
+export const natAuto = () => sGet("sfNatale") === "1";
+export const natId = () => NATALIZI.includes(sGet("sfNatId")) ? sGet("sfNatId") : "neve";
+/** lo sfondo di Natale sta sostituendo quello scelto? */
+export const natAttivo = () => natAuto() && inPeriodo();
+/** lo sfondo scelto (del dispositivo o della casa), senza Natale */
+const scelto = () => diDispositivo() || diCasa();
+/** quello che si vede adesso su questo dispositivo (la scelta non si tocca: a Natale passato torna da sola) */
+export const attuale = () => natAttivo() ? { id: natId(), o: scelto().o || {}, natale: true } : scelto();
 /** «animato anche con la grafica leggera» (per dispositivo) */
 const animaInLeggera = () => sGet("sfLite") === "1";
 const menoMoto = () => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; } };
@@ -73,6 +87,10 @@ const SV = { 1: .55, 2: 1, 3: 1.8 }, SI = { 1: .6, 2: 1, 3: 1.45 };
 const GRANA = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="3" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 .55 0"/></filter><rect width="180" height="180" filter="url(#g)"/></svg>`)}")`;
 /* onda che si ripete: due periodi uguali in 1600 (si sposta di metà e ricomincia senza salti) */
 const ONDA = (a, b) => `M0 ${b}C200 ${b - a} 200 ${b - a} 400 ${b}S600 ${b + a} 800 ${b}S1000 ${b - a} 1200 ${b}S1400 ${b + a} 1600 ${b}V200H0Z`;
+/* luci di festa: rosso, oro e verde che respirano (colori 0-2), più grandi e più morbide del bokeh */
+const FESTA = (() => { const r = caso(1225); return Array.from({ length: 16 }, (_, i) => ({ x: r1(r() * 100), y: r1(10 + r() * 85), s: r1(9 + r() * 20), c: i % 3, d: r1(7 + r() * 9), dl: r1(-r() * 12) })); })();
+/* notte di Natale: stelle fisse e abeti sulle colline (sempre uguali) */
+const NN_STELLE = (() => { const r = caso(2412); return Array.from({ length: 70 }, () => [Math.round(r() * 1600), Math.round(r() * 430), r1(.6 + r() * 1.5), r1(.35 + r() * .6)]); })();
 const BOKEH = (() => { const r = caso(2026); return Array.from({ length: 13 }, (_, i) => ({ x: r1(r() * 100), y: r1(r() * 100), s: r1(10 + r() * 22), c: i % 4, d: r1(26 + r() * 30), dl: r1(-r() * 40), dx: r1((r() - .5) * 16), dy: r1((r() - .5) * 14) })); })();
 
 /** l'HTML degli strati di uno sfondo (dentro .sf1) e le variabili CSS */
@@ -92,6 +110,9 @@ function strati(id, o, chiaro) {
   else if (id === "stelle") h = `<canvas class="sfcv"></canvas>`;
   else if (id === "bokeh") h = BOKEH.map(b => `<i class="sfb sfb${b.c}" style="left:${b.x}%;top:${b.y}%;width:${b.s}cqmax;height:${b.s}cqmax;--dx:${b.dx}cqw;--dy:${b.dy}cqh;animation-duration:calc(${b.d}s / var(--sv));animation-delay:${b.dl}s"></i>`).join("");
   else if (id === "cielo") h = `<div class="sfsk"></div>`;
+  else if (id === "neve") h = `<i class="sfnl"></i><canvas class="sfcv"></canvas>`;
+  else if (id === "lucifesta") h = FESTA.map(b => `<i class="sfx sfx${b.c}" style="left:${b.x}%;top:${b.y}%;width:${b.s}cqmax;height:${b.s}cqmax;animation-duration:calc(${b.d}s / var(--sv));animation-delay:${b.dl}s"></i>`).join("") + `<i class="sfxv"></i>`;
+  else if (id === "nottenatale") h = notteNatale(chiaro);
   return { h, v: v.join(";") };
 }
 
@@ -145,6 +166,72 @@ function stelle(cv, o, mini, isFermo, chiaro) {
   return () => { stop = true; cancelAnimationFrame(T); try { ro?.disconnect(); } catch {} };
 }
 
+/* ---------- neve (canvas, 24 al secondo): fiocchi a tre profondità che scendono ondeggiando ---------- */
+function neve(cv, o, mini, isFermo, chiaro) {
+  const ctx = cv.getContext("2d"); if (!ctx) return () => {};
+  const D = Math.min(1.5, window.devicePixelRatio || 1), k = SI[o.int] || 1, sp = SV[o.vel] || 1;
+  let W = 0, H = 0, P = [], T = null, stop = false, ultima = 0;
+  const misura = () => {
+    const R = cv.getBoundingClientRect(); W = Math.max(1, R.width); H = Math.max(1, R.height);
+    cv.width = Math.round(W * D); cv.height = Math.round(H * D); ctx.setTransform(D, 0, 0, D, 0, 0);
+    const n = Math.round(Math.min(mini ? 60 : 200, W * H / (mini ? 900 : 6500)) * k), rr = caso(1912);
+    P = Array.from({ length: n }, () => { const z = rr() < .5 ? .35 + rr() * .2 : rr() < .7 ? .6 + rr() * .2 : .85 + rr() * .15; return { x: rr() * W, y: rr() * H, z, f: rr() * 6.28, q: .7 + rr() * .6 }; });
+  };
+  const COL = chiaro ? "#ffffff" : "#f4f8ff", OMB = "rgba(50,75,120,.42)";
+  const passo = ts => {
+    if (stop) return;
+    if (!cv.isConnected) { stop = true; return; }
+    T = requestAnimationFrame(passo);
+    if (document.hidden || (UI.ss && !cv.closest(".ss1"))) return;
+    if (ts - ultima < 1000 / (mini ? 12 : 24)) return;
+    const dt = ultima ? Math.min(.2, (ts - ultima) / 1000) : 0; ultima = ts;
+    disegna(ts / 1000, dt);
+  };
+  function disegna(s, dt) {
+    ctx.clearRect(0, 0, W, H);
+    for (const p of P) {
+      p.y += dt * sp * (10 + 34 * p.z) * (mini ? .5 : 1); p.x += dt * sp * Math.sin(s * .5 + p.f) * 9 * p.z;
+      if (p.y > H + 6) { p.y = -6; p.x = Math.random() * W; } if (p.x > W + 6) p.x = -6; if (p.x < -6) p.x = W + 6;
+      const r = (mini ? .7 : 1) * (.9 + p.z * 2.9) * p.q;
+      if (chiaro) { ctx.globalAlpha = .9 * p.z; ctx.fillStyle = OMB; ctx.beginPath(); ctx.arc(p.x, p.y + .5, r + 1.1, 0, 6.283); ctx.fill(); }
+      ctx.globalAlpha = Math.min(1, (.3 + .7 * p.z) * (chiaro ? 1 : .9)); ctx.fillStyle = COL;
+      ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, 6.283); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  misura();
+  let ro = null; try { ro = new ResizeObserver(() => { misura(); if (isFermo) disegna(0, 0); }); ro.observe(cv); } catch {}
+  if (isFermo) disegna(0, 0); else T = requestAnimationFrame(passo);
+  return () => { stop = true; cancelAnimationFrame(T); try { ro?.disconnect(); } catch {} };
+}
+
+/* ---------- notte di Natale (ferma): cielo, stelle, colline innevate, abeti e una casa con le finestre accese ---------- */
+function abete(x, y, h, col, luci) {
+  const w = h * .42, P = [[0, 0], [w * .5, h * .38], [w * .28, h * .38], [w * .72, h * .7], [w * .42, h * .7], [w, h], [-w, h], [-w * .42, h * .7], [-w * .72, h * .7], [-w * .28, h * .38], [-w * .5, h * .38]];
+  const L = luci ? [[-.2, .5], [.25, .58], [-.45, .86], [0, .8], [.5, .9], [.1, .35]].map(([a, b], i) => `<circle cx="${r1(x + a * w)}" cy="${r1(y + b * h)}" r="${r1(h * .028)}" fill="${["#ffcf72", "#ff6b6b", "#7ee3a0"][i % 3]}"/>`).join("") : "";
+  return `<path d="M${P.map(([a, b]) => r1(x + a) + " " + r1(y + b)).join("L")}Z" fill="${col}"/>${L}`;
+}
+function notteNatale(chiaro) {
+  const C = chiaro ? { a: "#c9d6ee", b: "#e7e2ee", c: "#f6dccb", st: "#ffffff", h1: "#f3f6fb", h2: "#e6ecf5", h3: "#dbe3ef", ab: "#5d7a72", ab2: "#7d968f", casa: "#8a6f64", tetto: "#f7f9fc", fin: "#ffbe5c" }
+    : { a: "#040817", b: "#0c1636", c: "#1e2b57", st: "#ffffff", h1: "#a9b8d4", h2: "#8193b7", h3: "#62779f", ab: "#0a1324", ab2: "#101c33", casa: "#1a1d2c", tetto: "#c9d5ea", fin: "#ffc35c" };
+  const stelle = chiaro ? "" : NN_STELLE.map(([x, y, r, a]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${C.st}" opacity="${a}"/>`).join("");
+  return `<svg class="sfnn" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs><linearGradient id="sfnnc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C.a}"/><stop offset=".55" stop-color="${C.b}"/><stop offset="1" stop-color="${C.c}"/></linearGradient>
+      <radialGradient id="sfnnf"><stop offset="0" stop-color="${C.fin}" stop-opacity=".55"/><stop offset="1" stop-color="${C.fin}" stop-opacity="0"/></radialGradient>
+      <radialGradient id="sfnnl"><stop offset="0" stop-color="${chiaro ? "#ffffff" : "#fff6dc"}" stop-opacity="${chiaro ? .9 : .35}"/><stop offset="1" stop-color="#fff6dc" stop-opacity="0"/></radialGradient></defs>
+    <rect width="1600" height="900" fill="url(#sfnnc)"/>${stelle}
+    <circle cx="1270" cy="170" r="140" fill="url(#sfnnl)"/><circle cx="1270" cy="170" r="${chiaro ? 0 : 34}" fill="#f4efe0"/><circle cx="1284" cy="160" r="${chiaro ? 0 : 30}" fill="${C.b}"/>
+    <path d="M0 610C220 560 420 590 640 570S1060 520 1300 566S1520 560 1600 556V900H0Z" fill="${C.h3}"/>
+    ${[[160, 520, 110], [255, 545, 80], [1380, 500, 120], [1480, 530, 90], [1060, 520, 70]].map(([x, y, h]) => abete(x, y, h, C.ab2, false)).join("")}
+    <path d="M0 700C260 650 520 690 800 668S1300 640 1600 676V900H0Z" fill="${C.h2}"/>
+    <g transform="translate(700 560)"><rect x="0" y="40" width="170" height="104" fill="${C.casa}"/><path d="M-16 48L85 -16L186 48Z" fill="${C.tetto}"/><rect x="120" y="-6" width="18" height="34" fill="${C.casa}"/>
+      <rect x="22" y="64" width="34" height="30" rx="3" fill="${C.fin}"/><rect x="114" y="64" width="34" height="30" rx="3" fill="${C.fin}"/><rect x="70" y="86" width="30" height="58" rx="3" fill="${C.fin}" opacity=".85"/>
+      <ellipse cx="85" cy="150" rx="150" ry="40" fill="url(#sfnnf)"/></g>
+    ${abete(560, 560, 150, C.ab, true)}${abete(1000, 600, 120, C.ab, true)}
+    <path d="M0 780C300 744 640 770 960 756S1400 738 1600 760V900H0Z" fill="${C.h1}"/>
+  </svg>`;
+}
+
 /* ---------- la tua immagine ---------- */
 const URLM = {};
 /** indirizzo dell'immagine: /local/… così com'è, quella dei Media chiesta a Home Assistant (firmata, la tengo 20 minuti) */
@@ -157,9 +244,9 @@ async function indirizzoImmagine(o) {
 
 /** monta uno sfondo dentro un contenitore: { stop } (mini = miniatura o anteprima: misure in proporzione;
     scuro = sempre la versione scura, per il salvaschermo) */
-export function montaSfondo(root, id, o, { mini = false, scuro: soloScuro = false } = {}) {
+export function montaSfondo(root, id, o, { mini = false, scuro: soloScuro = false, fermo: forzaFermo = false } = {}) {
   if (!ID.has(id)) id = "vivo";
-  const chiaro = !soloScuro && !scuro(), isFermo = animato(id) && fermo(), { h, v } = strati(id, o, chiaro);
+  const chiaro = !soloScuro && !scuro(), isFermo = animato(id) && (forzaFermo || fermo()), { h, v } = strati(id, o, chiaro);
   const el = document.createElement("div");
   el.className = `sf1 sf-${id}${animato(id) ? " anim" : ""}${isFermo ? " fermo" : ""}${mini ? " mini" : ""}${chiaro ? " chiaro" : ""}`;
   el.setAttribute("style", v); el.innerHTML = h + `<i class="sfv"></i>`;
@@ -167,6 +254,7 @@ export function montaSfondo(root, id, o, { mini = false, scuro: soloScuro = fals
   if (mini) { const W = root.getBoundingClientRect().width || 160; el.style.setProperty("--k", String(r1(Math.min(1, W / Math.max(320, innerWidth)) * 100) / 100)); }
   const ctl = { el, stop: () => {} };
   if (id === "stelle") { const s = stelle(el.querySelector("canvas"), o, mini, isFermo, chiaro); ctl.stop = s; }
+  else if (id === "neve") { const s = neve(el.querySelector("canvas"), o, mini, isFermo, chiaro); ctl.stop = s; }
   else if (id === "cielo") {
     const sk = montaStile(el.querySelector(".sfsk"), "cielo", { cfg: { info: [], vel: o.vel || 2 }, sfondo: true });
     ctl.stop = () => sk.stop();
@@ -200,10 +288,19 @@ try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () =
 /* ================= Impostazioni → 🎨 Aspetto ================= */
 /** la riga «Sfondo» nella scheda Aspetto */
 export function sfondoVoce() {
-  const d = diDispositivo(), c = attuale(), [, ic, n] = INFO(c.id), casa = INFO(diCasa().id);
+  const d = diDispositivo(), c = attuale(), [, ic, n] = INFO(c.id), casa = INFO(diCasa().id), pr = INFO(scelto().id);
   return `<button class="li sf1r" data-act="sfApri" data-v="disp"><i class="sf1m" data-sf="${c.id}" data-sfo="${esc(JSON.stringify(opzioni(c, c.id)))}"><i class="sf1mi" data-keep></i></i>
-      <div class="tx"><b>${ic} ${esc(n)}${animato(c.id) ? ` <small class="sf1tag">${t("animato", "animated")}</small>` : ""}</b><span>${d ? t("Scelto per questo dispositivo", "Chosen for this device") : t("Lo sfondo della casa", "The home's background")}</span></div><span class="st">›</span></button>
-    ${isAdmin() ? `<button class="li" data-act="sfApri" data-v="casa"><span class="ic">🏠</span><div class="tx"><b>${t("Sfondo della casa", "Home background")}: ${esc(casa[2])}${animato(casa[0]) ? " · " + t("animato", "animated") : ""}</b><span>${t("Quello di tutti i dispositivi che non ne hanno scelto uno", "The one used by every device that hasn't picked its own")}</span></div><span class="st">›</span></button>` : ""}`;
+      <div class="tx"><b>${ic} ${esc(n)}${animato(c.id) ? ` <small class="sf1tag">${t("animato", "animated")}</small>` : ""}</b><span>${c.natale ? "🎄 " + t(`Automatico a Natale, fino al ${dataTesto(fineFesta())}; poi torna «${pr[2]}»`, `Automatic at Christmas, until ${dataTesto(fineFesta())}; then «${pr[2]}» comes back`) : d ? t("Scelto per questo dispositivo", "Chosen for this device") : t("Lo sfondo della casa", "The home's background")}</span></div><span class="st">›</span></button>
+    ${isAdmin() ? `<button class="li" data-act="sfApri" data-v="casa"><span class="ic">🏠</span><div class="tx"><b>${t("Sfondo della casa", "Home background")}: ${esc(casa[2])}${animato(casa[0]) ? " · " + t("animato", "animated") : ""}</b><span>${t("Quello di tutti i dispositivi che non ne hanno scelto uno", "The one used by every device that hasn't picked its own")}</span></div><span class="st">›</span></button>` : ""}
+    ${natVoce()}`;
+}
+/** «🎄 Automatico a Natale» (per dispositivo): interruttore e quale sfondo di Natale */
+function natVoce() {
+  const on = natAuto();
+  return `<div class="sf1nat"><div class="row between" style="gap:10px"><div class="tx"><b>🎄 ${t("Automatico a Natale", "Automatic at Christmas")}</b><span>${t("Su questo dispositivo, nel periodo di festa", "On this device, during the festive season")}</span></div>
+      <button class="sw ${on ? "on" : ""}" data-act="sfNat" aria-label="${t("Automatico a Natale", "Automatic at Christmas")}"><i></i></button></div>
+    ${on ? `<div class="seg" style="margin-top:8px">${NATALIZI.map(k => `<button class="${natId() === k ? "act" : ""}" data-act="sfNatId" data-v="${k}">${INFO(k)[1]} ${esc(INFO(k)[2])}</button>`).join("")}</div>` : ""}
+    <p class="small muted" style="margin-top:6px">${t(`Nel periodo di festa (fino al ${dataTesto(fineFesta())}) metto uno sfondo di Natale; finite le feste torna da solo quello scelto, che non cancello. Il periodo si cambia in ⚙️ Impostazioni → Natale.`, `During the festive season (until ${dataTesto(fineFesta())}) I show a Christmas background; after the holidays the chosen one comes back by itself (I don't delete it). Change the season in ⚙️ Settings → Christmas.`)}</p></div>`;
 }
 export function aspettoCard() {
   return `<section class="card"><div class="ch"><h2>🎨 ${t("Aspetto", "Appearance")}</h2></div><div class="stack">${sfondoVoce()}</div>
@@ -265,7 +362,7 @@ function opzioniDi(c) {
 }
 function foglio() {
   const c = inModifica(), dove = ED.dove, [, ic, n] = INFO(c.id);
-  const gruppo = (anim, titolo) => `<div class="fl1">${titolo}</div><div class="sf1g">${SFONDI().filter(s => s[4] === anim).map(([id, i, nn, sub]) => {
+  const gruppo = (anim, titolo) => `<div class="fl1">${titolo}</div><div class="sf1g">${SFONDI().filter(s => anim === "natale" ? s[5] === "natale" : s[4] === anim && !s[5]).map(([id, i, nn, sub]) => {
     const on = c.id === id && !c.daCasa, o = opzioni(c, id), dc = c.daCasa && c.id === id;
     return `<button class="${on ? "act" : dc ? "dc" : ""}" ${dc ? `title="${t("Lo sfondo della casa", "The home's background")}"` : ""} data-act="sfScegli" data-v="${id}"><i class="sf1m" data-sf="${id}" data-sfo="${esc(JSON.stringify(o))}"><i class="sf1mi" data-keep></i></i><b>${i} ${esc(nn)}</b><small>${esc(sub)}</small></button>`; }).join("")}</div>`;
   return `<div class="sh-head"><div><h3>🎨 ${dove === "casa" ? t("Sfondo della casa", "Home background") : t("Sfondo", "Background")}</h3><div class="small muted">${dove === "casa"
@@ -275,7 +372,8 @@ function foglio() {
       <div class="sf1es glass" aria-hidden="true"><b>21,5°</b><span>${t("Soggiorno · 3 luci accese", "Living room · 3 lights on")}</span></div>
       <button class="btn sm pri sf1go" data-act="sfProva">▶ ${t("Prova a schermo intero", "Try full screen")}</button></div>
     <div class="small muted" style="margin:6px 0 2px">${ic} ${esc(n)}${c.daCasa ? " · " + t("quello della casa", "the home's one") : ""}</div>
-    ${gruppo(false, t("Statici", "Still"))}${gruppo(true, t("Animati", "Animated"))}
+    ${dove === "disp" && natAttivo() ? `<div class="note1">🎄 ${t(`Fino al ${dataTesto(fineFesta())} vedi lo sfondo di Natale («Automatico a Natale»): quello che scegli qui torna dopo le feste.`, `Until ${dataTesto(fineFesta())} you see the Christmas background («Automatic at Christmas»): what you pick here comes back after the holidays.`)}</div>` : ""}
+    ${gruppo(false, t("Statici", "Still"))}${gruppo(true, t("Animati", "Animated"))}${gruppo("natale", "🎄 " + t("Natale", "Christmas"))}
     ${c.daCasa ? `<div class="note1">${t("Stai usando lo sfondo della casa: tocca uno sfondo per sceglierne uno tuo.", "You're using the home's background: tap one to pick your own.")}</div>` : `<div class="fl1">${ic} ${esc(n)} · ${t("opzioni", "options")}</div>${opzioniDi(c)}`}`;
 }
 
@@ -337,6 +435,9 @@ Object.assign(ACT, {
   sfScegli: el => { const c = inModifica(), id = el.dataset.v; salvaCfg({ id, o: c.daCasa ? { ...(diCasa().o || {}) } : (c.o || {}) }, `${INFO(id)[1]} ${INFO(id)[2]}`); },
   sfOpz: el => { const k = el.dataset.k, v = el.dataset.v; cambiaOpz(k, k === "uguali" ? v === "1" : ["vel", "int"].includes(k) ? +v : v); },
   sfLite: el => { sSet("sfLite", el.dataset.v); BG = null; render(true); },
+  sfNat: () => { const on = !natAuto(); sSet("sfNatale", on ? "1" : "0"); BG = null; render(true);
+    toast(on ? "🎄 " + (inPeriodo() ? t("Sfondo di Natale fino alla fine delle feste", "Christmas background until the end of the holidays") : t("Sfondo di Natale nel periodo di festa", "Christmas background during the festive season")) : t("Sfondo di sempre", "Usual background")); },
+  sfNatId: el => { sSet("sfNatId", el.dataset.v); BG = null; render(true); },
   sfProva: () => setTimeout(prova, 60),
   sfMedia: () => { MD.storia = []; openSheet(sfogliaMedia); apriMedia("media-source://media_source"); },
   sfMdApri: el => { MD.storia.push(MD.dir); apriMedia(el.dataset.id); },
