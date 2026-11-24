@@ -259,3 +259,13 @@ ORA="2026-12-24T20:15" node tools/mock/shot.mjs natale 1280 1000 natale.png
 ORA="2026-11-30T12:00" node tools/mock/shot.mjs natale 390 844 fuori.png      # fuori periodo: non è nel menu, l'amministratore la apre da ⚙️
 LS='{"mockEnt":"{\"light.albero_di_natale_2\":[\"unavailable\",{\"friendly_name\":\"Albero di Natale\"}]}"}' ORA="2026-12-13T18:00" node tools/mock/shot.mjs natale 1280 1000 staccato.png
 ```
+
+**Schede oggetto** (0.7.55): serrature e robot cambiano davvero coi comandi (la chiave gira per un attimo: `locking`, `unlocking`, `opening`; il robot pulisce, va in pausa, torna alla base e dopo 9 s è in carica);
+`switch.cancello_tieni_aperto` è il «tieni aperto» del cancello (stesso dispositivo); la lavastoviglie ha pausa, riprendi, sale e brillantante (come Home Connect);
+lo storico di `climate.soggiorno` e `climate.cucina` ha la temperatura della stanza che scende o sale (per «ti porto a 23° in una mezz'ora»).
+```bash
+node tools/mock/shot.mjs sicurezza 390 844 cancello.png '[data-k="cancello:cover.cancello"]'
+L=1 node tools/mock/shot.mjs clima 820 1180 clima.png '[data-k="clima:climate.cucina"]'
+LS='{"mockEnt":"{\"lock.porta_ingresso\":[\"jammed\",{\"friendly_name\":\"Serratura ingresso\",\"supported_features\":1}]}"}' node tools/mock/shot.mjs sicurezza 390 844 bloccata.png '[data-k="porta:lock.porta_ingresso"]'
+LS='{"nduja_oggetti":"0"}' node tools/mock/shot.mjs home 1280 900 pannelli.png      # «Pannelli di prima»
+```

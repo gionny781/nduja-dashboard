@@ -4,13 +4,14 @@
    con ✏️ scegli tu nome, aspetto e qualsiasi sensore; con ＋ ne aggiungi di nuovi.
    Aspetto per fermo, in funzione e finito: le animazioni della plancia (disegni.js), le tue immagini o GIF (/local/…) oppure l'icona.
    Lo stesso aspetto compare nella pagina, nella scheda della Home e nella mappa (nella stanza della presa o del sensore). */
-import { S, REG, ACT, CHG, LAYOUT, UI, HOME_EXTRA, VISTE, t, esc, nm, ok, val, attr, allEnts, deviceClass, watts, W, fnum, ago, hhmm, card, empty, page, svc, toast,
-  openSheet, closeSheet, render, isAdmin, LOC, areaOf, go, ordina } from "../core.js";
+import { S, REG, ACT, CHG, LAYOUT, UI, HOME_EXTRA, VISTE, AREAS, t, esc, nm, ok, val, attr, allEnts, deviceClass, watts, W, fnum, ago, hhmm, card, empty, page, svc, toast,
+  openSheet, closeSheet, render, isAdmin, LOC, areaOf, go, ordina, domain } from "../core.js";
 import { TRASCINA } from "../trascina.js";
 import { scegli, cambia, fileEsiste, indirizzoLocale } from "../edit.js";
 import { disegno, DISEGNI, riconosci } from "../disegni.js";
 import { oggi } from "./energia.js";
 import { ciclo, POTENZE_EXTRA, SOGLIE, soglie, aggiornaAvvisiTelefono } from "../avvisi.js";
+import { registra, tocca, schedeGrandi, em, quanto } from "../oggetti.js";
 
 const TIPI = () => [
   ["lavatrice", /lavatric|washer|washing|lavabianch/i, "🧺", t("Lavatrice", "Washing machine")],
@@ -117,7 +118,7 @@ function scheda(a, i) {
   const sw = a.switch && S[a.switch];
   return `<section class="card ap1 ${st.k}" data-tri="${esc(a.id)}">
     <div class="ch"><h2>${esc(a.nome)}</h2>${isAdmin() ? `<button class="btn sm" data-act="apEdit" data-i="${i}">✏️</button>` : ""}</div>
-    <div class="apr1">${vista(a, st.k, "pg" + i)}<div class="grow aps1"><b>${esc(st.n)}</b>${fin ? `<span>⏱ ${esc(fin)}</span>` : ""}</div></div>
+    <div class="apr1">${tocca("elettro:" + a.id, vista(a, st.k, "pg" + i), a.nome, "ap1t")}<div class="grow aps1"><b>${esc(st.n)}</b>${fin ? `<span>⏱ ${esc(fin)}</span>` : ""}</div></div>
     <div class="apg1">
       ${a.power ? `<button data-act="more" data-id="${a.power}"><small>${t("Adesso", "Now")}</small><b>${st.w != null ? watts(st.w) : "—"}</b></button>` : ""}
       ${a.energy ? `<button data-act="more" data-id="${a.energy}"><small>${t("Oggi", "Today")}</small><b>${kwh != null ? fnum(kwh, 2) + " kWh" : "—"}</b></button>` : ""}
@@ -133,7 +134,9 @@ const VOCI = () => [["power", "⚡ " + t("Potenza (W)", "Power (W)"), id => id.s
   ["energy", "📊 " + t("Contatore di energia (kWh)", "Energy meter (kWh)"), id => id.startsWith("sensor.") && (deviceClass(id) === "energy" || /wh$/i.test(attr(id, "unit_of_measurement") || ""))],
   ["status", "📋 " + t("Stato del produttore (facoltativo)", "Manufacturer status (optional)"), id => id.startsWith("sensor.") || id.startsWith("binary_sensor.")],
   ["end", "⏱ " + t("Ora di fine o tempo che manca", "End time or time left"), id => id.startsWith("sensor.")],
-  ["switch", "🔌 " + t("Presa o interruttore", "Plug or switch"), id => id.startsWith("switch.") || id.startsWith("input_boolean.")]];
+  ["switch", "🔌 " + t("Presa o interruttore", "Plug or switch"), id => id.startsWith("switch.") || id.startsWith("input_boolean.")],
+  ["pausa", "⏸ " + t("Pausa (facoltativo)", "Pause (optional)"), id => /^(button|input_button|script|switch)\./.test(id)],
+  ["riprendi", "▶ " + t("Riprendi (facoltativo)", "Resume (optional)"), id => /^(button|input_button|script|switch)\./.test(id)]];
 /* anteprima dal vivo dei tre momenti, con quello di adesso evidenziato */
 function anteprima(a) {
   const ora = momento(stato(a).k);
@@ -151,7 +154,8 @@ function campoImmagine(a, k, n) {
 }
 function config() {
   const a = bz, asp = aspettoDi(a), ric = riconosci(a);
-  const riga = ([k, label]) => `<button class="li" data-act="apPick" data-k="${k}"><div class="tx"><b>${label}</b><span>${a[k] && S[a[k]] ? esc(nm(a[k])) + " · " + esc(S[a[k]].state) + " " + esc(attr(a[k], "unit_of_measurement") || "") : t("nessuno", "none")}</span></div><span class="st">›</span></button>`;
+  const auto = k => k === "pausa" ? pausaAuto(a) : k === "riprendi" ? riprendiAuto(a) : null;
+  const riga = ([k, label]) => `<button class="li" data-act="apPick" data-k="${k}"><div class="tx"><b>${label}</b><span>${a[k] && S[a[k]] ? esc(nm(a[k])) + " · " + esc(S[a[k]].state) + " " + esc(attr(a[k], "unit_of_measurement") || "") : auto(k) && a[k] !== "none" ? "✨ " + esc(nm(auto(k))) + " · " + t("trovato da solo", "found by itself") : t("nessuno", "none")}</span></div><span class="st">›</span></button>`;
   const parti = {
     plancia: `<div class="fl1">${t("Disegno", "Drawing")}</div>
       <div class="apk1"><button class="${!a.disegno || a.disegno === "auto" ? "on" : ""}" data-act="apDis" data-v="auto"><span class="apv1">${disegno(ric || "presa", "on", "pkauto")}</span>✨ ${t("Automatico", "Automatic")}</button>
@@ -173,6 +177,12 @@ function config() {
     ${parti[asp]}
     <div class="fl1">${t("Sensori", "Sensors")}</div>
     <div class="stack">${VOCI().map(riga).join("")}</div>
+    <p class="small muted" style="margin:6px 0 0;line-height:1.45">${t("Pausa e Riprendi servono alla scheda grande: li trovo da soli tra i pulsanti del produttore (Home Connect, Miele…); se non ci sono, la pausa non compare.", "Pause and Resume are used by the big card: I find them by myself among the maker's buttons (Home Connect, Miele…); if there are none, pause doesn't show.")}</p>
+    ${(() => { const M = manutenzioneDi(a, true), no = new Set(a.noManut || []);
+      return `<div class="fl1">🧽 ${t("Manutenzione", "Maintenance")}</div>
+      <p class="small muted" style="margin:0 0 6px;line-height:1.45">${t("Filtri, sale, brillantante, pulizia del cestello…: li mostro nella scheda grande. Togli la spunta a quelli che non vuoi, con ＋ aggiungi qualsiasi sensore.", "Filters, salt, rinse aid, drum cleaning…: I show them on the big card. Untick the ones you don't want, add any sensor with ＋.")}</p>
+      <div class="stack">${M.map(x => `<label class="li rfc1"><input type="checkbox" data-chg="apMan" data-v="${x}" ${no.has(x) ? "" : "checked"}><div class="tx"><b>${esc(nomeManut(a, x))}</b><span>${esc(valoreManut(x).tx)}${(a.manut || []).includes(x) ? " · " + t("aggiunto da te", "added by you") : ""}</span></div></label>`).join("") || `<div class="small muted">${t("Nessun sensore di manutenzione trovato.", "No maintenance sensor found.")}</div>`}
+        <button class="add1" data-act="apManAdd"><span>＋</span>${t("Aggiungi un sensore", "Add a sensor")}</button></div>`; })()}
     <div class="fl1">${t("Quando è in funzione e quando ha finito", "When it's running and when it's done")}</div>
     <p class="small muted" style="margin:0 0 6px;line-height:1.45">${t("Ogni elettrodomestico consuma a modo suo: guarda quanto segna a riposo e mentre lavora, e regola i numeri. Valgono per la scheda, per gli avvisi della Home e per quelli sul telefono.", "Every appliance draws power its own way: check what it reads at rest and while working, and adjust the numbers. They apply to the card, the Home alerts and the phone alerts.")}${a.power && ok(a.power) ? ` <b>${t("Adesso", "Now")}: ${watts(W(a.power))}</b>` : ""}</p>
     <div class="apn1">
@@ -205,6 +215,7 @@ CHG.apN = el => { const k = el.dataset.k, v = parseFloat(String(el.value).replac
   const def = { threshold: 10, fineW: 5, fineMin: 3, cicloMin: 10, fineOre: 3 }[k];
   bz[k] = isNaN(v) || v < 0 ? def : k === "cicloMin" ? Math.round(v) : k === "fineOre" ? Math.round(v * 10) / 10 : Math.max(k === "fineMin" ? 1 : 0.1, v); render(); };
 CHG.apAvviso = el => { bz.avviso = el.checked; };
+CHG.apMan = el => { const x = el.dataset.v, L = new Set(bz.noManut || []); if (el.checked) L.delete(x); else L.add(x); bz.noManut = L.size ? [...L] : undefined; };
 CHG.apMappa = el => { if (el.checked) delete bz.mappa; else bz.mappa = false; };
 const salva = L => cambia(l => { l.appliances = L; });
 Object.assign(ACT, {
@@ -216,8 +227,13 @@ Object.assign(ACT, {
   apDis: el => { if (el.dataset.v === "auto") delete bz.disegno; else bz.disegno = el.dataset.v; render(); },
   apTipo: el => { bz.icona = el.dataset.ic; if (!bz.nome) bz.nome = el.dataset.n; render(); },
   apPick: el => { const k = el.dataset.k, v = VOCI().find(x => x[0] === k), keep = { ...bz }, i = idx;
-    scegli({ titolo: v[1], filtro: v[2], attuale: bz[k] || "none", auto: false, nessuno: true,
-      onPick: id => { idx = i; bz = { ...keep, [k]: id && id !== "none" ? id : null }; openSheet(config); } }); },
+    const opz = k === "pausa" || k === "riprendi";   // pausa e riprendi: «automatico» li cerca tra i pulsanti del produttore, «nessuno» li toglie
+    scegli({ titolo: v[1], filtro: v[2], attuale: opz ? bz[k] || "" : bz[k] || "none", auto: opz ? (k === "pausa" ? pausaAuto(bz) : riprendiAuto(bz)) || null : false, nessuno: true,
+      onPick: id => { idx = i; bz = { ...keep, [k]: opz ? id || undefined : id && id !== "none" ? id : null }; openSheet(config); } }); },
+  apManAdd: () => { const keep = { ...bz }, i = idx;
+    scegli({ titolo: "🧽 " + t("Sensore di manutenzione", "Maintenance sensor"), sotto: t("Qualsiasi sensore: filtro, sale, pulizia…", "Any sensor: filter, salt, cleaning…"), auto: false, attuale: null,
+      filtro: id => /^(sensor|binary_sensor)\./.test(id) && !manutenzioneDi(keep, true).includes(id),
+      onPick: id => { idx = i; bz = { ...keep, manut: id ? [...new Set([...(keep.manut || []), id])] : keep.manut, noManut: (keep.noManut || []).filter(x => x !== id) }; if (!bz.noManut.length) delete bz.noManut; openSheet(config); } }); },
   apSave: () => { if (!bz.nome) return toast(t("Scrivi un nome", "Write a name"), true);
     const a = bz, I = Object.values(a.img || {}), manca = I.some(u => fileEsiste(u) === "no");
     const L = [...elenco()]; if (idx < 0) L.push(a); else L[idx] = a; closeSheet();
@@ -236,7 +252,7 @@ Object.assign(ACT, {
 function homeCard() {
   const L = elenco(); if (!L.length) return "";
   return card("🧺 " + t("Elettrodomestici", "Appliances"), `<div class="aph1">${L.map((a, i) => { const st = stato(a), fin = st.k === "on" ? quandoFinisce(a) : null;
-    return `<button class="${st.k}" data-act="apGo">${vista(a, st.k, "hm" + i, "sm")}<span class="tx"><b>${esc(a.nome)}</b><span>${esc(fin ? "⏱ " + fin.replace(/^(finisce alle|ends at) /, "") : st.n)}</span></span></button>`; }).join("")}</div>`,
+    return `<button class="${st.k}" ${schedeGrandi() ? `data-act="ogApri" data-k="elettro:${esc(a.id)}"` : `data-act="apGo"`}>${vista(a, st.k, "hm" + i, "sm")}<span class="tx"><b>${esc(a.nome)}</b><span>${esc(fin ? "⏱ " + fin.replace(/^(finisce alle|ends at) /, "") : st.n)}</span></span></button>`; }).join("")}</div>`,
     { link: [t("Tutti", "All"), "elettrodomestici"] });
 }
 HOME_EXTRA.elettrodomestici = { title: () => t("Elettrodomestici", "Appliances"), render: homeCard, show: () => elenco().length > 0 };
@@ -253,6 +269,105 @@ export function elettroStanza(area, pre = "mp") {
     return { id: a.id, nome: a.nome, on: st.k === "on",
       html: `<span class="mpd2 ap2 ${st.k}"><button data-act="apGo" title="${esc(a.nome)} · ${esc(st.n)}" aria-label="${esc(a.nome)} · ${esc(st.n)}">${vista(a, st.k, pre + i, "xs")}</button></span>` }; });
 }
+
+/* ---------- scheda oggetto (oggetti.js): l'elettrodomestico disegnato, quanto manca, pausa, presa e manutenzione ---------- */
+const apDi = id => elenco().find(a => a.id === id) || null;
+/** le entità dei dispositivi dell'elettrodomestico (presa, sensori, app del produttore): per pausa e manutenzione */
+function parenti(a) {
+  const D = new Set([a.power, a.status, a.switch, a.end, a.energy].filter(x => x && S[x]).map(x => REG[x]?.device).filter(Boolean)), mie = new Set([a.power, a.status, a.switch, a.end, a.energy]);
+  return Object.keys(S).filter(x => D.has(REG[x]?.device) && !mie.has(x));
+}
+const PAUSA = /pause|pausa|sospend|interromp/i, RIPRENDI = /resume|riprend|continu|start|avvia|play/i;
+const pausaAuto = a => parenti(a).find(x => /^(button|input_button)\./.test(x) && PAUSA.test(x + " " + nm(x))) || null;
+const riprendiAuto = a => parenti(a).find(x => /^(button|input_button)\./.test(x) && RIPRENDI.test(x + " " + nm(x)) && !PAUSA.test(x + " " + nm(x)) && !/delay|ritard|remote|update|aggiorn/i.test(x)) || null;
+const scelto = (a, k, f) => a[k] === "none" ? null : a[k] && S[a[k]] ? a[k] : f(a);
+const pausaDi = a => scelto(a, "pausa", pausaAuto), riprendiDi = a => scelto(a, "riprendi", riprendiAuto) || pausaDi(a);   // alcuni hanno un solo pulsante «avvia / pausa»
+const inPausa = a => !!a.status && ok(a.status) && /paus/i.test(String(S[a.status].state));
+const premi = id => { const d = domain(id); return d === "script" ? svc("script", "turn_on", {}, { entity_id: id }) : d === "switch" ? svc("switch", "toggle", {}, { entity_id: id }) : svc(d, "press", {}, { entity_id: id }); };
+/* manutenzione: sensori del produttore che parlano di filtri, sale, pulizie (più quelli aggiunti in ✏️, meno quelli tolti) */
+const MANUT = /filt|tub.?clean|drum.?clean|pulizi|clean|decalc|descal|calcare|\bsal[et]\b|salt|brillant|rinse.?aid|lint|lanugin|condens|detersiv|deterg|serbatoi|tank|maintenance|manutenz|odor|odour/i;
+function manutenzioneDi(a, tutti = false) {
+  const no = new Set(tutti ? [] : a.noManut || []);
+  const L = parenti(a).filter(x => /^(sensor|binary_sensor)\./.test(x) && MANUT.test(x + " " + nm(x)) && !/time|tempo|power|energy|program|programma/i.test(x) && REG[x]?.hidden !== true);
+  return [...new Set([...L, ...(a.manut || []).filter(x => S[x])])].filter(x => !no.has(x));
+}
+const nomeManut = (a, x) => nm(x).replace(new RegExp("^" + (a.nome || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*", "i"), "") || nm(x);
+function valoreManut(x) {
+  if (!ok(x)) return { tx: t("non raggiungibile", "unavailable"), cls: "" };
+  if (x.startsWith("binary_sensor.")) return S[x].state === "on" ? { tx: t("da fare", "to do"), cls: "warn" } : { tx: t("a posto", "fine"), cls: "" };
+  const u = attr(x, "unit_of_measurement") || "", v = S[x].state;
+  return { tx: isNaN(parseFloat(v)) ? String(v).replace(/_/g, " ") : fnum(parseFloat(v), 0) + (u ? (u === "%" ? "" : " ") + u : ""), cls: /^(on|required|needed|low|empty|vuoto|warning|necessar)/i.test(v) ? "warn" : "" };
+}
+const femm = a => ["lavatrice", "asciugatrice", "lavastoviglie", "friggitrice"].includes(riconosci(a) || "") || /lavatric|asciugatric|lavastovigl|friggitric|macchina|presa|caldaia/i.test(a.nome || "");
+const VERBO = () => ({ lavatrice: t("Sto lavando", "I'm washing"), asciugatrice: t("Sto asciugando", "I'm drying"), lavastoviglie: t("Sto lavando i piatti", "I'm washing the dishes"), forno: t("Sto cuocendo", "I'm cooking"), frigo: t("Sto raffreddando", "I'm cooling") });
+const CONSIGLIO = () => ({ lavatrice: t("è ora di stendere!", "time to hang the washing!"), asciugatrice: t("piega i panni finché sono caldi.", "fold the clothes while they're warm."), lavastoviglie: t("apri lo sportello e fai uscire il vapore.", "open the door and let the steam out."), forno: t("attenzione, è ancora caldo.", "careful, it's still hot.") });
+/** quando finisce: { ore (Date) oppure min (minuti che mancano) } */
+function fineDi(a) {
+  if (!a.end || !ok(a.end)) return null;
+  const v = S[a.end].state;
+  if (deviceClass(a.end) === "timestamp" || /^\d{4}-\d\d-\d\dT/.test(v)) { const d = new Date(v); return d > Date.now() ? { ore: d, min: (d - Date.now()) / 60e3 } : null; }
+  const n = parseFloat(v); if (isNaN(n) || n <= 0) return null;
+  const u = String(attr(a.end, "unit_of_measurement") || "min").toLowerCase();
+  return { min: u.startsWith("h") ? n * 60 : u.startsWith("s") ? n / 60 : n };
+}
+const raggiungibileAp = a => [a.power, a.status, a.switch].some(x => x && ok(x)) || ![a.power, a.status, a.switch].some(Boolean);
+function fraseElettro(a) {
+  const f = femm(a), st = stato(a), tipo = riconosci(a) || disegnoDi(a), V = VERBO()[tipo] || t("Sono in funzione", "I'm running");
+  if (!raggiungibileAp(a)) return t(`${em("Non ti sento")}: controlla la presa o la rete.`, `${em("I can't hear you")}: check the plug or the network.`);
+  const M = manutenzioneDi(a).filter(x => valoreManut(x).cls === "warn"), coda = M.length ? " " + t(`${em(nomeManut(a, M[0]))}: da fare.`, `${em(nomeManut(a, M[0]))}: needs doing.`) : "";
+  if (inPausa(a)) return t(`Sono ${em("in pausa")}. Riprendo quando vuoi.`, `I'm ${em("paused")}. I'll carry on whenever you like.`) + coda;
+  if (st.k === "on") {
+    const fi = fineDi(a), c = a.power ? ciclo(a.power) : null;
+    if (fi?.ore && fi.min > 2) return `${V}: ` + t(`${em("finisco alle " + hhmm(fi.ore))}.`, `${em("I'll finish at " + hhmm(fi.ore))}.`) + coda;
+    if (fi && fi.min > 0) return `${V}: ` + t(`${em("mi mancano " + quanto(fi.min * 60))}.`, `${em(quanto(fi.min * 60) + " to go")}.`) + coda;
+    if (c?.on && Date.now() - c.on > 120e3) return `${V} ` + t(`da ${em(quanto((Date.now() - c.on) / 1000))}`, `for ${em(quanto((Date.now() - c.on) / 1000))}`) + (st.w != null ? t(`, consumo ${watts(st.w)}.`, `, using ${watts(st.w)}.`) : ".") + coda;
+    return `${V}` + (st.w != null ? t(`: consumo ${em(watts(st.w))}.`, `: using ${em(watts(st.w))}.`) : ".") + coda;
+  }
+  if (st.k === "done") { const fine = a.power ? ciclo(a.power).fine : 0, k = CONSIGLIO()[tipo];
+    return t(`${em("Ho finito")}`, `${em("I'm done")}`) + (fine ? " " + t(`${quanto((Date.now() - fine) / 1000)} fa`, `${quanto((Date.now() - fine) / 1000)} ago`) : "") + (k ? t(": ", ": ") + k : ".") + coda; }
+  if (st.k === "off") return t(`Sono ${em(f ? "spenta" : "spento")} dalla presa.`, `I'm ${em("switched off")} at the plug.`) + coda;
+  if (tipo === "frigo") return t(`Tengo tutto ${em("al fresco")}.`, `I'm keeping everything ${em("cool")}.`) + coda;
+  return t(`Sono ${em(f ? "pronta" : "pronto")} quando vuoi.`, `I'm ${em("ready")} when you are.`) + coda;
+}
+/** il disegno grande con l'anello di quanto manca (se si sa da quando lavora e quando finisce) */
+function disegnoElettro(a, m) {
+  const st = stato(a), v = vista(a, inPausa(a) ? "idle" : st.k, "og" + m, "og1v " + m);
+  if (m !== "xl" || st.k !== "on") return v;
+  const fi = fineDi(a), c = a.power ? ciclo(a.power) : null;
+  if (!fi || !c?.on) return v;
+  const fineMs = Date.now() + fi.min * 60e3, p = Math.min(1, Math.max(0, (Date.now() - c.on) / (fineMs - c.on || 1)));
+  return `<span class="og1pg">${v}<svg class="og1pgr" viewBox="0 0 100 100" aria-hidden="true"><circle class="tr" cx="50" cy="50" r="47" pathLength="100"/><circle class="pi" cx="50" cy="50" r="47" pathLength="100" style="stroke-dasharray:${(p * 100).toFixed(1)} 100"/></svg></span>`;
+}
+registra("elettro", {
+  nome: () => t("Elettrodomestici", "Appliances"), icona: "🧺", ordine: 50, pagina: "elettrodomestici",
+  elenco: () => elenco().map(a => a.id), esiste: id => !!apDi(id),
+  titolo: id => apDi(id).nome, luogo: id => AREAS[stanzaDi(apDi(id))]?.name || "",
+  stato: id => { const a = apDi(id); if (!raggiungibileAp(a)) return "na"; if (inPausa(a)) return "warn"; const k = stato(a).k; return k === "on" ? "run" : k === "done" ? "warn" : k === "off" ? "off" : "ok"; },
+  frase: id => fraseElettro(apDi(id)),
+  disegno: (id, m) => disegnoElettro(apDi(id), m),
+  comandi: id => { const a = apDi(id), st = stato(a), B = [], p = pausaDi(a), r = riprendiDi(a);
+    if (inPausa(a) && r) B.push({ act: "ogApPremi", id: r, ic: "▶", txt: t("Riprendi", "Resume"), pri: true, off: S[r]?.state === "unavailable" });
+    else if (st.k === "on" && p) B.push({ act: "ogApPremi", id: p, ic: "⏸", txt: t("Pausa", "Pause"), pri: true, off: S[p]?.state === "unavailable" });
+    if (a.switch && S[a.switch]) { const on = S[a.switch].state === "on", gira = on && st.k === "on";
+      B.push(gira ? { act: "ogApPresa", id, ic: "🔌", txt: t("Spegni la presa", "Switch off the plug"), tieni: t("Tieni premuto: lo fermi mentre lavora", "Press and hold: it stops while running"), cls: "bad", off: !ok(a.switch) }
+        : { act: "ogApPresa", id, ic: "🔌", txt: on ? t("Spegni la presa", "Switch off the plug") : t("Accendi la presa", "Switch on the plug"), pri: !on, off: !ok(a.switch) }); }
+    return B; },
+  dati: id => { const a = apDi(id), st = stato(a), kwh = a.energy ? oggi(a.energy) : null, fi = st.k === "on" ? fineDi(a) : null, c = a.power ? ciclo(a.power) : null;
+    return [a.power ? ["⚡", st.w != null ? watts(st.w) : "—"] : null, kwh != null ? ["📊", fnum(kwh, 2) + t(" kWh oggi", " kWh today")] : null,
+      fi ? ["⏱", fi.ore ? t("fine ", "ends ") + hhmm(fi.ore) : quanto(fi.min * 60)] : null,
+      c?.fine && st.k !== "on" ? ["🕒", t("ultimo ciclo ", "last cycle ") + new Date(c.fine).toLocaleString(LOC, { weekday: "short", hour: "2-digit", minute: "2-digit" })] : null]; },
+  extra: id => { const a = apDi(id), M = manutenzioneDi(a); if (!M.length) return "";
+    return `<div class="fl1">🧽 ${t("Manutenzione", "Maintenance")}</div><div class="og1mn">${M.map(x => { const v = valoreManut(x); return `<button class="${v.cls}" data-act="more" data-id="${x}"><small>${esc(nomeManut(a, x))}</small><b>${esc(v.tx)}</b></button>`; }).join("")}</div>`; },
+  gesti: id => { const a = apDi(id), st = stato(a), p = pausaDi(a), r = riprendiDi(a);
+    if (inPausa(a) && r) return { tocco: () => premi(r).then(() => toast("▶ " + t("Riprendo", "Resuming"))).catch(() => {}), aiuto: t("Tocca il disegno per riprendere", "Tap the drawing to resume") };
+    if (st.k === "on" && p) return { tocco: () => premi(p).then(() => toast("⏸ " + t("In pausa", "Paused"))).catch(() => {}), aiuto: t("Tocca il disegno per mettere in pausa", "Tap the drawing to pause") };
+    return {}; },
+});
+Object.assign(ACT, {
+  ogApPremi: el => premi(el.dataset.id).then(() => toast("✓ " + nm(el.dataset.id))).catch(() => {}),
+  ogApPresa: el => { const a = apDi(el.dataset.id); if (!a?.switch) return; const on = S[a.switch].state === "on";
+    svc(domain(a.switch), on ? "turn_off" : "turn_on", {}, { entity_id: a.switch }).then(() => toast("🔌 " + (on ? t("Presa spenta", "Plug off") : t("Presa accesa", "Plug on")))).catch(() => {}); },
+});
 
 function pagina() {
   const L = elenco();

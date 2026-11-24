@@ -9,6 +9,7 @@ import { schedeHome } from "./home.js";
 import { controllaCard } from "../controlla.js";
 import { assistenteCard } from "../assistente.js";
 import { aggiungiCard } from "../aggiungi.js";
+import { schedeGrandi } from "../oggetti.js";
 import { S, UI, AREAS, FLOORS, REG, ACT, CHG, LAYOUT, PAGES, t, LOC, esc, nm, ok, attr, allEnts, shortName, climateSensors,
   saveLayout, render, toast, go, page, ws, openSheet, isAdmin, deviceClass, HVAC, manualKind, excluded, tema, navMode, chiosco, sGet, sSet, grafica, leggera, applyTheme } from "../core.js";
 
@@ -157,6 +158,8 @@ function dispositivo() {
     <div class="dev1g"><div><b>${t("Tema", "Theme")}</b>${seg("themeSet", tema(), [["auto", "◐ " + t("Automatico", "Auto")], ["light", "☀︎ " + t("Chiaro", "Light")], ["dark", "☾ " + t("Scuro", "Dark")]])}</div>
     <div><b>${t("Pagina iniziale", "Start page")}</b>${seg("startSet", ["home", "colpo"].includes(sGet("start")) ? sGet("start") : "", [["", t("L'ultima aperta", "The last one")], ["home", "🏠 Home"], ["colpo", "👁️ " + t("Colpo d'occhio", "At a glance")]])}
       <small class="muted">${t("Cosa compare quando apri la plancia su questo dispositivo. «Colpo d'occhio» è l'ideale per il tablet a muro: le tue cose più importanti, grandi.", "What shows when you open the dashboard on this device. «At a glance» is ideal for a wall tablet: your most important things, big.")}</small></div>
+    <div><b>${t("Apri gli oggetti come schede grandi", "Open objects as big cards")}</b>${seg("ogSet", schedeGrandi() ? "1" : "0", [["1", "🖼️ " + t("Schede grandi", "Big cards")], ["0", t("Pannelli di prima", "Previous panels")]])}
+      <small class="muted">${t("Toccando cancello, porta con serratura, robot, clima o elettrodomestico si apre la sua scheda grande: il disegno che si muove con lo stato vero, una frase come se parlasse e i comandi più usati. «Pannelli di prima»: tutto come prima.", "Tapping a gate, a door lock, the vacuum, a climate device or an appliance opens its big card: the drawing moving with the real state, a sentence as if it were talking and the most used controls. «Previous panels»: everything as before.")}</small></div>
     <div><b>${t("Barra di navigazione", "Navigation bar")}</b>${seg("navMode", navMode(), [["fixed", t("Sempre visibile", "Always visible")], ["auto", t("A scomparsa", "Auto-hide")]])}
       <small class="muted">${t("A scomparsa: compare avvicinandoti al bordo, toccando la linguetta o scorrendo verso l'alto.", "Auto-hide: it appears when you move to the edge, tap the handle or scroll up.")}</small></div>
     <div><b>${t("Salvaschermo", "Screensaver")}</b>${seg("ssMin", String(ssMin()), [["0", t("Spento", "Off")], ["1", "1 min"], ["5", "5 min"], ["10", "10 min"], ["30", "30 min"]])}
@@ -168,6 +171,7 @@ function dispositivo() {
       <small class="muted">${t("Nasconde la barra laterale e l'intestazione di Home Assistant su questo dispositivo, a ogni apertura. Il pulsante ⛶ in alto mette a tutto schermo (dove il browser lo permette).", "Hides Home Assistant's sidebar and header on this device, every time. The ⛶ button at the top goes full screen (where the browser allows it).")}</small></div></div></section>`;
 }
 ACT.startSet = el => { sSet("start", el.dataset.v); render(true); toast(el.dataset.v === "colpo" ? "👁️ " + t("Si apre su Colpo d'occhio", "Opens on At a glance") : el.dataset.v === "home" ? "🏠 " + t("Si apre sulla Home", "Opens on Home") : t("Si apre sull'ultima pagina aperta", "Opens on the last page")); };
+ACT.ogSet = el => { sSet("oggetti", el.dataset.v); render(true); toast(el.dataset.v === "0" ? t("Oggetti con i pannelli di prima", "Objects with the previous panels") : "🖼️ " + t("Oggetti come schede grandi", "Objects as big cards")); };
 ACT.liteSet = el => { sSet("lite", el.dataset.v); applyTheme(); render(true); };
 ACT.kioskSet = el => { if ((el.dataset.v === "1") !== chiosco()) ACT.kiosk(); };
 ACT.themeSet = el => { try { localStorage.setItem("nduja_theme", el.dataset.v); } catch {} ; ACT.theme && (document.body.classList.remove("light")); render(true); };

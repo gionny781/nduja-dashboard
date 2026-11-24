@@ -14,6 +14,7 @@ import { aggiungiHome } from "../aggiungi.js";
 import { vistaClima, momentoClima } from "../climadisegni.js";
 import { luciStanza } from "../luce.js";
 import { TRASCINA, riordina, salvaOrdine } from "../trascina.js";
+import "../oggetti.js";   // la scheda «Oggetti in primo piano» (HOME_EXTRA.oggetti) e le schede grandi degli oggetti
 
 const saluto = () => { const h = new Date().getHours(); return h < 6 ? t("Buonanotte", "Good night") : h < 13 ? t("Buongiorno", "Good morning") : h < 18 ? t("Buon pomeriggio", "Good afternoon") : t("Buonasera", "Good evening"); };
 const climaAttivi = () => ents("climate", id => ok(id) && S[id].state !== "off");
@@ -118,7 +119,7 @@ function schedaStanza(a) {
     ${VISTE.ariaStanza?.(a) ? `<div class="stack" style="margin:4px 0 10px">${VISTE.ariaStanza(a)}</div>` : ""}
     ${L.length ? `<div class="row between" style="margin:6px 0 8px"><b>${t("Luci", "Lights")}</b>${lightsOn(a).length ? `<button class="btn sm" data-act="lightsOff" data-area="${a}">${t("Spegni", "Turn off")}</button>` : ""}</div><div class="tiles">${L.map(id => lightTile(id)).join("")}</div>` : ""}
     ${C.length ? `<div style="margin:14px 0 8px"><b>${t("Clima", "Climate")}</b></div><div class="stack">${C.map(id => climateCard(id)).join("")}</div>` : ""}
-    ${R.length ? `<div style="margin:14px 0 8px"><b>${t("Dispositivi", "Devices")}</b></div><div class="stack">${R.map(id => VISTE.tapRiga?.(id) || entityRow(id)).join("")}</div>` : ""}
+    ${R.length ? `<div style="margin:14px 0 8px"><b>${t("Dispositivi", "Devices")}</b></div><div class="stack">${R.map(id => (id.startsWith("lock.") && VISTE.oggRigaLock?.(id)) || (id.startsWith("vacuum.") && VISTE.oggRigaVac?.(id)) || VISTE.tapRiga?.(id) || entityRow(id)).join("")}</div>` : ""}
     ${O.length ? `<div style="margin:14px 0 8px"><b>${t("Porte e finestre", "Doors and windows")}</b></div><div class="stack">${O.map(id => `<div class="li ${isOn(id) ? "alert" : ""}"><span class="ic">${isOn(id) ? "🔓" : "🔒"}</span><div class="tx"><b>${esc(shortName(id))}</b><span>${isOn(id) ? t("aperta", "open") : t("chiusa", "closed")} · ${ago(S[id].last_changed)}</span></div></div>`).join("")}</div>` : ""}
     ${SN.length ? `<div style="margin:14px 0 8px"><b>${t("Sensori", "Sensors")}</b></div><div class="sn1">${SN.map(id => `<button data-act="more" data-id="${id}"><small>${esc(shortName(id))}</small><b>${esc(S[id].state)} ${esc(attr(id, "unit_of_measurement") || "")}</b></button>`).join("")}</div>` : ""}`;
 }

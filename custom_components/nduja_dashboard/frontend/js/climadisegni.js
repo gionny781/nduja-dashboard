@@ -7,6 +7,7 @@
    clima (Home, stanze), nella mappa e nelle stanze della Home. */
 import { S, ACT, CHG, LAYOUT, VISTE, t, esc, nm, nmHA, ok, attr, isAdmin, openSheet, closeSheet, render, toast } from "./core.js";
 import { cambia, fileEsiste, indirizzoLocale } from "./edit.js";
+import { tocca } from "./oggetti.js";
 
 /** momenti: [chiave, nome breve] */
 export const MOMENTI_CLIMA = () => [["off", t("Spento", "Off")], ["cool", t("Raffresca", "Cooling")], ["heat", t("Scalda", "Heating")], ["dry", t("Deumidifica", "Drying")], ["fan", t("Ventila", "Fan")]];
@@ -128,7 +129,8 @@ export function vistaClima(id, cls = "", o = {}) {
   if (m === "icona") return `<span class="apv1 ico2 cl1 ${cls}" title="${tt}"><span class="cli1 m-${k}">${k === "off" ? (tipo === "split" ? "❄️" : "🔥") : ICO[k]}</span></span>`;
   return `<span class="apv1 cl1 ${cls}" title="${tt}">${disegnoClima(tipo, k, rest, velocita(id))}</span>`;
 }
-VISTE.clima = id => vistaClima(id, "cl");
+/* nelle schede del clima il disegno apre la scheda grande dell'oggetto (oggetti.js), se è accesa su questo dispositivo */
+VISTE.clima = id => tocca("clima:" + id, vistaClima(id, "cl"), nm(id), "cl1t");
 
 /* ---------- ✏️ aspetto ---------- */
 let bz = null, bid = null;

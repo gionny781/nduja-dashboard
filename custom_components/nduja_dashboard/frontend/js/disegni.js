@@ -124,3 +124,88 @@ export function disegno(kind, k, key) {
   const f = FN[kind] || presa, p = "nd" + String(key || kind).replace(/[^\w-]/g, "_") + "_";
   return `<svg class="apd1 d-${FN[kind] ? kind : "presa"} st-${k}" viewBox="0 0 100 100" aria-hidden="true" focusable="false">${f(p)}</svg>`;
 }
+
+/* ================= disegni grandi delle schede oggetto (oggetti.js) =================
+   Fatti a mano per 'Nduja, animati solo col CSS di css/oggetti.css. Lo stato è una classe sull'SVG:
+   cancello e porta s-closed | s-open | s-opening | s-closing | s-jammed | s-na (stato non noto), robot r-cleaning | r-docked | …;
+   «off» = non raggiungibile. Usano le stesse variabili di colore dei disegni degli elettrodomestici (--apb, --aps, --apk…),
+   quindi tema chiaro e scuro vengono da soli dentro .apv1. */
+
+/* ---------- cancello scorrevole: l'anta scorre dietro il muretto ---------- */
+const sbarre = (x0, x1, y0, y1, passo) => { let d = ""; for (let x = x0; x <= x1 + .01; x += passo) d += `M${x.toFixed(1)} ${y0}V${y1}`; return d; };
+function cancelloScorrevole() {
+  return `<ellipse class="omb" cx="120" cy="150" rx="114" ry="9"/><path class="via" d="M86 170 104 146H186L204 170Z"/>
+  <path class="bin" d="M4 147.5H204"/>
+  <g class="anta sc"><rect class="lf" x="72" y="56" width="126" height="88" rx="3"/><path class="tel" d="M72 56h126v88H72zM72 100h126"/>
+    <path class="sb" d="${sbarre(82.5, 188, 56, 144, 10.5)}"/><circle class="ruota" cx="86" cy="146" r="3"/><circle class="ruota" cx="184" cy="146" r="3"/></g>
+  <g class="muro"><rect class="mu" x="2" y="50" width="70" height="97" rx="2"/><path class="mt" d="M2 66h70M2 82h70M2 98h70M2 114h70M2 130h70M20 50v16M48 66v16M20 82v16M48 98v16M20 114v16M48 130v17"/><rect class="cap" x="0" y="44" width="74" height="8" rx="3"/></g>
+  <g class="pil"><rect class="mu" x="198" y="40" width="24" height="107" rx="2"/><rect class="cap" x="194" y="34" width="32" height="8" rx="3"/></g>
+  <g class="lamp"><rect class="lb" x="204" y="26" width="12" height="8" rx="2"/><path class="lv" d="M204 26a6 7 0 0 1 12 0z"/><circle class="la" cx="210" cy="22" r="13"/></g>`;
+}
+/* ---------- cancello a battente: due ante che girano sui cardini ---------- */
+function anta(x0, x1, lato) {
+  /* il bordo in alto sale verso il centro: curva da (x0, y0) a (x1, y1) con il punto di controllo a metà (x varia in modo lineare) */
+  const [y0, y1] = lato === "l" ? [60, 46] : [46, 60], yc = 48, d = `M${x0} ${y0}Q${(x0 + x1) / 2} ${yc} ${x1} ${y1}V140H${x0}Z`;
+  let sb = ""; for (let x = x0 + 9; x < x1 - 3; x += 9) { const u = (x - x0) / (x1 - x0), yt = (1 - u) ** 2 * y0 + 2 * (1 - u) * u * yc + u * u * y1; sb += `M${x.toFixed(1)} ${(yt + 1).toFixed(1)}V140`; }
+  return `<g class="anta bt ${lato}"><path class="lf" d="${d}"/><path class="tel" d="${d}M${x0} 104H${x1}"/><path class="sb" d="${sb}"/></g>`;
+}
+function cancelloBattente() {
+  return `<ellipse class="omb" cx="120" cy="150" rx="114" ry="9"/><path class="via" d="M78 170 98 146H142L162 170Z"/>
+  ${anta(42, 119, "l")}${anta(121, 198, "r")}
+  <g class="pil"><rect class="mu" x="16" y="34" width="26" height="113" rx="2"/><rect class="cap" x="12" y="28" width="34" height="8" rx="3"/>
+    <rect class="mu" x="198" y="34" width="26" height="113" rx="2"/><rect class="cap" x="194" y="28" width="34" height="8" rx="3"/></g>
+  <g class="lamp"><rect class="lb" x="205" y="20" width="12" height="8" rx="2"/><path class="lv" d="M205 20a6 7 0 0 1 12 0z"/><circle class="la" cx="211" cy="16" r="13"/></g>`;
+}
+/* ---------- cancelletto pedonale: un'anta tra la recinzione ---------- */
+function cancelletto() {
+  const rete = x0 => { let d = ""; for (let x = x0 + 8; x < x0 + 64; x += 9) d += `M${x} 92V146`; return `<path class="sb" d="${d}M${x0} 98H${x0 + 66}M${x0} 140H${x0 + 66}"/>`; };
+  return `<ellipse class="omb" cx="120" cy="150" rx="114" ry="9"/><path class="via" d="M98 170 106 146H134L142 170Z"/>
+  <g class="rec">${rete(2)}${rete(172)}</g>
+  <g class="anta bt l1"><path class="lf" d="M90 72Q120 60 150 72V142H90Z"/><path class="tel" d="M90 72Q120 60 150 72V142H90ZM90 106H150"/><path class="sb" d="${sbarre(98, 142, 70, 142, 7.4)}"/><circle class="man" cx="144" cy="108" r="2.4"/></g>
+  <g class="pil"><rect class="mu" x="70" y="58" width="20" height="89" rx="2"/><rect class="cap" x="67" y="53" width="26" height="7" rx="3"/>
+    <rect class="mu" x="150" y="58" width="20" height="89" rx="2"/><rect class="cap" x="147" y="53" width="26" height="7" rx="3"/></g>`;
+}
+const CANC = { scorrevole: cancelloScorrevole, battente: cancelloBattente, cancelletto };
+/** il cancello grande: tipo scorrevole | battente | cancelletto, k = stato (open, closed, opening, closing, jammed, na), off = non raggiungibile */
+export function disegnoCancello(tipo, k, o = {}) {
+  const f = CANC[tipo] || cancelloScorrevole;
+  return `<svg class="ogd1 og-cg t-${CANC[tipo] ? tipo : "scorrevole"} s-${k || "na"}${o.off ? " off" : ""}${o.tieni ? " tieni" : ""}" viewBox="0 0 240 170" aria-hidden="true" focusable="false">${f()}
+    <g class="qq"><circle cx="120" cy="30" r="11"/><path d="M116.4 27a3.8 3.8 0 1 1 5.4 3.4c-1.2.6-1.8 1.3-1.8 2.6M120 37.2v.2"/></g></svg>`;
+}
+
+/* ---------- porta con serratura: la chiave gira, il catenaccio entra ed esce, la porta si socchiude su «apri» ---------- */
+export function disegnoPorta(k, o = {}) {
+  return `<svg class="ogd1 og-pt s-${k || "na"}${o.off ? " off" : ""}" viewBox="0 0 200 210" aria-hidden="true" focusable="false">
+  <ellipse class="omb" cx="100" cy="199" rx="88" ry="7"/>
+  <rect class="mur" x="30" y="6" width="140" height="192" rx="4"/>
+  <rect class="fuori" x="52" y="20" width="96" height="178"/><rect class="luce" x="52" y="20" width="96" height="178"/>
+  <g class="anta"><rect class="lf" x="52" y="20" width="96" height="178" rx="2"/>
+    <rect class="pan" x="64" y="34" width="72" height="64" rx="4"/><rect class="pan" x="64" y="112" width="72" height="72" rx="4"/>
+    <rect class="cat" x="141" y="127" width="11" height="6" rx="2"/>
+    <rect class="plc" x="123" y="94" width="16" height="50" rx="8"/><path class="mng" d="M131 104h-19"/><circle class="mng0" cx="131" cy="104" r="4.4"/>
+    <circle class="anello" cx="131" cy="129" r="11"/><circle class="cil" cx="131" cy="129" r="6.8"/>
+    <g class="chiave"><path class="ks" d="M131 129v17"/><path class="kd" d="M131 138h3.6M131 142h2.8"/><rect class="kh" x="124" y="145" width="14" height="14" rx="7"/><circle class="kf" cx="131" cy="152" r="2.4"/></g></g>
+  <path class="tel" d="M48 198V16h104v182"/><path class="sog" d="M40 198h120"/>
+  <rect class="zer" x="66" y="200" width="68" height="7" rx="2"/></svg>`;
+}
+
+/* ---------- robot aspirapolvere: visto dall'alto, sul pavimento con la sua base ---------- */
+export function disegnoRobot(k, o = {}) {
+  const pol = [[44, 30], [96, 52], [168, 34], [204, 80], [58, 96], [150, 98], [92, 120], [196, 124], [36, 140]].map(([x, y], i) => `<circle class="p${i % 4}" cx="${x}" cy="${y}" r="${1.4 + (i % 3) * .5}"/>`).join("");
+  const spaz = (x, y) => `<g transform="translate(${x} ${y})"><g class="spz"><circle class="bb" r="9"/><path d="M0 0l8-3M0 0l-1.6 8.4M0 0l-6.4-5.4"/><circle r="1.8"/></g></g>`;   // .bb: cerchio invisibile, così la spazzola gira sul suo centro
+  /* piccolo (Home, elenchi): solo il robot, fermo al centro, senza pavimento né base */
+  return `<svg class="ogd1 og-rb r-${k}${o.off ? " off" : ""}${o.carica ? " carica" : ""}${o.piccolo ? " pc" : ""}" viewBox="${o.piccolo ? "84 50 72 72" : "0 0 240 180"}" aria-hidden="true" focusable="false">
+  <rect class="pav" x="6" y="6" width="228" height="168" rx="22"/><path class="fug" d="M6 62h228M6 118h228M82 6v168M158 6v168"/>
+  <path class="sc" d="M60 40H180V72H60V104H180"/><path class="rit" d="M184 64Q150 92 120 136"/>
+  <g class="pol">${pol}</g>
+  <g class="dock"><rect class="db" x="94" y="158" width="52" height="16" rx="6"/><rect class="dl" x="114" y="162" width="12" height="3.4" rx="1.7"/></g>
+  <g class="rbm"><g class="rb">
+    <circle class="ombr" cx="2" cy="4" r="30"/>
+    <circle class="b" r="28"/><path class="bump" d="M-24.2-14a28 28 0 0 1 48.4 0"/><circle class="tur" cy="-4" r="9"/><circle class="lid" cy="-4" r="9" pathLength="100"/>
+    ${spaz(-17, -19)}${spaz(17, -19)}
+    <circle class="led" cy="12" r="2.6"/><path class="bolt" d="M1.6 3.6-3 10.4h3.2L-1.4 16.4 4 9.2H.8l2-5.6z"/>
+    <g class="ps"><rect x="-4.6" y="-9" width="3.2" height="10" rx="1.2"/><rect x="1.4" y="-9" width="3.2" height="10" rx="1.2"/></g>
+    <g class="err"><circle cx="20" cy="-24" r="9"/><path d="M20-29.4v6M20-19.6v.2"/></g>
+  </g></g>
+  <g class="zz"><path d="M150 112h7l-7 8h7M163 100h5l-5 6h5"/></g></svg>`;
+}

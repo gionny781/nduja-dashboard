@@ -1,11 +1,13 @@
 /* Sicurezza: allarme (inserisci / disinserisci col codice), accessi (cancelli, garage, portoni, porte e serrature),
    telecamere (anteprime, diretta al tocco col lettore di video.js), porte e finestre aperte, fumo, gas, acqua, monossido, movimento. I sensori di pericolo accesi finiscono anche negli Avvisi della Home.
    ⚙️ (amministratori): LAYOUT.sicurezza = { noPericoli:[] (trovati da soli ma senza allarme), pericoli:[] (aggiunti a mano), movimenti: quanti (0 = scheda nascosta), camere: "no" | id di un gruppo } */
-import { S, ACT, CHG, UI, LAYOUT, HOME_EXTRA, t, LOC, esc, fnum, nm, nmHA, ok, attr, ents, isOn, ago, card, empty, page, svc, toast, openSheet, closeSheet, render,
+import { S, REG, ACT, CHG, UI, LAYOUT, HOME_EXTRA, VISTE, t, LOC, esc, fnum, nm, nmHA, ok, attr, ents, isOn, ago, card, empty, page, svc, toast, openSheet, closeSheet, render,
   deviceClass, openings, shortName, areaOf, AREAS, isAdmin, domain, sicuro, PAGES, excluded, myHA, ordina, COLPO } from "../core.js";
 import { item, addBtn, scegli, cambia } from "../edit.js";
 import { TRASCINA, riordina, salvaOrdine } from "../trascina.js";
 import { anteprima, telecamere, gruppiCam, gruppoDi } from "../video.js";
+import { registra, tocca, schedeGrandi, quanto, em } from "../oggetti.js";
+import { disegnoCancello, disegnoPorta } from "../disegni.js";
 
 const sc = () => LAYOUT.sicurezza || {};
 const PERICOLO = ["smoke", "gas", "carbon_monoxide", "moisture", "safety", "tamper"], MOVIMENTO = ["motion", "occupancy", "presence"];
@@ -145,7 +147,7 @@ function riassunto(a, st) {
 function accesso(a, i, n) {
   const st = statoDi(a), P = pulsanti(a, st);
   const html = `<div class="ac1 st-${st.k || "na"} ${raggiungibile(a.id) ? "" : "dis"}">
-    <div class="ac1h"><span class="aci1">${disegnoAccesso(formaDi(a), st.k)}</span><div class="tx"><b>${esc(nomeDi(a))}</b><span>${riassunto(a, st)}</span></div></div>
+    <div class="ac1h">${disegnoTocca(a, st)}<div class="tx"><b>${esc(nomeDi(a))}</b><span>${riassunto(a, st)}</span></div></div>
     <div class="acb1 ${P.length > 1 ? "tre" : ""}">${P.map(p => bottone(a, p)).join("")}</div></div>`;
   if (!UI.edit) return html;
   return `<div class="ed1" data-tri="${a.id}">${html}<div class="edb"><button data-act="acMove" data-id="${a.id}" data-v="-1" ${i ? "" : "disabled"} aria-label="${t("Sposta prima", "Move earlier")}">◀</button><button data-act="acMove" data-id="${a.id}" data-v="1" ${i < n - 1 ? "" : "disabled"} aria-label="${t("Sposta dopo", "Move later")}">▶</button>
@@ -171,6 +173,156 @@ async function comando(a, cosa) {
   return svc(d, "press", {}, T);
 }
 
+/* ---------- schede oggetto (oggetti.js): il cancello e la porta con serratura ----------
+   Il cancello: le forme «cancello» e «cancelletto» (qualsiasi comando); la porta: le serrature (lock) con la forma porta o portone.
+   Garage e portoni senza serratura restano con il pannello di sempre. Scelte in più nelle voci degli accessi:
+   apertura ("scorrevole" | "battente", solo per il cancello) e tieni (entità che lo tiene aperto, facoltativa). */
+const accessoDi = id => accessi().find(a => a.id === id) || null;
+export function tipoOggetto(a) {
+  const f = formaDi(a);
+  if (f === "cancello" || f === "cancelletto") return "cancello";
+  return domain(a.id) === "lock" && (f === "porta" || f === "portone") ? "porta" : null;
+}
+const chiaveOgg = a => tipoOggetto(a) ? tipoOggetto(a) + ":" + a.id : null;
+/** il disegno della scheda Accessi: con le schede grandi diventa un pulsante che apre la scheda del cancello o della porta */
+const disegnoTocca = (a, st) => { const k = chiaveOgg(a), html = `<span class="aci1">${disegnoAccesso(formaDi(a), st.k)}</span>`; return k ? tocca(k, html, nomeDi(a), "aci1t") : html; };
+/* scorrevole o a battente: dal nome, altrimenti scorrevole (come il disegno piccolo); si cambia in ✏️ */
+const APERTURE = () => [["scorrevole", "↔️ " + t("Scorrevole", "Sliding")], ["battente", "↩️ " + t("A battente", "Swing")]];
+const aperturaAuto = id => /battent|swing|\bante\b|two.?leaf/i.test(id + " " + nmHA(id)) ? "battente" : "scorrevole";
+const aperturaDi = a => ["scorrevole", "battente"].includes(a.apertura) ? a.apertura : aperturaAuto(a.id);
+const disegnoDi = a => formaDi(a) === "cancelletto" ? "cancelletto" : aperturaDi(a);
+/* «tieni aperto»: un interruttore, pulsante o script del cancello che lo tiene aperto (scelto in ✏️, altrimenti trovato dal nome) */
+const TIENI = /tieni.?apert|keep.?open|hold.?open|sempre.?apert|always.?open|apertura.?(fissa|permanente)|fermo.?apert|open.?hold/i;
+const tieniAuto = id => { const d = REG[id]?.device; return d ? Object.keys(S).find(x => x !== id && REG[x]?.device === d && /^(switch|button|input_boolean|script|input_button)\./.test(x) && TIENI.test(x + " " + nmHA(x))) || null : null; };
+const tieniDi = a => a.tieni === "none" ? null : a.tieni && S[a.tieni] ? a.tieni : tieniAuto(a.id);
+const tieniAcceso = a => { const h = tieniDi(a); return !!h && /^(switch|input_boolean)\./.test(h) && S[h].state === "on"; };
+async function tieniAperto(a, on) {
+  const h = tieniDi(a); if (!h) return; const d = domain(h), T = { entity_id: h };
+  if (d === "switch" || d === "input_boolean") return svc(d, on ? "turn_on" : "turn_off", {}, T);
+  if (!on) return;
+  return d === "script" ? svc("script", "turn_on", {}, T) : svc(d, "press", {}, T);
+}
+const notte = () => { const h = new Date().getHours(); return h >= 22 || h < 6; };
+/* il cancello parla (al maschile: cancello, cancelletto) */
+function fraseCancello(a) {
+  if (!raggiungibile(a.id)) return t(`${em("Non ti sento")}: controlla la corrente o la rete del cancello.`, `${em("I can't hear you")}: check the gate's power or network.`);
+  const st = statoDi(a), da = st.k && S[st.src] ? (Date.now() - new Date(S[st.src].last_changed)) / 1000 : 0;
+  if (st.k === "opening") return t(`${em("Mi sto aprendo")}, un attimo.`, `${em("I'm opening")}, just a moment.`);
+  if (st.k === "closing") return t(`${em("Mi sto chiudendo")}.`, `${em("I'm closing")}.`);
+  if (st.k === "jammed") return t(`Mi sono ${em("bloccato")} a metà: dai un'occhiata.`, `I'm ${em("stuck")} halfway: have a look.`);
+  if (st.k === "open") {
+    if (tieniAcceso(a)) return t(`Resto ${em("aperto")} finché non mi chiudi.`, `I'll stay ${em("open")} until you close me.`);
+    if (notte() && da > 300) return t(`È notte e sono ancora ${em("aperto")}.`, `It's night and I'm still ${em("open")}.`);
+    return t(`Sono ${em("aperto")} da ${quanto(da)}.`, `I've been ${em("open")} for ${quanto(da)}.`);
+  }
+  if (st.k === "closed") return da < 600 ? t(`Mi sono ${em("chiuso")} ${quanto(da)} fa. Tutto tranquillo.`, `I ${em("closed")} ${quanto(da)} ago. All quiet.`) : t(`Sono ${em("chiuso")}. Tutto tranquillo.`, `I'm ${em("closed")}. All quiet.`);
+  return t(`Tocca e ${em("mi apro")}. Non so dirti se sono aperto: mi manca un sensore.`, `Tap and ${em("I'll open")}. I can't tell whether I'm open: I have no sensor.`);
+}
+/* comando del tocco sul disegno: ferma se si muove (tre pulsanti), chiude se è aperto, altrimenti apre */
+function cosaTocco(a) {
+  const c = cmdDi(a), k = statoDi(a).k;
+  if (c === "impulso") return "impulso";
+  if (c === "tre" && (k === "opening" || k === "closing")) return "stop";
+  return k === "open" || k === "opening" ? "chiudi" : "apri";
+}
+const DETTO = () => ({ apri: "▲ " + t("Apro", "Opening"), chiudi: "▼ " + t("Chiudo", "Closing"), stop: "■ " + t("Fermo", "Stopping"), impulso: "▶ " + t("Comando inviato", "Command sent") });
+const vai = (a, cosa) => comando(a, cosa).then(() => toast(DETTO()[cosa] + " · " + nomeDi(a))).catch(() => {});
+async function chiudiCancello(a, cosa) { if (tieniAcceso(a)) await tieniAperto(a, false).catch(() => {}); return vai(a, cosa); }
+registra("cancello", {
+  nome: () => t("Cancelli", "Gates"), icona: "🚧", ordine: 10, pagina: "sicurezza",
+  elenco: () => accessi().filter(a => tipoOggetto(a) === "cancello").map(a => a.id),
+  esiste: id => { const a = accessoDi(id); return !!a && tipoOggetto(a) === "cancello"; },
+  titolo: id => nomeDi(accessoDi(id)), luogo: id => AREAS[areaOf(id)]?.name || "",
+  stato: id => { const a = accessoDi(id), k = statoDi(a).k; return !raggiungibile(id) ? "na" : k === "open" ? "warn" : k === "opening" || k === "closing" ? "run" : k === "jammed" ? "bad" : k === "closed" ? "ok" : "na"; },
+  frase: id => fraseCancello(accessoDi(id)),
+  disegno: (id, m) => { const a = accessoDi(id); return `<span class="apv1 og1v ${m}">${disegnoCancello(disegnoDi(a), statoDi(a).k, { off: !raggiungibile(id), tieni: tieniAcceso(a) })}</span>`; },
+  comandi: id => {
+    const a = accessoDi(id), st = statoDi(a), off = !raggiungibile(id), h = tieniDi(a);
+    const B = pulsanti(a, st).map(([cosa, txt, ic, , pri]) => ({ act: "ogAcc", id, v: cosa, ic, txt, pri, off }));
+    if (h) B.push(tieniAcceso(a) ? { act: "ogTieni", id, v: "0", ic: "📌", txt: t("Lascialo chiudere", "Let it close"), off: !ok(h) } : { act: "ogTieni", id, v: "1", ic: "📌", txt: t("Apri e tieni aperto", "Open and hold"), off: off || !ok(h) });
+    return B;
+  },
+  dati: id => {
+    const a = accessoDi(id), st = statoDi(a), c = cmdDi(a);
+    return [S[st.src] && raggiungibile(id) ? ["🕒", t("Ultimo cambio ", "Last change ") + esc(ago(S[st.src].last_changed))] : null,
+      ["🎛️", esc(NOMI_CMD()[c]) + (c === "impulso" && domain(id) === "switch" ? " · " + fnum(impulsoS(a), impulsoS(a) % 1 ? 1 : 0) + " s" : "")],
+      a.sensore && S[a.sensore] ? ["📡", esc(nm(a.sensore))] : null, tieniDi(a) ? ["📌", esc(nm(tieniDi(a)))] : null];
+  },
+  gesti: id => { const a = accessoDi(id); if (!raggiungibile(id)) return {};
+    const h = tieniDi(a), cosa = cosaTocco(a);
+    return { tocco: () => cosa === "chiudi" || cosa === "stop" ? chiudiCancello(a, cosa) : vai(a, cosa),
+      lungo: h ? () => { vai(a, cmdDi(a) === "impulso" ? "impulso" : "apri"); tieniAperto(a, true).then(() => toast("📌 " + t("Lo tengo aperto", "Holding it open"))).catch(() => {}); } : null,
+      aiuto: h ? t("Tocca il cancello per aprirlo o chiuderlo · tienilo premuto per aprirlo e tenerlo aperto", "Tap the gate to open or close it · press and hold to open it and keep it open")
+        : t("Tocca il cancello per aprirlo o chiuderlo", "Tap the gate to open or close it") };
+  },
+});
+/* la porta con la serratura parla (al femminile) */
+function statoPorta(a) {
+  const s = S[a.id]?.state, ap = !!a.sensore && ok(a.sensore) && S[a.sensore].state === "on";
+  const k = { locked: "locked", unlocked: "unlocked", open: "open", opening: "opening", unlocking: "unlocking", locking: "locking", jammed: "jammed" }[s] || "na";
+  return { k, aperta: ap || k === "open" || k === "opening" };
+}
+const battPorta = id => { const v = attr(id, "battery_level"); if (v != null && !isNaN(+v)) return +v;
+  const d = REG[id]?.device, b = d && Object.keys(S).find(x => x.startsWith("sensor.") && REG[x]?.device === d && deviceClass(x) === "battery" && ok(x)); return b ? +S[b].state : null; };
+const sogliaBatt = () => { const v = +LAYOUT.batterie?.soglia; return v > 0 && v < 100 ? v : 20; };   // la stessa soglia della pagina Batterie
+const puoAprire = id => !!((+attr(id, "supported_features") || 0) & 1);
+const nessunoInCasa = () => { const P = ents("person"); return P.length > 0 && P.every(p => S[p].state !== "home"); };
+function frasePorta(a) {
+  if (!raggiungibile(a.id)) return t(`${em("Non ti sento")}: controlla la batteria o il collegamento della serratura.`, `${em("I can't hear you")}: check the lock's battery or connection.`);
+  const p = statoPorta(a), da = (Date.now() - new Date(S[a.id].last_changed)) / 1000, b = battPorta(a.id);
+  const coda = b != null && b < sogliaBatt() ? " " + t(`La mia batteria è al ${em(Math.round(b) + "%")}: cambiala presto.`, `My battery is at ${em(Math.round(b) + "%")}: replace it soon.`) : "";
+  let f;
+  if (p.k === "unlocking" || p.k === "opening") f = t(`Sto ${em("girando la chiave")}…`, `I'm ${em("turning the key")}…`);
+  else if (p.k === "locking") f = t(`Mi sto ${em("chiudendo a chiave")}…`, `I'm ${em("locking")}…`);
+  else if (p.k === "jammed") f = t(`La serratura si è ${em("bloccata")}: controlla la porta.`, `The lock is ${em("jammed")}: check the door.`);
+  else if (p.k === "open") f = t(`Ti apro: ${em("spingi pure")}.`, `I'm open: ${em("just push")}.`);
+  else if (p.k === "locked") f = p.aperta ? t(`Sono chiusa a chiave ma ${em("la porta è aperta")}: accostala.`, `I'm locked but ${em("the door is open")}: close it.`) : t(`Sono ${em("chiusa a chiave")}. Tutto tranquillo.`, `I'm ${em("locked")}. All quiet.`);
+  else if (p.k === "unlocked") f = p.aperta ? t(`Sono ${em("aperta")} da ${quanto(da)}.`, `I've been ${em("open")} for ${quanto(da)}.`)
+    : nessunoInCasa() ? t(`Non c'è nessuno in casa e sono ${em("sbloccata")}.`, `Nobody's home and I'm ${em("unlocked")}.`) : t(`Sono ${em("sbloccata")} da ${quanto(da)}.`, `I've been ${em("unlocked")} for ${quanto(da)}.`);
+  else f = t("Non so dirti come sono messa.", "I can't tell how I am.");
+  return f + coda;
+}
+registra("porta", {
+  nome: () => t("Porte con serratura", "Doors with a lock"), icona: "🔐", ordine: 20, pagina: "sicurezza",
+  elenco: () => accessi().filter(a => tipoOggetto(a) === "porta").map(a => a.id),
+  esiste: id => { const a = accessoDi(id); return !!a && tipoOggetto(a) === "porta"; },
+  titolo: id => nomeDi(accessoDi(id)), luogo: id => AREAS[areaOf(id)]?.name || "",
+  stato: id => { if (!raggiungibile(id)) return "na"; const p = statoPorta(accessoDi(id)); return p.k === "jammed" ? "bad" : ["unlocking", "locking", "opening"].includes(p.k) ? "run" : p.k === "locked" && !p.aperta ? "ok" : p.k === "na" ? "na" : "warn"; },
+  frase: id => frasePorta(accessoDi(id)),
+  disegno: (id, m) => { const p = statoPorta(accessoDi(id)); return `<span class="apv1 og1v ${m}">${disegnoPorta(p.k, { off: !raggiungibile(id) }).replace('class="ogd1 og-pt', `class="ogd1 og-pt${p.aperta ? " ajar" : ""}`)}</span>`; },
+  comandi: id => {
+    const p = statoPorta(accessoDi(id)), off = !raggiungibile(id) || ["unlocking", "locking", "opening"].includes(p.k), B = [];
+    if (p.k === "locked" || p.k === "jammed" || p.k === "na") B.push({ act: "ogPorta", id, v: "unlock", ic: "🔓", txt: t("Sblocca", "Unlock"), tieni: t("Tieni premuto per sbloccare", "Press and hold to unlock"), off });
+    if (p.k !== "locked") B.push({ act: "ogPorta", id, v: "lock", ic: "🔒", txt: t("Chiudi a chiave", "Lock"), pri: true, off });
+    if (puoAprire(id)) B.push({ act: "ogPorta", id, v: "open", ic: "🚪", txt: t("Apri la porta", "Open the door"), tieni: t("Tieni premuto per aprire la porta", "Press and hold to open the door"), off });
+    return B;
+  },
+  dati: id => { const a = accessoDi(id), b = battPorta(id);
+    return [b != null ? ["🔋", Math.round(b) + "%", b < sogliaBatt() ? "bad" : ""] : null, raggiungibile(id) ? ["🕒", t("Ultimo cambio ", "Last change ") + esc(ago(S[id].last_changed))] : null,
+      a.sensore && S[a.sensore] ? ["📡", esc(nm(a.sensore)) + " · " + (S[a.sensore].state === "on" ? t("aperta", "open") : t("chiusa", "closed"))] : null]; },
+  gesti: id => { if (!raggiungibile(id)) return {};
+    const p = statoPorta(accessoDi(id)), chiusa = p.k === "locked", apre = puoAprire(id);
+    return { tocco: chiusa ? null : () => ogPorta(id, "lock"),
+      lungo: chiusa ? () => ogPorta(id, "unlock") : apre ? () => ogPorta(id, "open") : null,
+      aiuto: chiusa ? t("Tieni premuta la porta per sbloccarla", "Press and hold the door to unlock it")
+        : apre ? t("Tocca la porta per chiuderla a chiave · tienila premuta per aprirla", "Tap the door to lock it · press and hold to open it") : t("Tocca la porta per chiuderla a chiave", "Tap the door to lock it") };
+  },
+});
+function ogPorta(id, cosa) {
+  return svc("lock", cosa, {}, { entity_id: id }).then(() => toast({ lock: "🔒 " + t("Chiudo a chiave", "Locking"), unlock: "🔓 " + t("Sblocco", "Unlocking"), open: "🚪 " + t("Apro la porta", "Opening the door") }[cosa] + " · " + nomeDi(accessoDi(id) || { id }))).catch(() => {});
+}
+Object.assign(ACT, {
+  ogAcc: el => { const a = accessoDi(el.dataset.id); if (!a) return; const cosa = el.dataset.v; cosa === "chiudi" || cosa === "stop" ? chiudiCancello(a, cosa) : vai(a, cosa); },
+  ogTieni: el => { const a = accessoDi(el.dataset.id); if (!a) return;
+    if (el.dataset.v === "1") { vai(a, cmdDi(a) === "impulso" ? "impulso" : "apri"); tieniAperto(a, true).then(() => toast("📌 " + t("Lo tengo aperto", "Holding it open"))).catch(() => {}); }
+    else tieniAperto(a, false).then(() => toast("📌 " + t("Non lo tengo più aperto", "No longer holding it open"))).catch(() => {}); },
+  ogPorta: el => ogPorta(el.dataset.id, el.dataset.v),
+});
+/** riga di una serratura nella finestra della stanza (Home): con le schede grandi si tocca e si apre la scheda della porta */
+VISTE.oggRigaLock = id => { const a = accessoDi(id); if (!a || tipoOggetto(a) !== "porta" || !schedeGrandi()) return "";
+  const p = statoPorta(a);
+  return `<button class="li og1li" data-act="ogApri" data-k="porta:${esc(id)}"><span class="apv1 og1v xs2">${disegnoPorta(p.k, { off: !raggiungibile(id) })}</span><div class="tx"><b>${esc(nomeDi(a))}</b><span>${frasePorta(a).replace(/<[^>]+>/g, "")}</span></div><span class="st">›</span></button>`; };
+
 /* ✏️ e ＋: nome, disegno, comando e sensore facoltativo */
 let bz = null, nuovo = false;
 function config() {
@@ -179,6 +331,9 @@ function config() {
     <label class="fld1"><span>${t("Nome", "Name")}</span><input id="ac1n" type="text" value="${esc(a.nome || "")}" placeholder="${esc(shortName(a.id))}" data-chg="acNome"></label>
     <div class="fl1">${t("Icona", "Icon")}</div>
     <div class="ack1">${FORME().map(([k, n]) => `<button class="${formaDi(a) === k ? "on" : ""}" data-act="acIco" data-v="${k}"><span class="aci1">${disegnoAccesso(k, "closed")}</span>${esc(n)}</button>`).join("")}</div>
+    ${formaDi(a) === "cancello" ? `<div class="fl1">${t("Come si apre", "How it opens")}</div>
+    <div class="seg" style="flex-wrap:wrap"><button class="${!a.apertura ? "act" : ""}" data-act="acAper" data-v="">✨ ${t("Automatico", "Automatic")} · ${esc(APERTURE().find(x => x[0] === aperturaAuto(a.id))[1])}</button>${APERTURE().map(([k, n]) => `<button class="${a.apertura === k ? "act" : ""}" data-act="acAper" data-v="${k}">${esc(n)}</button>`).join("")}</div>
+    <p class="small muted" style="margin-top:6px">${t("Serve al disegno grande del cancello: l'anta che scorre dietro il muretto o le due ante che girano.", "Used by the gate's big drawing: a leaf sliding behind the wall or two swinging leaves.")}</p>` : ""}
     <div class="fl1">${t("Comando", "Command")}</div>
     ${C.length > 1 ? `<div class="seg" style="flex-wrap:wrap">${C.map(k => `<button class="${c === k ? "act" : ""}" data-act="acCmdSet" data-v="${k}">${esc(NOMI_CMD()[k])}</button>`).join("")}</div>`
       : `<div class="vb1" style="display:inline-block">${esc(NOMI_CMD()[c])}</div>`}
@@ -188,6 +343,9 @@ function config() {
     <div class="fl1">${t("Sensore aperto / chiuso (facoltativo)", "Open / closed sensor (optional)")}</div>
     <button class="li" data-act="acSens" style="width:100%;text-align:left"><span class="ic">📡</span><div class="tx"><b>${a.sensore && S[a.sensore] ? esc(nm(a.sensore)) : t("Nessuno", "None")}</b>
       <span>${a.sensore && S[a.sensore] ? esc(a.sensore) + " · " + (S[a.sensore].state === "on" ? t("aperto", "open") : S[a.sensore].state === "off" ? t("chiuso", "closed") : esc(S[a.sensore].state)) : t("Un binary_sensor che dice se è aperto: così vedi lo stato anche dei comandi a impulso.", "A binary_sensor telling whether it's open: so you see the state even with pulse commands.")}</span></div><span class="st">›</span></button>
+    ${tipoOggetto(a) === "cancello" ? `<div class="fl1">📌 ${t("Tieni aperto (facoltativo)", "Hold open (optional)")}</div>
+    <button class="li" data-act="acTieni" style="width:100%;text-align:left"><span class="ic">📌</span><div class="tx"><b>${tieniDi(a) ? esc(nm(tieniDi(a))) : t("Nessuno", "None")}${tieniDi(a) && !a.tieni ? " · ✨ " + t("trovato da solo", "found by itself") : ""}</b>
+      <span>${t("L'interruttore, il pulsante o lo script della centralina che tiene il cancello aperto. Nella scheda grande: tieni premuto il cancello per aprirlo e tenerlo aperto.", "The controller's switch, button or script that keeps the gate open. On the big card: press and hold the gate to open it and keep it open.")}</span></div><span class="st">›</span></button>` : ""}
     <div class="acpv1 st-${st.k || "na"}"><span class="aci1">${disegnoAccesso(formaDi(a), st.k)}</span><span>${t("Adesso", "Now")}: <b>${esc(parola(st.k, formaDi(a) === "porta") || t("stato non noto", "state unknown"))}</b></span></div>
     <div class="li" style="margin-top:10px"><span class="ic">🏠</span><div class="tx"><b>${t("Nella scheda della Home", "On the Home card")}</b><span>${t("Spento: resta solo qui nella pagina Sicurezza.", "Off: it stays only here on the Security page.")}</span></div>
       <button class="sw ${a.home !== false ? "on" : ""}" data-act="acHome" aria-pressed="${a.home !== false}" aria-label="${t("Nella scheda della Home", "On the Home card")}"><i></i></button></div>
@@ -211,12 +369,19 @@ Object.assign(ACT, {
   acSens: () => { const keep = { ...bz, nome: document.getElementById("ac1n")?.value.trim() ?? bz.nome }, n = nuovo;
     scegli({ titolo: "📡 " + t("Sensore aperto / chiuso", "Open / closed sensor"), sotto: t("Acceso vuol dire aperto.", "On means open."), filtro: id => id.startsWith("binary_sensor."),
       area: areaOf(keep.id), attuale: keep.sensore || "none", auto: false, nessuno: true, onPick: id => apri({ ...keep, sensore: id && id !== "none" ? id : undefined }, n) }); },
+  acAper: el => { bz.apertura = el.dataset.v || undefined; render(); },
+  acTieni: () => { const keep = { ...bz, nome: document.getElementById("ac1n")?.value.trim() ?? bz.nome }, n = nuovo;
+    scegli({ titolo: "📌 " + t("Tieni aperto", "Hold open"), sotto: t("Acceso (o premuto) vuol dire: resta aperto.", "On (or pressed) means: stay open."),
+      filtro: id => /^(switch|button|input_boolean|input_button|script)\./.test(id) && id !== keep.id, area: areaOf(keep.id), attuale: keep.tieni || "", auto: tieniAuto(keep.id) || false, nessuno: true,
+      onPick: id => apri({ ...keep, tieni: id === "none" ? "none" : id || undefined }, n) }); },
   acSave: () => { const a = bz, n = (document.getElementById("ac1n")?.value || "").trim(), id = a.id;
     const v = { extra: true };   // salvato a mano: resta anche se Home Assistant cambia la device_class
     if (n && n !== shortName(id)) v.nome = n;
     if (a.icona && a.icona !== formaAuto(id)) v.icona = a.icona;
     if (a.cmd && a.cmd !== comandiDi(id)[0]) v.cmd = a.cmd;
     if (a.sensore) v.sensore = a.sensore;
+    if (a.apertura && formaDi(a) === "cancello") v.apertura = a.apertura;
+    if (a.tieni && tipoOggetto(a) === "cancello") v.tieni = a.tieni;
     if (domain(id) === "switch" && impulsoS(a) !== 1) v.impulso = impulsoS(a);   // tenuto anche col comando apri / chiudi: se si torna all'impulso c'è ancora
     if (a.home === false) v.home = false;
     closeSheet();
@@ -232,7 +397,7 @@ const inHome = () => accessi().filter(a => a.home !== false);
 function homeCard() {
   const L = inHome(); if (!L.length) return "";
   return card("🚪 " + t("Accessi", "Access"), `<div class="ach1">${L.map(a => { const st = statoDi(a), p = pulsanti(a, st).find(x => x[4]) || pulsanti(a, st)[0];
-    return `<div class="st-${st.k || "na"} ${raggiungibile(a.id) ? "" : "dis"}"><span class="aci1">${disegnoAccesso(formaDi(a), st.k)}</span><div class="tx"><b>${esc(nomeDi(a))}</b><span>${riassunto(a, st)}</span></div>${bottone(a, p)}</div>`; }).join("")}</div>`,
+    return `<div class="st-${st.k || "na"} ${raggiungibile(a.id) ? "" : "dis"}">${disegnoTocca(a, st)}<div class="tx"><b>${esc(nomeDi(a))}</b><span>${riassunto(a, st)}</span></div>${bottone(a, p)}</div>`; }).join("")}</div>`,
     { link: [t("Tutti", "All"), "sicurezza"] });
 }
 /* senza cancello, garage o portone la scheda non c'è: in «✨ Cosa puoi aggiungere» (aggiungi.js) spiego cosa serve; se gli accessi ci sono ma li hai tolti dalla Home è una scelta, non manca niente */

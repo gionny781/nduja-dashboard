@@ -1,0 +1,301 @@
+/* ===== 🖼️ Schede oggetto (js/oggetti.js) e disegni grandi di cancello, porta e robot (js/disegni.js) =====
+   Il foglio grande: in alto la frase (--oc è il colore dello stato), al centro il disegno o il quadrante, sotto comandi e dati.
+   I disegni usano le variabili di .apv1 (--apb, --aps, --apk, --apg, --apin), quindi chiaro e scuro vengono da soli.
+   Animazioni solo di transform e opacity; con la grafica leggera le più pesanti si fermano, con «Riduci movimento» tutte.
+   Il tema chiaro è scritto qui a mano (body.light), in fondo. */
+
+/* ---------- il foglio ---------- */
+.sheet:has(.og1){width:min(980px,100%);max-height:94vh}
+@media (max-width:640px){.sheet:has(.og1){max-height:96vh;padding-left:16px;padding-right:16px}}
+.og1{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;--oc:var(--tx2)}
+.st-heat{--oc:#ff9f0a}.st-cool{--oc:#64d2ff}.st-dry{--oc:#3fdcc4}
+.st-ok{--oc:var(--green)}.st-warn{--oc:var(--orange)}.st-run{--oc:#5eb0ff}.st-bad{--oc:var(--red)}.st-na{--oc:var(--tx3)}.st-off{--oc:var(--tx2)}
+.og1h{display:flex;align-items:center;gap:8px;min-width:0}
+.og1n{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.og1n b{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.og1n small{font-size:12px;color:var(--tx3)}
+.og1f{font-size:clamp(21px,3.4vw,30px);font-weight:750;letter-spacing:-.025em;line-height:1.22;color:var(--tx);text-wrap:balance;min-height:1.2em}
+.og1f em,.og1hm em{font-style:normal;color:var(--oc);transition:color .4s}
+.og1c{position:relative;display:grid;place-items:center;min-width:0;padding:6px 0}
+.og1p{display:flex;flex-direction:column;gap:12px;min-width:0}
+@media (min-width:900px){
+  .og1{grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);grid-template-areas:"h h" "f f" "c p";column-gap:30px;row-gap:16px}
+  .og1h{grid-area:h}.og1f{grid-area:f;max-width:34ch}.og1c{grid-area:c;align-self:center}.og1p{grid-area:p;align-self:center}
+}
+
+/* la superficie dei gesti: tocco, tocco lungo (anello che si riempie) */
+.og1g{position:relative;display:grid;place-items:center;max-width:100%;border-radius:26px;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+.og1g.ges{cursor:pointer;transition:transform .18s}
+.og1g.ges:active{transform:scale(.985)}
+.og1g.ges:focus-visible{outline:2px solid var(--oc);outline-offset:6px}
+.og1r{position:absolute;inset:-8px;width:calc(100% + 16px);height:calc(100% + 16px);pointer-events:none;overflow:visible}
+.og1r rect{fill:none;stroke:var(--oc);stroke-width:3;stroke-linecap:round;vector-effect:non-scaling-stroke;stroke-dasharray:0 100;opacity:0;transition:stroke-dasharray .12s,opacity .12s}
+.og1g.hold .og1r rect{opacity:1;stroke-dasharray:100 100;transition:stroke-dasharray .65s linear,opacity .1s}
+
+/* misure dei disegni */
+.apv1.og1v.xl{--s:min(300px,64vw)}
+.og-cancello .apv1.og1v.xl,.og-robot .apv1.og1v.xl,.og-porta .apv1.og1v.xl{--s:auto;display:block;height:auto}
+.og-cancello .apv1.og1v.xl{width:min(540px,86vw);aspect-ratio:240/170}
+.og-robot .apv1.og1v.xl{width:min(500px,86vw);aspect-ratio:240/180}
+.og-porta .apv1.og1v.xl{width:min(300px,62vw);aspect-ratio:200/210}
+.apv1.og1v.sm{--s:58px}.apv1.og1v.xs2{--s:36px}
+.ogd1{display:block;width:100%;height:auto;overflow:visible}
+.ogd1.off{filter:grayscale(1);opacity:.55}
+
+/* comandi grandi */
+.og1b{display:grid;gap:10px;grid-template-columns:repeat(var(--n,2),minmax(0,1fr))}
+.og1b.n1{--n:1}.og1b.n2{--n:2}.og1b.n3{--n:3}.og1b.n4{--n:2}
+@media (max-width:560px){.og1b.n3{--n:2}.og1b.n3 .og1k:first-child{grid-column:1/-1}}
+.og1k{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:9px;min-width:0;min-height:62px;padding:10px 14px;border-radius:20px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);font-size:16px;font-weight:700;color:var(--tx);line-height:1.15;transition:transform .12s,background .2s,border-color .2s}
+.og1k i{font-style:normal;font-size:19px;line-height:1}
+.og1k span{position:relative;z-index:1;text-align:left}.og1k i{position:relative;z-index:1}
+.og1k.pri{background:rgba(10,132,255,.24);border-color:rgba(10,132,255,.6)}
+.og1k.bad{background:rgba(255,69,58,.12);border-color:rgba(255,69,58,.42)}
+.og1k:active{transform:scale(.97)}
+.og1k:disabled{opacity:.4;cursor:default}
+.og1k.warn{background:rgba(255,159,10,.2);border-color:var(--orange);color:var(--orange);font-size:13.5px}
+.og1k.tieni{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.og1k s{position:absolute;inset:0;background:color-mix(in srgb,var(--oc) 34%,transparent);transform:scaleX(0);transform-origin:left;pointer-events:none}
+.og1k.tieni.hold s{transform:scaleX(1);transition:transform var(--td,.9s) linear}
+.og1k.tieni::after{content:"✋";position:absolute;right:9px;top:7px;font-size:11px;opacity:.55}
+
+/* dati e aiuto */
+.og1d{display:flex;flex-wrap:wrap;gap:7px}
+.og1d span{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:13px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.07);font-size:13px;color:var(--tx2);font-variant-numeric:tabular-nums}
+.og1d span i{font-style:normal}.og1d span.bad{color:var(--red);border-color:rgba(255,69,58,.35)}
+.og1a{display:flex;align-items:center;gap:10px;padding:9px 10px 9px 13px;border-radius:15px;background:rgba(10,132,255,.1);border:1px dashed rgba(10,132,255,.45);font-size:12.5px;color:var(--tx2);line-height:1.4}
+.og1a span{flex:1}.og1a button{flex:none;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.08);font-size:12px;color:var(--tx2)}
+.og1p .fl1{margin:4px 0 -2px}
+
+/* modalità del clima, ventola, stanze del robot, manutenzione */
+.og1md{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:8px}
+.og1md button{display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 6px;border-radius:17px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);font-size:12.5px;font-weight:650;color:var(--tx2)}
+.og1md button i{font-style:normal;font-size:20px}
+.og1md button.act{color:var(--tx);background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.32)}
+.og1md button.act.m-heat{background:rgba(255,138,61,.18);border-color:#ff8a3d}.og1md button.act:is(.m-cool){background:rgba(100,210,255,.16);border-color:#64d2ff}
+.og1md button.act.m-dry{background:rgba(63,220,196,.16);border-color:#3fdcc4}.og1md button.act.m-off{background:rgba(255,69,58,.12);border-color:rgba(255,69,58,.5)}
+.og1md button:disabled{opacity:.4}
+.og1fn{flex-wrap:wrap}
+.og1st button{display:inline-flex;align-items:center;gap:7px;padding:11px 15px;font-size:14px}
+.og1st button i{font-style:normal;display:grid;place-items:center;width:19px;height:19px;border-radius:50%;background:#0a84ff;color:#fff;font-size:11px;font-weight:800}
+.og1sp{width:100%;min-height:52px;margin-top:2px;font-size:15px}
+.og1mn{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.og1mn button{display:flex;flex-direction:column;gap:3px;padding:10px 12px;border-radius:15px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);text-align:left;min-width:0}
+.og1mn small{font-size:11.5px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.og1mn b{font-size:14px}
+.og1mn .warn{border-color:rgba(255,159,10,.55);background:rgba(255,159,10,.1)}.og1mn .warn b{color:var(--orange)}
+.og1sw{position:absolute;top:4px;right:2px;z-index:2;padding:7px 12px;border-radius:999px;font-size:12.5px;font-weight:700;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.og1mp{max-height:46vh;width:auto;max-width:100%;cursor:default}
+
+/* anello di quanto manca (elettrodomestici) */
+.og1pg{position:relative;display:inline-grid;place-items:center}
+.og1pgr{position:absolute;inset:-7%;width:114%;height:114%;transform:rotate(-90deg);pointer-events:none;overflow:visible}
+.og1pgr circle{fill:none;stroke-width:2.2;stroke-linecap:round}
+.og1pgr .tr{stroke:rgba(255,255,255,.1)}.og1pgr .pi{stroke:var(--oc);transition:stroke-dasharray 1s}
+
+/* ---------- quadrante della temperatura ---------- */
+.og1q{position:relative;width:min(370px,84vw);aspect-ratio:1;margin:0 auto;touch-action:none;-webkit-user-select:none;user-select:none}
+.og1q>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.og1q .tr{fill:none;stroke:rgba(255,255,255,.1);stroke-width:15;stroke-linecap:round}
+.og1q .pi{fill:none;stroke:var(--qc);stroke-width:15;stroke-linecap:round;transition:stroke .4s}
+.og1q .st{fill:var(--tx);stroke:rgba(0,0,0,.35);stroke-width:1.5}
+.og1m{cursor:grab;outline:none}.og1q.tira .og1m{cursor:grabbing}
+.og1m .mh{fill:transparent}
+.og1m .mk{fill:#fff;stroke:var(--qc);stroke-width:5;transition:stroke .4s;filter:drop-shadow(0 3px 6px rgba(0,0,0,.45))}
+.og1m:focus-visible .mk{stroke-width:8}
+.og1qd{position:absolute;left:50%;top:44%;width:48%;transform:translate(-50%,-50%)}
+.og1qd .og1g{width:100%}
+.og1qd .apv1.og1v.md2{--s:auto;width:100%;height:auto;aspect-ratio:1;font-size:clamp(46px,13vw,88px)}
+.og1qv{position:absolute;left:18%;right:18%;bottom:1%;display:flex;flex-direction:column;align-items:center;gap:1px;text-align:center;pointer-events:none}
+.og1qv b{font-size:clamp(32px,8.6vw,46px);font-weight:800;letter-spacing:-.045em;line-height:1;font-variant-numeric:tabular-nums}
+.og1qv small{font-size:12.5px;color:var(--tx2)}
+.og1q.spento .pi{opacity:0}.og1q.spento .og1qv b{font-size:clamp(20px,5vw,26px);color:var(--tx2);letter-spacing:-.02em}
+
+/* ---------- pulsanti che aprono la scheda (nelle pagine) ---------- */
+.og1tp{display:inline-grid;place-items:center;padding:0;border-radius:17px;cursor:pointer;position:relative;flex:none;transition:transform .15s}
+.og1tp:hover{transform:scale(1.04)}.og1tp:active{transform:scale(.96)}
+.og1tp:focus-visible{outline:2px solid #0a84ff;outline-offset:3px}
+.og1tp.cl1t{border-radius:18px}
+.vs1r{gap:12px;align-items:center}
+.og1li .apv1{margin-right:2px}
+.og1li .tx span{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* ---------- Home: «Oggetti in primo piano» ---------- */
+.og1hg{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.og1hm{display:flex;align-items:center;gap:12px;min-width:0;padding:10px 12px 10px 10px;border-radius:20px;text-align:left;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);transition:transform .15s,border-color .3s}
+.og1hm:active{transform:scale(.985)}
+.og1hm:is(.st-run,.st-cool,.st-dry){border-color:rgba(94,176,255,.4)}.og1hm.st-heat{border-color:rgba(255,159,10,.4)}.og1hm.st-warn{border-color:rgba(255,159,10,.4)}.og1hm.st-bad{border-color:rgba(255,69,58,.5)}
+.og1hd{flex:none;display:grid;place-items:center;width:64px;height:64px;border-radius:17px;background:rgba(255,255,255,.05)}
+.og1hm .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.og1hm .tx b{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.og1hm .tx>span{font-size:12.5px;line-height:1.35;color:var(--tx2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.og1hm em{font-weight:700}
+.og1cd{flex:none}.og1cd .apv1{--s:40px}
+
+/* ================= disegni ================= */
+.ogd1 .omb{fill:rgba(0,0,0,.28)}
+
+/* ---------- cancello ---------- */
+.og-cg{overflow:hidden;--gc:var(--apk)}
+.og-cg.s-closed{--gc:#30d158}.og-cg.s-open{--gc:#ff9f0a}.og-cg.s-opening,.og-cg.s-closing{--gc:#5eb0ff}.og-cg.s-jammed{--gc:#ff453a}
+.og-cg .via{fill:rgba(255,255,255,.045)}
+.og-cg .bin{fill:none;stroke:var(--aps);stroke-width:2;stroke-linecap:round;opacity:.6}
+.og-cg{--mur:#272c37}
+.og-cg .mu{fill:var(--mur);stroke:var(--aps);stroke-width:1.3}   /* pieno: l'anta che scorre ci passa dietro */
+.og-cg .mt{fill:none;stroke:var(--aps);stroke-width:.9;opacity:.35}
+.og-cg .cap{fill:var(--apk);opacity:.42}
+.og-cg .lf{fill:var(--gc);opacity:.08;transition:fill .5s}
+.og-cg .tel{fill:none;stroke:var(--gc);stroke-width:2.8;stroke-linejoin:round;transition:stroke .5s}
+.og-cg .sb{fill:none;stroke:var(--gc);stroke-width:2;stroke-linecap:round;opacity:.62;transition:stroke .5s}
+.og-cg .rec .sb{stroke:var(--apk);opacity:.45}
+.og-cg .ruota,.og-cg .man{fill:var(--gc)}
+.og-cg .lb{fill:var(--apk);opacity:.5}.og-cg .lv{fill:rgba(255,179,64,.22);stroke:var(--aps);stroke-width:1}.og-cg .la{fill:#ffb340;opacity:0}
+.og-cg .anta{transition:transform 1.5s cubic-bezier(.45,0,.25,1)}
+.og-cg .anta.l{transform-origin:42px 100px}.og-cg .anta.r{transform-origin:198px 100px}.og-cg .anta.l1{transform-origin:90px 100px}
+.og-cg.s-open .anta.sc{transform:translateX(-118px)}
+.og-cg.s-opening .anta.sc{transform:translateX(-66px);transition-duration:7s;transition-timing-function:linear}
+.og-cg.s-closing .anta.sc{transform:translateX(-46px);transition-duration:7s;transition-timing-function:linear}
+.og-cg.s-open .anta.bt{transform:scaleX(.14)}
+.og-cg.s-opening .anta.bt{transform:scaleX(.52);transition-duration:7s;transition-timing-function:linear}
+.og-cg.s-closing .anta.bt{transform:scaleX(.66);transition-duration:7s;transition-timing-function:linear}
+.og-cg.s-jammed .anta.sc{transform:translateX(-40px)}.og-cg.s-jammed .anta.bt{transform:scaleX(.7)}
+.og-cg:is(.s-opening,.s-closing) .lv{fill:#ffb340}
+.og-cg:is(.s-opening,.s-closing) .la{animation:ogLamp 1s steps(1) infinite}
+.og-cg.tieni .lv{fill:rgba(255,179,64,.55)}
+.og-cg .qq{display:none}.og-cg.s-na:not(.off) .qq{display:inline}
+.og-cg .qq circle{fill:var(--apb);stroke:var(--apk);stroke-width:1.4}.og-cg .qq path{fill:none;stroke:var(--apk);stroke-width:2.2;stroke-linecap:round}
+.og-cg.s-na .tel,.og-cg.s-na .sb{stroke-dasharray:5 4}
+@keyframes ogLamp{0%{opacity:.6}50%{opacity:0}}
+
+/* ---------- porta con serratura ---------- */
+.og-pt{--dc:var(--apk)}
+.og-pt.s-locked{--dc:#30d158}.og-pt:is(.s-unlocked,.s-open){--dc:#ff9f0a}.og-pt:is(.s-unlocking,.s-locking,.s-opening){--dc:#5eb0ff}.og-pt.s-jammed{--dc:#ff453a}
+.og-pt .mur{fill:var(--apg);stroke:var(--aps);stroke-width:1;stroke-opacity:.4}
+.og-pt .fuori{fill:var(--apin)}
+.og-pt .luce{fill:#ffcf8a;opacity:0;transition:opacity .9s}
+.og-pt.ajar .luce{opacity:.32}
+.og-pt .anta{transform-origin:52px 110px;transition:transform 1s cubic-bezier(.45,0,.25,1)}
+.og-pt.ajar .anta{transform:scaleX(.8)}
+.og-pt{--legno:#3b332e;--venatura:rgba(255,232,205,.2)}
+.og-pt .lf{fill:var(--legno);stroke:var(--aps);stroke-width:1.6}   /* piena: la luce di dentro si vede solo dallo spiraglio */
+.og-pt .pan{fill:none;stroke:var(--venatura);stroke-width:1.8}
+.og-pt .plc{fill:var(--apk);opacity:.22}
+.og-pt .mng{fill:none;stroke:var(--apk);stroke-width:4.6;stroke-linecap:round}.og-pt .mng0{fill:var(--apk)}
+.og-pt .anello{fill:none;stroke:var(--dc);stroke-width:2.6;transition:stroke .4s}
+.og-pt .cil{fill:var(--apk);opacity:.6}
+.og-pt .chiave{transform-origin:131px 129px;transition:transform .7s cubic-bezier(.45,0,.25,1)}
+.og-pt .chiave .ks,.og-pt .chiave .kd{fill:none;stroke:#d9b45a;stroke-width:2.6;stroke-linecap:round}
+.og-pt .chiave .kh{fill:#d9b45a}.og-pt .chiave .kf{fill:var(--apin)}
+.og-pt:is(.s-unlocked,.s-open) .chiave{transform:rotate(-90deg)}
+.og-pt .cat{fill:var(--apk);transition:transform .5s}
+.og-pt:is(.s-unlocked,.s-open,.s-opening,.s-unlocking) .cat{transform:translateX(-13px)}
+.og-pt.s-unlocking .chiave,.og-pt.s-opening .chiave{animation:ogChiave 1.3s ease-in-out infinite}
+.og-pt.s-locking .chiave{animation:ogChiave 1.3s ease-in-out infinite reverse}
+.og-pt.s-jammed .chiave{transform:rotate(-40deg);animation:ogTrema .5s ease-in-out infinite}
+.og-pt .tel{fill:none;stroke:var(--aps);stroke-width:3.4;stroke-linejoin:round}
+.og-pt .sog{stroke:var(--aps);stroke-width:2;opacity:.5}
+.og-pt .zer{fill:var(--apk);opacity:.2}
+@keyframes ogChiave{0%,15%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+@keyframes ogTrema{0%,100%{transform:rotate(-40deg)}50%{transform:rotate(-30deg)}}
+
+/* ---------- robot ---------- */
+.og-rb{--rc:#64d2ff;--rl:var(--apk)}
+.og-rb .pav{fill:var(--apg);stroke:var(--aps);stroke-width:1.2;stroke-opacity:.3}
+.og-rb .fug{fill:none;stroke:var(--aps);stroke-width:1;opacity:.16}
+.og-rb .sc{fill:none;stroke:var(--rc);stroke-width:50;stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .8s}
+.og-rb .rit{fill:none;stroke:var(--rc);stroke-width:2.4;stroke-linecap:round;stroke-dasharray:3 7;opacity:0}
+.og-rb .pol circle{fill:var(--apk);opacity:.4}
+.og-rb .db{fill:var(--apb);stroke:var(--aps);stroke-width:1.4}.og-rb .dl{fill:var(--apk);opacity:.45}
+.og-rb .ombr{fill:rgba(0,0,0,.26)}
+.og-rb .b{fill:var(--apb);stroke:var(--aps);stroke-width:2}
+.og-rb .bump{fill:none;stroke:var(--apk);stroke-width:2.6;stroke-linecap:round;opacity:.55}
+.og-rb .tur{fill:var(--apin);stroke:var(--aps);stroke-width:1.4}
+.og-rb .lid{fill:none;stroke:var(--rc);stroke-width:2.4;stroke-linecap:round;stroke-dasharray:22 78;opacity:0;transform-box:fill-box;transform-origin:center}
+.og-rb .spz{transform-box:fill-box;transform-origin:center}
+.og-rb .spz path{fill:none;stroke:var(--apk);stroke-width:1.7;stroke-linecap:round}.og-rb .spz circle{fill:var(--apk)}.og-rb .spz .bb{fill:none;stroke:none}
+.og-rb .led{fill:var(--rl);opacity:.75;transition:fill .4s}
+.og-rb .bolt{fill:#ffd60a;opacity:0}
+.og-rb .ps{opacity:0}.og-rb .ps rect{fill:#ff9f0a}
+.og-rb .err{opacity:0}.og-rb .err circle{fill:#ff453a}.og-rb .err path{fill:none;stroke:#fff;stroke-width:2.6;stroke-linecap:round}
+.og-rb .zz{opacity:0}.og-rb .zz path{fill:none;stroke:var(--apk);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.og-rb .rbm{transform:translate(120px,86px);transition:transform 1.2s cubic-bezier(.45,0,.25,1)}
+.og-rb.r-docked .rbm{transform:translate(120px,130px)}
+.og-rb.r-error .rbm{transform:translate(120px,86px) rotate(16deg)}
+.og-rb.r-cleaning{--rl:#30d158}.og-rb.r-returning{--rl:#5eb0ff}.og-rb.r-docked{--rl:#30d158}.og-rb.r-error{--rl:#ff453a}.og-rb.r-paused{--rl:#ff9f0a}
+.og-rb.r-cleaning .sc{opacity:.07}
+.og-rb.r-cleaning .lid{opacity:.9}
+.og-rb.r-paused .ps,.og-rb.r-error .err{opacity:1}
+.og-rb.r-docked:not(.carica) .zz{opacity:.55}
+.og-rb.carica .bolt{opacity:1}.og-rb.carica .dl{fill:#30d158;opacity:.9}
+.og-rb.r-returning .rit{opacity:.55}
+.off.og-rb .rbm{transition:none}
+.og-rb.pc .pav,.og-rb.pc .fug,.og-rb.pc .sc,.og-rb.pc .rit,.og-rb.pc .pol,.og-rb.pc .dock,.og-rb.pc .zz,.og-rb.pc .ombr{display:none}
+.og-rb.pc .rbm{transform:translate(120px,86px)!important;animation:none!important}
+.og-rb.pc .b{stroke-width:3}
+@media (prefers-reduced-motion:no-preference){
+  .og-rb.r-cleaning .rbm{animation:ogGiro 26s linear infinite}
+  .og-rb.r-cleaning .spz{animation:ogSpaz .45s linear infinite}
+  .og-rb.r-cleaning .lid{animation:ogSpaz 1.6s linear infinite}
+  .og-rb.r-cleaning .pol circle{animation:ogPol 26s linear infinite}
+  .og-rb.r-cleaning .pol .p1{animation-delay:-6.5s}.og-rb.r-cleaning .pol .p2{animation-delay:-13s}.og-rb.r-cleaning .pol .p3{animation-delay:-19.5s}
+  .og-rb.r-returning .rbm{animation:ogTorna 5.5s ease-in-out infinite}
+  .og-rb.r-returning .rit{animation:ogRit 1s linear infinite}
+  .og-rb.r-returning .spz{animation:ogSpaz 1.2s linear infinite}
+  .og-rb.carica .bolt{animation:ogRespira 1.8s ease-in-out infinite}
+  .og-rb.r-paused .ps{animation:ogRespira 1.6s ease-in-out infinite}
+  .og-rb.r-error .err{animation:ogRespira 1s ease-in-out infinite}
+  .og-rb.r-docked:not(.carica) .zz{animation:ogZz 3.6s ease-in-out infinite}
+}
+/* pulizia a righe: avanti, giù, indietro… e ritorno lungo il bordo (il robot è disegnato col davanti in alto) */
+@keyframes ogGiro{
+  0%{transform:translate(60px,40px) rotate(90deg)}16%{transform:translate(180px,40px) rotate(90deg)}19%{transform:translate(180px,40px) rotate(180deg)}
+  23%{transform:translate(180px,72px) rotate(180deg)}26%{transform:translate(180px,72px) rotate(270deg)}42%{transform:translate(60px,72px) rotate(270deg)}
+  45%{transform:translate(60px,72px) rotate(180deg)}49%{transform:translate(60px,104px) rotate(180deg)}52%{transform:translate(60px,104px) rotate(90deg)}
+  68%{transform:translate(180px,104px) rotate(90deg)}71%{transform:translate(180px,104px) rotate(0deg)}80%{transform:translate(180px,40px) rotate(0deg)}
+  83%{transform:translate(180px,40px) rotate(-90deg)}95%{transform:translate(60px,40px) rotate(-90deg)}100%{transform:translate(60px,40px) rotate(-270deg)}}
+/* ritorno: va verso la base, si gira ed entra in retromarcia (come quelli veri), poi ricomincia */
+@keyframes ogTorna{0%{transform:translate(184px,60px) rotate(225deg);opacity:0}10%{opacity:1}62%{transform:translate(120px,110px) rotate(180deg);opacity:1}
+  76%{transform:translate(120px,110px) rotate(360deg);opacity:1}88%{transform:translate(120px,130px) rotate(360deg);opacity:1}100%{transform:translate(120px,130px) rotate(360deg);opacity:0}}
+@keyframes ogSpaz{to{transform:rotate(360deg)}}
+@keyframes ogPol{0%,30%{opacity:.4}38%,80%{opacity:0}92%,100%{opacity:.4}}
+@keyframes ogRit{to{stroke-dashoffset:-20}}
+@keyframes ogRespira{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes ogZz{0%,100%{opacity:.15;transform:translateY(3px)}50%{opacity:.6;transform:translateY(-2px)}}
+
+/* ---------- grafica leggera e «riduci movimento» ---------- */
+body.lite .og-rb .rbm,body.lite .og-rb .pol circle,body.lite .og-rb .lid,body.lite .og-rb .rit,body.lite .og-rb .zz{animation:none!important}
+body.lite .og-rb.r-returning .rbm{transform:translate(120px,112px) rotate(180deg)}
+body.lite .og-cg .anta,body.lite .og-pt .anta{transition-duration:.6s!important}
+body.lite .og1pgr .pi,body.lite .og1q .pi,body.lite .og1q .mk{transition:none}
+@media (prefers-reduced-motion:reduce){
+  .og1 *,.og1hg *,.ogd1 *{animation:none!important;transition:none!important}
+  .og1g.hold .og1r rect,.og1k.tieni.hold s{transition:none!important}
+}
+
+/* ---------- tema chiaro (a mano) ---------- */
+body.light .og1k{background:rgba(255,255,255,.75);border-color:rgba(28,28,30,.12)}
+body.light .og1k.pri{background:rgba(10,132,255,.14);border-color:rgba(10,132,255,.55);color:#0b5cc2}
+body.light .og1k.bad{background:rgba(255,59,48,.08);border-color:rgba(255,59,48,.4);color:#c4271e}
+body.light .og1d span{background:rgba(255,255,255,.7);border-color:rgba(28,28,30,.08)}
+body.light .og1d span.bad{color:#c4271e}
+body.light .og1a{background:rgba(10,132,255,.07)}body.light .og1a button{background:rgba(28,28,30,.06)}
+body.light .og1md button,body.light .og1mn button{background:rgba(255,255,255,.7);border-color:rgba(28,28,30,.09)}
+body.light .og1md button.act{background:rgba(28,28,30,.08);border-color:rgba(28,28,30,.32)}
+body.light .og1md button.act.m-heat{background:rgba(249,115,22,.12);border-color:#f97316}body.light .og1md button.act.m-cool{background:rgba(24,162,230,.12);border-color:#18a2e6}
+body.light .og1md button.act.m-dry{background:rgba(18,179,155,.12);border-color:#12b39b}
+body.light .og1sw{background:rgba(255,255,255,.85);border-color:rgba(28,28,30,.12)}
+body.light .og1q .tr,body.light .og1pgr .tr{stroke:rgba(28,28,30,.09)}
+body.light .og1q .st{fill:#1c1c1e;stroke:#fff}
+body.light .og1hm{background:rgba(255,255,255,.65);border-color:rgba(28,28,30,.08)}
+body.light .og1hd{background:rgba(28,28,30,.04)}
+body.light .st-heat{--oc:#e07a00}body.light .st-cool{--oc:#1286c4}body.light .st-dry{--oc:#0f9c87}body.light .st-ok{--oc:#1f9d45}body.light .st-warn{--oc:#d97706}body.light .st-run{--oc:#0a6fd6}body.light .st-bad{--oc:#d92d20}
+body.light .ogd1 .omb{fill:rgba(40,50,70,.12)}
+body.light .og-cg.s-closed{--gc:#1f9d45}body.light .og-cg.s-open{--gc:#e07a00}body.light .og-cg:is(.s-opening,.s-closing){--gc:#0a6fd6}body.light .og-cg.s-jammed{--gc:#d92d20}
+body.light .og-cg .via{fill:rgba(28,28,30,.04)}body.light .og-cg{--mur:#e8ecf2}
+body.light .og-pt.s-locked{--dc:#1f9d45}body.light .og-pt:is(.s-unlocked,.s-open){--dc:#e07a00}body.light .og-pt:is(.s-unlocking,.s-locking,.s-opening){--dc:#0a6fd6}
+body.light .og-pt .chiave .ks,body.light .og-pt .chiave .kd{stroke:#b8902f}body.light .og-pt .chiave .kh{fill:#b8902f}
+body.light .og-pt.ajar .luce{opacity:.45}body.light .og-pt{--legno:#e6d6c2;--venatura:rgba(90,60,30,.22)}
+body.light .og-rb{--rc:#18a2e6}
+body.light .og-rb .ombr{fill:rgba(40,50,70,.14)}
+body.light .og-rb.r-cleaning .sc{opacity:.09}

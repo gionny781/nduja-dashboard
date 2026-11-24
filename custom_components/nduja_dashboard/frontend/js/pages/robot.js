@@ -1,8 +1,10 @@
 /* Robot aspirapolvere: stato, batteria, mappa, comandi, pulizia per stanza, impostazioni rapide e manutenzione.
    Tutto viene dal dispositivo del robot; con ✏️ (amministratori) si scelgono, per ogni robot, in LAYOUT.vacuums[id]:
    { map: camera | "none", quick: [select], passate: 2|3 (pulizia per stanza), ricambi: % (rosso sotto), noManut: [sensori da non mostrare] } */
-import { S, REG, ACT, CHG, LAYOUT, render, openSheet, UI, t, esc, nm, ok, val, attr, ents, card, empty, page, svc, ws, cached, toast, isAdmin, shortName, deviceClass, DEFAULT_OFF, myHA } from "../core.js";
+import { S, REG, ACT, CHG, LAYOUT, VISTE, AREAS, render, openSheet, UI, t, IT, esc, nm, ok, val, attr, ents, card, empty, page, svc, ws, cached, toast, isAdmin, shortName, deviceClass, DEFAULT_OFF, myHA, areaOf, fnum } from "../core.js";
 import { item, addBtn, scegli, cambia } from "../edit.js";
+import { registra, tocca, schedeGrandi, em } from "../oggetti.js";
+import { disegnoRobot } from "../disegni.js";
 
 const conf = id => LAYOUT.vacuums?.[id] || {};
 /** salva una scelta del robot: chi lascia tutto come prima non ha niente in LAYOUT */
@@ -74,7 +76,7 @@ function robot(id) {
     <div class="ch"><h2>🤖 ${esc(nm(id))}</h2>${isAdmin() ? `<button class="btn sm" data-act="vacEdit" data-id="${id}">✏️</button>` : ""}</div>
     <div class="vg1">
       <div>
-        <div class="vs1"><b>${esc(STATO()[st] || attr(id, "status") || st)}</b>${attr(id, "status") && STATO()[st] ? `<span class="muted small">${esc(String(attr(id, "status")).replace(/_/g, " "))}</span>` : ""}</div>
+        <div class="row vs1r">${tocca("robot:" + id, `<span class="apv1 og1v sm">${disegnoRobot(kRobot(id), { off: !ok(id), carica: inCarica(id), piccolo: true })}</span>`, nm(id), "vac1t")}<div class="vs1"><b>${esc(STATO()[st] || attr(id, "status") || st)}</b>${attr(id, "status") && STATO()[st] ? `<span class="muted small">${esc(String(attr(id, "status")).replace(/_/g, " "))}</span>` : ""}</div></div>
         <div class="row" style="gap:14px;margin:10px 0 14px;flex-wrap:wrap">
           ${b != null ? `<span class="vb1">🔋 <b>${Math.round(b)}%</b>${attr(id, "charging") ? " ⚡" : ""}</span>` : ""}
           ${area != null ? `<span class="vb1">📐 <b>${area}</b> m²</span>` : ""}${tempo != null ? `<span class="vb1">⏱ <b>${tempo}</b> min</span>` : ""}
@@ -123,7 +125,8 @@ function config(id) {
 Object.assign(ACT, {
   vac: el => svc("vacuum", el.dataset.v, {}, { entity_id: el.dataset.id }),
   vacRoom: el => { const id = el.dataset.id, v = isNaN(+el.dataset.v) ? el.dataset.v : +el.dataset.v, L = sel[id] = sel[id] || []; const i = L.indexOf(v); i < 0 ? L.push(v) : L.splice(i, 1); render(); },
-  vacRooms: el => { const id = el.dataset.id; pulisciStanze(id, sel[id]).then(() => { toast("🤖 " + t("Partito", "Started")); sel[id] = []; }).catch(() => {}); },
+  vacRooms: el => { const id = el.dataset.id, L = [...(sel[id] || [])];
+    pulisciStanze(id, L).then(() => { toast("🤖 " + t("Partito", "Started")); sel[id] = []; giro[id] = { ids: L, t: Date.now() }; }).catch(() => {}); },
   vacReset: el => svc("button", "press", {}, { entity_id: el.dataset.id }).then(() => toast("↺ " + nm(el.dataset.id))),
   vacEdit: el => { const id = el.dataset.id; openSheet(() => config(id)); },
   vacPass: el => { const id = el.dataset.id, n = +el.dataset.v; salvaV(id, c => { if (n > 1) c.passate = n; else delete c.passate; }, "🤖 " + (n === 1 ? t("1 passata", "1 pass") : t(`${n} passate`, `${n} passes`))); },
@@ -141,6 +144,99 @@ Object.assign(ACT, {
     if (!(v >= 1 && v <= 80)) { el.value = sottoRic(id); return toast(t("Scrivi un numero da 1 a 80", "Enter a number from 1 to 80"), true); }
     salvaV(id, c => { c.ricambi = v === RIC_DEF ? undefined : v; }, "🔧 " + t(`Da cambiare sotto il ${v}%`, `Replace below ${v}%`)); };
 }
+
+/* ---------- scheda oggetto (oggetti.js): il robot disegnato, la mappa con le stanze da toccare, le parti del robot ---------- */
+const giro = {};   // stanze chieste da questa plancia, nell'ordine in cui le hai toccate (per dire «sto pulendo la cucina, poi il corridoio»)
+const STATI_R = ["cleaning", "docked", "returning", "paused", "idle", "error"];
+const kRobot = id => !ok(id) ? "idle" : STATI_R.includes(S[id].state) ? S[id].state : "idle";
+const inCarica = id => { const b = batteria(id); return attr(id, "charging") === true || (S[id]?.state === "docked" && b != null && b < 100); };
+/** con l'articolo davanti, in minuscolo, come lo diresti: «la cucina», «il corridoio», «l'ingresso», «lo studio» */
+function articolo(n) {
+  const s = String(n || "").trim(); if (!s) return "";
+  const m = s[0].toLowerCase() + s.slice(1);
+  if (!IT) return "the " + m;
+  if (/^[aeiouàèéìòù]/i.test(m)) return "l'" + m;
+  if (/^(s[^aeiou]|z|gn|ps|x|y)/i.test(m)) return "lo " + m;
+  if (/a$/i.test(m.split(" ")[0])) return "la " + m;
+  if (/i$/i.test(m.split(" ")[0])) return "i " + m;
+  return "il " + m;
+}
+/* la stanza che sta pulendo, se il robot lo dice (attributo o sensore dello stesso dispositivo) */
+const STANZA_ORA = /current_room|current_segment|cleaning_room|stanza_attuale|stanza_corrente|current_area/i;
+function stanzaOra(id) {
+  const R = stanze(id), daId = v => { const r = R.find(x => String(x.id) === String(v)); return r ? r.nome : null; };
+  for (const k of ["current_room", "current_segment", "cleaning_room", "room_name"]) { const v = attr(id, k); if (v != null && v !== "" && typeof v !== "object") return daId(v) || (isNaN(+v) ? String(v) : null); }
+  const x = delDispositivo(id, e => e.startsWith("sensor.") && STANZA_ORA.test(e) && ok(e))[0];
+  return x ? daId(S[x].state) || (isNaN(+S[x].state) ? S[x].state : null) : null;
+}
+const nomeStanzaR = (id, rid) => stanze(id).find(r => String(r.id) === String(rid))?.nome || null;
+const ricambiBassi = id => manutenzione(id).filter(x => x.v < sottoRic(id)).sort((a, b) => a.v - b.v);
+function fraseRobot(id) {
+  if (!ok(id)) return t(`${em("Non ti sento")}: forse sono spento o senza Wi‑Fi.`, `${em("I can't hear you")}: maybe I'm off or without Wi‑Fi.`);
+  const st = S[id].state, b = batteria(id), err = attr(id, "error"), errOk = !err || /no.?error|none|^0$/i.test(String(err));
+  let f;
+  if (st === "error" || !errOk) f = t(`Ho un problema: ${em(String(err || "errore").replace(/_/g, " "))}.`, `I have a problem: ${em(String(err || "error").replace(/_/g, " "))}.`);
+  else if (st === "cleaning") {
+    const g = giro[id] && Date.now() - giro[id].t < 4 * 3600e3 ? giro[id].ids.map(r => nomeStanzaR(id, r)).filter(Boolean) : [], ora = stanzaOra(id);
+    const dopo = ora ? g.slice(g.findIndex(n => n.toLowerCase() === ora.toLowerCase()) + 1).filter(n => n.toLowerCase() !== ora.toLowerCase()) : [];
+    const prog = attr(id, "cleaning_progress");
+    if (ora) f = t(`Sto pulendo ${em(articolo(ora))}`, `I'm cleaning ${em(articolo(ora))}`) + (g.length && dopo.length && g.some(n => n.toLowerCase() === ora.toLowerCase()) ? t(", poi ", ", then ") + dopo.map(articolo).join(t(" e ", " and ")) : "") + ".";
+    else if (g.length) f = t(`Sto pulendo ${em(g.map(articolo).join(", ").replace(/, ([^,]*)$/, " e $1"))}.`, `I'm cleaning ${em(g.map(articolo).join(", ").replace(/, ([^,]*)$/, " and $1"))}.`);
+    else f = t(`Sto ${em("pulendo casa")}`, `I'm ${em("cleaning the house")}`) + (prog ? t(`: sono al ${prog}%.`, `: ${prog}% done.`) : ".");
+    if (b != null && b < 20) f += " " + t(`La batteria è al ${Math.round(b)}%: tra poco torno alla base.`, `Battery at ${Math.round(b)}%: I'll head back soon.`);
+  }
+  else if (st === "returning") f = t(`${em("Torno alla base")}`, `${em("Heading back to the dock")}`) + (b != null && b < 30 ? t(" a ricaricarmi.", " to recharge.") : ".");
+  else if (st === "paused") f = t(`Sono ${em("in pausa")}. Riprendo quando vuoi.`, `I'm ${em("paused")}. I'll carry on whenever you like.`);
+  else if (st === "docked") {
+    f = inCarica(id) && b != null ? t(`Sono ${em("alla base")} e mi sto ricaricando: batteria al ${Math.round(b)}%.`, `I'm ${em("on the dock")}, charging: battery at ${Math.round(b)}%.`)
+      : t(`Sono ${em("alla base")}`, `I'm ${em("on the dock")}`) + (b != null ? t(`, carico al ${Math.round(b)}%. Pronto quando vuoi.`, `, charged to ${Math.round(b)}%. Ready when you are.`) : t(". Pronto quando vuoi.", ". Ready when you are."));
+    const a = attr(id, "cleaned_area"), tm = attr(id, "cleaning_time");
+    if (a != null && tm != null && +a > 0 && !ricambiBassi(id).length) f += " " + t(`L'ultima volta ho pulito ${fnum(a, 0)} m² in ${fnum(tm, 0)} minuti.`, `Last time I cleaned ${fnum(a, 0)} m² in ${fnum(tm, 0)} minutes.`);
+  }
+  else f = t(`Sono ${em("fermo")}. Tocca e parto.`, `I'm ${em("stopped")}. Tap and I'll go.`);
+  const R = ricambiBassi(id)[0];
+  if (R && !["cleaning", "error"].includes(st) && errOk) f += " " + t(`${nomeRic(id, R.id)}: ${em(Math.round(R.v) + "%")}, va cambiato.`, `${nomeRic(id, R.id)}: ${em(Math.round(R.v) + "%")}, needs replacing.`);
+  return f;
+}
+const vistaMappa = {};   // per robot: al centro la mappa invece del disegno (su questo dispositivo, finché resta aperta la plancia)
+function comandiRobot(id) {
+  const st = S[id].state, off = !ok(id), b = (v, ic, txt, pri) => ({ act: "vac", id, v, ic, txt, pri, off });
+  if (st === "cleaning") return [b("pause", "⏸", t("Pausa", "Pause"), true), b("return_to_base", "🏠", t("Alla base", "Dock"))];
+  if (st === "paused") return [b("start", "▶", t("Riprendi", "Resume"), true), b("return_to_base", "🏠", t("Alla base", "Dock")), b("stop", "⏹", t("Ferma", "Stop"))];
+  if (st === "returning") return [b("start", "▶", t("Pulisci tutto", "Clean all"), true), b("stop", "⏹", t("Ferma", "Stop"))];
+  return [b("start", "▶", t("Pulisci tutto", "Clean all"), true), st !== "docked" ? b("return_to_base", "🏠", t("Alla base", "Dock")) : null, b("locate", "📍", t("Trova", "Locate"))].filter(Boolean);
+}
+function extraRobot(id) {
+  const R = stanze(id), scelte = sel[id] || [], M = manutenzione(id);
+  return `${R.length ? `<div class="fl1">${t("Tocca le stanze da pulire", "Tap the rooms to clean")}</div>
+    <div class="vr1 og1st">${R.map(r => `<button class="${scelte.includes(r.id) ? "on" : ""}" data-act="vacRoom" data-id="${id}" data-v="${r.id}">${scelte.includes(r.id) ? `<i>${scelte.indexOf(r.id) + 1}</i>` : ""}${esc(r.nome)}</button>`).join("")}</div>
+    ${scelte.length ? `<button class="btn pri og1sp" data-act="vacRooms" data-id="${id}">▶ ${t(`Pulisci ${scelte.length} stanz${scelte.length === 1 ? "a" : "e"}`, `Clean ${scelte.length} room${scelte.length === 1 ? "" : "s"}`)}${passate(id) > 1 && passateOk() ? " · " + t(`${passate(id)} passate`, `${passate(id)} passes`) : ""}</button>` : ""}` : ""}
+    ${M.length ? `<div class="fl1">${t("Parti del robot", "Robot parts")}</div><div class="stack">${M.map(x => `<div class="vmn1"><span>${esc(nomeRic(id, x.id))}</span><span class="bar1"><i style="width:${Math.max(3, x.v)}%;background:${x.v < sottoRic(id) ? "var(--red)" : x.v < sottoRic(id) + 20 ? "var(--orange)" : "var(--green)"}"></i></span><b>${Math.round(x.v)}%</b>${x.reset && isAdmin() ? `<button class="btn sm" data-act="vacReset" data-id="${x.reset}" title="${t("Azzera dopo la sostituzione", "Reset after replacing")}">↺</button>` : ""}</div>`).join("")}</div>` : ""}`;
+}
+registra("robot", {
+  nome: () => t("Robot", "Vacuums"), icona: "🤖", ordine: 30, pagina: "robot",
+  elenco: () => ents("vacuum"), esiste: id => !!S[id] && id.startsWith("vacuum."),
+  titolo: id => nm(id), luogo: id => AREAS[areaOf(id)]?.name || "",
+  stato: id => { if (!ok(id)) return "na"; const st = S[id].state, err = attr(id, "error"); if (st === "error" || (err && !/no.?error|none|^0$/i.test(String(err)))) return "bad";
+    return ["cleaning", "returning"].includes(st) ? "run" : st === "paused" ? "warn" : ricambiBassi(id).length ? "warn" : "ok"; },
+  frase: fraseRobot,
+  disegno: (id, m) => m === "xl" && vistaMappa[id] && mappa(id) ? `<img class="vm1 og1mp" src="${esc(attr(mappa(id), "entity_picture") || "")}" alt="${t("Mappa", "Map")}">`
+    : `<span class="apv1 og1v ${m}">${disegnoRobot(kRobot(id), { off: !ok(id), carica: inCarica(id), piccolo: m !== "xl" })}</span>`,
+  angolo: id => mappa(id) ? `<button class="og1sw" data-act="ogMappa" data-id="${id}">${vistaMappa[id] ? "🤖 " + t("Robot", "Robot") : "🗺️ " + t("Mappa", "Map")}</button>` : "",
+  comandi: comandiRobot,
+  dati: id => { const b = batteria(id), a = attr(id, "cleaned_area"), tm = attr(id, "cleaning_time"), pr = attr(id, "cleaning_progress"), fs = attr(id, "fan_speed");
+    return [b != null ? ["🔋", Math.round(b) + "%" + (inCarica(id) ? " ⚡" : ""), b < 20 ? "bad" : ""] : null, S[id].state === "cleaning" && pr ? ["📈", pr + "%"] : null,
+      a != null ? ["📐", fnum(a, 0) + " m²"] : null, tm != null ? ["⏱", fnum(tm, 0) + " min"] : null, fs ? ["🌀", esc(String(fs).replace(/_/g, " "))] : null]; },
+  extra: extraRobot,
+  gesti: id => { if (!ok(id) || vistaMappa[id]) return {};
+    const st = S[id].state, vac = v => svc("vacuum", v, {}, { entity_id: id }).then(() => toast({ start: "▶ " + t("Parto", "Starting"), pause: "⏸ " + t("In pausa", "Paused"), return_to_base: "🏠 " + t("Torno alla base", "Heading home"), locate: "📍 " + t("Eccomi!", "Here I am!") }[v])).catch(() => {});
+    return { tocco: () => vac(st === "cleaning" ? "pause" : "start"), lungo: () => vac(st === "docked" ? "locate" : "return_to_base"),
+      aiuto: t("Tocca il robot per farlo partire o metterlo in pausa · tienilo premuto per mandarlo alla base", "Tap the robot to start or pause it · press and hold to send it to the dock") };
+  },
+});
+ACT.ogMappa = el => { const id = el.dataset.id; vistaMappa[id] = !vistaMappa[id]; render(); };
+/** riga del robot nella finestra della stanza (Home) */
+VISTE.oggRigaVac = id => !schedeGrandi() || !S[id] ? "" : `<button class="li og1li" data-act="ogApri" data-k="robot:${esc(id)}"><span class="apv1 og1v xs2">${disegnoRobot(kRobot(id), { off: !ok(id), carica: inCarica(id), piccolo: true })}</span><div class="tx"><b>${esc(nm(id))}</b><span>${fraseRobot(id).replace(/<[^>]+>/g, "")}</span></div><span class="st">›</span></button>`;
 
 function pagina() {
   const V = ents("vacuum");

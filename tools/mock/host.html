@@ -236,6 +236,12 @@ const ENT = {
   "cover.cancello": st("closed", { friendly_name: "Cancello", device_class: "gate", supported_features: 11 }, 2*H),
   "cover.garage": st("open", { friendly_name: "Porta garage", device_class: "garage", supported_features: 11 }, 420),
   "cover.basculante_cantina": st("opening", { friendly_name: "Basculante cantina", device_class: "garage", supported_features: 3 }, 5),
+  /* schede oggetto (0.7.55): «tieni aperto» della centralina del cancello; pausa, riprendi e sale della lavastoviglie (come Home Connect) */
+  "switch.cancello_tieni_aperto": st("off", { friendly_name: "Cancello Tieni aperto" }),
+  "button.lavastoviglie_pause_program": st("unknown", { friendly_name: "Lavastoviglie Pause program" }),
+  "button.lavastoviglie_resume_program": st("unknown", { friendly_name: "Lavastoviglie Resume program" }),
+  "binary_sensor.lavastoviglie_salt_nearly_empty": st("on", { friendly_name: "Lavastoviglie Sale quasi finito" }),
+  "binary_sensor.lavastoviglie_rinse_aid_nearly_empty": st("off", { friendly_name: "Lavastoviglie Brillantante quasi finito" }),
   "switch.cancelletto": st("off", { friendly_name: "Relè cancelletto" }),
   "binary_sensor.cancelletto_contatto": st("off", { friendly_name: "Contatto cancelletto" }, 3*H),
   "button.portone_condominio": st("unknown", { friendly_name: "Apriportone condominio" }),
@@ -584,6 +590,11 @@ for (const e of REG.entities) {
   if (/^(plant|sensor|number)\.monstera/.test(e.ei)) { e.ai = "soggiorno"; e.di = "dev_pl_monstera"; e.pl = "plant"; }
   if (e.ei.startsWith("sensor.flower_care_")) { e.ai = "esterno"; e.di = "dev_flora"; e.pl = "xiaomi_ble"; if (e.ei.endsWith("_battery")) e.ec = 1; }
 }
+/* schede oggetto (0.7.55): il cancello e il suo «tieni aperto» sono lo stesso dispositivo; la lavastoviglie (presa, potenza, pulsanti, sale) anche */
+for (const e of REG.entities) {
+  if (/^(cover\.cancello|switch\.cancello_tieni_aperto)$/.test(e.ei)) { e.di = "dev_cancello"; e.ai = "esterno"; }
+  if (/^(sensor|switch|button|binary_sensor)\.lavastoviglie/.test(e.ei)) { e.di = "dev_lavast"; e.ai = "cucina"; }
+}
 /* Natale (0.7.54): il Twinkly è un dispositivo in soggiorno; la presa del giardino ha l'etichetta «Natale» */
 for (const e of REG.entities) {
   if (/albero_di_natale/.test(e.ei)) { e.pl = "twinkly"; e.di = "dev_twinkly"; e.ai = "soggiorno"; }
@@ -732,7 +743,7 @@ const MOV = {};
 function mockCover(m) {
   const d = m.service_data || {}, ids = [].concat(m.target?.entity_id || []);
   for (const id of ids) { const e = ENT[id]; if (!e || !id.startsWith("cover.") || e.s === "unavailable") continue;
-    const manda = () => { e.lc = Date.now() / 1000; window.mockStati?.({ c: { [id]: { "+": { s: e.s, a: e.a } } } }); }, conP = e.a.current_position != null;
+    const manda = () => { e.lc = Date.now() / 1000; window.mockStati?.({ c: { [id]: { "+": { s: e.s, a: e.a, lc: e.lc } } } }); }, conP = e.a.current_position != null;
     if (m.service === "set_cover_tilt_position") { e.a = { ...e.a, current_tilt_position: d.tilt_position }; manda(); continue; }
     if (m.service === "stop_cover") { clearInterval(MOV[id]); clearTimeout(MOV[id]); e.s = conP ? (e.a.current_position > 0 ? "open" : "closed") : "open"; manda(); continue; }
     const fine = m.service === "open_cover" ? 100 : m.service === "close_cover" ? 0 : m.service === "set_cover_position" ? d.position : m.service === "toggle" ? (e.s === "closed" ? 100 : 0) : null;
@@ -1015,6 +1026,11 @@ const conn = {
         return out; }
       /* aria (0.7.43): da quanto i sensori dell'aria hanno il valore di adesso (prima un valore normale) */
       case "history/history_during_period": { const out = {}, t0 = new Date(m.start_time).getTime() / 1000;
+        /* clima (0.7.55): gli ultimi 30 minuti con la temperatura della stanza che scende (soggiorno) o sale (cucina) */
+        if (m.no_attributes === false) { const ora = Date.now() / 1000, C = { "climate.soggiorno": [27, 25], "climate.cucina": [18.3, 19.5] };
+          for (const id of m.entity_ids || []) { const e = ENT[id], c = C[id]; if (!e || !c) continue;
+            out[id] = Array.from({ length: 7 }, (_, i) => ({ s: e.s, a: { ...e.a, current_temperature: Math.round((c[0] + (c[1] - c[0]) * i / 6) * 10) / 10 }, lu: ora - (6 - i) * 300 })); }
+          return out; }
         for (const id of m.entity_ids || []) { const q = ARIA_STORIA[id], e = ENT[id]; if (!q || !e) continue; const da = Date.now() / 1000 - q[1] * 60;
           out[id] = da > t0 ? [{ s: String(q[0]), lu: t0 }, { s: e.s, lu: da }] : [{ s: e.s, lu: t0 }]; }
         return out; }
@@ -1065,6 +1081,16 @@ const conn = {
         if (m.domain === "music_assistant") { const r = mockMA(m); console.log("SVC", JSON.stringify(m)); return { response: r }; }
         if (m.domain === "media_player" && ["media_pause", "media_stop"].includes(m.service)) for (const id of [].concat(m.target?.entity_id || [])) { const e = ENT[id]; if (!e) continue;
           e.s = m.service === "media_pause" ? "paused" : "idle"; setTimeout(() => window.mockStati?.({ c: { [id]: { "+": { s: e.s } } } }), 120); }
+        /* schede oggetto (0.7.55): serrature (con la chiave che gira) e robot cambiano davvero */
+        if (m.domain === "lock" && ["lock", "unlock", "open"].includes(m.service)) for (const id of [].concat(m.target?.entity_id || [])) { const e = ENT[id]; if (!e || e.s === "unavailable") continue;
+          const manda = () => { e.lc = Date.now() / 1000; window.mockStati?.({ c: { [id]: { "+": { s: e.s, lc: e.lc } } } }); };
+          e.s = { lock: "locking", unlock: "unlocking", open: "opening" }[m.service]; manda();
+          setTimeout(() => { e.s = { lock: "locked", unlock: "unlocked", open: "open" }[m.service]; manda(); if (m.service === "open") setTimeout(() => { e.s = "unlocked"; manda(); }, 5000); }, 1800); }
+        if (m.domain === "vacuum" || m.domain === "dreame_vacuum") for (const id of [].concat(m.target?.entity_id || [])) { const e = ENT[id]; if (!e) continue;
+          const manda = () => { e.lc = Date.now() / 1000; window.mockStati?.({ c: { [id]: { "+": { s: e.s, a: e.a, lc: e.lc } } } }); };
+          const nuovo = { start: "cleaning", pause: "paused", stop: "idle", return_to_base: "returning", vacuum_clean_segment: "cleaning", send_command: "cleaning" }[m.service]; if (!nuovo) continue;
+          clearTimeout(MOV[id]); e.s = nuovo; e.a = { ...e.a, status: nuovo }; manda();
+          if (nuovo === "returning") MOV[id] = setTimeout(() => { e.s = "docked"; e.a = { ...e.a, status: "charging", charging: true }; manda(); }, 9000); }
         /* tapparelle (0.7.42): si muovono davvero, un 5% ogni 350 ms (quelle senza posizione in 3 secondi) */
         if (m.domain === "cover") mockCover(m);
         /* aria (0.7.43): purificatori, umidificatori e deumidificatori cambiano davvero */
