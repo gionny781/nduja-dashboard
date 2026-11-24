@@ -6,7 +6,7 @@ import { S, REG, ACT, CHG, UI, LAYOUT, HOME_EXTRA, VISTE, t, LOC, esc, fnum, nm,
 import { item, addBtn, scegli, cambia } from "../edit.js";
 import { TRASCINA, riordina, salvaOrdine } from "../trascina.js";
 import { anteprima, telecamere, gruppiCam, gruppoDi } from "../video.js";
-import { registra, tocca, schedeGrandi, quanto, em } from "../oggetti.js";
+import { registra, tocca, schedeGrandi, quanto, em, frase } from "../oggetti.js";
 import { disegnoCancello, disegnoPorta } from "../disegni.js";
 
 const sc = () => LAYOUT.sicurezza || {};
@@ -235,6 +235,9 @@ registra("cancello", {
   titolo: id => nomeDi(accessoDi(id)), luogo: id => AREAS[areaOf(id)]?.name || "",
   stato: id => { const a = accessoDi(id), k = statoDi(a).k; return !raggiungibile(id) ? "na" : k === "open" ? "warn" : k === "opening" || k === "closing" ? "run" : k === "jammed" ? "bad" : k === "closed" ? "ok" : "na"; },
   frase: id => fraseCancello(accessoDi(id)),
+  semplice: id => { const a = accessoDi(id); if (!raggiungibile(id)) return t("Non raggiungibile", "Unavailable");
+    const k = statoDi(a).k, n = { open: t("Aperto", "Open"), closed: t("Chiuso", "Closed"), opening: t("Si apre…", "Opening…"), closing: t("Si chiude…", "Closing…"), jammed: t("Bloccato", "Stuck") }[k] || t("Stato non noto", "Unknown state");
+    return n + (k === "open" && tieniAcceso(a) ? " · " + t("tenuto aperto", "held open") : ""); },
   disegno: (id, m) => { const a = accessoDi(id); return `<span class="apv1 og1v ${m}">${disegnoCancello(disegnoDi(a), statoDi(a).k, { off: !raggiungibile(id), tieni: tieniAcceso(a) })}</span>`; },
   comandi: id => {
     const a = accessoDi(id), st = statoDi(a), off = !raggiungibile(id), h = tieniDi(a);
@@ -289,6 +292,10 @@ registra("porta", {
   titolo: id => nomeDi(accessoDi(id)), luogo: id => AREAS[areaOf(id)]?.name || "",
   stato: id => { if (!raggiungibile(id)) return "na"; const p = statoPorta(accessoDi(id)); return p.k === "jammed" ? "bad" : ["unlocking", "locking", "opening"].includes(p.k) ? "run" : p.k === "locked" && !p.aperta ? "ok" : p.k === "na" ? "na" : "warn"; },
   frase: id => frasePorta(accessoDi(id)),
+  semplice: id => { const a = accessoDi(id); if (!raggiungibile(id)) return t("Non raggiungibile", "Unavailable");
+    const p = statoPorta(a), b = battPorta(id), n = { locked: t("Chiusa a chiave", "Locked"), unlocked: t("Sbloccata", "Unlocked"), open: t("Aperta", "Open"), opening: t("Si apre…", "Opening…"),
+      unlocking: t("Si sblocca…", "Unlocking…"), locking: t("Si chiude a chiave…", "Locking…"), jammed: t("Bloccata", "Jammed") }[p.k] || t("Stato non noto", "Unknown state");
+    return [n, p.aperta && p.k !== "open" && p.k !== "opening" ? t("porta aperta", "door open") : "", b != null && b < sogliaBatt() ? t("batteria ", "battery ") + Math.round(b) + "%" : ""].filter(Boolean).join(" · "); },
   disegno: (id, m) => { const p = statoPorta(accessoDi(id)); return `<span class="apv1 og1v ${m}">${disegnoPorta(p.k, { off: !raggiungibile(id) }).replace('class="ogd1 og-pt', `class="ogd1 og-pt${p.aperta ? " ajar" : ""}`)}</span>`; },
   comandi: id => {
     const p = statoPorta(accessoDi(id)), off = !raggiungibile(id) || ["unlocking", "locking", "opening"].includes(p.k), B = [];
@@ -321,7 +328,7 @@ Object.assign(ACT, {
 /** riga di una serratura nella finestra della stanza (Home): con le schede grandi si tocca e si apre la scheda della porta */
 VISTE.oggRigaLock = id => { const a = accessoDi(id); if (!a || tipoOggetto(a) !== "porta" || !schedeGrandi()) return "";
   const p = statoPorta(a);
-  return `<button class="li og1li" data-act="ogApri" data-k="porta:${esc(id)}"><span class="apv1 og1v xs2">${disegnoPorta(p.k, { off: !raggiungibile(id) })}</span><div class="tx"><b>${esc(nomeDi(a))}</b><span>${frasePorta(a).replace(/<[^>]+>/g, "")}</span></div><span class="st">›</span></button>`; };
+  return `<button class="li og1li" data-act="ogApri" data-k="porta:${esc(id)}"><span class="apv1 og1v xs2">${disegnoPorta(p.k, { off: !raggiungibile(id) })}</span><div class="tx"><b>${esc(nomeDi(a))}</b><span>${esc(frase("porta:" + id, { testo: true }))}</span></div><span class="st">›</span></button>`; };
 
 /* ✏️ e ＋: nome, disegno, comando e sensore facoltativo */
 let bz = null, nuovo = false;

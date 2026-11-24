@@ -5,13 +5,13 @@
    Aspetto per fermo, in funzione e finito: le animazioni della plancia (disegni.js), le tue immagini o GIF (/local/…) oppure l'icona.
    Lo stesso aspetto compare nella pagina, nella scheda della Home e nella mappa (nella stanza della presa o del sensore). */
 import { S, REG, ACT, CHG, LAYOUT, UI, HOME_EXTRA, VISTE, AREAS, t, esc, nm, ok, val, attr, allEnts, deviceClass, watts, W, fnum, ago, hhmm, card, empty, page, svc, toast,
-  openSheet, closeSheet, render, isAdmin, LOC, areaOf, go, ordina, domain } from "../core.js";
+  openSheet, closeSheet, render, isAdmin, LOC, areaOf, go, ordina, domain, sGet, sSet } from "../core.js";
 import { TRASCINA } from "../trascina.js";
 import { scegli, cambia, fileEsiste, indirizzoLocale } from "../edit.js";
 import { disegno, DISEGNI, riconosci } from "../disegni.js";
 import { oggi } from "./energia.js";
 import { ciclo, POTENZE_EXTRA, SOGLIE, soglie, aggiornaAvvisiTelefono } from "../avvisi.js";
-import { registra, tocca, schedeGrandi, em, quanto } from "../oggetti.js";
+import { registra, tocca, schedeGrandi, em, quanto, articolo } from "../oggetti.js";
 
 const TIPI = () => [
   ["lavatrice", /lavatric|washer|washing|lavabianch/i, "🧺", t("Lavatrice", "Washing machine")],
@@ -292,11 +292,14 @@ function manutenzioneDi(a, tutti = false) {
   return [...new Set([...L, ...(a.manut || []).filter(x => S[x])])].filter(x => !no.has(x));
 }
 const nomeManut = (a, x) => nm(x).replace(new RegExp("^" + (a.nome || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*", "i"), "") || nm(x);
+/* gli stati dei sensori di manutenzione dei produttori (spesso in inglese), detti come li diresti */
+const STATI_MANUT = () => ({ low: t("basso", "low"), empty: t("vuoto", "empty"), required: t("da fare", "to do"), needed: t("da fare", "to do"), warning: t("da controllare", "check it"),
+  ok: t("a posto", "fine"), full: t("pieno", "full"), present: t("presente", "present"), absent: t("manca", "missing"), off: t("a posto", "fine"), on: t("da controllare", "check it") });
 function valoreManut(x) {
   if (!ok(x)) return { tx: t("non raggiungibile", "unavailable"), cls: "" };
-  if (x.startsWith("binary_sensor.")) return S[x].state === "on" ? { tx: t("da fare", "to do"), cls: "warn" } : { tx: t("a posto", "fine"), cls: "" };
-  const u = attr(x, "unit_of_measurement") || "", v = S[x].state;
-  return { tx: isNaN(parseFloat(v)) ? String(v).replace(/_/g, " ") : fnum(parseFloat(v), 0) + (u ? (u === "%" ? "" : " ") + u : ""), cls: /^(on|required|needed|low|empty|vuoto|warning|necessar)/i.test(v) ? "warn" : "" };
+  if (x.startsWith("binary_sensor.")) return S[x].state === "on" ? { tx: t("da controllare", "check it"), cls: "warn" } : { tx: t("a posto", "fine"), cls: "" };
+  const u = attr(x, "unit_of_measurement") || "", v = S[x].state, n = String(v).toLowerCase().replace(/[\s-]+/g, "_");
+  return { tx: isNaN(parseFloat(v)) ? STATI_MANUT()[n] || String(v).replace(/_/g, " ") : fnum(parseFloat(v), 0) + (u ? (u === "%" ? "" : " ") + u : ""), cls: /^(on|required|needed|low|empty|vuoto|warning|necessar)/i.test(v) ? "warn" : "" };
 }
 const femm = a => ["lavatrice", "asciugatrice", "lavastoviglie", "friggitrice"].includes(riconosci(a) || "") || /lavatric|asciugatric|lavastovigl|friggitric|macchina|presa|caldaia/i.test(a.nome || "");
 const VERBO = () => ({ lavatrice: t("Sto lavando", "I'm washing"), asciugatrice: t("Sto asciugando", "I'm drying"), lavastoviglie: t("Sto lavando i piatti", "I'm washing the dishes"), forno: t("Sto cuocendo", "I'm cooking"), frigo: t("Sto raffreddando", "I'm cooling") });
@@ -310,11 +313,33 @@ function fineDi(a) {
   const u = String(attr(a.end, "unit_of_measurement") || "min").toLowerCase();
   return { min: u.startsWith("h") ? n * 60 : u.startsWith("s") ? n / 60 : n };
 }
+/* «38 minuti in anticipo»: la prima ora di fine che l'elettrodomestico ha detto in questo ciclo, confrontata con quando ha finito davvero.
+   Si segna su questo dispositivo (come i cicli, vedi avvisi.js): { [id]: { on: inizio del ciclo (ms), fine: fine prevista (ms) } } */
+let PREV = {}; try { PREV = JSON.parse(sGet("apPrev") || "{}") || {}; } catch {}
+function segnaPrevisione(a) {
+  if (!a.power || !a.end) return;
+  const c = ciclo(a.power), fi = c.on ? fineDi(a) : null; if (!fi || PREV[a.id]?.on === c.on) return;
+  PREV[a.id] = { on: c.on, fine: Math.round(fi.ore ? +fi.ore : Date.now() + fi.min * 60e3) };
+  sSet("apPrev", JSON.stringify(PREV));
+}
+setInterval(() => { try { elenco().forEach(segnaPrevisione); } catch {} }, 30000);
+/** minuti di anticipo (positivi) o di ritardo (negativi) dell'ultimo ciclo finito rispetto alla prima previsione; null se non lo so */
+function anticipo(a) {
+  if (!a.power) return null;
+  const c = ciclo(a.power), r = PREV[a.id];
+  if (!c.fine || !r || r.on > c.fine || c.fine - r.on > 12 * 3600e3) return null;
+  return (r.fine - (c.fine - soglie(a.power).min * 60e3)) / 60e3;   // il consumo è sceso qualche minuto prima che me ne accorgessi
+}
+/** «38 minuti in anticipo», «con 12 minuti di ritardo», «puntuale» (null se non lo so) */
+const comeAnticipo = m => m == null ? null : Math.abs(m) < 3 ? t("puntuale", "right on time") : m > 0 ? quanto(m * 60) + t(" in anticipo", " early") : t("con ", "") + quanto(-m * 60) + t(" di ritardo", " late");
+/** chi è, per le frasi in terza persona: «La lavatrice» se il nome è quello del tipo, altrimenti il nome com'è («Miele») */
+const soggetto = a => { const n = a.nome || ""; if (!riconosci(a) || !/^(la |il |lo |l')?(lavatric|asciugatric|lavastovigl|forno|frigo|friggitric|washer|washing|dryer|dishwasher|oven|fridge)/i.test(n)) return n;
+  const x = articolo(n); return x[0].toUpperCase() + x.slice(1); };
 const raggiungibileAp = a => [a.power, a.status, a.switch].some(x => x && ok(x)) || ![a.power, a.status, a.switch].some(Boolean);
 function fraseElettro(a) {
   const f = femm(a), st = stato(a), tipo = riconosci(a) || disegnoDi(a), V = VERBO()[tipo] || t("Sono in funzione", "I'm running");
   if (!raggiungibileAp(a)) return t(`${em("Non ti sento")}: controlla la presa o la rete.`, `${em("I can't hear you")}: check the plug or the network.`);
-  const M = manutenzioneDi(a).filter(x => valoreManut(x).cls === "warn"), coda = M.length ? " " + t(`${em(nomeManut(a, M[0]))}: da fare.`, `${em(nomeManut(a, M[0]))}: needs doing.`) : "";
+  const M = manutenzioneDi(a).filter(x => valoreManut(x).cls === "warn"), coda = M.length ? " " + t(`Da controllare: ${em(nomeManut(a, M[0]).toLowerCase())}.`, `Please check: ${em(nomeManut(a, M[0]).toLowerCase())}.`) : "";
   if (inPausa(a)) return t(`Sono ${em("in pausa")}. Riprendo quando vuoi.`, `I'm ${em("paused")}. I'll carry on whenever you like.`) + coda;
   if (st.k === "on") {
     const fi = fineDi(a), c = a.power ? ciclo(a.power) : null;
@@ -344,6 +369,15 @@ registra("elettro", {
   titolo: id => apDi(id).nome, luogo: id => AREAS[stanzaDi(apDi(id))]?.name || "",
   stato: id => { const a = apDi(id); if (!raggiungibileAp(a)) return "na"; if (inPausa(a)) return "warn"; const k = stato(a).k; return k === "on" ? "run" : k === "done" ? "warn" : k === "off" ? "off" : "ok"; },
   frase: id => fraseElettro(apDi(id)),
+  semplice: id => { const a = apDi(id), st = stato(a), fi = st.k === "on" ? fineDi(a) : null;
+    if (!raggiungibileAp(a)) return t("Non raggiungibile", "Unavailable");
+    return [inPausa(a) ? t("In pausa", "Paused") : st.n, fi ? (fi.ore ? t("fine ", "ends ") + hhmm(fi.ore) : t("mancano ", "") + quanto(fi.min * 60) + t("", " left")) : st.k === "on" && st.w != null ? watts(st.w) : ""].filter(Boolean).join(" · "); },
+  /* le entità dell'elettrodomestico (presa, sensori) portano a lui: per le frasi negli Avvisi */
+  trova: e => elenco().find(a => a.id === e || [a.power, a.status, a.switch, a.end, a.energy].includes(e))?.id ?? null,
+  /* negli Avvisi (se chi usa la plancia lo sceglie): «La lavatrice ha finito, 38 minuti in anticipo.» */
+  avviso: id => { const a = apDi(id); if (stato(a).k !== "done") return null;
+    const an = comeAnticipo(anticipo(a)), k = CONSIGLIO()[riconosci(a) || disegnoDi(a)], chi = esc(soggetto(a)) + " " + t("ha finito", "is done");
+    return an ? `${chi}, ${an}.` : k ? `${chi}: ${k}` : chi + "."; },
   disegno: (id, m) => disegnoElettro(apDi(id), m),
   comandi: id => { const a = apDi(id), st = stato(a), B = [], p = pausaDi(a), r = riprendiDi(a);
     if (inPausa(a) && r) B.push({ act: "ogApPremi", id: r, ic: "▶", txt: t("Riprendi", "Resume"), pri: true, off: S[r]?.state === "unavailable" });
@@ -355,7 +389,8 @@ registra("elettro", {
   dati: id => { const a = apDi(id), st = stato(a), kwh = a.energy ? oggi(a.energy) : null, fi = st.k === "on" ? fineDi(a) : null, c = a.power ? ciclo(a.power) : null;
     return [a.power ? ["⚡", st.w != null ? watts(st.w) : "—"] : null, kwh != null ? ["📊", fnum(kwh, 2) + t(" kWh oggi", " kWh today")] : null,
       fi ? ["⏱", fi.ore ? t("fine ", "ends ") + hhmm(fi.ore) : quanto(fi.min * 60)] : null,
-      c?.fine && st.k !== "on" ? ["🕒", t("ultimo ciclo ", "last cycle ") + new Date(c.fine).toLocaleString(LOC, { weekday: "short", hour: "2-digit", minute: "2-digit" })] : null]; },
+      c?.fine && st.k !== "on" ? ["🕒", t("ultimo ciclo ", "last cycle ") + new Date(c.fine).toLocaleString(LOC, { weekday: "short", hour: "2-digit", minute: "2-digit" })] : null,
+      st.k === "done" && comeAnticipo(anticipo(a)) ? ["🎯", esc(comeAnticipo(anticipo(a)))] : null]; },
   extra: id => { const a = apDi(id), M = manutenzioneDi(a); if (!M.length) return "";
     return `<div class="fl1">🧽 ${t("Manutenzione", "Maintenance")}</div><div class="og1mn">${M.map(x => { const v = valoreManut(x); return `<button class="${v.cls}" data-act="more" data-id="${x}"><small>${esc(nomeManut(a, x))}</small><b>${esc(v.tx)}</b></button>`; }).join("")}</div>`; },
   gesti: id => { const a = apDi(id), st = stato(a), p = pausaDi(a), r = riprendiDi(a);

@@ -269,3 +269,14 @@ L=1 node tools/mock/shot.mjs clima 820 1180 clima.png '[data-k="clima:climate.cu
 LS='{"mockEnt":"{\"lock.porta_ingresso\":[\"jammed\",{\"friendly_name\":\"Serratura ingresso\",\"supported_features\":1}]}"}' node tools/mock/shot.mjs sicurezza 390 844 bloccata.png '[data-k="porta:lock.porta_ingresso"]'
 LS='{"nduja_oggetti":"0"}' node tools/mock/shot.mjs home 1280 900 pannelli.png      # «Pannelli di prima»
 ```
+
+**Schede oggetto, parte 2** (0.7.56): `media_player.sonos_soggiorno` e `media_player.sonos_corridoio` sono uniti (`group_members`); `media_player.join` e `unjoin` cambiano davvero i gruppi
+(chi si unisce suona quello che suona il gruppo). L'Apple TV ha `media_duration` e `media_position` (l'avanzamento sullo schermo). Ogni comando finisce in `window.mockSvc` del finto Home Assistant
+(«dominio.servizio {dati} → {destinazione}»): dal frame della plancia si legge con `parent.mockSvc`. Le frasi si provano con `nduja_frasi` in `LS` (`{"off":["clima"],"avvisi":true}`);
+per «38 minuti in anticipo» servono `nduja_appl` (il ciclo finito) e `nduja_apPrev` (la prima previsione).
+```bash
+node tools/mock/shot.mjs musica 1280 900 cassa.png '.mpa1t >> nth=0'
+node tools/mock/shot.mjs media 390 844 tv.png '.md1tt'
+LS='{"nduja_frasi":"{\"off\":[\"cancello\",\"clima\"]}"}' node tools/mock/shot.mjs home 1280 900 semplici.png
+```
+

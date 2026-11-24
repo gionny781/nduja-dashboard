@@ -273,19 +273,23 @@ const ENT = {
   "automation.vecchia": st("off", { friendly_name: "Vecchia automazione", id: "789" }),
   "media_player.echo_cucina": st("playing", { friendly_name: "Echo cucina", supported_features: 318397, media_title: "Bohemian Rhapsody", media_artist: "Queen", volume_level: .35, entity_picture: "/custom_components/nduja_dashboard/frontend/img/chili.svg", source_list: ["Spotify","Radio"], source: "Spotify", shuffle: false, repeat: "off" }),
   /* musica 0.7.28: Sonos (sfoglia della cassa), Google Nest (cast), gruppo Google; Echo è di alexa_media (vedi REG) */
-  "media_player.sonos_soggiorno": st("paused", { friendly_name: "Sonos soggiorno", supported_features: 973375, media_title: "Notturno", media_artist: "Demo Trio", volume_level: .3, shuffle: false, repeat: "off", source_list: ["TV", "Linea"] }),
+  "media_player.sonos_soggiorno": st("paused", { friendly_name: "Sonos soggiorno", supported_features: 973375, media_title: "Notturno", media_artist: "Demo Trio", volume_level: .3, shuffle: false, repeat: "off", source_list: ["TV", "Linea"],
+    entity_picture: "/tools/mock/cover-b.svg", media_content_id: "x-sonos:notturno", group_members: ["media_player.sonos_soggiorno", "media_player.sonos_corridoio"] }),
+  /* schede oggetto 0.7.56: un secondo Sonos, unito a quello del soggiorno (group_members; media_player.join e unjoin cambiano i gruppi) */
+  "media_player.sonos_corridoio": st("paused", { friendly_name: "Sonos corridoio", supported_features: 973375, media_title: "Notturno", media_artist: "Demo Trio", volume_level: .22, shuffle: false, repeat: "off",
+    entity_picture: "/tools/mock/cover-b.svg", media_content_id: "x-sonos:notturno", group_members: ["media_player.sonos_soggiorno", "media_player.sonos_corridoio"] }),
   "media_player.nest_studio": st("idle", { friendly_name: "Nest Mini studio", supported_features: 152511, volume_level: .5 }),
   "media_player.casa_tutta": st("off", { friendly_name: "Tutta la casa", supported_features: 152511, volume_level: .4 }),
   /* Music Assistant 0.7.29: due casse di MA (mockNoMA le toglie: Music Assistant non installata) */
-  "media_player.ma_soggiorno": st("playing", { friendly_name: "Soggiorno MA", supported_features: 2544575, media_title: "Mattino lento", media_artist: "Demo Trio", media_album_name: "Album demo",
+  "media_player.ma_soggiorno": st("playing", { friendly_name: "Soggiorno MA", supported_features: 2544575 | 524288, media_title: "Mattino lento", media_artist: "Demo Trio", media_album_name: "Album demo",
     media_content_id: "library://track/12", media_content_type: "music", entity_picture: "/tools/mock/cover-a.svg", volume_level: .4, shuffle: false, repeat: "off", media_duration: 214, media_position: 63 }),
-  "media_player.ma_cucina": st("idle", { friendly_name: "Cucina MA", supported_features: 2544575, volume_level: .3, shuffle: false, repeat: "off" }),
+  "media_player.ma_cucina": st("idle", { friendly_name: "Cucina MA", supported_features: 2544575 | 524288, volume_level: .3, shuffle: false, repeat: "off" }),
   /* Media (0.7.30): TV Samsung con il suo telecomando, Apple TV, Google TV (Android TV Remote), LG webOS spenta, Harmony senza lettore */
   "media_player.tv_soggiorno": st("on", { friendly_name: "TV soggiorno", device_class: "tv", supported_features: 128|256|1024|4|8|2048|512|1|16384|16|32, volume_level: .18, is_volume_muted: false,
     source: "Netflix", app_name: "Netflix", source_list: ["TV", "HDMI 1", "HDMI 2", "Netflix", "YouTube", "Prime Video", "Disney+", "RaiPlay", "Mediaset Infinity", "DAZN", "Spotify", "Arte TV"] }),
   "remote.tv_soggiorno": st("on", { friendly_name: "TV soggiorno" }),
   "media_player.apple_tv_soggiorno": st("playing", { friendly_name: "Apple TV soggiorno", supported_features: 128|256|1|16384|16|32|512|2048|1024, media_title: "Il faro", media_series_title: "Serie demo",
-    media_content_type: "tvshow", entity_picture: "/tools/mock/cover-b.svg", app_name: "Apple TV", app_id: "com.apple.TVWatchList", source: "Apple TV", source_list: ["Apple TV", "Netflix", "YouTube", "RaiPlay", "Disney+", "Musica", "Foto"] }),
+    media_content_type: "tvshow", entity_picture: "/tools/mock/cover-b.svg", media_duration: 2580, media_position: 1210, media_position_updated_at: new Date(Date.now() - 60e3).toISOString(), app_name: "Apple TV", app_id: "com.apple.TVWatchList", source: "Apple TV", source_list: ["Apple TV", "Netflix", "YouTube", "RaiPlay", "Disney+", "Musica", "Foto"] }),
   "remote.apple_tv_soggiorno": st("on", { friendly_name: "Apple TV soggiorno" }),
   "media_player.google_tv_cucina": st("on", { friendly_name: "Google TV cucina", supported_features: 128|256|1024|8|512, app_id: "com.google.android.youtube.tv", app_name: "YouTube", volume_level: .3 }),
   "remote.google_tv_cucina": st("on", { friendly_name: "Google TV cucina", current_activity: "com.google.android.youtube.tv" }),
@@ -1050,6 +1054,8 @@ const conn = {
       case "config/entity_registry/get": return { entity_id: m.entity_id, labels: ["casa"], ...(m.entity_id.startsWith("media_player.ma_") ? { config_entry_id: "ma_finta", platform: "music_assistant" } : {}) };
       case "config/entity_registry/update": console.log("WS", JSON.stringify(m)); return { entity_entry: { entity_id: m.entity_id, labels: m.labels } };
       case "call_service":
+        /* ogni comando finisce in window.mockSvc («dominio.servizio {dati} → {destinazione}»): per controllare che i pulsanti chiamino i servizi giusti */
+        (window.mockSvc = window.mockSvc || []).push(m.domain + "." + m.service + " " + JSON.stringify(m.service_data || {}) + " → " + JSON.stringify(m.target || {}));
         if (m.domain === "calendar" && m.service === "get_events") { const ids = [].concat(m.target.entity_id); return { response: Object.fromEntries(ids.map(id => [id, { events: EV[id] || [] }])) }; }
         if (m.type === "recorder/statistic_during_period") return { change: 1.23 };
         /* mockPioggiaDomani: domani piove (prova dell'avviso dell'irrigazione) */
@@ -1097,6 +1103,19 @@ const conn = {
         if (["fan", "humidifier", "homeassistant", "number"].includes(m.domain)) mockAria(m);
         /* luci e interruttori: lo stato cambia davvero, come in Home Assistant (anche i membri dei gruppi) */
         if (["light", "switch"].includes(m.domain) && ["turn_on", "turn_off", "toggle"].includes(m.service)) mockLuci(m);
+        /* casse unite (0.7.56): join e unjoin cambiano group_members di tutte le casse coinvolte; chi si unisce suona quello che suona il gruppo */
+        if (m.domain === "media_player" && ["join", "unjoin"].includes(m.service)) {
+          const C = {}, gruppo = id => { const g = ENT[id]?.a.group_members; return Array.isArray(g) && g.length > 1 ? g : [id]; };
+          const metti = (g) => g.forEach(x => { const e = ENT[x]; if (!e) return; e.a = { ...e.a, group_members: g.length > 1 ? [...g] : [] }; C[x] = { "+": { s: e.s, a: e.a } }; });
+          const togli = x => { const g = gruppo(x).filter(y => y !== x); metti(g); metti([x]); };
+          if (m.service === "unjoin") [].concat(m.target?.entity_id || []).forEach(togli);
+          else for (const capo of [].concat(m.target?.entity_id || [])) { const nuovi = [].concat(m.service_data?.group_members || []).filter(x => x !== capo && ENT[x]);
+            nuovi.forEach(x => { if (gruppo(x).length > 1) togli(x); });
+            const g = [...new Set([...gruppo(capo), ...nuovi])], L = ENT[capo];
+            nuovi.forEach(x => { const e = ENT[x]; e.s = L.s; e.a = { ...e.a, media_title: L.a.media_title, media_artist: L.a.media_artist, entity_picture: L.a.entity_picture, media_content_id: L.a.media_content_id }; });
+            metti(g); }
+          console.log("SVC", JSON.stringify(m)); setTimeout(() => window.mockStati?.({ c: C }), 120);
+        }
         /* casse: play_media e play/pausa cambiano lo stato finto */
         if (m.domain === "media_player" && ["play_media", "media_play_pause"].includes(m.service) && !m.service_data?.enqueue) for (const id of [].concat(m.target?.entity_id || [])) { const e = ENT[id]; if (!e) continue;
           e.s = m.service === "play_media" ? "playing" : e.s === "playing" ? "paused" : "playing";

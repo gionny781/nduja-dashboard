@@ -7,6 +7,8 @@ import { S, ACT, CHG, UI, REG, DEVICES, LAYOUT, t, esc, nm, ok, attr, ents, area
   toast, render, cached, uncache, go, patch, FISSI, isAdmin, openSheet, closeSheet, PAGES, isTV, tvInMedia, myHA } from "../core.js";
 import { item, addBtn, cambia } from "../edit.js";
 import { TRASCINA } from "../trascina.js";
+import { registra, tocca, quadrante, em, coloreDi, allArticolo, elencoParole } from "../oggetti.js";
+import { disegnoCassa } from "../disegni.js";
 
 const F = { PAUSE: 1, SEEK: 2, VOL: 4, MUTE: 8, PREV: 16, NEXT: 32, ON: 128, OFF: 256, PLAY_MEDIA: 512, SOURCE: 2048, STOP: 4096, PLAY: 16384, SHUFFLE: 32768,
   SOUND: 65536, BROWSE: 131072, REPEAT: 262144, ENQUEUE: 2097152 };
@@ -21,7 +23,7 @@ function lettore(id, piccolo = false) {
   const titolo = a.media_title || (on ? a.source || a.app_name || "" : ""), art = a.media_artist || a.media_album_name || a.media_series_title || "";
   const b = (act, ic, f, extra = "") => ha(id, f) ? `<button class="mpc1 ${extra}" data-act="${act}" data-id="${id}">${ic}</button>` : "";
   return `<div class="mpl1 ${on ? "on" : ""} ${suona(id) ? "play" : ""} ${piccolo ? "mini" : ""}">
-    <div class="mpa1" style="${img ? `background-image:url('${esc(img)}')` : ""}">${img ? "" : `<span>${tipo(id)}</span>`}</div>
+    ${tocca(chiaveOgg(id), `<div class="mpa1" style="${img ? `background-image:url('${esc(img)}')` : ""}">${img ? "" : `<span>${tipo(id)}</span>`}</div>`, nm(id), "mpa1t")}
     <div class="mpt2"><div class="row between" style="gap:8px"><b>${esc(nm(id))}</b>${ha(id, F.ON) || ha(id, F.OFF) ? `<button class="sw ${on ? "on" : ""}" data-act="muPower" data-id="${id}" aria-label="${esc(nm(id))}"><i></i></button>` : ""}</div>
       <small>${esc(STATO()[S[id].state] || S[id].state)}${AREAS[areaOf(id)] && !piccolo ? " · " + esc(AREAS[areaOf(id)].name) : ""}</small>
       ${titolo ? `<div class="mpn1"><b>${esc(titolo)}</b>${art ? `<span>${esc(art)}</span>` : ""}</div>` : ""}
@@ -546,6 +548,128 @@ function suonaPref(p) {
   if (p.espandi) suonaCartella({ media_content_id: p.id, title: p.titolo, thumbnail: p.img, can_play: true, media_content_type: p.tipo });
   else suonaQui([{ id: p.id, titolo: p.titolo, sotto: p.sotto || "", img: p.img, tipo: p.tipo }], 0);
 }
+
+/* ================= scheda oggetto (oggetti.js): la cassa disegnata dentro il volume da trascinare,
+   i preferiti come dischi, le casse di casa stanza per stanza (quali suonano insieme: «unisci», «stacca») e «suona qui» ================= */
+const GRUPPO = 524288;   // MediaPlayerEntityFeature.GROUPING: media_player.join / unjoin
+/** le casse come oggetti: tutti i lettori che non sono TV (le TV sono l'oggetto «tv» di pages/media.js) */
+const casseOgg = () => ents("media_player", id => !isTV(id)).sort((a, b) => nm(a).localeCompare(nm(b)));
+/** chiave dell'oggetto di un lettore: la cassa o la TV */
+const chiaveOgg = id => (isTV(id) ? "tv:" : "cassa:") + id;
+/** chi suona insieme a questa cassa (lei compresa, la prima è quella che guida il gruppo) */
+const membri = id => { const g = attr(id, "group_members"); return Array.isArray(g) && g.length > 1 && g.includes(id) ? g.filter(x => S[x]) : [id]; };
+const conAltri = id => membri(id).filter(x => x !== id);
+const unibili = (a, b) => a !== b && ha(a, GRUPPO) && ha(b, GRUPPO) && piattaforma(a) === piattaforma(b) && ok(b);
+/** da dove può arrivare la musica per «Suona qui»: questo dispositivo (se suona) o una cassa che suona */
+const sorgenteVerso = id => ["qui", ...casse().filter(suona)].find(da => da !== id && (da !== "qui" || QUI.stato === "play") && puoSpostare(da, id)) || null;
+const kCassa = id => !ok(id) ? "na" : !acceso(id) ? "off" : suona(id) ? "play" : S[id].state === "paused" ? "pausa" : "on";
+const disegnoCassaDi = (id, m) => `<span class="apv1 og1v og2cv ${m}">${disegnoCassa(kCassa(id), { vol: attr(id, "volume_level"), muta: !!attr(id, "is_volume_muted"), piccolo: !["xl", "md2"].includes(m) })}</span>`;
+/* il colore della copertina, altrimenti il viola della musica */
+const VIOLA = { d: "#c58bff", l: "#8a3fd1" };
+const coloreCassa = id => (acceso(id) && coloreDi(copertina(attr(id, "entity_picture")))) || VIOLA;
+/** «, insieme alla cucina e allo studio» (stanze diverse dalla mia) oppure «, insieme a Nest Mini» (i nomi) */
+function insiemeA(id, L) {
+  const A = L.map(areaOf), mia = areaOf(id), perStanza = A.every(a => a && AREAS[a] && a !== mia) && new Set(A).size === A.length;
+  return perStanza ? t(", insieme ", ", together with ") + esc(elencoParole(A.map(a => allArticolo(AREAS[a].name))))
+    : t(", insieme a ", ", together with ") + esc(elencoParole(L.map(nm)));
+}
+/* la cassa parla (al femminile) */
+function fraseCassa(id) {
+  if (!ok(id)) return t(`${em("Non ti sento")}: controlla che sia accesa e collegata.`, `${em("I can't hear you")}: check it's powered and connected.`);
+  const a = S[id].attributes, st = S[id].state, tit = a.media_title, art = a.media_artist || a.media_album_name || "", ins = conAltri(id);
+  if (!acceso(id)) return t(`Sono ${em("spenta")}.`, `I'm ${em("off")}.`) + (ha(id, F.ON) ? " " + t("Tocca e mi accendo.", "Tap and I'll turn on.") : "");
+  if (st === "playing") return (tit ? t(`Suono ${em("«" + tit + "»")}`, `I'm playing ${em("«" + tit + "»")}`) + (art ? t(" di ", " by ") + esc(art) : "") : t(`Sto ${em("suonando")}`, `I'm ${em("playing")}`))
+    + (ins.length ? insiemeA(id, ins) : "") + (a.is_volume_muted ? t(`, ma sono ${em("muta")}`, `, but I'm ${em("muted")}`) : "") + ".";
+  if (st === "paused") return (tit ? t(`${em("In pausa")} su «${esc(tit)}»`, `${em("Paused")} on «${esc(tit)}»`) : t(`Sono ${em("in pausa")}`, `I'm ${em("paused")}`)) + t(". Riprendo quando vuoi.", ". I'll carry on whenever you like.");
+  return t(`Sono ${em("accesa")} e in silenzio`, `I'm ${em("on")} and quiet`) + (ins.length ? insiemeA(id, ins) : "") + t(". Scegli cosa suonare.", ". Pick something to play.");
+}
+function sempliceCassa(id) {
+  if (!ok(id)) return t("Non raggiungibile", "Unavailable");
+  const a = S[id].attributes, st = S[id].state;
+  return [STATO()[st] || st, ["playing", "paused"].includes(st) ? [a.media_title, a.media_artist].filter(Boolean).join(" – ") : "", conAltri(id).length ? "👥 " + membri(id).length : "", a.is_volume_muted ? t("muta", "muted") : ""].filter(Boolean).join(" · ");
+}
+/** il disegno al centro della scheda, con i gesti (tocco e tocco lungo) */
+function cassaGesto(id) {
+  const g = gestiCassa(id), fa = !!(g.tocco || g.lungo);
+  return `<div class="og1g ${fa ? "ges" : ""}" ${fa ? `data-og="cassa:${esc(id)}" role="button" tabindex="0" aria-label="${esc(g.aiuto || nm(id))}"` : ""}>${disegnoCassaDi(id, "md2")}${g.lungo ? `<svg class="og1r" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><rect x="1" y="1" width="98" height="98" rx="7" pathLength="100"/></svg>` : ""}</div>`;
+}
+function gestiCassa(id) {
+  if (!ok(id)) return {};
+  const on = acceso(id), st = S[id].state, E = { entity_id: id };
+  const tocco = !on ? (ha(id, F.ON) ? () => svc("media_player", "turn_on", {}, E).then(() => toast("⏻ " + nm(id))).catch(() => {}) : null)
+    : (ha(id, F.PAUSE) || ha(id, F.PLAY)) && ["playing", "paused"].includes(st) ? () => svc("media_player", "media_play_pause", {}, E).catch(() => {}) : null;
+  const lungo = on && ha(id, F.MUTE) ? () => { const m = !attr(id, "is_volume_muted"); svc("media_player", "volume_mute", { is_volume_muted: m }, E).then(() => toast((m ? "🔇 " : "🔊 ") + nm(id))).catch(() => {}); } : null;
+  const P = [tocco ? (on ? t("tocca la cassa per fermare o far ripartire la musica", "tap the speaker to pause or resume the music") : t("tocca la cassa per accenderla", "tap the speaker to turn it on")) : "",
+    lungo ? t("tienila premuta per il muto", "press and hold to mute") : "", on && ha(id, F.VOL) ? t("trascina il cerchio per il volume", "drag the ring for the volume") : ""].filter(Boolean).join(" · ");
+  return { tocco, lungo, aiuto: P ? P[0].toUpperCase() + P.slice(1) : "" };
+}
+/** i preferiti che questa cassa può suonare, come dischi (la copertina vera, altrimenti il disco disegnato) */
+function prefCassa(id) {
+  if (!ok(id)) return "";
+  const P = preferiti().map((p, i) => ({ p, i })).filter(({ p }) => p.k === "ma" ? isMA(id) : p.k === "cassa" ? p.cassa === id : ha(id, F.PLAY_MEDIA) && !isAlexa(id));
+  if (!P.length) return "";
+  const ora = suona(id) ? String(attr(id, "media_content_id") || "") : "";
+  return `<div class="fl1">⭐ ${t("Preferiti", "Favourites")}</div><div class="og2fv">${P.map(({ p, i }) => { const u = p.img ? copertina(p.img) : null, gira = !!ora && ora === p.id;
+    return `<button class="og2ds ${gira ? "on" : ""}" data-act="ogMuPref" data-id="${esc(id)}" data-i="${i}" aria-label="▶ ${esc(p.titolo)}"><span class="og2dv">${disco(gira)}${u ? `<img src="${esc(u)}" alt="" loading="lazy" onerror="this.remove()">` : ""}<i class="og2dh" aria-hidden="true"></i></span><small>${esc(p.titolo)}</small></button>`; }).join("")}</div>`;
+}
+function suonaPrefSu(p, id) {
+  if (p.k === "ma") return svc("music_assistant", "play_media", { media_id: p.id, media_type: p.tipo }, { entity_id: id }).then(() => { toast("▶ " + p.titolo + " · " + nm(id)); uncache("maq:" + id); }).catch(() => {});
+  const a = p.k === "cassa" ? p.cassa : id;
+  return svc("media_player", "play_media", { media_content_id: p.id, media_content_type: p.tipo || "music" }, { entity_id: a }).then(() => toast("▶ " + p.titolo + " · " + nm(a))).catch(() => {});
+}
+/** le casse di casa, stanza per stanza: quelle che suonano con questa sono unite; con un tocco si uniscono o si staccano */
+function stanzeCasse(id) {
+  const L = casseOgg(); if (L.length < 2) return "";
+  const g = {}; L.forEach(x => (g[AREAS[areaOf(x)] ? areaOf(x) : "_"] = g[AREAS[areaOf(x)] ? areaOf(x) : "_"] || []).push(x));
+  const ord = [...areasSorted(true).filter(a => g[a]), ...(g._ ? ["_"] : [])], M = membri(id);
+  const sotto = x => !ok(x) ? t("non raggiungibile", "unavailable") : suona(x) ? "▶ " + (attr(x, "media_title") || STATO().playing) : STATO()[S[x].state] || S[x].state;
+  const tessera = x => { const me = x === id, ins = !me && M.includes(x), un = unibili(id, x) || (ins && ha(x, GRUPPO));
+    return `<div class="og2sp ${me ? "me" : ""} ${ins ? "ins" : ""} ${suona(x) ? "play" : ""}">
+      <button class="og2sb" ${me ? `aria-current="true"` : `data-act="ogApri" data-k="cassa:${esc(x)}"`}>${disegnoCassaDi(x, "xs3")}<span class="tx"><b>${esc(nm(x))}</b><small>${esc(sotto(x))}</small></span></button>
+      ${me ? `<span class="og2lk me">${t("Questa", "This one")}</span>` : un ? `<button class="og2lk ${ins ? "on" : ""}" data-act="${ins ? "ogMuStacca" : "ogMuAggiungi"}" data-id="${esc(ins ? x : id)}" data-v="${esc(x)}" aria-pressed="${ins}">${ins ? "🔗 " + t("Insieme", "Together") : "＋ " + t("Unisci", "Join")}</button>` : ""}</div>`; };
+  return `<div class="fl1">🏠 ${t("Le casse di casa", "Speakers at home")}</div><div class="og2st">${ord.map(a => `<div class="og2sr"><small>${esc(a === "_" ? t("Senza stanza", "No room") : AREAS[a].name)}</small><div class="og2sl">${g[a].map(tessera).join("")}</div></div>`).join("")}</div>
+    ${L.some(x => x !== id && unibili(id, x)) ? `<p class="small muted og2nt">${t("Si uniscono le casse dello stesso sistema (per esempio Sonos con Sonos): suonano la stessa musica, insieme.", "Speakers of the same system can be joined (for example Sonos with Sonos): they play the same music, together.")}</p>` : ""}`;
+}
+registra("cassa", {
+  nome: () => t("Casse", "Speakers"), icona: "🔊", ordine: 60, pagina: "musica", soloVivo: true,
+  elenco: casseOgg, esiste: id => !!S[id] && id.startsWith("media_player.") && !isTV(id),
+  titolo: id => nm(id), luogo: id => AREAS[areaOf(id)]?.name || "",
+  stato: id => { const k = kCassa(id); return { na: "na", off: "off", play: "run", pausa: "warn" }[k] || "ok"; },
+  frase: fraseCassa, semplice: sempliceCassa, colore: coloreCassa,
+  disegno: disegnoCassaDi,
+  centro: id => {
+    if (!ha(id, F.VOL) || !ok(id)) return "";
+    const a = S[id].attributes, on = acceso(id);
+    return quadrante("cassa:" + id, { min: 0, max: 100, step: 1, tasto: 5, u: "%", v: a.volume_level != null ? Math.round(+a.volume_level * 100) : undefined, colore: "var(--oc)",
+      off: !on, spentoTxt: t("Spenta", "Off"), dentro: cassaGesto(id), nomi: { 1: "Volume" }, sotto: !on ? "" : a.is_volume_muted ? "🔇 " + t("muta", "muted") : t("volume", "volume") });
+  },
+  imposta: (id, v) => svc("media_player", "volume_set", { volume_level: Math.round(v) / 100 }, { entity_id: id }).catch(() => {}),
+  comandi: id => {
+    const off = !ok(id), on = acceso(id), st = S[id]?.state, B = [], b = (act, ic, txt, pri, x = {}) => ({ act, id, ic, txt, pri, off, ...x });
+    if (!on) { if (ha(id, F.ON)) B.push(b("muPower", "⏻", t("Accendi", "Turn on"), true)); }
+    else if ((ha(id, F.PAUSE) || ha(id, F.PLAY)) && ["playing", "paused"].includes(st)) B.push(b("muPlay", st === "playing" ? "⏸" : "▶", st === "playing" ? t("Pausa", "Pause") : t("Riprendi", "Resume"), true));
+    const da = !suona(id) && !off && sorgenteVerso(id);
+    if (da) B.push(b("ogMuQui", "⇢", t("Suona qui", "Play here"), !B.some(x => x.pri), { v: da }));
+    if (on && ha(id, F.NEXT) && ["playing", "paused"].includes(st)) B.push(b("muNext", "⏭", t("Avanti", "Next")));
+    if (conAltri(id).length && ha(id, GRUPPO)) B.push(b("ogMuStacca", "⛓", t("Stacca", "Unlink"), false, { v: id }));
+    else { const g = casseOgg().find(x => suona(x) && unibili(id, x)); if (g && !suona(id)) B.push(b("ogMuUnisci", "🔗", t("Unisciti a ", "Join ") + nm(g), false, { v: g })); }
+    return B.slice(0, 4);
+  },
+  dati: id => { if (!ok(id)) return []; const a = S[id].attributes, on = acceso(id), ins = conAltri(id);
+    return [on && ha(id, F.VOL) ? ["🔊", Math.round((+a.volume_level || 0) * 100) + "%" + (a.is_volume_muted ? " · " + t("muta", "muted") : "")] : null,
+      on && a.source ? ["🎚️", esc(a.source)] : null, ins.length ? ["👥", esc(t("con ", "with ") + elencoParole(ins.map(nm)))] : null,
+      MARCHE[piattaforma(id)] ? ["🏷️", esc(MARCHE[piattaforma(id)])] : null]; },
+  extra: id => prefCassa(id) + stanzeCasse(id),
+  gesti: gestiCassa,   // con il volume il disegno con i gesti sta dentro il cerchio (cassaGesto)
+  altro: id => { if (casse().includes(id) && !tolta(id)) sSet("mu_dove", id); if (UI.page === "musica") render(true); else go("musica"); },
+});
+Object.assign(ACT, {
+  ogMuQui: el => { const da = el.dataset.v, a = el.dataset.id; if (da === "qui") sblocca(); sposta(da, a); },
+  ogMuUnisci: el => { const id = el.dataset.id, g = el.dataset.v; svc("media_player", "join", { group_members: [id] }, { entity_id: membri(g)[0] }).then(() => toast("🔗 " + nm(id) + " · " + nm(g))).catch(() => {}); },
+  ogMuAggiungi: el => { const id = el.dataset.id, x = el.dataset.v; svc("media_player", "join", { group_members: [x] }, { entity_id: membri(id)[0] }).then(() => toast("🔗 " + nm(x) + " · " + nm(id))).catch(() => {}); },
+  ogMuStacca: el => { const x = el.dataset.v; svc("media_player", "unjoin", {}, { entity_id: x }).then(() => toast("⛓ " + nm(x) + t(": da sola", ": on its own"))).catch(() => {}); },
+  ogMuPref: el => { const p = preferiti()[+el.dataset.i]; if (p) suonaPrefSu(p, el.dataset.id); },
+});
 
 /* ================= pagina ================= */
 function cardCassa(id) {

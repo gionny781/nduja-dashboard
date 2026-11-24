@@ -3,7 +3,7 @@
    { map: camera | "none", quick: [select], passate: 2|3 (pulizia per stanza), ricambi: % (rosso sotto), noManut: [sensori da non mostrare] } */
 import { S, REG, ACT, CHG, LAYOUT, VISTE, AREAS, render, openSheet, UI, t, IT, esc, nm, ok, val, attr, ents, card, empty, page, svc, ws, cached, toast, isAdmin, shortName, deviceClass, DEFAULT_OFF, myHA, areaOf, fnum } from "../core.js";
 import { item, addBtn, scegli, cambia } from "../edit.js";
-import { registra, tocca, schedeGrandi, em } from "../oggetti.js";
+import { registra, tocca, schedeGrandi, em, articolo, frase } from "../oggetti.js";
 import { disegnoRobot } from "../disegni.js";
 
 const conf = id => LAYOUT.vacuums?.[id] || {};
@@ -56,7 +56,11 @@ function rapide(id) {
   return c ? c.filter(x => S[x]) : L.filter(x => RAPIDE.test(x)).slice(0, 4);
 }
 /* manutenzione: sensori «…_left» in % del robot, con il pulsante di azzeramento se c'è; quelli tolti in ✏️ non compaiono (tutti = anche quelli) */
-const nomeRic = (id, x) => shortName(x).replace(new RegExp("^" + nm(id) + "\\s*", "i"), "").replace(/\s*(left|rimanente)$/i, "");
+/* i nomi delle parti in inglese (come arrivano da molte integrazioni), in italiano se la plancia è in italiano */
+const PARTI_IT = [[/^main\s*brush/i, "Spazzola principale"], [/^side\s*brush/i, "Spazzola laterale"], [/^filter/i, "Filtro"], [/^sensors?(\s*dirty)?/i, "Sensori"],
+  [/^mop(\s*pad)?/i, "Panno"], [/^dust\s*bag/i, "Sacchetto"], [/^(cleaning\s*)?brush/i, "Spazzola"], [/^detergent/i, "Detergente"]];
+const nomeRic = (id, x) => { const n = shortName(x).replace(new RegExp("^" + nm(id).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*", "i"), "").replace(/\s*(left|rimanente)$/i, "");
+  if (!IT) return n; const r = PARTI_IT.find(([re]) => re.test(n)); return r ? r[1] : n; };
 function manutenzione(id, tutti = false) {
   const no = new Set(tutti ? [] : conf(id).noManut || []);
   return delDispositivo(id, x => x.startsWith("sensor.") && /_left$/.test(x) && attr(x, "unit_of_measurement") === "%" && ok(x) && !no.has(x)).map(x => {
@@ -150,17 +154,6 @@ const giro = {};   // stanze chieste da questa plancia, nell'ordine in cui le ha
 const STATI_R = ["cleaning", "docked", "returning", "paused", "idle", "error"];
 const kRobot = id => !ok(id) ? "idle" : STATI_R.includes(S[id].state) ? S[id].state : "idle";
 const inCarica = id => { const b = batteria(id); return attr(id, "charging") === true || (S[id]?.state === "docked" && b != null && b < 100); };
-/** con l'articolo davanti, in minuscolo, come lo diresti: «la cucina», «il corridoio», «l'ingresso», «lo studio» */
-function articolo(n) {
-  const s = String(n || "").trim(); if (!s) return "";
-  const m = s[0].toLowerCase() + s.slice(1);
-  if (!IT) return "the " + m;
-  if (/^[aeiouàèéìòù]/i.test(m)) return "l'" + m;
-  if (/^(s[^aeiou]|z|gn|ps|x|y)/i.test(m)) return "lo " + m;
-  if (/a$/i.test(m.split(" ")[0])) return "la " + m;
-  if (/i$/i.test(m.split(" ")[0])) return "i " + m;
-  return "il " + m;
-}
 /* la stanza che sta pulendo, se il robot lo dice (attributo o sensore dello stesso dispositivo) */
 const STANZA_ORA = /current_room|current_segment|cleaning_room|stanza_attuale|stanza_corrente|current_area/i;
 function stanzaOra(id) {
@@ -180,7 +173,7 @@ function fraseRobot(id) {
     const g = giro[id] && Date.now() - giro[id].t < 4 * 3600e3 ? giro[id].ids.map(r => nomeStanzaR(id, r)).filter(Boolean) : [], ora = stanzaOra(id);
     const dopo = ora ? g.slice(g.findIndex(n => n.toLowerCase() === ora.toLowerCase()) + 1).filter(n => n.toLowerCase() !== ora.toLowerCase()) : [];
     const prog = attr(id, "cleaning_progress");
-    if (ora) f = t(`Sto pulendo ${em(articolo(ora))}`, `I'm cleaning ${em(articolo(ora))}`) + (g.length && dopo.length && g.some(n => n.toLowerCase() === ora.toLowerCase()) ? t(", poi ", ", then ") + dopo.map(articolo).join(t(" e ", " and ")) : "") + ".";
+    if (ora) f = t(`Sto pulendo ${em(articolo(ora))}`, `I'm cleaning ${em(articolo(ora))}`) + (g.length && dopo.length && g.some(n => n.toLowerCase() === ora.toLowerCase()) ? t(", poi ", ", then ") + esc(dopo.map(articolo).join(t(" e ", " and "))) : "") + ".";
     else if (g.length) f = t(`Sto pulendo ${em(g.map(articolo).join(", ").replace(/, ([^,]*)$/, " e $1"))}.`, `I'm cleaning ${em(g.map(articolo).join(", ").replace(/, ([^,]*)$/, " and $1"))}.`);
     else f = t(`Sto ${em("pulendo casa")}`, `I'm ${em("cleaning the house")}`) + (prog ? t(`: sono al ${prog}%.`, `: ${prog}% done.`) : ".");
     if (b != null && b < 20) f += " " + t(`La batteria è al ${Math.round(b)}%: tra poco torno alla base.`, `Battery at ${Math.round(b)}%: I'll head back soon.`);
@@ -195,7 +188,7 @@ function fraseRobot(id) {
   }
   else f = t(`Sono ${em("fermo")}. Tocca e parto.`, `I'm ${em("stopped")}. Tap and I'll go.`);
   const R = ricambiBassi(id)[0];
-  if (R && !["cleaning", "error"].includes(st) && errOk) f += " " + t(`${nomeRic(id, R.id)}: ${em(Math.round(R.v) + "%")}, va cambiato.`, `${nomeRic(id, R.id)}: ${em(Math.round(R.v) + "%")}, needs replacing.`);
+  if (R && !["cleaning", "error"].includes(st) && errOk) f += " " + t(`${esc(nomeRic(id, R.id))}: ${em(Math.round(R.v) + "%")}, da cambiare.`, `${esc(nomeRic(id, R.id))}: ${em(Math.round(R.v) + "%")}, needs replacing.`);
   return f;
 }
 const vistaMappa = {};   // per robot: al centro la mappa invece del disegno (su questo dispositivo, finché resta aperta la plancia)
@@ -220,6 +213,8 @@ registra("robot", {
   stato: id => { if (!ok(id)) return "na"; const st = S[id].state, err = attr(id, "error"); if (st === "error" || (err && !/no.?error|none|^0$/i.test(String(err)))) return "bad";
     return ["cleaning", "returning"].includes(st) ? "run" : st === "paused" ? "warn" : ricambiBassi(id).length ? "warn" : "ok"; },
   frase: fraseRobot,
+  semplice: id => { if (!ok(id)) return t("Non raggiungibile", "Unavailable"); const st = S[id].state, b = batteria(id), ora = st === "cleaning" ? stanzaOra(id) : null;
+    return [STATO()[st] || String(attr(id, "status") || st).replace(/_/g, " "), ora, b != null ? Math.round(b) + "%" + (inCarica(id) ? " ⚡" : "") : ""].filter(Boolean).join(" · "); },
   disegno: (id, m) => m === "xl" && vistaMappa[id] && mappa(id) ? `<img class="vm1 og1mp" src="${esc(attr(mappa(id), "entity_picture") || "")}" alt="${t("Mappa", "Map")}">`
     : `<span class="apv1 og1v ${m}">${disegnoRobot(kRobot(id), { off: !ok(id), carica: inCarica(id), piccolo: m !== "xl" })}</span>`,
   angolo: id => mappa(id) ? `<button class="og1sw" data-act="ogMappa" data-id="${id}">${vistaMappa[id] ? "🤖 " + t("Robot", "Robot") : "🗺️ " + t("Mappa", "Map")}</button>` : "",
@@ -236,7 +231,7 @@ registra("robot", {
 });
 ACT.ogMappa = el => { const id = el.dataset.id; vistaMappa[id] = !vistaMappa[id]; render(); };
 /** riga del robot nella finestra della stanza (Home) */
-VISTE.oggRigaVac = id => !schedeGrandi() || !S[id] ? "" : `<button class="li og1li" data-act="ogApri" data-k="robot:${esc(id)}"><span class="apv1 og1v xs2">${disegnoRobot(kRobot(id), { off: !ok(id), carica: inCarica(id), piccolo: true })}</span><div class="tx"><b>${esc(nm(id))}</b><span>${fraseRobot(id).replace(/<[^>]+>/g, "")}</span></div><span class="st">›</span></button>`;
+VISTE.oggRigaVac = id => !schedeGrandi() || !S[id] ? "" : `<button class="li og1li" data-act="ogApri" data-k="robot:${esc(id)}"><span class="apv1 og1v xs2">${disegnoRobot(kRobot(id), { off: !ok(id), carica: inCarica(id), piccolo: true })}</span><div class="tx"><b>${esc(nm(id))}</b><span>${esc(frase("robot:" + id, { testo: true }))}</span></div><span class="st">›</span></button>`;
 
 function pagina() {
   const V = ents("vacuum");

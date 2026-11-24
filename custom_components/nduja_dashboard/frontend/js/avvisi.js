@@ -20,6 +20,7 @@ import { pericoli } from "./pages/sicurezza.js";
 import { novitaAvvisi } from "./novita.js";
 import { daCambiare, perAutomazione, tTipo } from "./batterie.js";
 import { info } from "./people.js";
+import { frase } from "./oggetti.js";
 
 const MIN = 6e4;
 const vecchio = id => Date.now() - new Date(S[id].last_changed).getTime();
@@ -87,7 +88,7 @@ const pioggia = r => {
   return f.some(x => /rain|pour|lightning|hail/.test(x.condition || "") || (x.precipitation_probability || 0) >= r.pioggiaPr);
 };
 
-/** elenco degli avvisi: { k (chiave per nasconderlo), ic, b, s, id?, go?, act?, cls } */
+/** elenco degli avvisi: { k (chiave per nasconderlo), ic, b, s, id?, go?, act?, cls, ogg? (l'entità di un oggetto: con le frasi negli Avvisi, b diventa la sua frase) } */
 export function avvisi() {
   seguiElettro();
   const A = [], R = regole(), aperte = inHome("aperture") ? openings().filter(isOn) : [];
@@ -107,7 +108,7 @@ export function avvisi() {
   if (inHome("pioggia") && openings().some(o => isOn(o) && deviceClass(o) === "window") && pioggia(R))
     A.unshift({ k: "rain", ic: "🌧️", b: t("Sta arrivando la pioggia", "Rain is coming"), s: t("ci sono finestre aperte", "some windows are open"), cls: "alert" });
   if (inHome("elettro")) for (const id of elettro()) if (soglie(id).avviso && EL[id]?.fine && Date.now() - EL[id].fine < R.finitoOre * 3600e3)
-    A.push({ k: "el:" + id + EL[id].fine, ic: "🧺", b: `${esc(shortName(id).replace(/\s*(potenza|power|consumo)\s*/ig, " ").trim())} ${t("ha finito", "is done")}`, s: ago(new Date(EL[id].fine).toISOString()), id });
+    A.push({ k: "el:" + id + EL[id].fine, ic: "🧺", b: `${esc(shortName(id).replace(/\s*(potenza|power|consumo)\s*/ig, " ").trim())} ${t("ha finito", "is done")}`, s: ago(new Date(EL[id].fine).toISOString()), id, ogg: id });
   const RF = inHome("raccolta") && new Date().getHours() >= R.raccoltaOra ? ritiri().domani : [];
   if (RF.length) A.push({ k: "rf:" + new Date().toDateString(), ic: "♻️", b: t("Stasera esponi", "Put out tonight"), s: RF.map(chip).join(" "), raw: true });
   /* pile scariche: le scelte della pagina Batterie (soglie, nascoste, aggiunte; niente telefoni, auto e batteria di casa) */
@@ -126,7 +127,7 @@ export function avvisi() {
 }
 
 export function avvisiCard() {
-  const A = avvisi(), n = A.length;
+  const A = avvisi().map(a => { const f = a.ogg ? frase(a.ogg, { avviso: true, testo: true }) : null; return f ? { ...a, b: esc(f) } : a; }), n = A.length;
   return card(`🔔 ${t("Avvisi", "Alerts")} <span class="tag ${n ? "warn" : "ok"}">${n || t("tutto ok", "all good")}</span>`, n ? `<div class="stack">${A.map(a => `<div class="li av3 ${a.cls || ""}" ${a.act ? `data-act="${a.act}"` : a.go ? `data-act="go" data-id="${a.go}"` : a.id ? `data-act="more" data-id="${a.id}"` : ""} role="button">
       <span class="ic">${a.ic}</span><div class="tx"><b>${a.b}</b><span>${a.s}</span></div><button class="x3" data-act="avHide" data-k="${esc(a.k)}" aria-label="${t("Nascondi", "Dismiss")}">✕</button></div>`).join("")}</div>`
     : `<div class="small muted">${t("Nessuna finestra aperta, nessuna pila scarica, nessun aggiornamento.", "No open windows, no low batteries, no updates.")}</div>`,

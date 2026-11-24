@@ -82,6 +82,9 @@ registra("clima", {
   titolo: id => nm(id), luogo: id => AREAS[areaOf(id)]?.name || "",
   stato: id => { if (!ok(id)) return "na"; if (S[id].state === "off") return "off"; const m = momentoClima(id); return m.rest ? "ok" : { heat: "heat", cool: "cool", dry: "dry" }[m.k] || "run"; },
   frase: fraseClima,
+  semplice: id => { if (!ok(id)) return t("Non raggiungibile", "Unavailable"); const a = S[id].attributes, H = HVAC(), cur = a.current_temperature;
+    const meta = a.temperature != null ? gr(a.temperature) : a.target_temp_low != null && a.target_temp_high != null ? gr(a.target_temp_low) + "–" + gr(a.target_temp_high) : "";
+    return [H[S[id].state] || S[id].state, S[id].state === "off" ? (cur != null ? gr(cur) : "") : cur != null && meta ? gr(cur) + " → " + meta : meta || (cur != null ? gr(cur) : "")].filter(Boolean).join(" · "); },
   disegno: (id, m) => vistaClima(id, "og1v " + m),
   centro: id => {
     const a = S[id]?.attributes || {}, due = a.temperature == null && a.target_temp_low != null && a.target_temp_high != null;

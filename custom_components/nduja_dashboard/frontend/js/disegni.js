@@ -209,3 +209,23 @@ export function disegnoRobot(k, o = {}) {
   </g></g>
   <g class="zz"><path d="M150 112h7l-7 8h7M163 100h5l-5 6h5"/></g></svg>`;
 }
+
+/* ---------- cassa: il woofer che pompa, le onde che escono (tante quanto il volume), pausa e muto ---------- */
+/** la cassa disegnata: k = play | pausa | on (accesa e zitta) | off | na; vol (0–1) decide quante onde; muta; piccolo (Home, elenchi: solo la cassa) */
+export function disegnoCassa(k, o = {}) {
+  const v = o.vol == null ? 2 : o.vol < .34 ? 1 : o.vol < .67 ? 2 : 3, cx = 100, cy = 124;
+  const arco = (r, lato) => { const a = 28 * Math.PI / 180, x = r * Math.cos(a), y = r * Math.sin(a), s = lato === "d" ? 1 : -1;
+    return `M${(cx + s * x).toFixed(1)} ${(cy - y).toFixed(1)}A${r} ${r} 0 0 ${lato === "d" ? 1 : 0} ${(cx + s * x).toFixed(1)} ${(cy + y).toFixed(1)}`; };
+  const onde = lato => [56, 70, 84].map((r, i) => `<path class="w w${i + 1}" d="${arco(r, lato)}"/>`).join("");
+  return `<svg class="ogd1 og-cs s-${k} v${v}${o.muta ? " muta" : ""}${o.piccolo ? " pc" : ""}" viewBox="${o.piccolo ? "50 6 100 188" : "0 0 200 200"}" aria-hidden="true" focusable="false">
+  <ellipse class="omb" cx="100" cy="192" rx="56" ry="5"/>
+  <g class="ond od">${onde("d")}</g><g class="ond os">${onde("s")}</g>
+  <rect class="b" x="56" y="12" width="88" height="176" rx="16"/><rect class="pan" x="63" y="19" width="74" height="162" rx="11"/>
+  <circle class="tw" cx="100" cy="52" r="13"/><circle class="twd" cx="100" cy="52" r="6"/>
+  <g class="wf"><circle class="acc" cx="${cx}" cy="${cy}" r="35"/><circle class="sur" cx="${cx}" cy="${cy}" r="31"/><circle class="cono" cx="${cx}" cy="${cy}" r="25"/>
+    <circle class="ri" cx="${cx}" cy="${cy}" r="19"/><circle class="ri" cx="${cx}" cy="${cy}" r="13.5"/><circle class="cap" cx="${cx}" cy="${cy}" r="8.5"/></g>
+  <g class="ps"><rect x="93" y="113" width="5" height="22" rx="2"/><rect x="102" y="113" width="5" height="22" rx="2"/></g>
+  <g class="mu"><circle cx="160" cy="88" r="11"/><path d="M155 83l10 10M165 83l-10 10"/></g>
+  <circle class="led" cx="100" cy="174" r="2.6"/>
+  <g class="qq"><circle cx="100" cy="124" r="11"/><path d="M96.4 121a3.8 3.8 0 1 1 5.4 3.4c-1.2.6-1.8 1.3-1.8 2.6M100 131.2v.2"/></g></svg>`;
+}

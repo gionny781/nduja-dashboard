@@ -797,6 +797,8 @@ body.ss-on .shell,body.ss-on .tabbar,body.ss-on .sheet,body.ss-on .backdrop,body
 .mpt2>small{color:var(--tx2);font-size:12px}
 .mpn1{display:flex;flex-direction:column;min-width:0}.mpn1 b,.mpn1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mpn1 span{font-size:12.5px;color:var(--tx2)}
 .mpk1{display:flex;gap:6px;align-items:center;margin-top:4px}
+/* .mpk1 è anche il segnaposto della mappa (sopra, assoluto): nei lettori di Musica e Media i tasti stanno al loro posto */
+.mpl1 .mpk1,.md1in .mpk1{position:static;transform:none;z-index:auto}
 .mpc1{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);font-size:15px;color:var(--tx)}
 .mpc1.big{width:46px;height:46px;font-size:19px;background:var(--tx);color:var(--bg,#000)}.mpc1.on{background:rgba(10,132,255,.4)}
 .mpv1{display:flex;align-items:center;gap:8px;margin-top:4px}.mpv1 input{flex:1}.mpv1 em{font-style:normal;font-size:12px;width:26px;text-align:right;color:var(--tx2)}

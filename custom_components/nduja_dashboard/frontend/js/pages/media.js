@@ -9,6 +9,7 @@
 import { S, REG, DEVICES, ACT, CHG, UI, LAYOUT, HOME_EXTRA, t, esc, nm, ok, attr, ents, areaOf, AREAS, card, empty, page, svc, sGet, sSet,
   toast, render, go, isAdmin, openSheet, closeSheet, isTV, tvAuto, excluded, remotoDi, lettoreDi, myHA } from "../core.js";
 import { item, addBtn, cambia, scegli, mostra } from "../edit.js";
+import { registra, tocca, schedeGrandi, apriOggetto, paginaVisibile, em, coloreDi, tintaDi } from "../oggetti.js";
 
 const F = { PAUSE: 1, VOL: 4, MUTE: 8, PREV: 16, NEXT: 32, ON: 128, OFF: 256, PLAY_MEDIA: 512, VSTEP: 1024, SOURCE: 2048, PLAY: 16384 };
 const ha = (id, f) => !!id && ((attr(id, "supported_features") || 0) & f) === f;
@@ -182,14 +183,20 @@ const ora = c => {
   return { titolo: a.media_title || a.media_series_title || "", sotto: [a.media_series_title && a.media_title ? a.media_series_title : "", a.media_artist || a.media_channel || ""].filter(Boolean).join(" · "),
     app: o?.app || null, sorgente: a.app_name || a.source || "", img: a.entity_picture || null };
 };
-/** lo schermo disegnato: spento (con la lucina), con l'app aperta (i suoi colori) o con l'immagine di quello che è in onda */
-function schermo(c, cls = "") {
+/** lo schermo disegnato: spento (con la lucina), con l'app aperta (i suoi colori) o con l'immagine di quello che è in onda;
+    extra: html in più dentro lo schermo (la pausa e l'avanzamento, nella scheda grande) */
+function schermo(c, cls = "", extra = "") {
   const o = ora(c), un = c.mp && !ok(c.mp);
   const dentro = !o ? `<i class="md1sb" aria-hidden="true"></i>`
     : o.img ? `<img src="${esc(o.img)}" alt="" loading="lazy" onerror="this.remove()">${o.app ? logo(o.app, o.app.n, "pic") : ""}`
     : o.app ? logo(o.app, o.app.n, "full")
     : `<span class="md1sn"><b>${esc(o.sorgente || nm(c.k))}</b></span>`;
-  return `<div class="md1tv ${o ? "on" : ""} ${un ? "un" : ""} ${cls}"><div class="md1sc">${dentro}<i class="md1gl" aria-hidden="true"></i></div><i class="md1ft" aria-hidden="true"></i></div>`;
+  return `<div class="md1tv ${o ? "on" : ""} ${un ? "un" : ""} ${cls}"><div class="md1sc">${dentro}${extra}<i class="md1gl" aria-hidden="true"></i></div><i class="md1ft" aria-hidden="true"></i></div>`;
+}
+/** lo schermo di un telecomando senza lettore (Harmony, Broadlink…): l'attività in corso */
+function schermoRemoto(c, cls = "") {
+  const on = S[c.rm]?.state === "on", att = attr(c.rm, "current_activity");
+  return `<div class="md1tv ${on ? "on" : ""} md1rmv ${cls}"><div class="md1sc"><span class="md1sn"><b>🎛️</b><small>${esc(on && att && !/^power\s*off$/i.test(att) ? att : on ? t("Acceso", "On") : t("Spento", "Off"))}</small></span><i class="md1gl" aria-hidden="true"></i></div><i class="md1ft" aria-hidden="true"></i></div>`;
 }
 const STATO = () => ({ on: t("Acceso", "On"), playing: t("In riproduzione", "Playing"), paused: t("In pausa", "Paused"), idle: t("Acceso", "On"), off: t("Spento", "Off"), standby: "Standby",
   buffering: t("Carica…", "Buffering…"), unavailable: t("Non raggiungibile", "Unavailable"), unknown: "—" });
@@ -198,7 +205,7 @@ function cardTV(c) {
   /* le app hanno i loro pulsanti: nel menu «Sorgente» restano gli ingressi (HDMI, TV…) */
   const tutte = (a.source_list || []).filter(s => typeof s === "string"), ingressi = tutte.filter(s => INGRESSO.test(s.trim()));
   const pl = (v, ic, f, lab) => ha(mp, f) ? `<button class="mpc1" data-act="mdMp" data-v="${v}" data-id="${mp}" aria-label="${lab}">${ic}</button>` : "";
-  const corpo = `${schermo(c)}
+  const corpo = `${tocca("tv:" + c.k, schermo(c), nm(c.k), "md1tt")}
     <div class="md1in"><div class="row between" style="gap:10px"><div class="md1nm"><b>${esc(nm(mp))}</b><small>${esc([STATO()[S[mp].state] || S[mp].state, AREAS[areaOf(mp)]?.name, MARCHE[c.plat]].filter(Boolean).join(" · "))}</small></div>
       ${ha(mp, F.ON) || ha(mp, F.OFF) || c.rm ? `<button class="md1pw ${on ? "on" : ""}" data-act="mdK" data-k="power" data-id="${c.k}" aria-label="${on ? t("Spegni", "Turn off") : t("Accendi", "Turn on")}" aria-pressed="${on}">⏻</button>` : ""}</div>
       ${o?.titolo ? `<div class="mpn1 md1now"><b>${esc(o.titolo)}</b>${o.sotto || o.sorgente ? `<span>${esc(o.sotto || o.sorgente)}</span>` : ""}</div>` : ""}
@@ -213,8 +220,8 @@ function cardTV(c) {
 }
 /* telecomando senza lettore (Harmony, Broadlink…): accensione e attività */
 function cardRemoto(c) {
-  const on = S[c.rm]?.state === "on", att = attr(c.rm, "current_activity");
-  return card("", `<div class="md1tc"><div class="md1tv ${on ? "on" : ""} md1rmv"><div class="md1sc"><span class="md1sn"><b>🎛️</b><small>${esc(on && att && !/^power\s*off$/i.test(att) ? att : on ? t("Acceso", "On") : t("Spento", "Off"))}</small></span><i class="md1gl" aria-hidden="true"></i></div><i class="md1ft" aria-hidden="true"></i></div>
+  const on = S[c.rm]?.state === "on";
+  return card("", `<div class="md1tc">${tocca("tv:" + c.k, schermoRemoto(c), nm(c.k), "md1tt")}
     <div class="md1in"><div class="row between" style="gap:10px"><div class="md1nm"><b>${esc(nm(c.rm))}</b><small>${esc([AREAS[areaOf(c.rm)]?.name, MARCHE[c.plat] || t("Telecomando", "Remote")].filter(Boolean).join(" · "))}</small></div>
       <button class="md1pw ${on ? "on" : ""}" data-act="mdK" data-k="power" data-id="${c.k}" aria-label="${on ? t("Spegni", "Turn off") : t("Accendi", "Turn on")}" aria-pressed="${on}">⏻</button></div>
       ${!(attr(c.rm, "activity_list") || []).length && !Object.keys(LAYOUT.mdTasti?.[c.k] || {}).length ? `<div class="small muted">${isAdmin() ? t("Con ✏️ Modifica scegli il comando di ogni tasto del telecomando.", "With ✏️ Edit choose the command of each remote key.") : t("I tasti di questo telecomando non sono ancora stati scelti.", "This remote's keys haven't been set up yet.")}</div>` : ""}</div></div>`, { cls: "md1a1" });
@@ -251,7 +258,7 @@ function cardApp(c) {
   const attivita = Array.isArray(act) && act.length ? act.filter(x => !/^power\s*off$/i.test(x)) : [];
   if (!L.length && !attivita.length) return "";
   APPV[c.k] = L;
-  const aperta = x => !!o && o.tutti.some(v => v === String(x.v).toLowerCase() || v === x.nome.toLowerCase() || (x.app && x.app.r.test(v)));
+  const aperta = x => appAperta(o, x);
   const pezzi = L.map((x, i) => ed ? `<button class="md1ap" data-act="mdAppNa" data-id="${c.k}" data-v="${esc(x.nome)}" aria-pressed="${!na.includes(x.nome)}" ${na.includes(x.nome) ? `style="opacity:.38"` : ""}>${logo(x.app, x.nome)}<small>${na.includes(x.nome) ? "🙈 " : "✓ "}${esc(x.nome)}</small></button>`
     : `<button class="md1ap ${aperta(x) ? "ora" : ""}" data-act="mdApp" data-id="${c.k}" data-i="${i}" aria-label="${t("Apri", "Open")} ${esc(x.nome)}">${logo(x.app, x.nome)}<small>${esc(x.nome)}</small></button>`).join("");
   const att = attivita.map(a => `<button class="md1at ${a === cur ? "ora" : ""}" data-act="mdAtt" data-id="${c.rm}" data-v="${esc(a)}"><span>${a === cur ? "●" : "▶"}</span>${esc(a)}</button>`).join("");
@@ -259,6 +266,8 @@ function cardApp(c) {
     ${c.plat === "androidtv_remote" && L.some(x => x.via === "activity") && !ed ? `<div class="small muted" style="margin-top:10px">${t("Si aprono se l'app è installata sulla TV.", "They open if the app is installed on the TV.")}${isAdmin() ? t(" Quelle che non hai le togli con ✏️ Modifica.", " Remove the ones you don't have with ✏️ Edit.") : ""}</div>` : ""}`, { cls: "md1a3" });
 }
 const APPV = {};
+/** quell'app è aperta adesso? (o = appOra) */
+const appAperta = (o, x) => !!o && o.tutti.some(v => v === String(x.v).toLowerCase() || v === x.nome.toLowerCase() || (x.app && x.app.r.test(v)));
 
 /* ================= pagina ================= */
 function chip(k, sel) {
@@ -288,11 +297,136 @@ function pagina() {
 function homeCard() {
   const L = schermi().filter(acceso); if (!L.length) return "";
   return card("📺 " + t("Media", "Media"), `<div class="stack">${L.slice(0, 3).map(mp => { const c = ctx(mp), o = ora(c), su = azione(c, "volsu"), giu = azione(c, "volgiu");
-    return `<div class="md1h">${`<button class="md1hb" data-act="mdVai" data-id="${mp}">${schermo(c, "sm")}<span class="tx"><b>${esc(nm(mp))}</b><small>${esc(o?.titolo || o?.sorgente || STATO()[S[mp].state] || "")}</small></span></button>`}
+    return `<div class="md1h">${`<button class="md1hb" ${schedeGrandi() ? `data-act="ogApri" data-k="tv:${esc(mp)}"` : `data-act="mdVai" data-id="${mp}"`}>${schermo(c, "sm")}<span class="tx"><b>${esc(nm(mp))}</b><small>${esc(o?.titolo || o?.sorgente || STATO()[S[mp].state] || "")}</small></span></button>`}
       ${giu ? `<button class="mpc1" data-act="mdK" data-k="volgiu" data-id="${mp}" aria-label="${t("Volume −", "Volume −")}">−</button>` : ""}${su ? `<button class="mpc1" data-act="mdK" data-k="volsu" data-id="${mp}" aria-label="${t("Volume +", "Volume +")}">+</button>` : ""}
       ${azione(c, "power") ? `<button class="md1pw on sm" data-act="mdK" data-k="power" data-id="${mp}" aria-label="${t("Spegni", "Turn off")}">⏻</button>` : ""}</div>`; }).join("")}</div>`, { link: ["Media", "media"] });
 }
 HOME_EXTRA.media = { title: () => t("Media", "Media"), render: homeCard, show: () => schermi().some(acceso) };
+
+/* ================= scheda oggetto (oggetti.js): la TV disegnata con quello che è in onda (il colore della copertina sulla parete),
+   il telecomando disegnato che pilota quello vero, le app preferite (scelte in ✏️ per tutta la casa: LAYOUT.mdPref { schermo: [nomi] }) ================= */
+/** com'è fatto lo schermo, per parlare: la TV e la console al femminile, il decoder, l'amplificatore e il telecomando al maschile */
+const femm = k => !["📡", "🎚️", "🎛️"].includes(icona(k));
+const oraDi = k => { const c = ctx(k); return c.mp ? ora(c) : null; };
+/** il colore di quello che è in onda: la copertina, altrimenti i colori dell'app */
+function coloreTv(k) {
+  const o = oraDi(k); if (!o) return null;
+  return (o.img && coloreDi(o.img)) || (o.app ? tintaDi(o.app.a1) : null);
+}
+/** a che punto è (0–100), se il lettore lo dice */
+function avanzamento(mp) {
+  const a = S[mp]?.attributes || {}, d = +a.media_duration, p = +a.media_position; if (!(d > 0) || isNaN(p)) return null;
+  const da = S[mp].state === "playing" && a.media_position_updated_at ? (Date.now() - Date.parse(a.media_position_updated_at)) / 1000 : 0;
+  return Math.min(100, Math.max(0, (p + Math.max(0, da)) / d * 100));
+}
+function disegnoTv(k, m) {
+  const c = ctx(k);
+  if (m !== "xl") return `<span class="og2ts ${m}">${c.mp ? schermo(c, "sm") : schermoRemoto(c, "sm")}</span>`;
+  const on = c.mp ? acceso(c.mp) : S[c.rm]?.state === "on", st = S[c.mp]?.state, pr = c.mp && on ? avanzamento(c.mp) : null, col = coloreTv(k);
+  const extra = (st === "paused" ? `<span class="og2ps" aria-hidden="true"><i></i><i></i></span>` : "") + (pr != null ? `<i class="og2pr" aria-hidden="true" style="width:${pr.toFixed(1)}%"></i>` : "");
+  return `<div class="og2tv ${on ? "on" : ""} ${st === "playing" ? "play" : ""}"${col ? ` style="--tc:${col.d};--tcl:${col.l}"` : ""}><i class="og2gw" aria-hidden="true"></i>${c.mp ? schermo(c, "xl", extra) : schermoRemoto(c, "xl")}</div>`;
+}
+/* la TV parla */
+function fraseTv(k) {
+  const c = ctx(k), f = femm(k), acc = f ? t("accesa", "on") : t("acceso", "on"), spe = f ? t("spenta", "off") : t("spento", "off");
+  if (!c.mp) {
+    if (!ok(c.rm)) return t(`${em("Non ti sento")}: controlla le pile o la rete del telecomando.`, `${em("I can't hear you")}: check the remote's batteries or network.`);
+    const att = attr(c.rm, "current_activity");
+    return S[c.rm].state === "on" && att && !/^power\s*off$/i.test(att) ? t(`Sono su ${em(att)}.`, `I'm on ${em(att)}.`) : t(`È tutto ${em("spento")}.`, `Everything is ${em("off")}.`);
+  }
+  if (!ok(c.mp)) return t(`${em("Non ti sento")}: controlla la corrente o la rete.`, `${em("I can't hear you")}: check the power or the network.`);
+  if (!acceso(c.mp)) return t(`Sono ${em(spe)}.`, `I'm ${em(spe)}.`) + (azione(c, "power") ? " " + t("Tocca e mi accendo.", "Tap and I'll turn on.") : "");
+  const o = ora(c), st = S[c.mp].state, dove = o.app?.n || o.sorgente || "", su = dove ? t(" su ", " on ") + esc(dove) : "";
+  const muto = attr(c.mp, "is_volume_muted") ? " " + t("Sono senza audio.", "I'm muted.") : "";
+  if (st === "paused") return (o.titolo ? t(`${em("In pausa")} su «${esc(o.titolo)}»`, `${em("Paused")} on «${esc(o.titolo)}»`) : t(`Sono ${em("in pausa")}`, `I'm ${em("paused")}`) + su) + "." + muto;
+  if (o.titolo) return t(`Sto mostrando ${em("«" + o.titolo + "»")}`, `I'm showing ${em("«" + o.titolo + "»")}`) + su + "." + muto;
+  if (dove) return t(`Sono ${acc} su ${em(dove)}.`, `I'm on ${em(dove)}.`) + muto;
+  return t(`Sono ${em(acc)}.`, `I'm ${em("on")}.`) + muto;
+}
+function sempliceTv(k) {
+  const c = ctx(k);
+  if (!c.mp) { const att = attr(c.rm, "current_activity"); return !ok(c.rm) ? t("Non raggiungibile", "Unavailable") : S[c.rm].state === "on" && att && !/^power\s*off$/i.test(att) ? att : STATO().off; }
+  if (!ok(c.mp)) return STATO().unavailable;
+  if (!acceso(c.mp)) return STATO().off;
+  const o = ora(c), st = S[c.mp].state;
+  return [st === "paused" ? STATO().paused : "", o.app?.n || o.sorgente || STATO()[st] || st, o.titolo, attr(c.mp, "is_volume_muted") ? t("senza audio", "muted") : ""].filter(Boolean).join(" · ");
+}
+/** il telecomando disegnato: solo i tasti che su questo schermo funzionano (gli altri restano incisi, spenti) */
+function telecomandoDisegnato(c) {
+  const fa = L => L.some(x => azione(c, x));
+  if (!fa(["su", "giu", "sx", "dx", "ok", "indietro", "home", "menu", "volsu", "volgiu", "chsu", "chgiu", "muto"])) return "";   // solo l'accensione: basta il pulsante qui sopra
+  const k = (key, ic, cls) => azione(c, key) ? `<button class="og2k ${cls}" data-act="mdK" data-k="${key}" data-id="${esc(c.k)}" aria-label="${esc(NOMI()[key])}" title="${esc(NOMI()[key])}">${ic}</button>` : `<span class="og2k ${cls} vu" aria-hidden="true"></span>`;
+  const fr = r => `<svg viewBox="0 0 24 24" aria-hidden="true" style="transform:rotate(${r}deg)"><path d="M7 14.5l5-5 5 5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const muto = attr(c.mp, "is_volume_muted");
+  return `<div class="og2rc" role="group" aria-label="${t("Telecomando", "Remote")}"><i class="og2ir" aria-hidden="true"></i>
+    <div class="og2rt">${k("power", "⏻", "pw")}</div>
+    ${fa(["su", "giu", "sx", "dx", "ok"]) ? `<div class="og2pad">${k("su", fr(0), "su")}${k("sx", fr(-90), "sx")}${k("ok", "OK", "ok")}${k("dx", fr(90), "dx")}${k("giu", fr(180), "giu")}</div>` : ""}
+    ${fa(["indietro", "home", "menu"]) ? `<div class="og2nv">${k("indietro", "↩", "tn")}${k("home", "⌂", "tn")}${k("menu", "☰", "tn")}</div>` : ""}
+    ${fa(["volsu", "volgiu", "chsu", "chgiu", "muto"]) ? `<div class="og2rk">${fa(["volsu", "volgiu"]) ? `<div class="og2rr">${k("volsu", "+", "rr")}<small>VOL</small>${k("volgiu", "−", "rr")}</div>` : ""}
+      ${fa(["muto"]) ? k("muto", muto ? "🔇" : "🔈", "mt") : ""}${fa(["chsu", "chgiu"]) ? `<div class="og2rr">${k("chsu", "⌃", "rr")}<small>CH</small>${k("chgiu", "⌄", "rr")}</div>` : ""}</div>` : ""}
+    <i class="og2lg" aria-hidden="true">🌶️ 'nduja</i></div>`;
+}
+/** le app preferite: quelle scelte in ✏️ (nell'ordine scelto), altrimenti quelle del catalogo che lo schermo ha (fino a 8) */
+function prefTv(k) {
+  const na = appNascoste(k), L = apps(ctx(k)).filter(x => !na.includes(x.nome)), P = LAYOUT.mdPref?.[k];
+  if (Array.isArray(P)) return P.map(n => L.find(x => x.nome === n)).filter(Boolean);
+  const cat = L.filter(x => x.app); return (cat.length ? cat : L).slice(0, 8);
+}
+function appTv(k) {
+  const c = ctx(k), na = appNascoste(k), tutte = apps(c).filter(x => !na.includes(x.nome)), L = prefTv(k), o = c.mp && acceso(c.mp) ? appOra(c) : null, adm = isAdmin();
+  const act = attr(c.rm, "activity_list"), cur = attr(c.rm, "current_activity"), att = !c.mp && Array.isArray(act) ? act.filter(x => !/^power\s*off$/i.test(x)) : [];
+  if (!tutte.length && !att.length) return "";
+  APPV["og:" + k] = L;
+  return `<div class="og2ap">${tutte.length ? `<div class="fl1 og2fh"><span>⭐ ${t("App preferite", "Favourite apps")}</span>${adm ? `<button class="btn sm" data-act="ogTvPref" data-id="${esc(k)}" aria-label="${t("Scegli le app preferite", "Choose the favourite apps")}">✏️<span class="og2et"> ${t("Scegli", "Choose")}</span></button>` : ""}</div>
+    ${L.length ? `<div class="og2aps">${L.map((x, i) => `<button class="md1ap ${appAperta(o, x) ? "ora" : ""}" data-act="ogTvApp" data-id="${esc(k)}" data-i="${i}" aria-label="${t("Apri", "Open")} ${esc(x.nome)}">${logo(x.app, x.nome)}<small>${esc(x.nome)}</small></button>`).join("")}</div>`
+      : `<div class="small muted">${adm ? t("Nessuna app preferita: sceglile con ✏️ Scegli.", "No favourite apps: pick them with ✏️ Choose.") : t("Nessuna app preferita.", "No favourite apps.")}</div>`}` : ""}
+    ${att.length ? `<div class="fl1">${t("Attività", "Activities")}</div><div class="md1ats">${att.map(a => `<button class="md1at ${a === cur ? "ora" : ""}" data-act="mdAtt" data-id="${esc(c.rm)}" data-v="${esc(a)}"><span>${a === cur ? "●" : "▶"}</span>${esc(a)}</button>`).join("")}</div>` : ""}</div>`;
+}
+/* ✏️ le app preferite di uno schermo (per tutta la casa) */
+let PK = null;
+function foglioPref() {
+  const k = PK, na = appNascoste(k), tutte = apps(ctx(k)).filter(x => !na.includes(x.nome)), scelte = prefTv(k).map(x => x.nome), proprie = Array.isArray(LAYOUT.mdPref?.[k]);
+  return `<div class="sh-head"><div><h3>⭐ ${t("App preferite", "Favourite apps")}</h3><div class="small muted">${esc(nm(k))} · ${t("vale per tutta la casa", "for the whole home")}</div></div><button class="x" data-act="sheetClose">×</button></div>
+    <p class="small muted" style="margin:0 2px 12px;line-height:1.45">${t("Tocca le app da avere nella scheda grande della TV: compaiono nell'ordine in cui le scegli.", "Tap the apps to keep on the TV's big card: they show in the order you pick them.")}${proprie ? "" : " " + t("Adesso sono automatiche: quelle che conosco, fino a otto.", "Right now they're automatic: the ones I know, up to eight.")}</p>
+    <div class="og2aps og2pk">${tutte.map(x => { const i = scelte.indexOf(x.nome); return `<button class="md1ap ${i >= 0 ? "sel" : ""}" data-act="ogTvPrefT" data-v="${esc(x.nome)}" aria-pressed="${i >= 0}">${logo(x.app, x.nome)}${i >= 0 && proprie ? `<i class="og2n">${i + 1}</i>` : ""}<small>${i >= 0 ? "★ " : "☆ "}${esc(x.nome)}</small></button>`; }).join("")}</div>
+    <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn pri" data-act="ogTvPrefOk">✓ ${t("Fatto", "Done")}</button>${proprie ? `<button class="btn" data-act="ogTvPrefAuto">✨ ${t("Automatiche", "Automatic")}</button>` : ""}</div>`;
+}
+const salvaPref = (k, L, msg) => cambia(l => { const M = { ...(l.mdPref || {}) }; if (L) M[k] = L; else delete M[k]; if (Object.keys(M).length) l.mdPref = M; else delete l.mdPref; }, msg);
+registra("tv", {
+  nome: () => t("TV e box", "TVs and boxes"), icona: "📺", ordine: 70, pagina: "media", soloVivo: true,
+  elenco: chiavi, esiste: id => chiavi().includes(id),
+  titolo: id => nm(id), luogo: id => AREAS[areaOf(id)]?.name || "",
+  stato: id => { const c = ctx(id); if (!c.mp) return !ok(c.rm) ? "na" : S[c.rm].state === "on" ? "run" : "off";
+    return !ok(c.mp) ? "na" : !acceso(c.mp) ? "off" : S[c.mp].state === "paused" ? "warn" : "run"; },
+  frase: fraseTv, semplice: sempliceTv, colore: coloreTv,
+  disegno: disegnoTv,
+  comandi: id => { const c = ctx(id), mp = c.mp, on = mp ? acceso(mp) : S[c.rm]?.state === "on", off = !ok(mp || c.rm), B = [];
+    if (azione(c, "power")) B.push({ act: "ogTv", id, v: "power", ic: "⏻", txt: on ? t("Spegni", "Turn off") : t("Accendi", "Turn on"), pri: !on, cls: on ? "bad" : "", off });
+    if (mp && on && (ha(mp, F.PAUSE) || ha(mp, F.PLAY)) && ["playing", "paused"].includes(S[mp].state))
+      B.push({ act: "mdMp", id: mp, v: "media_play_pause", ic: S[mp].state === "playing" ? "⏸" : "▶", txt: S[mp].state === "playing" ? t("Pausa", "Pause") : t("Riprendi", "Resume"), pri: true, off });
+    if (on && azione(c, "muto")) B.push({ act: "ogTv", id, v: "muto", ic: attr(mp, "is_volume_muted") ? "🔈" : "🔇", txt: attr(mp, "is_volume_muted") ? t("Audio", "Sound on") : t("Muto", "Mute"), off });
+    return B; },
+  dati: id => { const c = ctx(id), mp = c.mp, on = mp ? acceso(mp) : false, o = mp ? ora(c) : null, a = S[mp]?.attributes || {};
+    return [o && (o.app?.n || o.sorgente) ? ["▶", esc(o.app?.n || o.sorgente)] : null, on && ha(mp, F.VOL) && a.volume_level != null ? ["🔊", Math.round(+a.volume_level * 100) + "%"] : null,
+      MARCHE[c.plat] && MARCHE[c.plat] !== (o?.app?.n || o?.sorgente) ? ["🏷️", esc(MARCHE[c.plat])] : null]; },
+  extra: id => { const c = ctx(id), r = telecomandoDisegnato(c), a = appTv(id);
+    return r || a ? `<div class="og2tvx ${r ? "" : "solo"}">${r}${a}</div>` : ""; },
+  gesti: id => { const c = ctx(id), mp = c.mp; if (!ok(mp || c.rm)) return {};
+    const on = mp ? acceso(mp) : S[c.rm].state === "on", pw = azione(c, "power"), pp = mp && on && (ha(mp, F.PAUSE) || ha(mp, F.PLAY)) && ["playing", "paused"].includes(S[mp].state);
+    const tocco = !on ? pw : pp ? () => svc("media_player", "media_play_pause", {}, { entity_id: mp }).catch(() => {}) : null, lungo = on ? pw : null;
+    const P = [tocco ? (on ? t("tocca lo schermo per mettere in pausa o riprendere", "tap the screen to pause or resume") : t("tocca lo schermo per accendere", "tap the screen to turn on")) : "", lungo ? t("tienilo premuto per spegnere", "press and hold to turn off") : ""].filter(Boolean).join(" · ");
+    return { tocco, lungo, aiuto: P ? P[0].toUpperCase() + P.slice(1) : "" }; },
+  altro: id => { sSet("md_tv", id); if (paginaVisibile("media")) go("media"); },
+});
+Object.assign(ACT, {
+  ogTv: el => { const f = azione(ctx(el.dataset.id), el.dataset.v); if (f) f(); },
+  ogTvApp: el => { const k = el.dataset.id, x = (APPV["og:" + k] || [])[+el.dataset.i]; if (x) apri(ctx(k), x); },
+  ogTvPref: el => { if (!isAdmin()) return; PK = el.dataset.id; openSheet(foglioPref); },
+  ogTvPrefT: el => { const k = PK, n = el.dataset.v, L = prefTv(k).map(x => x.nome), i = L.indexOf(n); if (i >= 0) L.splice(i, 1); else L.push(n);
+    salvaPref(k, L, (i >= 0 ? "☆ " : "★ ") + n); },
+  ogTvPrefAuto: () => salvaPref(PK, null, "✨ " + t("App preferite automatiche", "Automatic favourite apps")),
+  ogTvPrefOk: () => apriOggetto("tv:" + PK),
+});
 
 /* ---------- ✏️ un tasto con un comando tuo ---------- */
 let ED = null;

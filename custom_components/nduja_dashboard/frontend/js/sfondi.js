@@ -13,6 +13,7 @@ import { cambia, indirizzoLocale, fileEsiste } from "./edit.js";
 import { mix } from "./scenaenergia.js";
 import { montaStile } from "./salvaschermo.js";
 import { inPeriodo, fine as fineFesta, dataTesto } from "./festa.js";
+import { voceFrasi } from "./oggetti.js";
 
 /* ================= catalogo ================= */
 /** [id, icona, nome, descrizione, animato, gruppo] (gruppo «natale»: gli sfondi di Natale, in un gruppo a parte) */
@@ -303,8 +304,8 @@ function natVoce() {
     <p class="small muted" style="margin-top:6px">${t(`Nel periodo di festa (fino al ${dataTesto(fineFesta())}) metto uno sfondo di Natale; finite le feste torna da solo quello scelto, che non cancello. Il periodo si cambia in ⚙️ Impostazioni → Natale.`, `During the festive season (until ${dataTesto(fineFesta())}) I show a Christmas background; after the holidays the chosen one comes back by itself (I don't delete it). Change the season in ⚙️ Settings → Christmas.`)}</p></div>`;
 }
 export function aspettoCard() {
-  return `<section class="card"><div class="ch"><h2>🎨 ${t("Aspetto", "Appearance")}</h2></div><div class="stack">${sfondoVoce()}</div>
-    <p class="small muted" style="margin-top:8px">${t("Sfondi statici e animati, tutti disegnati dalla plancia, oppure una tua immagine. Ogni dispositivo può avere il suo.", "Still and animated backgrounds, all drawn by the dashboard, or an image of yours. Every device can have its own.")}</p></section>`;
+  return `<section class="card"><div class="ch"><h2>🎨 ${t("Aspetto", "Appearance")}</h2></div><div class="stack">${sfondoVoce()}${voceFrasi()}</div>
+    <p class="small muted" style="margin-top:8px">${t("Sfondi statici e animati, tutti disegnati dalla plancia, oppure una tua immagine. Ogni dispositivo può avere il suo, e le sue frasi degli oggetti.", "Still and animated backgrounds, all drawn by the dashboard, or an image of yours. Every device can have its own, and its own object sentences.")}</p></section>`;
 }
 
 /* ---------- il foglio «Sfondo» ---------- */

@@ -1,4 +1,4 @@
-/* ===== 🖼️ Schede oggetto (js/oggetti.js) e disegni grandi di cancello, porta e robot (js/disegni.js) =====
+/* ===== 🖼️ Schede oggetto (js/oggetti.js) e disegni grandi di cancello, porta, robot e cassa (js/disegni.js); la TV e il telecomando (js/pages/media.js) =====
    Il foglio grande: in alto la frase (--oc è il colore dello stato), al centro il disegno o il quadrante, sotto comandi e dati.
    I disegni usano le variabili di .apv1 (--apb, --aps, --apk, --apg, --apin), quindi chiaro e scuro vengono da soli.
    Animazioni solo di transform e opacity; con la grafica leggera le più pesanti si fermano, con «Riduci movimento» tutte.
@@ -16,6 +16,9 @@
 .og1n small{font-size:12px;color:var(--tx3)}
 .og1f{font-size:clamp(21px,3.4vw,30px);font-weight:750;letter-spacing:-.025em;line-height:1.22;color:var(--tx);text-wrap:balance;min-height:1.2em}
 .og1f em,.og1hm em{font-style:normal;color:var(--oc);transition:color .4s}
+.og1f.piano{font-size:clamp(19px,2.8vw,25px);font-weight:650;letter-spacing:-.015em}
+/* il colore dell'oggetto (la copertina di quello che suona): --ocd nel tema scuro, --ocl nel chiaro */
+.og1.tinta,.og1hm.tinta{--oc:var(--ocd)}
 .og1c{position:relative;display:grid;place-items:center;min-width:0;padding:6px 0}
 .og1p{display:flex;flex-direction:column;gap:12px;min-width:0}
 @media (min-width:900px){
@@ -116,6 +119,8 @@
 .og1tp:hover{transform:scale(1.04)}.og1tp:active{transform:scale(.96)}
 .og1tp:focus-visible{outline:2px solid #0a84ff;outline-offset:3px}
 .og1tp.cl1t{border-radius:18px}
+.og1tp.mpa1t{border-radius:14px}
+.og1tp.md1tt{display:block;width:100%;border-radius:16px;text-align:inherit}.og1tp.md1tt>.md1tv{width:100%}.og1tp.md1tt:hover{transform:scale(1.015)}
 .vs1r{gap:12px;align-items:center}
 .og1li .apv1{margin-right:2px}
 .og1li .tx span{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -132,6 +137,9 @@
 .og1hm .tx>span{font-size:12.5px;line-height:1.35;color:var(--tx2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .og1hm em{font-weight:700}
 .og1cd{flex:none}.og1cd .apv1{--s:40px}
+.og1hd .og2ts .md1tv{width:58px;padding-bottom:9px}.og1cd .og2ts .md1tv{width:44px;padding-bottom:7px}
+.og2ts .md1sc{border-width:3px;border-radius:7px}.og2ts .md1ft{height:6px}.og2ts .md1ft::before{top:-3px;height:3px}.og2ts .md1lg b{font-size:9px}.og2ts .md1sn b{font-size:9px}.og2ts .md1sn small{display:none}
+.og2ts .md1sb{right:4px;bottom:3px;width:4px;height:4px}
 
 /* ================= disegni ================= */
 .ogd1 .omb{fill:rgba(0,0,0,.28)}
@@ -263,13 +271,141 @@
 @keyframes ogRespira{0%,100%{opacity:1}50%{opacity:.3}}
 @keyframes ogZz{0%,100%{opacity:.15;transform:translateY(3px)}50%{opacity:.6;transform:translateY(-2px)}}
 
+/* ---------- cassa ---------- */
+.og-cs{--sc:var(--oc,#c58bff)}
+.og-cs .b{fill:var(--apb);stroke:var(--aps);stroke-width:2}
+.og-cs .pan{fill:none;stroke:var(--aps);stroke-width:1;opacity:.28}
+.og-cs .tw{fill:var(--apin);stroke:var(--aps);stroke-width:1.6}.og-cs .twd{fill:var(--apk);opacity:.45}
+.og-cs .acc{fill:none;stroke:var(--sc);stroke-width:3;opacity:.85;transition:stroke .6s}
+.og-cs .sur{fill:var(--apin);stroke:var(--aps);stroke-width:1.4}
+.og-cs .cono{fill:var(--apg);stroke:var(--aps);stroke-width:1;stroke-opacity:.5}
+.og-cs .ri{fill:none;stroke:var(--aps);stroke-width:1;opacity:.35}
+.og-cs .cap{fill:var(--apk);opacity:.55}
+.og-cs .wf{transform-origin:100px 124px}
+.og-cs .w{fill:none;stroke:var(--sc);stroke-width:3.2;stroke-linecap:round;opacity:0;transition:stroke .6s}
+.og-cs .led{fill:var(--apk);opacity:.35;transition:fill .4s,opacity .4s}
+.og-cs .ps,.og-cs .mu,.og-cs .qq{opacity:0}.og-cs .ps rect{fill:#ff9f0a}
+.og-cs .mu circle{fill:#ff453a}.og-cs .mu path{fill:none;stroke:#fff;stroke-width:2.6;stroke-linecap:round}
+.og-cs .qq circle{fill:var(--apb);stroke:var(--apk);stroke-width:1.4}.og-cs .qq path{fill:none;stroke:var(--apk);stroke-width:2.2;stroke-linecap:round}
+.og-cs.s-play .led,.og-cs.s-on .led{fill:#30d158;opacity:.9}.og-cs.s-pausa .led{fill:#ff9f0a;opacity:.9}
+.og-cs.s-play .w{opacity:.75}.og-cs.v1 .w2,.og-cs.v1 .w3,.og-cs.v2 .w3{display:none}
+.og-cs.muta .w{display:none}.og-cs.muta .mu{opacity:1}
+.og-cs.s-pausa .ps{opacity:1}
+.og-cs.s-off .acc,.og-cs.s-na .acc{stroke:var(--aps);opacity:.4}
+.og-cs.s-na .qq{opacity:1}.og-cs.s-na .cap{opacity:0}
+.og-cs.pc{width:auto;height:var(--s,46px)}.og-cs.pc .ond,.og-cs.pc .omb,.og-cs.pc .mu,.og-cs.pc .pan{display:none}
+.og-cs.pc .b{stroke-width:3.4}.og-cs.pc .acc{stroke-width:4.4}
+@media (prefers-reduced-motion:no-preference){
+  .og-cs.s-play .wf{animation:ogPompa .46s ease-in-out infinite alternate}
+  .og-cs.s-play .w{animation:ogOnda 1.6s ease-out infinite}
+  .og-cs.s-play .w2{animation-delay:.25s}.og-cs.s-play .w3{animation-delay:.5s}
+  .og-cs.s-pausa .ps{animation:ogRespira 1.6s ease-in-out infinite}
+}
+@keyframes ogPompa{from{transform:scale(1)}to{transform:scale(1.045)}}
+@keyframes ogOnda{0%{opacity:0}25%{opacity:.85}100%{opacity:0}}
+.apv1.og1v.og2cv.xl{--s:min(260px,58vw)}
+/* dentro il cerchio del volume la cassa (alta e stretta) sta un po' più piccola del clima, sopra il numero */
+.og-cassa .og1qd{width:52%;top:43%}
+.apv1.og1v.xs3{--s:40px}
+
+/* ---------- preferiti come dischi (cassa) ---------- */
+.og2fv{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:12px 10px}
+.og2ds{display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0;padding:2px}
+.og2ds small{max-width:100%;font-size:12px;font-weight:650;color:var(--tx2);text-align:center;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.og2dv{position:relative;width:min(84px,100%);aspect-ratio:1;border-radius:50%;overflow:hidden;background:#0d0f16;box-shadow:0 10px 22px -12px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.08);transition:transform .15s}
+.og2dv .mu1d{inset:0;width:100%;height:100%}
+.og2dv img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.og2dh{position:absolute;left:50%;top:50%;width:16%;height:16%;transform:translate(-50%,-50%);border-radius:50%;background:var(--bg,#0b0d13);box-shadow:0 0 0 3px rgba(255,255,255,.22)}
+.og2ds:active .og2dv{transform:scale(.95)}
+.og2ds.on .og2dv{box-shadow:0 0 0 3px var(--oc),0 12px 26px -12px rgba(0,0,0,.85)}
+.og2ds.on small{color:var(--oc)}
+@media (prefers-reduced-motion:no-preference){.og2ds.on .og2dv{animation:mu1gira 6s linear infinite}}
+
+/* ---------- le casse di casa, stanza per stanza ---------- */
+.og2st{display:flex;flex-direction:column;gap:10px}
+.og2sr>small{display:block;margin:0 2px 6px;font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3)}
+.og2sl{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.og2sp{display:flex;align-items:center;gap:6px;min-width:0;padding:6px 8px 6px 6px;border-radius:17px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);transition:border-color .3s,background .3s}
+.og2sp.me{border-color:color-mix(in srgb,var(--oc) 55%,transparent);background:color-mix(in srgb,var(--oc) 9%,transparent)}
+.og2sp.ins{border-color:color-mix(in srgb,var(--oc) 45%,transparent)}
+.og2sb{flex:1;min-width:0;display:flex;align-items:center;gap:9px;text-align:left;padding:0;border-radius:12px}
+.og2sb .tx{min-width:0;display:flex;flex-direction:column;gap:1px}
+.og2sb b{font-size:13.5px;font-weight:700;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.og2sb small{font-size:11.5px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.og2sp.play .og2sb small{color:var(--tx2)}
+.og2lk{flex:none;padding:7px 10px;border-radius:12px;font-size:12px;font-weight:700;color:var(--tx2);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);white-space:nowrap}
+.og2lk.on{color:var(--oc);border-color:color-mix(in srgb,var(--oc) 55%,transparent);background:color-mix(in srgb,var(--oc) 12%,transparent)}
+.og2lk.me{background:none;border-color:transparent;color:var(--oc);padding:7px 4px}
+.og2nt{margin:2px 2px 0;line-height:1.45}
+
+/* ---------- TV: lo schermo grande, la luce sulla parete del colore di quello che è in onda ---------- */
+.og-tv .og1c>.og1g{width:100%}
+.og2tv{position:relative;width:100%;max-width:560px;margin:0 auto;--tc:#6f8dff;--tcl:#3f5fd6;padding:6% 0 0}
+.og2gw{position:absolute;left:-8%;right:-8%;top:-4%;bottom:6%;border-radius:40%;background:radial-gradient(closest-side,color-mix(in srgb,var(--tc) 55%,transparent),transparent);opacity:0;transition:opacity .8s,background .8s;pointer-events:none}
+.og2tv.on .og2gw{opacity:.7}
+.og2tv .md1tv.xl{position:relative}
+.og2tv .md1tv.xl .md1sc{border-width:8px;border-radius:18px}
+.og2tv .md1tv.xl .md1ft{height:14px}
+.og2tv .md1tv.xl .md1lg.full{font-size:clamp(26px,6vw,52px)}
+.og2tv .md1tv.xl .md1lg.pic{font-size:13px;left:12px;top:12px}
+.og2tv .md1tv.xl .md1sn b{font-size:clamp(20px,4vw,32px)}
+.og2ps{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:9%;background:rgba(0,0,0,.38);z-index:2}
+.og2ps i{width:5.5%;height:28%;border-radius:4px;background:rgba(255,255,255,.92);box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.og2pr{position:absolute;left:0;bottom:0;height:4px;background:var(--tc);box-shadow:0 0 10px var(--tc);z-index:3;transition:width 1s linear}
+@media (prefers-reduced-motion:no-preference){.og2tv.play .og2gw{animation:ogLuceTv 5s ease-in-out infinite}}
+@keyframes ogLuceTv{0%,100%{opacity:.58}50%{opacity:.85}}
+
+/* ---------- il telecomando disegnato e le app preferite ---------- */
+.og2tvx{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:start}
+.og2tvx.solo{grid-template-columns:minmax(0,1fr)}
+.og2rc{position:relative;width:156px;padding:18px 14px 20px;border-radius:46px 46px 38px 38px;display:flex;flex-direction:column;align-items:center;gap:14px;
+  background:linear-gradient(180deg,#30343f,#1b1e26 55%,#15171d);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -6px 14px rgba(0,0,0,.35),0 22px 40px -22px rgba(0,0,0,.9),0 0 0 1px rgba(0,0,0,.4);color:rgba(235,240,250,.88)}
+.og2ir{position:absolute;top:8px;left:50%;width:22px;height:5px;transform:translateX(-50%);border-radius:3px;background:linear-gradient(90deg,#3a1414,#5a1d1d,#3a1414);opacity:.9}
+.og2rt{display:flex;justify-content:flex-end;width:100%;padding:0 4px}
+.og2k{display:grid;place-items:center;border-radius:50%;background:linear-gradient(180deg,#3a3f4b,#262a33);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 3px 6px rgba(0,0,0,.45);color:inherit;font-size:15px;font-weight:700;line-height:1;transition:transform .1s,filter .1s}
+.og2k:active{transform:translateY(1px) scale(.95);filter:brightness(1.25)}
+.og2k:focus-visible{outline:2px solid #0a84ff;outline-offset:2px}
+.og2k.vu{opacity:.32;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+.og2k.pw{width:34px;height:34px;background:linear-gradient(180deg,#d6453b,#9f2a22);color:#fff;font-size:15px}
+.og2k.pw.vu{background:#2a2e38}
+.og2pad{position:relative;width:126px;height:126px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#2f333d,#1e2129 70%);box-shadow:inset 0 2px 0 rgba(255,255,255,.08),inset 0 -4px 10px rgba(0,0,0,.4),0 0 0 1px rgba(0,0,0,.45)}
+.og2pad .og2k{position:absolute;width:38px;height:38px;background:none;box-shadow:none;border-radius:12px}
+.og2pad .og2k svg{width:22px;height:22px}
+.og2pad .su{left:44px;top:4px}.og2pad .giu{left:44px;bottom:4px}.og2pad .sx{left:4px;top:44px}.og2pad .dx{right:4px;top:44px}
+.og2pad .og2k.ok{left:37px;top:37px;width:52px;height:52px;border-radius:50%;background:linear-gradient(180deg,#444a57,#2b2f39);box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 4px 10px rgba(0,0,0,.5);font-size:13px;letter-spacing:.04em}
+.og2pad .og2k.vu{opacity:.2}
+.og2nv{display:flex;gap:12px}.og2nv .og2k{width:36px;height:36px;font-size:16px}
+.og2rk{display:flex;align-items:center;gap:12px}
+.og2rr{display:flex;flex-direction:column;align-items:center;width:40px;border-radius:20px;background:linear-gradient(180deg,#363b46,#23262e);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 3px 8px rgba(0,0,0,.45);padding:2px 0}
+.og2rr small{font-size:8.5px;font-weight:800;letter-spacing:.1em;opacity:.55;margin:1px 0}
+.og2rr .og2k{width:36px;height:34px;background:none;box-shadow:none;font-size:18px}
+.og2k.mt{width:34px;height:34px;font-size:14px}
+.og2lg{font-style:normal;font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;opacity:.32;margin-top:2px;white-space:nowrap}
+.og2ap{min-width:0;display:flex;flex-direction:column;gap:10px}
+.og2fh{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0!important}.og2fh>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.og2aps{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:12px 10px}
+.og2aps .md1ap .md1lg{font-size:15px;border-radius:13px}
+.og2pk{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+.og2pk .md1ap{position:relative;opacity:.55}.og2pk .md1ap.sel{opacity:1}
+.og2pk .md1ap.sel .md1lg{box-shadow:0 0 0 3px #0a84ff,0 14px 26px -16px rgba(0,0,0,.9)}
+.og2n{position:absolute;top:-6px;right:-6px;z-index:2;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#0a84ff;color:#fff;font-style:normal;font-size:11.5px;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+@media (max-width:480px){.og2et{display:none}.og2tvx{gap:12px}.og2rc{width:140px;padding:16px 10px 18px;gap:12px}.og2pad{width:116px;height:116px}.og2pad .su,.og2pad .giu{left:39px}.og2pad .sx,.og2pad .dx{top:39px}.og2pad .og2k.ok{left:32px;top:32px}
+  .og2aps{grid-template-columns:repeat(auto-fill,minmax(84px,1fr))}}
+@media (max-width:360px){.og2tvx{grid-template-columns:minmax(0,1fr);justify-items:center}}
+
+/* ---------- 🗣️ frasi degli oggetti (Impostazioni) ---------- */
+.og1fr .tx span{white-space:normal;line-height:1.4}
+
 /* ---------- grafica leggera e «riduci movimento» ---------- */
 body.lite .og-rb .rbm,body.lite .og-rb .pol circle,body.lite .og-rb .lid,body.lite .og-rb .rit,body.lite .og-rb .zz{animation:none!important}
 body.lite .og-rb.r-returning .rbm{transform:translate(120px,112px) rotate(180deg)}
 body.lite .og-cg .anta,body.lite .og-pt .anta{transition-duration:.6s!important}
 body.lite .og1pgr .pi,body.lite .og1q .pi,body.lite .og1q .mk{transition:none}
+body.lite .og-cs .w,body.lite .og2tv .og2gw,body.lite .og2ds.on .og2dv,body.lite .og-cs.s-pausa .ps{animation:none!important}
+body.lite .og-cs.s-play .wf{animation-duration:.8s!important}
+body.lite .og2pr{transition:none}
 @media (prefers-reduced-motion:reduce){
-  .og1 *,.og1hg *,.ogd1 *{animation:none!important;transition:none!important}
+  .og1 *,.og1hg *,.ogd1 *,.og2dv{animation:none!important;transition:none!important}
   .og1g.hold .og1r rect,.og1k.tieni.hold s{transition:none!important}
 }
 
@@ -299,3 +435,10 @@ body.light .og-pt.ajar .luce{opacity:.45}body.light .og-pt{--legno:#e6d6c2;--ven
 body.light .og-rb{--rc:#18a2e6}
 body.light .og-rb .ombr{fill:rgba(40,50,70,.14)}
 body.light .og-rb.r-cleaning .sc{opacity:.09}
+body.light .og1.tinta,body.light .og1hm.tinta{--oc:var(--ocl)}
+body.light .og2sp{background:rgba(255,255,255,.65);border-color:rgba(28,28,30,.08)}
+body.light .og2lk{background:rgba(255,255,255,.8);border-color:rgba(28,28,30,.12)}body.light .og2lk.me{background:none;border-color:transparent}
+body.light .og2dh{background:#eef1f6;box-shadow:0 0 0 3px rgba(255,255,255,.5)}
+body.light .og2tv .og2gw{background:radial-gradient(closest-side,color-mix(in srgb,var(--tcl) 40%,transparent),transparent)}
+body.light .og2tv.on .og2gw{opacity:.5}
+body.light .og-cs .w{stroke-width:3.6}
