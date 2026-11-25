@@ -85,6 +85,9 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.58-dev ✅ | mer 25 nov | Fluidità: animazioni ferme quando non si vedono, grafica automatica che si misura |
 | 0.7.59-dev ✅ | mer 25 nov | Veloce anche con migliaia di entità (tablet Android) |
 | 0.7.60-dev ✅ | mer 25 nov | Alexa: i tuoi Echo, volumi e messaggi |
+| 0.7.61-dev | gio 26 nov | Manuale di istruzioni in PDF dalle Impostazioni |
+| 0.7.62-dev | ven 27 nov | Controllo finale prima della 0.8.0 |
+| **0.8.0** | sab 28 nov | **Versione definitiva** (solo se il controllo dice «pronta») |
 
 ⏸️ **In standby:** «In auto: comandi per CarPlay e Android Auto» — si farà ufficialmente con l'app 'Nduja; la scheda è in `docs/sviluppo/standby/in-auto-carplay.md`.
 
