@@ -1,0 +1,166 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8">
+<!-- Disegni semplificati delle schermate di Home Assistant per la guida all'installazione (COME_INSTALLARE.md / HOW_TO_INSTALL.md).
+     Non sono screenshot: sono schemi disegnati qui, senza loghi, per mostrare dove toccare. Uso: guida.html#<scena>-<it|en>, con guida.mjs.
+     La scena «apri» mette accanto alla barra laterale disegnata la plancia vera del finto Home Assistant (host.html). -->
+<style>
+:root{--bg:#eef1f5;--card:#fff;--tx:#1d2330;--mu:#66708a;--li:#dfe3ea;--ac:#1e88e5;--hi:#ff6a1a;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box}html,body{margin:0;width:1180px;height:740px;overflow:hidden;background:var(--bg);color:var(--tx);font-size:15px}
+.app{display:flex;height:100%}
+.side{width:230px;background:#fff;border-right:1px solid var(--li);display:flex;flex-direction:column;padding:10px 0}
+.side h1{font-size:17px;margin:6px 18px 14px;font-weight:600;display:flex;gap:10px;align-items:center}
+.side h1 i{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#5aa9f0,#1e6fd0);display:inline-block}
+.it{display:flex;align-items:center;gap:14px;padding:10px 18px;margin:1px 8px;border-radius:10px;color:#2a3242;font-size:14.5px;position:relative}
+.it svg{width:20px;height:20px;flex:none;stroke:#5c667c;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.it.on{background:#e3effc;color:#0f5db8;font-weight:600}.it.on svg{stroke:#0f5db8}
+.it img{width:22px;height:22px;margin:-1px}
+.grow{flex:1}.sep{height:1px;background:var(--li);margin:8px 16px}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.top{height:58px;display:flex;align-items:center;gap:12px;padding:0 34px 0 24px;border-bottom:1px solid var(--li);background:#fff}
+.top b{font-size:19px;font-weight:600}.top .crumb{color:var(--mu);font-size:14px}
+.dots{margin-left:auto;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;position:relative;font-size:22px;color:#4a5470}
+.body{flex:1;padding:22px 26px;position:relative;overflow:hidden}
+.card{background:var(--card);border-radius:14px;border:1px solid var(--li);padding:16px 18px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.row{display:flex;align-items:center;gap:14px;padding:12px 4px;border-bottom:1px solid #eef0f4}.row:last-child{border:0}
+.ico{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:#eef3fb;flex:none}
+.ico img{width:28px}
+.row small,.mu{color:var(--mu);font-size:13px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:22px;background:var(--ac);color:#fff;font-weight:600;font-size:14.5px;position:relative;white-space:nowrap}
+.btn.g{background:#fff;color:var(--ac);border:1px solid #c9d6e8}
+.ph{display:block;height:10px;border-radius:5px;background:#e6e9ef;margin:8px 0}
+.veil{position:absolute;inset:0;z-index:1;background:rgba(20,26,40,.42)}
+.dlg{z-index:3;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:520px;background:#fff;border-radius:22px;padding:24px 26px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.dlg h3{margin:0 0 6px;font-size:20px}.dlg p{margin:0 0 16px;color:var(--mu);font-size:14px;line-height:1.45}
+.fld{border:1px solid #c3cad6;border-radius:8px;padding:9px 12px 10px;margin:12px 0;position:relative}
+.fld small{display:block;color:var(--mu);font-size:11.5px;margin-bottom:2px}.fld code{font-size:15px;font-family:ui-monospace,Menlo,monospace}
+.acts{display:flex;justify-content:flex-end;gap:12px;margin-top:18px}
+.sw{width:40px;height:22px;border-radius:11px;background:#c5ccd8;position:relative;flex:none;margin-left:auto}.sw:after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff}
+.sw.on{background:var(--ac)}.sw.on:after{left:21px}
+.menu{position:absolute;right:20px;top:52px;width:290px;background:#fff;border-radius:12px;box-shadow:0 10px 34px rgba(0,0,0,.18);padding:6px 0;z-index:3}
+.menu div{padding:11px 18px;font-size:14.5px;position:relative}
+/* evidenziatore: anello arancione con il numero del passo */
+.hi{position:relative;z-index:2}
+.hi:before{content:"";position:absolute;inset:-6px;border:3px solid var(--hi);border-radius:inherit;box-shadow:0 0 0 6px rgba(255,106,26,.18);pointer-events:none}
+.hi.r:before{border-radius:12px}
+.n{position:absolute;right:-16px;top:-16px;width:28px;height:28px;border-radius:50%;background:var(--hi);color:#fff;font:700 15px/28px system-ui;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.25);z-index:4}
+.cap{padding:12px 24px 11px;flex:none;background:#1d2330;color:#fff;font-size:15px;display:flex;flex-direction:column;gap:3px;z-index:9;line-height:1.45}
+.cap b{color:#ffb27a}.cap .note{color:#8f9ab2;font-size:12px}
+.tag{font-size:12px;background:#fff3e0;color:#a65300;border-radius:6px;padding:2px 8px;font-weight:600}
+iframe{border:0;width:100%;height:100%;display:block}
+</style></head><body><div id="r" style="height:740px"></div>
+<script>
+const [scena, lingua] = (location.hash.slice(1) || "marketplace-it").split("-");
+const IT = lingua !== "en", t = (a, b) => IT ? a : b;
+/* icone semplici disegnate qui (niente icone di Home Assistant) */
+const I = {
+  casa: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>', fulmine: '<path d="M13 2L5 13h6l-1 9 8-11h-6z"/>', mappa: '<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+  lista: '<path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>', orologio: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  play: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/>', spunta: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/>',
+  chiave: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3"/>', ingr: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',
+  campana: '<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>', negozio: '<path d="M4 9l2-5h12l2 5"/><path d="M4 9h16v11H4z"/><path d="M9 20v-6h6v6"/>',
+  disp: '<rect x="3" y="4" width="8" height="8" rx="1.5"/><rect x="13" y="4" width="8" height="8" rx="1.5"/><rect x="3" y="14" width="8" height="6" rx="1.5"/><rect x="13" y="14" width="8" height="6" rx="1.5"/>',
+  aree: '<path d="M3 21V9l9-6 9 6v12z"/><path d="M3 13h18M12 13v8"/>', persone: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.5A5 5 0 0 1 22 19"/>',
+  auto: '<path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="5"/>', sistema: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+};
+const ic = k => `<svg viewBox="0 0 24 24">${I[k]}</svg>`;
+const CHILI = '<img src="/custom_components/nduja_dashboard/frontend/img/chili.svg" alt="">';
+const hi = (html, n, cls = "") => `<span class="hi r ${cls}" style="display:inline-flex">${html}<span class="n">${n}</span></span>`;
+
+function side(sel, nduja = false, nN = 0) {
+  const v = [["casa", t("Panoramica", "Overview")], ["fulmine", t("Energia", "Energy")], ["mappa", t("Mappa", "Map")], ["lista", t("Registro", "Logbook")],
+    ["orologio", t("Cronologia", "History")], ["play", "Media"], ["spunta", t("Elenchi attività", "To-do lists")]];
+  const it = (k, l, on) => `<div class="it ${on ? "on" : ""}">${ic(k)}${l}</div>`;
+  return `<nav class="side"><h1><i></i>Home Assistant</h1>
+    ${v.map(([k, l]) => it(k, l, sel === k)).join("")}
+    ${sel === "hacs" ? `<div class="it on hi r">${ic("negozio")}HACS<span class="n">1</span></div>` : ""}
+    ${nduja ? `<div class="it ${sel === "nduja" ? "on" : ""} hi r" style="margin-top:2px">${CHILI}<b>'Nduja</b>${nN ? `<span class="n">${nN}</span>` : ""}</div>` : ""}
+    <div class="grow"></div><div class="sep"></div>
+    ${it("chiave", t("Strumenti per sviluppatori", "Developer tools"))}
+    <div class="it ${sel === "impostazioni" ? "on" : ""} ${sel === "impostazioni" && !nduja ? "hi r" : ""}">${ic("ingr")}${t("Impostazioni", "Settings")}${sel === "impostazioni" && !nduja ? '<span class="n">1</span>' : ""}</div>
+    ${it("campana", t("Notifiche", "Notifications"))}</nav>`;
+}
+const barra = (titolo, crumb = "", dots = "") => `<div class="top">${crumb ? `<span class="crumb">${crumb}</span>` : ""}<b>${titolo}</b><span class="dots">${dots || "⋮"}</span></div>`;
+const cap = (testo) => `<div class="cap"><span>${testo}</span><span class="note">${t("Disegno semplificato: la tua schermata può essere un po' diversa", "Simplified drawing: your screen may look a little different")}</span></div>`;
+const ph = (w = 70) => `<span class="ph" style="width:${w}%"></span>`;
+const voce = (k, a, b, extra = "") => `<div class="row"><div class="ico"><svg viewBox="0 0 24 24" style="width:22px;stroke:#1e6fd0;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round">${I[k]}</svg></div><div><b>${a}</b><br><small>${b}</small></div>${extra}</div>`;
+
+/* la pagina Impostazioni con le sue voci */
+const impostazioni = (evid) => `<div class="card" style="max-width:760px">
+  ${voce("negozio", "Marketplace", t("Integrazioni, temi e plance della comunità", "Community integrations, themes and dashboards"), evid === "mk" ? '<span class="n" style="position:static;margin-left:auto">2</span>' : "")}
+  ${voce("disp", t("Dispositivi e servizi", "Devices & services"), t("Integrazioni, entità e aiutanti", "Integrations, entities and helpers"), evid === "ds" ? '<span class="n" style="position:static;margin-left:auto">2</span>' : "")}
+  ${voce("aree", t("Aree, etichette e zone", "Areas, labels & zones"), t("Stanze, piani e luoghi", "Rooms, floors and places"))}
+  ${voce("persone", t("Persone", "People"), t("Chi vive in casa e i suoi dispositivi", "Who lives here and their devices"))}
+  ${voce("auto", t("Automazioni e scene", "Automations & scenes"), "…")}
+  ${voce("sistema", t("Sistema", "System"), t("Backup, rete, registri, riavvio", "Backups, network, logs, restart"))}</div>`;
+
+const S = {
+  /* 1: Marketplace → Aggiungi da link */
+  marketplace: () => `<div class="app">${side("impostazioni")}<div class="main">${barra("Marketplace", t("Impostazioni ›", "Settings ›"), "")}
+    <div class="body"><div style="display:flex;justify-content:flex-end;margin:0 10px 18px">${hi(`<span class="btn g">＋ ${t("Aggiungi da link", "Add from link")}</span>`, 3)}</div>
+      <div class="grid">${[0, 1, 2, 3, 4, 5].map(() => `<div class="card"><div class="ico" style="margin-bottom:10px"></div>${ph(60)}${ph(90)}${ph(40)}</div>`).join("")}</div>
+      <div class="veil"></div>
+      <div class="dlg"><h3>${t("Aggiungi da link", "Add from link")}</h3><p>${t("Scrivi l'indirizzo del repository GitHub. La prima volta Home Assistant ti chiede di collegare GitHub: legge solo informazioni pubbliche.", "Type the GitHub repository address. The first time Home Assistant asks you to connect GitHub: it only reads public information.")}</p>
+        <div class="fld hi r" style="display:block"><small>Repository</small><code>gionny781/nduja-dashboard</code><span class="n">4</span></div>
+        <div class="acts"><span class="btn g">${t("Annulla", "Cancel")}</span>${hi(`<span class="btn">${t("Aggiungi", "Add")}</span>`, 5)}</div></div>
+    </div>${cap(`<b>1</b> ${t("Impostazioni", "Settings")} → <b>2</b> Marketplace → <b>3</b> ${t("Aggiungi da link", "Add from link")} → <b>4</b> gionny781/nduja-dashboard → <b>5</b> ${t("Aggiungi", "Add")}`)}</div></div>`,
+
+  /* 1 (prima della 2026.11): HACS → archivi personalizzati */
+  hacs: () => `<div class="app">${side("hacs")}<div class="main">${barra("HACS", "", hi("⋮", 2))}
+    <div class="body"><div class="card">${[0, 1, 2, 3, 4].map(() => `<div class="row"><div class="ico"></div><div style="flex:1">${ph(35)}${ph(60)}</div></div>`).join("")}</div>
+      <div class="veil"></div>
+      <div class="dlg"><h3>${t("Archivi digitali personalizzati", "Custom repositories")}</h3><p>${t("Aggiungi l'indirizzo del repository e scegli il tipo.", "Add the repository address and pick its type.")}</p>
+        <div class="fld hi r" style="display:block"><small>Repository</small><code>https://github.com/gionny781/nduja-dashboard</code><span class="n">3</span></div>
+        <div class="fld hi r" style="display:block"><small>${t("Tipo", "Type")}</small>${t("Integrazione", "Integration")}<span class="n">4</span></div>
+        <div class="acts">${hi(`<span class="btn">${t("Aggiungi", "Add")}</span>`, 5)}</div></div>
+    </div>${cap(`<b>1</b> HACS → <b>2</b> ⋮ → ${t("Archivi digitali personalizzati", "Custom repositories")} → <b>3</b> ${t("indirizzo", "address")} → <b>4</b> ${t("Integrazione", "Integration")} → <b>5</b> ${t("Aggiungi", "Add")}`)}</div></div>`
+    ,
+
+  /* 2: la pagina di 'Nduja nel Marketplace → Scarica */
+  scarica: () => `<div class="app">${side("impostazioni")}<div class="main">${barra("'Nduja Dashboard", "Marketplace ›")}
+    <div class="body"><div class="card" style="display:flex;gap:18px;align-items:center">
+        <div class="ico" style="width:72px;height:72px;border-radius:18px;background:#fff3ef">${CHILI.replace('alt=""', 'alt="" style="width:52px"')}</div>
+        <div style="flex:1"><b style="font-size:20px">'Nduja Dashboard</b><br><small class="mu">gionny781 · ${t("Integrazione", "Integration")}</small><br>
+          <small class="mu">${t("Una plancia in stile vetro, piccante, per Home Assistant.", "A spicy, glass-style control deck for Home Assistant.")}</small></div>
+        ${hi(`<span class="btn">⬇ ${t("Scarica", "Download")}</span>`, 1)}</div>
+      <div class="card" style="margin-top:16px"><b>README</b>${ph(92)}${ph(84)}${ph(88)}${ph(50)}<div style="height:150px;border-radius:10px;background:linear-gradient(120deg,#1b2b55,#3a1f4d);margin-top:12px"></div></div>
+    </div>${cap(`<b>1</b> ${t("Scarica: scegli l'ultima versione e conferma", "Download: pick the latest version and confirm")}`)}</div></div>`,
+
+  /* 2 (anteprime): l'interruttore Pre-release nella pagina del dispositivo */
+  prerelease: () => `<div class="app">${side("impostazioni")}<div class="main">${barra("'Nduja Dashboard", t("Impostazioni › Dispositivi e servizi › Marketplace ›", "Settings › Devices & services › Marketplace ›"))}
+    <div class="body"><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card"><b>${t("Controlli", "Controls")}</b>
+        <div class="row"><div><b>Pre-release</b><br><small>${t("Ricevi le anteprime (versioni -dev)", "Get the previews (-dev versions)")}</small></div>${hi('<span class="sw on"></span>', 3)}</div>
+        <div class="row"><div>${ph(140)}</div></div></div>
+      <div class="card"><b>${t("Entità disattivate", "Disabled entities")}</b>
+        <div class="row"><div style="flex:1"><b>Pre-release</b><br><small>${t("Disattivata di base", "Disabled by default")}</small></div>${hi(`<span class="btn g">${t("Attiva", "Enable")}</span>`, 2)}</div></div>
+      </div>
+      <div class="card" style="margin-top:16px">${ph(30)}${ph(70)}${ph(55)}</div>
+    </div>${cap(`<b>1</b> ${t("Impostazioni → Dispositivi e servizi → Marketplace → 'Nduja Dashboard", "Settings → Devices & services → Marketplace → 'Nduja Dashboard")} → <b>2</b> ${t("attiva", "enable")} Pre-release → <b>3</b> ${t("accendila", "turn it on")}`)}</div></div>`,
+
+  /* 3: riavvio */
+  riavvia: () => `<div class="app">${side("impostazioni")}<div class="main">${barra(t("Sistema", "System"), t("Impostazioni ›", "Settings ›"), hi("⏻", 3))}
+    <div class="body"><div class="grid">${[t("Backup", "Backups"), t("Rete", "Network"), t("Registri", "Logs"), t("Generale", "General"), t("Hardware", "Hardware"), t("Riparazioni", "Repairs")].map(x => `<div class="card"><b>${x}</b>${ph(70)}${ph(45)}</div>`).join("")}</div>
+      <div class="veil"></div>
+      <div class="dlg"><h3>${t("Riavvia Home Assistant", "Restart Home Assistant")}</h3>
+        <div class="row"><div class="ico">↻</div><div style="flex:1"><b>${t("Riavvio rapido", "Quick reload")}</b><br><small>${t("Ricarica solo la configurazione: non basta", "Only reloads the configuration: not enough")}</small></div></div>
+        <div class="row hi r" style="padding:12px 8px"><div class="ico">⏻</div><div style="flex:1"><b>${t("Riavvia Home Assistant", "Restart Home Assistant")}</b><br><small>${t("Serve per caricare 'Nduja", "Needed to load 'Nduja")}</small></div><span class="n">4</span></div></div>
+    </div>${cap(`<b>1</b> ${t("Impostazioni", "Settings")} → <b>2</b> ${t("Sistema", "System")} → <b>3</b> ⏻ ${t("in alto a destra", "top right")} → <b>4</b> ${t("Riavvia Home Assistant (non il riavvio rapido)", "Restart Home Assistant (not the quick reload)")}`)}</div></div>`,
+
+  /* 4: aggiungi l'integrazione */
+  integrazione: () => `<div class="app">${side("impostazioni")}<div class="main">${barra(t("Dispositivi e servizi", "Devices & services"), t("Impostazioni ›", "Settings ›"))}
+    <div class="body"><div class="grid">${[0, 1, 2, 3, 4, 5].map(() => `<div class="card"><div class="ico" style="margin-bottom:10px"></div>${ph(55)}${ph(35)}</div>`).join("")}</div>
+      <div style="position:absolute;right:30px;bottom:70px">${hi(`<span class="btn">＋ ${t("Aggiungi integrazione", "Add integration")}</span>`, 2)}</div>
+      <div class="veil"></div>
+      <div class="dlg"><h3>'Nduja Dashboard</h3><p>${t("Aggiunge alla barra laterale una plancia a pagina intera in stile vetro. Stanze, luci, clima, elettrodomestici e aggiornamenti vengono trovati da soli.", "Adds a full-page glass-style dashboard to the sidebar. Rooms, lights, climate, appliances and updates are found by themselves.")}</p>
+        <div class="fld"><small>${t("Nome nella barra laterale", "Sidebar title")}</small>'Nduja</div>
+        <div class="fld"><small>${t("Icona", "Icon")}</small>mdi:chili-hot</div>
+        <div class="row" style="padding:6px 0"><span>${t("Solo per amministratori", "Admins only")}</span><span class="sw"></span></div>
+        <div class="acts">${hi(`<span class="btn">${t("Invia", "Submit")}</span>`, 4)}</div></div>
+    </div>${cap(`<b>1</b> ${t("Impostazioni → Dispositivi e servizi", "Settings → Devices & services")} → <b>2</b> ＋ ${t("Aggiungi integrazione", "Add integration")} → <b>3</b> ${t("cerca", "search")} «'Nduja» → <b>4</b> ${t("Invia", "Submit")}`)}</div></div>`,
+
+  /* 5: apri 'Nduja nella barra laterale (accanto, la plancia vera del finto Home Assistant) */
+  apri: () => `<div class="app">${side("nduja", true, 1)}<div class="main" style="background:#111"><div style="flex:1;min-height:0"><iframe src="/tools/mock/host.html"></iframe></div>
+    ${cap(`<b>1</b> 🌶️ 'Nduja ${t("nella barra laterale: la plancia si apre a pagina intera", "in the sidebar: the dashboard opens full page")}`)}</div></div>`,
+};
+document.getElementById("r").innerHTML = (S[scena] || S.marketplace)();
+</script></body></html>

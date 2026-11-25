@@ -81,12 +81,12 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.54-dev ✅ | lun 23 nov | Natale: pagina delle luci di festa (Twinkly), sfondo e salvaschermo |
 | 0.7.55-dev ✅ | mar 24 nov | Schede oggetto (1): cancello, porta, robot, clima, lavatrice |
 | 0.7.56-dev ✅ | mar 24 nov | Schede oggetto (2): musica, TV e frasi ovunque |
-| 0.7.57-dev | mer 25 nov | Guida all'installazione illustrata e controllo finale |
+| 0.7.57-dev ✅ | mer 25 nov | Guida all'installazione illustrata e controllo finale |
 
 ⏸️ **In standby:** «In auto: comandi per CarPlay e Android Auto» — si farà ufficialmente con l'app 'Nduja; la scheda è in `docs/sviluppo/standby/in-auto-carplay.md`.
 
 ## Dopo
-- 0.8.0 — versione ufficiale con tutte le anteprime, guida COME_INSTALLARE con foto, ritocchi
+- 0.8.0 — versione ufficiale con tutte le anteprime e ritocchi (la guida [COME_INSTALLARE](COME_INSTALLARE.md) con le immagini è pronta; cosa resta: [VERSO-0.8.0](docs/sviluppo/VERSO-0.8.0.md))
 - 1.0 — via «beta», segnalazione all'elenco ufficiale HACS
 
 ## Dopo la 0.8.0

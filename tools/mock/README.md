@@ -280,3 +280,11 @@ node tools/mock/shot.mjs media 390 844 tv.png '.md1tt'
 LS='{"nduja_frasi":"{\"off\":[\"cancello\",\"clima\"]}"}' node tools/mock/shot.mjs home 1280 900 semplici.png
 ```
 
+
+**Galleria e guida** (0.7.57): `galleria.mjs` rifà le immagini del README e della guida in `docs/galleria/` (tablet 1180×820 in tema scuro accanto al telefono 390×844 in tema chiaro, con le cornici disegnate, WebP); l'ora è ferma a mercoledì 25 novembre alle 11 (Natale il 12 dicembre sera).
+Al posto del peperoncino di prova usa `cam-ingresso.svg`, `cam-garage.svg` e `mappa-robot.svg`. `guida.mjs` fa i disegni semplificati delle schermate di Home Assistant da `guida.html` (`#<scena>-it|en`: `marketplace`, `hacs`, `scarica`, `prerelease`, `riavvia`, `integrazione`, `apri`) in `docs/guida/`.
+```bash
+node tools/mock/galleria.mjs                 # tutte (circa 20 minuti)
+node tools/mock/galleria.mjs home meteo      # solo alcune; RAW=1 salva anche i PNG dei due schermi
+node tools/mock/guida.mjs riavvia
+```

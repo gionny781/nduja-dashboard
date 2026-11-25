@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180"><!-- telecamera finta «Garage» per le schermate: visione notturna, disegnata per 'Nduja -->
+<defs><radialGradient id="l" cx=".5" cy="0" r="1"><stop offset="0" stop-color="#9fb0a4"/><stop offset="1" stop-color="#3b4640"/></radialGradient></defs>
+<rect width="320" height="180" fill="url(#l)"/><path d="M0 120h320v60H0z" fill="#56635a"/><path d="M40 120l-40 60M110 120l-14 60M210 120l14 60M280 120l40 60" stroke="#4a564e" stroke-width="2"/>
+<rect x="18" y="26" width="70" height="80" fill="#4e5b53"/><path d="M24 40h58M24 56h58M24 72h58M24 88h58" stroke="#68766c" stroke-width="4"/>
+<path d="M118 120c4-20 14-34 30-38l26-14h52l28 18c20 4 30 14 32 34z" fill="#2c3530"/><path d="M168 74l14-6h40l18 12z" fill="#7d8d82"/>
+<circle cx="150" cy="122" r="15" fill="#1d2420"/><circle cx="150" cy="122" r="6" fill="#6f7e73"/><circle cx="262" cy="122" r="15" fill="#1d2420"/><circle cx="262" cy="122" r="6" fill="#6f7e73"/>
+<rect x="250" y="20" width="44" height="30" rx="3" fill="#4e5b53"/><path d="M256 28h32M256 36h24M256 44h28" stroke="#6f7e73" stroke-width="3"/>
+<text x="10" y="170" font-family="monospace" font-size="10" fill="#dfe8e2">IR</text></svg>

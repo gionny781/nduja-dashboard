@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><!-- mappa finta del robot per le schermate: pianta vista dall'alto, disegnata per 'Nduja -->
+<rect width="400" height="300" fill="#141a24"/>
+<g stroke="#e9eef6" stroke-width="5" stroke-linejoin="round" fill="none">
+<path d="M30 30h340v240H30z"/><path d="M200 30v95M200 165v105M30 150h70M140 150h60M260 150h110M290 150v-20M290 110V30"/></g>
+<g opacity=".9"><path d="M33 33h164v114H33z" fill="#3b6ea5"/><path d="M203 33h84v114h-84z" fill="#5a9e6f"/><path d="M293 33h74v114h-74z" fill="#b07ab8"/><path d="M33 153h164v114H33z" fill="#c98b4a"/><path d="M203 153h164v114H203z" fill="#4a9aa8"/></g>
+<g fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2"><path d="M46 50h136M46 62h136M46 74h136M46 86h136M46 98h136M46 110h136M46 122h96"/></g>
+<g fill="rgba(0,0,0,.35)"><rect x="60" y="180" width="70" height="40" rx="6"/><rect x="230" y="190" width="40" height="40" rx="20"/><rect x="310" y="45" width="40" height="70" rx="4"/></g>
+<g font-family="sans-serif" font-size="13" font-weight="600" fill="#fff"><text x="115" y="140" text-anchor="middle">Soggiorno</text><text x="245" y="140" text-anchor="middle">Bagno</text><text x="330" y="140" text-anchor="middle" font-size="11.5">Lavanderia</text><text x="115" y="260" text-anchor="middle">Cucina</text><text x="285" y="260" text-anchor="middle">Ingresso</text></g>
+<circle cx="150" cy="122" r="9" fill="#fff"/><circle cx="150" cy="122" r="4" fill="#3b6ea5"/><rect x="340" y="236" width="18" height="18" rx="4" fill="#ffd34d"/></svg>
