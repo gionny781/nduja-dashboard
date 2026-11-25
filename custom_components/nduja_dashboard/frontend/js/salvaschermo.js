@@ -23,7 +23,7 @@
    Leggerezza: si ridisegna al massimo ogni 20 secondi (e al cambio del minuto), le animazioni sono solo CSS
    (transform e opacity), tutto si ferma quando la scheda non è visibile e con «Riduci movimento».
    Anteprima dal vivo nel foglio «Personalizza» (stesso disegno, in piccolo). */
-import { S, ACT, CHG, FISSI, UI, AGGIUNGI, t, LOC, esc, fnum, attr, W, nm, watts, sGet, sSet, ws, toast, openSheet, closeSheet, render, patch, cached,
+import { S, ACT, CHG, FISSI, UI, AGGIUNGI, VISTE, t, LOC, esc, fnum, attr, W, nm, watts, sGet, sSet, ws, toast, openSheet, closeSheet, render, patch, cached,
   weatherEnt, WX, ents, roomTemp, roomHum, areasSorted, AREAS, forecast, myHA } from "./core.js";
 import { inDiretta } from "./video.js";
 import { indirizzoLocale, fileEsiste } from "./edit.js";
@@ -289,6 +289,9 @@ function pannelli(d) {
   const PP = ents("person").slice(0, 6);
   if (PP.length) P.push(pan("👥", t("Persone", "People"), `<div class="ssq4">${PP.map(p => { const i = persona(p);
       return `<div class="${i.casa ? "home" : ""}"><span class="ssav" style="${i.foto ? `background-image:url('${esc(i.foto)}')` : ""}">${i.foto ? "" : esc(i.nome[0] || "?")}</span><b>${esc(i.nome)}</b><small>${i.casa ? "🏠" : "📍"} ${esc(i.zona)}</small></div>`; }).join("")}</div>`, "#3b4a8f"));
+  /* gli Echo (pagina Alexa): si accendono quando qualcuno parla ad Alexa */
+  const ax = VISTE.alexaSS?.();
+  if (ax) P.push(pan("🗣️", "Alexa", ax, "#1d5f7c"));
   const E = calendari().length ? eventi(calendari(), 7) : [];
   const EV = Array.isArray(E) ? E.filter(ev => fine(ev) > Date.now()).slice(0, 4) : [];
   if (EV.length) P.push(pan("📅", t("Prossimi impegni", "Coming up"), `<div class="ssq5">${EV.map(ev => `<div style="--cc:${colore(ev.cal)}"><span>${esc(quando(ev))}</span><b>${esc(corto(ev.summary, 48))}</b>${ev.location ? `<small>📍 ${esc(corto(ev.location, 40))}</small>` : ""}</div>`).join("")}</div>`, "#5a3a7a"));

@@ -288,3 +288,12 @@ node tools/mock/galleria.mjs                 # tutte (circa 20 minuti)
 node tools/mock/galleria.mjs home meteo      # solo alcune; RAW=1 salva anche i PNG dei due schermi
 node tools/mock/guida.mjs riavvia
 ```
+
+**Alexa** (0.7.60): Echo di `alexa_media` con il modello nel registro dei dispositivi — `echo_cucina` (Echo Dot, suona), `echo_show_soggiorno` (Echo Show 5, col nome
+doppio «Echo Show  di Mario Echo Show di Mario»), `echo_show_8_cucina`, `echo_pop_corridoio` (muto), `echo_studio_soggiorno`, il gruppo `ovunque`, una Fire TV, Echo Auto,
+`this_device` e `mario_s_ultimate_alexa` (non disponibile). Ci sono `notify.alexa_media` e i `notify.alexa_media_<nome>`; le chiamate finiscono in `window.mockSvc`.
+`window.mockAlexa(id, frase)` fa «parlare ad Alexa» un Echo (last_called, last_called_timestamp, last_called_summary come Alexa Media Player); con `mockProvaAlexa` in `LS`
+compare sopra la plancia il pulsante «🗣️ simula "Alexa"». `mockNoAlexaNotify`: niente `notify.alexa_media` (si usano quelli dei singoli Echo).
+```bash
+LS='{"mockProvaAlexa":"1"}' node tools/mock/shot.mjs alexa 1280 1100 alexa.png
+```

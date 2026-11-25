@@ -271,7 +271,18 @@ const ENT = {
   "automation.luci_giardino": st("on", { friendly_name: "Luci giardino al tramonto", id: "123", last_triggered: new Date(Date.now()-3600e3*20).toISOString() }),
   "automation.raccolta": st("on", { friendly_name: "Raccolta differenziata", id: "456", last_triggered: new Date(Date.now()-3600e3*3).toISOString() }),
   "automation.vecchia": st("off", { friendly_name: "Vecchia automazione", id: "789" }),
-  "media_player.echo_cucina": st("playing", { friendly_name: "Echo cucina", supported_features: 318397, media_title: "Bohemian Rhapsody", media_artist: "Queen", volume_level: .35, entity_picture: "/custom_components/nduja_dashboard/frontend/img/chili.svg", source_list: ["Spotify","Radio"], source: "Spotify", shuffle: false, repeat: "off" }),
+  "media_player.echo_cucina": st("playing", { friendly_name: "Echo cucina", supported_features: 318399, is_volume_muted: false, last_called: false, last_called_timestamp: Date.now() - 5 * 3600e3, last_called_summary: "metti i Queen", media_title: "Bohemian Rhapsody", media_artist: "Queen", volume_level: .35, entity_picture: "/custom_components/nduja_dashboard/frontend/img/chili.svg", source_list: ["Spotify","Radio"], source: "Spotify", shuffle: false, repeat: "off" }),
+  /* Alexa (0.7.60): Echo di Alexa Media Player con i modelli veri nel registro dei dispositivi (ALEXA qui sotto); last_called come in Alexa Media Player.
+     mockNoAlexaNotify: niente notify.alexa_media (solo quelli dei singoli Echo); mockProvaAlexa: pulsante «simula "Alexa"» sopra la plancia (anche window.mockAlexa(id, frase)) */
+  "media_player.echo_show_soggiorno": st("idle", { friendly_name: "Echo Show  di Mario Echo Show di Mario", supported_features: 318399, volume_level: .5, is_volume_muted: false, media_content_type: "idle", last_called: false, last_called_timestamp: Date.now() - 3 * 3600e3, last_called_summary: "che ore sono" }),
+  "media_player.echo_show_8_cucina": st("idle", { friendly_name: "Echo Show 8 di Mario", supported_features: 318399, volume_level: .4, is_volume_muted: false, media_content_type: "idle", last_called: true, last_called_timestamp: Date.now() - 40 * 60e3, last_called_summary: "accendi la luce della cucina" }),
+  "media_player.echo_pop_corridoio": st("idle", { friendly_name: "Echo Pop di Mario", supported_features: 318399, volume_level: .25, is_volume_muted: true, last_called: false, last_called_timestamp: null }),
+  "media_player.echo_studio_soggiorno": st("idle", { friendly_name: "Echo Studio di Mario", supported_features: 318399, volume_level: .3, is_volume_muted: false, last_called: false, last_called_timestamp: null }),
+  "media_player.ovunque": st("idle", { friendly_name: "Ovunque", supported_features: 318399, volume_level: .45, is_volume_muted: false, last_called: false, last_called_timestamp: null }),
+  "media_player.fire_tv_stick_di_mario": st("idle", { friendly_name: "Mario's Fire TV stick", supported_features: 318399, volume_level: .3, last_called: false, last_called_timestamp: null }),
+  "media_player.echo_auto_di_mario": st("idle", { friendly_name: "Echo Auto di Mario", supported_features: 318399, volume_level: .6, last_called: false, last_called_timestamp: null }),
+  "media_player.this_device": st("idle", { friendly_name: "This Device", supported_features: 318399, volume_level: .5, last_called: false, last_called_timestamp: null }),
+  "media_player.mario_s_ultimate_alexa": st("unavailable", { friendly_name: "Mario's Ultimate Alexa", supported_features: 318399 }),
   /* musica 0.7.28: Sonos (sfoglia della cassa), Google Nest (cast), gruppo Google; Echo è di alexa_media (vedi REG) */
   "media_player.sonos_soggiorno": st("paused", { friendly_name: "Sonos soggiorno", supported_features: 973375, media_title: "Notturno", media_artist: "Demo Trio", volume_level: .3, shuffle: false, repeat: "off", source_list: ["TV", "Linea"],
     entity_picture: "/tools/mock/cover-b.svg", media_content_id: "x-sonos:notturno", group_members: ["media_player.sonos_soggiorno", "media_player.sonos_corridoio"] }),
@@ -557,11 +568,15 @@ const ARIA_STORIA = { "sensor.aria_corridoio_co2": [880, 45], "sensor.aria_cucin
   "sensor.aria_lavanderia_umidita": [58, 190], "sensor.aria_soggiorno_co2": [700, 35], "sensor.radon_lavanderia": [170, 600] };
 /* acqua (0.7.44): prima della portata di adesso l'acqua era ferma */
 if (ENT["sensor.portata_acqua"] && ACQUA_M[0] > 0) ARIA_STORIA["sensor.portata_acqua"] = [0, ACQUA_M[1]];
+/* Alexa (0.7.60): modello di ogni Echo nel registro dei dispositivi, come lo scrive Alexa Media Player */
+const ALEXA = { "media_player.echo_cucina": "Echo Dot", "media_player.echo_show_soggiorno": "Echo Show 5", "media_player.echo_show_8_cucina": "Echo Show 8", "media_player.echo_pop_corridoio": "Echo Pop",
+  "media_player.echo_studio_soggiorno": "Echo Studio", "media_player.ovunque": "Speaker Group", "media_player.fire_tv_stick_di_mario": "Fire TV Stick", "media_player.echo_auto_di_mario": "Echo Auto",
+  "media_player.this_device": "Alexa Mobile Voice iOS", "media_player.mario_s_ultimate_alexa": "Ultimate Alexa" };
 const REG = { entities: Object.keys(ENT).map(id => ({ ei: id, ai: /soggiorno|tv_sogg/.test(id) ? "soggiorno" : /echo_cucina/.test(id) ? "cucina" : /soggiorno/.test(id) ? "soggiorno" : /^(cover\.(cancello|garage|basculante|tenda_sole)|switch\.cancellett|binary_sensor\.cancellett|button\.portone|camera\.(cortile|giardino|campanello)|light\.giardino)/.test(id) ? "esterno" : /corridoio|porta|ariston/.test(id) ? "corridoio" : /cucina/.test(id) ? "cucina" : /lavatric|asciugatric|lavanderia/.test(id) ? "lavanderia" : /forno|frigo|lavastov/.test(id) ? "cucina" : null,
   hb: id === "camera.cantina" || undefined,
   pl: /^(media_player|remote)\.tv_soggiorno$/.test(id) ? "samsungtv" : /apple_tv_/.test(id) ? "apple_tv" : /google_tv_/.test(id) ? "androidtv_remote" : id === "media_player.lg_camera" ? "webostv" : id === "remote.harmony_studio" ? "harmony" :
-    id.startsWith("media_player.ma_") ? "music_assistant" : id.includes("model_3") ? "tesla_fleet" : id === "media_player.echo_cucina" ? "alexa_media" : id.startsWith("media_player.sonos") ? "sonos" : /^media_player\.(nest|casa_tutta)/.test(id) ? "cast" : undefined,
-  di: /tv_soggiorno$/.test(id) && !/apple/.test(id) ? "dev_tv" : /apple_tv_/.test(id) ? "dev_atv" : /google_tv_/.test(id) ? "dev_gtv" : id === "media_player.lg_camera" ? "dev_lg" : id === "media_player.casa_tutta" ? "dev_cgrp" : id.includes("model_3") ? "dev_car" : id.startsWith("camera.campanello") ? "dev_bell" : id.startsWith("camera.giardino") ? "dev_reo" : id.startsWith("camera.cortile") ? "dev_cort" : id.includes("ambrogio") ? "dev_v" : id.includes("mario") ? "dev_g" : id.includes("anna") ? "dev_c" : id.includes("ariston") ? "dev_a" : null })) };
+    id.startsWith("media_player.ma_") ? "music_assistant" : id.includes("model_3") ? "tesla_fleet" : ALEXA[id] ? "alexa_media" : id.startsWith("media_player.sonos") ? "sonos" : /^media_player\.(nest|casa_tutta)/.test(id) ? "cast" : undefined,
+  di: ALEXA[id] ? "dev_ax_" + id.split(".")[1] : /tv_soggiorno$/.test(id) && !/apple/.test(id) ? "dev_tv" : /apple_tv_/.test(id) ? "dev_atv" : /google_tv_/.test(id) ? "dev_gtv" : id === "media_player.lg_camera" ? "dev_lg" : id === "media_player.casa_tutta" ? "dev_cgrp" : id.includes("model_3") ? "dev_car" : id.startsWith("camera.campanello") ? "dev_bell" : id.startsWith("camera.giardino") ? "dev_reo" : id.startsWith("camera.cortile") ? "dev_cort" : id.includes("ambrogio") ? "dev_v" : id.includes("mario") ? "dev_g" : id.includes("anna") ? "dev_c" : id.includes("ariston") ? "dev_a" : null })) };
 /* batterie (0.7.35): dispositivi e categoria «diagnostica» (ec: 1) come in Home Assistant */
 for (const e of REG.entities) {
   const m = e.ei.match(/^(?:sensor|binary_sensor|lock)\.(trv_soggiorno|movimento_corridoio|fumo_cucina|telecomando_ikea|serratura_ingresso|allagamento_lavanderia|valvola_bagno)/);
@@ -994,7 +1009,7 @@ const conn = {
       case "nduja_dashboard/save_layout": LAYOUT = m.layout; localStorage.setItem("mockLayout", JSON.stringify(LAYOUT)); return { ok: true };
       case "config/entity_registry/list_for_display": return REG;
       case "config/entity_registry/list": return REG_FULL();
-      case "config/device_registry/list": return [{ id: "dev_twinkly", name: "Albero di Natale", manufacturer: "LEDWORKS", model: "Twinkly Strings" }, { id: "dev_cgrp", name: "Tutta la casa", manufacturer: "Google Inc.", model: "Google Cast Group" }, { id: "dev_g", name: "iPhone di Mario" }, { id: "dev_c", name: "iPhone di Anna" }, { id: "dev_a", name: "Ariston", manufacturer: "Ariston", model: "Caldaia demo" }, { id: "dev_otgw", name: "OpenTherm Gateway", manufacturer: "Demo", model: "OpenTherm Gateway" }, { id: "dev_tv", name: "TV soggiorno", manufacturer: "Samsung", model: "QE55 demo" }, { id: "dev_atv", name: "Apple TV soggiorno", manufacturer: "Apple", model: "Apple TV 4K" },
+      case "config/device_registry/list": return [...Object.entries(ALEXA).map(([id, model]) => ({ id: "dev_ax_" + id.split(".")[1], name: ENT[id]?.a.friendly_name || id, manufacturer: "Amazon", model })), { id: "dev_twinkly", name: "Albero di Natale", manufacturer: "LEDWORKS", model: "Twinkly Strings" }, { id: "dev_cgrp", name: "Tutta la casa", manufacturer: "Google Inc.", model: "Google Cast Group" }, { id: "dev_g", name: "iPhone di Mario" }, { id: "dev_c", name: "iPhone di Anna" }, { id: "dev_a", name: "Ariston", manufacturer: "Ariston", model: "Caldaia demo" }, { id: "dev_otgw", name: "OpenTherm Gateway", manufacturer: "Demo", model: "OpenTherm Gateway" }, { id: "dev_tv", name: "TV soggiorno", manufacturer: "Samsung", model: "QE55 demo" }, { id: "dev_atv", name: "Apple TV soggiorno", manufacturer: "Apple", model: "Apple TV 4K" },
         { id: "dev_gtv", name: "Google TV cucina", manufacturer: "Google", model: "Chromecast with Google TV" }, { id: "dev_lg", name: "TV camera", manufacturer: "LG", model: "OLED demo" }, { id: "dev_rb", name: "Rain Bird", manufacturer: "Rain Bird", model: "ESP-ME demo" }, { id: "dev_hw", name: "Prato dietro", manufacturer: "Hunter", model: "Hydrawise zona" }, ...(localStorage.getItem("mockNoCar") ? [] : [{ id: "dev_car", name: "Model 3", manufacturer: "Tesla", model: "Model 3" }]),
         ...[["trv_soggiorno", "Termostatica soggiorno"], ["movimento_corridoio", "Sensore movimento corridoio"], ["fumo_cucina", "Rilevatore fumo cucina"], ["telecomando_ikea", "Telecomando IKEA"],
           ["serratura_ingresso", "Serratura ingresso"], ["allagamento_lavanderia", "Sensore allagamento lavanderia"], ["valvola_bagno", "Valvola termostatica bagno"], ["finestra", "Sensore finestra soggiorno"]].map(([k, name]) => ({ id: "dev_b_" + k, name })),
@@ -1010,7 +1025,8 @@ const conn = {
       case "config/floor_registry/list": return localStorage.getItem("mockPiani") ? [{ floor_id: "terra", name: "Piano terra", level: 0 }, { floor_id: "primo", name: "Primo piano", level: 1 }] : [];
       case "recorder/statistic_during_period": return { change: /gas/.test(m.statistic_id) ? (m.calendar?.period === "month" ? 61.3 : 2.84) : /acqua/.test(m.statistic_id) ? (m.calendar?.period === "month" ? 1.482 : 0.214) : 1.23 };
       case "config/auth/list": return [{ id: "u1", name: "Mario", is_owner: true, is_active: true, group_ids: ["system-admin"] }, { id: "u2", name: "Anna", is_active: true, group_ids: ["system-users"] }];
-      case "get_services": return { ...(localStorage.getItem("mockNoServPiante") ? {} : { nduja_dashboard: { leggi_casa: {} } }), notify: { mobile_app_telefono_demo: {}, mobile_app_iphone_di_mario: {}, mobile_app_iphone_di_anna: {}, persistent_notification: {} }, todo: { get_items: {}, add_item: {}, update_item: {} }, dreame_vacuum: { vacuum_clean_segment: {} }, rainbird: { start_irrigation: {} }, hydrawise: { start_watering: {}, suspend: {}, resume: {} } };
+      case "get_services": return { ...(localStorage.getItem("mockNoServPiante") ? {} : { nduja_dashboard: { leggi_casa: {} } }), notify: { mobile_app_telefono_demo: {}, mobile_app_iphone_di_mario: {}, mobile_app_iphone_di_anna: {}, persistent_notification: {},
+        ...(localStorage.getItem("mockNoAlexaNotify") ? {} : { alexa_media: {} }), ...Object.fromEntries(Object.keys(ALEXA).filter(id => !/ultimate/.test(id)).map(id => ["alexa_media_" + id.split(".")[1], {}])), alexa_media_last_called: {} }, todo: { get_items: {}, add_item: {}, update_item: {} }, dreame_vacuum: { vacuum_clean_segment: {} }, rainbird: { start_irrigation: {} }, hydrawise: { start_watering: {}, suspend: {}, resume: {} } };
       case "energy/get_prefs": return { energy_sources: [{ type: "grid", stat_energy_from: "sensor.imp", stat_energy_to: "sensor.exp", number_energy_price: 0.35, number_energy_price_export: 0.044 }, { type: "solar", stat_energy_from: "sensor.prod" },
         ...(localStorage.getItem("mockNoGas") ? [] : [{ type: "gas", stat_energy_from: "sensor.contatore_gas", ...(localStorage.getItem("mockGasNoPrezzo") ? {} : { number_energy_price: 1.05 }) }]),
         ...(localStorage.getItem("mockNoAcqua") || localStorage.getItem("mockAcquaNoPrefs") ? [] : [{ type: "water", stat_energy_from: "sensor.contatore_acqua", number_energy_price: 2.1 }])], device_consumption: [] };
@@ -1139,6 +1155,21 @@ const conn = {
   }
 };
 window.hassConnection = Promise.resolve({ conn, auth: { accessToken: "finto", expired: false } });
+/* Alexa (0.7.60): qualcuno dice «Alexa…» a un Echo. Come Alexa Media Player: last_called vero solo su quello, timestamp in ms e la frase detta */
+const FRASI_ALEXA = ["che tempo fa domani", "accendi la luce del soggiorno", "metti un timer di dieci minuti", "che ore sono", "aggiungi il latte alla lista della spesa"];
+let giroAlexa = 0;
+window.mockAlexa = (id, frase) => {
+  const casse = ["media_player.echo_show_8_cucina", "media_player.echo_show_soggiorno", "media_player.echo_cucina", "media_player.echo_pop_corridoio", "media_player.echo_studio_soggiorno"];
+  id = id || casse[giroAlexa++ % casse.length]; frase = frase || FRASI_ALEXA[giroAlexa % FRASI_ALEXA.length];
+  const c = {};
+  for (const x of Object.keys(ALEXA)) { const e = ENT[x]; if (!e || e.s === "unavailable") continue;
+    e.a = { ...e.a, last_called: x === id, ...(x === id ? { last_called_timestamp: Date.now(), last_called_summary: frase } : {}) }; c[x] = { "+": { a: e.a } }; }
+  window.mockStati?.({ c }); return id;
+};
+if (localStorage.getItem("mockProvaAlexa")) addEventListener("DOMContentLoaded", () => {
+  const b = document.createElement("button"); b.textContent = "🗣️ simula «Alexa»";
+  b.style.cssText = "position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:9;padding:9px 16px;border-radius:999px;border:0;background:#13b4ee;color:#fff;font:600 14px system-ui;box-shadow:0 6px 18px rgba(0,0,0,.4);cursor:pointer";
+  b.onclick = () => window.mockAlexa(); document.body.appendChild(b); });
 /* la plancia usa il fetch del suo iframe: intercetto le chiamate REST di Home Assistant */
 addEventListener("DOMContentLoaded", () => { const fr = document.getElementById("fr"); const aggancia = () => { const w = fr.contentWindow, f0 = w.fetch.bind(w); w.fetch = (u, o) => mockApi(u, o) || f0(u, o); };
   fr.addEventListener("load", aggancia); try { if (fr.contentWindow?.fetch) aggancia(); } catch {} });

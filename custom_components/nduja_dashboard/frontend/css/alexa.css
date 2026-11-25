@@ -1,0 +1,189 @@
+/* ===== 🗣️ Alexa (js/pages/alexa.js, disegni degli Echo in js/disegni.js) =====
+   Disegni: colori dalle variabili (--fab tessuto, --cor cornice dello Show, --scr schermo, --ring0 anello spento, --luce luce di Alexa).
+   s-ascolta = qualcuno ha appena detto «Alexa»: anello azzurro che ruota piano o schermo acceso; s-suona = luce tenue e respiro lento.
+   Animazioni solo di stroke-dashoffset, transform e opacity; ferme con «Riduci movimento» e con la grafica leggera.
+   Il tema chiaro è scritto qui a mano (body.light); il salvaschermo resta sempre scuro. */
+
+/* ---------- i disegni ---------- */
+.axd{--fab:#30353f;--fab2:#3b414d;--cor:#14171d;--scr:#0a0f18;--ring0:rgba(255,255,255,.1);--luce:#3fd0ff;display:block;width:100%;height:auto;overflow:visible}
+.axd .tes{fill:var(--fab)}.axd .t2{fill:var(--fab2)}
+.axd .luc{fill:#fff;opacity:.06}
+.axd .omb{fill:rgba(0,0,0,.35)}
+.axd .grl{fill:none;stroke:rgba(255,255,255,.07);stroke-width:1.2}
+.axd .tst{fill:rgba(255,255,255,.18)}
+.axd .alo{fill:var(--luce);opacity:0;transition:opacity 1s}
+.axd .anl .a0{fill:none;stroke:var(--ring0);stroke-width:2.6}
+.axd .anl .a1{fill:none;stroke:var(--luce);stroke-width:3;stroke-linecap:round;opacity:0;stroke-dasharray:30 20;transition:opacity 1s}
+.axd .dev{transform-origin:60px 92px}
+/* Show: cornice, schermo con ora e meteo (o copertina e titolo), barra azzurra in basso quando ascolta */
+.axd .cor{fill:var(--cor)}
+.axd .scr .sf{fill:var(--scr);transition:fill 1s}
+.axd .scr text{font-family:var(--font);font-weight:700}
+.axd .scr .ora{font-size:16px;fill:rgba(255,255,255,.62)}
+.axd .scr .tt{font-size:8.5px;fill:#fff}
+.axd .scr .ts{font-size:7px;font-weight:600;fill:rgba(255,255,255,.6)}
+.axd .scr .bar{fill:var(--luce);opacity:0;transition:opacity 1s}
+.axd .scr .bar2{fill:#fff;opacity:0}
+.axd .cam{fill:#2c3038}
+.axd .pin{fill:#4a505c}.axd .led{fill:rgba(255,255,255,.18);transition:fill 1s}
+/* ascolta */
+.axd.s-ascolta .alo{opacity:.16}
+.axd.s-ascolta .anl .a1{opacity:1;animation:axGira 1.8s linear infinite}
+.axd.s-ascolta .scr .sf{fill:#0f2a40}
+.axd.s-ascolta .scr .bar{opacity:.95}
+.axd.s-ascolta .scr .bar2{opacity:.65;animation:axScorre 1.4s ease-in-out infinite}
+.axd.s-ascolta .led{fill:var(--luce)}
+/* suona: luce tenue e fissa, respiro lento */
+.axd.s-suona .alo{opacity:.05}
+.axd.s-suona .anl .a1{opacity:.45;stroke-dasharray:none}
+.axd.s-suona .scr .sf{fill:#0d1422}
+.axd.s-suona .dev{animation:axResp 3.6s ease-in-out infinite}
+/* non disponibile */
+.axd.s-na .dev{opacity:.42}
+.axd.s-na .scr text{display:none}
+@keyframes axGira{to{stroke-dashoffset:-100}}
+@keyframes axScorre{from{transform:translateX(0)}to{transform:translateX(102px)}}
+@keyframes axResp{50%{transform:scale(1.03)}}
+@media (prefers-reduced-motion:reduce){.axd *{animation:none!important;transition:none!important}.axd.s-ascolta .anl .a1{stroke-dasharray:none}}
+body.lite .axd *{animation:none!important}body.lite .axd.s-ascolta .anl .a1{stroke-dasharray:none}
+body.light .axd{--fab:#c4cad4;--fab2:#d3d8e0;--cor:#20232a;--ring0:rgba(0,0,0,.13);--luce:#13b4ee}
+body.light .axd .luc{opacity:.4}
+body.light .axd .omb{fill:rgba(40,50,70,.16)}
+body.light .axd .grl{stroke:rgba(0,0,0,.08)}
+body.light .axd .tst{fill:rgba(0,0,0,.22)}
+body.light .axd .pin{fill:#9aa1ad}body.light .axd .led{fill:rgba(0,0,0,.2)}
+body.light .axd.s-ascolta .alo{opacity:.2}
+/* salvaschermo: sempre scuro */
+body.light .ax1ss .axd{--fab:#30353f;--fab2:#3b414d;--cor:#14171d;--ring0:rgba(255,255,255,.1);--luce:#3fd0ff}
+body.light .ax1ss .axd .luc{opacity:.06}body.light .ax1ss .axd .omb{fill:rgba(0,0,0,.35)}body.light .ax1ss .axd .grl{stroke:rgba(255,255,255,.07)}body.light .ax1ss .axd .tst{fill:rgba(255,255,255,.18)}
+
+/* ---------- griglia degli Echo ---------- */
+.ax1g{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.ax1e{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0;padding:14px 14px 12px;border-radius:22px;
+  background:rgba(255,255,255,.045);border:1px solid var(--line);transition:border-color .8s,box-shadow .8s,background .8s}
+.ax1e::before{content:"";position:absolute;left:18px;right:18px;top:0;height:3px;border-radius:0 0 3px 3px;background:var(--axc);opacity:.75}
+.ax1e.s-ascolta{border-color:rgba(63,208,255,.6);background:rgba(63,208,255,.07);box-shadow:0 0 0 1px rgba(63,208,255,.25),0 12px 40px -14px rgba(63,208,255,.6)}
+.ax1e.s-na{opacity:.75}
+.ax1d{display:block;width:100%;max-width:156px;margin:0 auto;padding:0;border-radius:16px}
+.ax1d:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.ax1n{display:block;max-width:100%;margin-top:4px;font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ax1s{display:block;max-width:100%;margin-top:2px;font-size:12.5px;color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ax1fr{display:block;max-width:100%;min-height:17px;margin-top:2px;font-size:12px;font-weight:600;color:#3fd0ff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:opacity .8s}
+.ax1fr:empty{opacity:0}
+body.light .ax1fr{color:#0a86b8}
+body.light .ax1e{background:rgba(255,255,255,.55)}
+body.light .ax1e.s-ascolta{background:rgba(19,180,238,.09);border-color:rgba(19,180,238,.55)}
+.ax1e.ed{cursor:grab}
+
+/* ---------- barra del volume nel colore del dispositivo ---------- */
+.ax1v{display:flex;align-items:center;gap:10px;width:100%;margin-top:10px}
+.ax1v input[type=range]{-webkit-appearance:none;appearance:none;flex:1;min-width:0;height:16px;margin:0;border-radius:999px;cursor:pointer;
+  background:linear-gradient(90deg,var(--axc,var(--blue)) 0,var(--axc,var(--blue)) var(--p,0%),rgba(255,255,255,.1) var(--p,0%),rgba(255,255,255,.1) 100%)}
+.ax1v input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid var(--axc,var(--blue));box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.ax1v input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--axc,var(--blue));box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.ax1v input[type=range]:disabled{opacity:.35;cursor:default}
+.ax1v input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+.ax1v output{min-width:40px;text-align:right;font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
+.ax1v.sm input[type=range]{height:10px}.ax1v.sm input[type=range]::-webkit-slider-thumb{width:18px;height:18px}.ax1v.sm output{font-size:12.5px;min-width:34px}
+.ax1v.mu input[type=range]{filter:saturate(.15);opacity:.55}
+.ax1mu{width:34px;height:34px;flex:none;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.08);border:1px solid var(--line);font-size:15px}
+.ax1mu.on{background:rgba(255,69,58,.18);border-color:rgba(255,69,58,.4)}
+.ax1v.sm .ax1mu{width:28px;height:28px;font-size:13px}
+body.light .ax1v input[type=range]{background:linear-gradient(90deg,var(--axc,var(--blue)) 0,var(--axc,var(--blue)) var(--p,0%),rgba(0,0,0,.1) var(--p,0%),rgba(0,0,0,.1) 100%)}
+body.light .ax1mu{background:rgba(0,0,0,.05)}
+
+/* ---------- righe piccole (gruppi, altri) e disegnini ---------- */
+.ax1mi{display:inline-block;width:30px;height:25px;flex:none}
+.ax1mi .axd{width:100%;height:100%}
+.ax1r{display:flex;align-items:center;gap:10px;min-width:0}
+.ax1r .ax1mi{width:40px;height:33px}
+.ax1r .tx{flex:1;min-width:0}
+.ax1r .tx b{display:block;font-size:14px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ax1r .tx span{display:block;font-size:12px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ax1r.dis{opacity:.7}
+.ax1gr{padding:11px 13px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06)}
+.ax1gr .ax1v{margin-top:8px}
+.ax1al{display:flex;flex-wrap:wrap;gap:6px}.ax1al .ax1mi{width:44px;height:37px}
+body.light .ax1gr{background:rgba(255,255,255,.5);border-color:var(--line)}
+
+/* ---------- messaggio ---------- */
+.ax1msg{display:flex;flex-direction:column;gap:12px}
+.ax1cs{display:flex;flex-wrap:wrap;gap:8px}
+.ax1c{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:5px 13px 5px 7px;border-radius:999px;font-weight:650;font-size:13px;
+  background:rgba(255,255,255,.06);border:1.5px solid var(--line);color:var(--tx);transition:background .2s,border-color .2s}
+.ax1c span{white-space:nowrap}
+.ax1c.tut{padding-left:13px}
+.ax1c.on{background:color-mix(in srgb,var(--axc,var(--blue)) 24%,transparent);border-color:var(--axc,var(--blue))}
+.ax1c.grp .ax1mi{width:34px}
+.ax1cg{width:1px;align-self:stretch;margin:4px 2px;background:var(--line2)}
+body.light .ax1c{background:rgba(255,255,255,.6)}
+body.light .ax1c.on{background:color-mix(in srgb,var(--axc,var(--blue)) 18%,#fff)}
+.ax1in{display:flex;gap:8px;align-items:stretch}
+.ax1in input{flex:1;min-width:0;padding:12px 15px;border-radius:16px;background:rgba(255,255,255,.07);border:1px solid var(--line);font-size:15px;outline:none}
+.ax1in input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(10,132,255,.22)}
+.ax1in .btn{flex:none;padding-left:16px;padding-right:16px}
+body.light .ax1in input{background:rgba(255,255,255,.75)}
+.ax1op{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ax1fz{display:flex;flex-wrap:wrap;gap:8px}
+.ax1fz button{padding:8px 13px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid var(--line);font-size:13px;font-weight:600;text-align:left}
+.ax1fz button:active,.ax1rr:active{transform:scale(.97)}
+body.light .ax1fz button{background:rgba(255,255,255,.6)}
+.ax1msg .fl1{display:flex;align-items:center;gap:8px;margin:2px 0 -4px}
+.ax1rc{display:flex;flex-direction:column;gap:6px}
+.ax1rr{display:flex;align-items:center;gap:10px;width:100%;padding:8px 12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);text-align:left}
+.ax1rr .ic{font-size:16px;flex:none}
+.ax1rr .tx{flex:1;min-width:0}
+.ax1rr .tx b{display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ax1rr .tx small{display:block;font-size:11.5px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ax1rr .rp{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.08);font-weight:700}
+body.light .ax1rr{background:rgba(255,255,255,.5);border-color:var(--line)}body.light .ax1rr .rp{background:rgba(0,0,0,.06)}
+.ax1no{padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.45;background:rgba(255,159,10,.12);border:1px solid rgba(255,159,10,.3)}
+/* scheda della Home e del Colpo d'occhio: più stretta */
+.ax1mc.hm .ax1c,.ax1mc.cd .ax1c{min-height:36px;font-size:12.5px;padding:4px 11px 4px 6px}
+.ax1mc.hm .ax1c.tut,.ax1mc.cd .ax1c.tut{padding-left:11px}
+.ax1mc.hm .ax1msg,.ax1mc.cd .ax1msg{gap:10px}
+.ax1mc.hm .ax1cs,.ax1mc.cd .ax1cs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -4px;padding:2px 4px}.ax1mc.hm .ax1cs::-webkit-scrollbar,.ax1mc.cd .ax1cs::-webkit-scrollbar{display:none}
+.ax1mc.hm .ax1c,.ax1mc.cd .ax1c{flex:none}
+
+/* ---------- comandi per tutti, chiedi, impostazioni ---------- */
+.ax1col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.ax1tb{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.ax1tb .btn{flex:1 1 140px}
+.ax1sel{width:100%;margin-bottom:10px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid var(--line)}
+body.light .ax1sel{background:rgba(255,255,255,.75)}
+.ax1set{display:flex;flex-direction:column;gap:12px}
+.ax1sr{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ax1sr>span{font-weight:600;font-size:14px}
+.ax1sr small{display:block;font-weight:400;font-size:12px;color:var(--tx3);margin-top:2px}
+.ax1sh{display:flex;justify-content:center;margin:4px 0 8px}.ax1sh .ax1d{max-width:150px}
+.ax1pal{display:flex;flex-wrap:wrap;gap:8px}
+.ax1pal button{width:36px;height:36px;border-radius:50%;background:var(--c);border:3px solid transparent;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2);font-size:14px}
+.ax1pal button.on{border-color:var(--tx)}
+
+/* ---------- Colpo d'occhio: tessera del volume ---------- */
+.ax1cv{padding:14px 16px}
+.ax1cvh{display:flex;align-items:center;gap:12px;min-width:0}
+.ax1cvh .ax1d{width:74px;flex:none;margin:0}
+.ax1cvh .tx{flex:1;min-width:0}
+.ax1cvh .tx b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ax1cvh .tx span{display:block;font-size:12.5px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ax1cv.s-ascolta .tx span{color:#3fd0ff}body.light .ax1cv.s-ascolta .tx span{color:#0a86b8}
+.ax1cv.d-s{padding:12px}.ax1cv.d-s .ax1cvh .ax1d{width:44px}
+
+/* ---------- salvaschermo «Casa» ---------- */
+.ax1ss{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:18px;align-items:end}
+.ax1ss>div{display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0}
+.ax1sd{display:block;width:100%;max-width:150px}
+.ax1ss b{margin-top:6px;font-size:clamp(14px,2.2vw,22px);color:#fff;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ax1ss small{font-size:clamp(12px,1.6vw,16px);color:rgba(255,255,255,.6);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+@media (max-width:640px){
+  .ax1g{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .ax1e{padding:12px 10px 10px}
+  .ax1n{font-size:14px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.25}
+  .ax1v{gap:6px}.ax1v output{min-width:34px;font-size:12.5px}
+  .ax1mu{width:30px;height:30px;font-size:13px}
+  .ax1in .btn span{display:none}
+  .ax1cs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -4px;padding:2px 4px}.ax1cs::-webkit-scrollbar{display:none}
+  .ax1c{flex:none}
+}

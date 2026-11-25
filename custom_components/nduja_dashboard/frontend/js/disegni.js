@@ -229,3 +229,40 @@ export function disegnoCassa(k, o = {}) {
   <circle class="led" cx="100" cy="174" r="2.6"/>
   <g class="qq"><circle cx="100" cy="124" r="11"/><path d="M96.4 121a3.8 3.8 0 1 1 5.4 3.4c-1.2.6-1.8 1.3-1.8 2.6M100 131.2v.2"/></g></svg>`;
 }
+
+/* ---------- Echo (pagina Alexa): disegni nostri, uno per tipo, tutti nello stesso riquadro 120 × 100 ----------
+   tipo: show | sfera (Dot, Echo) | pop | studio | auto | firetv | gruppo | app | altro.
+   k: fermo | ascolta (qualcuno ha appena detto «Alexa»: schermo acceso o anello azzurro che ruota) | suona (luce più tenue, respira piano) | na.
+   o.schermo (solo Show): { ora, meteo, titolo, img } · o.piccolo: chip, Home, salvaschermo (niente scritte sullo schermo).
+   Colori dalle variabili CSS (css/alexa.css): niente gradienti né id, così più disegni nella stessa pagina non si pestano i piedi. */
+const anello = (cx, cy, rx, ry) => `<g class="anl"><ellipse class="a0" cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}"/><ellipse class="a1" cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" pathLength="100"/></g>`;
+const taglia = (s, n) => { s = String(s || ""); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
+function echoShow(o) {
+  const sc = o.schermo || {}, img = !o.piccolo && sc.img && /^(\/|https?:)/.test(sc.img) ? sc.img : "";
+  const testo = o.piccolo ? "" : sc.titolo
+    ? `<text class="tt" x="${img ? 46 : 41}" y="20" text-anchor="${img ? "start" : "middle"}">${escS(taglia(sc.titolo, img ? 13 : 20))}</text>${sc.sotto ? `<text class="ts" x="${img ? 46 : 41}" y="30" text-anchor="${img ? "start" : "middle"}">${escS(taglia(sc.sotto, img ? 15 : 24))}</text>` : ""}`
+    : `<text class="ora" x="41" y="26" text-anchor="middle">${escS(sc.ora || "")}</text>${sc.meteo ? `<text class="ts" x="41" y="37" text-anchor="middle">${escS(sc.meteo)}</text>` : ""}`;
+  return `<path class="tes" d="M24 88h72l-6-18H30z"/><rect class="cor" x="13" y="13" width="94" height="60" rx="7"/>
+    <svg class="scr" x="18" y="18" width="84" height="50" viewBox="0 0 84 50"><rect class="sf" width="84" height="50"/>
+      ${img ? `<image href="${escS(img)}" x="6" y="6" width="34" height="34" preserveAspectRatio="xMidYMid slice"/>` : ""}${testo}
+      <rect class="bar" x="0" y="45" width="84" height="5"/><rect class="bar2" x="-18" y="45" width="18" height="5"/></svg>
+    <circle class="cam" cx="60" cy="15.6" r="1"/>`;
+}
+const escS = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const SAGOMA = {
+  show: echoShow,
+  sfera: () => `<circle class="tes" cx="60" cy="50" r="34"/><ellipse class="luc" cx="49" cy="36" rx="13" ry="8"/>${anello(60, 77, 22, 5)}<circle class="tst" cx="51" cy="21" r="1.6"/><circle class="tst" cx="69" cy="21" r="1.6"/>`,
+  pop: () => `<path class="tes" d="M24 84a36 36 0 0 1 72 0z"/><ellipse class="luc" cx="48" cy="58" rx="12" ry="7"/>${anello(60, 82, 30, 3.4)}`,
+  studio: () => `<rect class="tes" x="30" y="14" width="60" height="74" rx="14"/>${anello(60, 22, 22, 5)}<circle class="grl" cx="60" cy="58" r="16"/><circle class="grl" cx="60" cy="58" r="8"/>`,
+  altro: () => `<rect class="tes" x="40" y="10" width="40" height="80" rx="9"/>${anello(60, 16, 16, 4)}<path class="grl" d="M44 44h32M44 52h32M44 60h32M44 68h32"/>`,
+  auto: () => `<rect class="tes" x="20" y="44" width="80" height="18" rx="9"/>${anello(60, 45, 30, 1.6)}<circle class="tst" cx="34" cy="53" r="1.8"/><circle class="tst" cx="86" cy="53" r="1.8"/><path class="grl" d="M48 72h24"/>`,
+  firetv: () => `<rect class="tes" x="30" y="40" width="50" height="20" rx="6"/><rect class="pin" x="80" y="44" width="12" height="12" rx="2"/><circle class="led" cx="40" cy="50" r="2.2"/>`,
+  gruppo: () => `<circle class="tes" cx="43" cy="58" r="23"/>${anello(43, 76, 15, 3.4)}<circle class="tes t2" cx="77" cy="50" r="27"/><ellipse class="luc" cx="69" cy="38" rx="10" ry="6"/>${anello(77, 71, 18, 4)}`,
+  app: () => `<rect class="tes" x="40" y="8" width="40" height="84" rx="9"/><rect class="sf" x="44" y="16" width="32" height="66" rx="3"/><g class="anl"><circle class="a0" cx="60" cy="49" r="11"/><circle class="a1" cx="60" cy="49" r="11" pathLength="100"/></g>`,
+};
+/** disegno di un Echo; k = fermo | ascolta | suona | na */
+export function disegnoEcho(tipo, k = "fermo", o = {}) {
+  const f = SAGOMA[tipo] || SAGOMA.altro;
+  return `<svg class="axd ax-${SAGOMA[tipo] ? tipo : "altro"} s-${k}${o.piccolo ? " pc" : ""}" viewBox="0 0 120 100" aria-hidden="true" focusable="false">
+  <ellipse class="alo" cx="60" cy="54" rx="50" ry="42"/><ellipse class="omb" cx="60" cy="93" rx="38" ry="3.4"/><g class="dev">${f(o)}</g></svg>`;
+}

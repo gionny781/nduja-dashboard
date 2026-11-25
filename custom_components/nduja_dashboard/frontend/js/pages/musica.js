@@ -4,7 +4,7 @@
    Sotto, casse e lettori per stanza (le TV stanno nella pagina Media, se c'è: vedi tvInMedia in core.js).
    In Home la scheda «In riproduzione» mostra solo quello che sta suonando (anche su questo dispositivo). */
 import { S, ACT, CHG, UI, REG, DEVICES, LAYOUT, t, esc, nm, ok, attr, ents, areaOf, AREAS, areasSorted, card, empty, page, svc, svcResp, ws, sGet, sSet,
-  toast, render, cached, uncache, go, patch, FISSI, isAdmin, openSheet, closeSheet, PAGES, isTV, tvInMedia, myHA } from "../core.js";
+  toast, render, cached, uncache, go, patch, FISSI, isAdmin, openSheet, closeSheet, PAGES, isTV, tvInMedia, myHA, VISTE } from "../core.js";
 import { item, addBtn, cambia } from "../edit.js";
 import { TRASCINA } from "../trascina.js";
 import { registra, tocca, quadrante, em, coloreDi, allArticolo, elencoParole } from "../oggetti.js";
@@ -675,7 +675,7 @@ Object.assign(ACT, {
 function cardCassa(id) {
   const nota = !puoSfogliare(id) && !isAlexa(id) ? `<div class="small muted" style="margin-top:10px">${t("Da questa cassa non si può scegliere la musica dalla plancia: usa la sua app, poi la comandi da qui.", "This speaker doesn't let the dashboard choose the music: use its app, then control it from here.")}</div>` : "";
   /* senza «Sfoglia» la scheda è larga: il lettore e «Chiedi ad Alexa» stanno affiancati */
-  return card((isGruppo(id) ? "👥 " : tipo(id) + " ") + esc(nm(id)), `<div class="${puoSfogliare(id) ? "" : "mu1two"}">${lettore(id)}${isAlexa(id) ? chiediAlexa(id) : ""}</div>${isMA(id) ? codaMA(id) : ""}${nota}`, { cls: "mu1p" });
+  return card((isGruppo(id) ? "👥 " : tipo(id) + " ") + esc(nm(id)), `<div class="${puoSfogliare(id) ? "" : "mu1two"}">${lettore(id)}${isAlexa(id) ? chiediAlexa(id) : ""}</div>${isMA(id) ? codaMA(id) : ""}${nota}`, { cls: "mu1p", right: isAlexa(id) && VISTE.alexaPagina?.() ? `<a data-act="go" data-id="alexa">🗣️ Alexa ›</a>` : "" });
 }
 function pagina() {
   const chi = dove(), L = tutti(), g = {};
