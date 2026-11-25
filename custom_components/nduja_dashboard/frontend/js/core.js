@@ -16,6 +16,34 @@ export const UI = { page: null, sheet: null, user: null, opt: {}, version: "", e
      names:{id:nome}, rooms:{id:area}, sensors:{area:{temp,hum}}, weather, pages:{id:false}, customPages:[{id,title,icon,items}],
      seen:[entity_id già visti], seenCars:[dispositivi delle auto già viste] (novita.js) } */
 export const LAYOUT = {};
+/* ---------- velocità con tante entità (0.7.59) ----------
+   Con migliaia di entità, rifare le stesse scansioni di tutti gli stati decine di volte per ogni ridisegno blocca i tablet.
+   VERS.gen cambia quando cambiano le entità presenti, il registro o le scelte della casa; VERS.ver anche a ogni cambio di stato.
+   memoGen: risultati che dipendono solo da quali entità ci sono (riconoscimenti automatici, elenchi per dominio e per area);
+   memoVer: risultati che dipendono anche dagli stati: calcolati una volta sola finché nessuno stato cambia. */
+export const VERS = { gen: 0, ver: 0 };
+export const nuovaGen = () => { VERS.gen++; VERS.ver++; };
+export function memoGen(fn) { let g = -1, v; return () => { if (g !== VERS.gen) { v = fn(); g = VERS.gen; } return v; }; }
+export function memoVer(fn) { let g = -1, v; return () => { if (g !== VERS.ver) { v = fn(); g = VERS.ver; } return v; }; }
+let IDX = null, IDXg = -1;
+function indice() {
+  if (IDX && IDXg === VERS.gen) return IDX;
+  const tutti = Object.keys(S), dom = {}, area = {}, disp = {};
+  for (const id of tutti) {
+    const d = id.slice(0, id.indexOf("."));
+    (dom[d] || (dom[d] = [])).push(id);
+    const a = areaOf(id); if (a) (area[a] || (area[a] = [])).push(id);
+    const dv = REG[id]?.device; if (dv) (disp[dv] || (disp[dv] = [])).push(id);
+  }
+  IDXg = VERS.gen; return (IDX = { tutti, dom, area, disp });
+}
+/** tutti gli id delle entità (come Object.keys(S), ma senza rifarlo ogni volta): non modificare l'elenco restituito */
+export const tutteLeEntita = () => indice().tutti;
+/** id delle entità di un dominio / di un'area: non modificare l'elenco restituito */
+export const idsDi = dom => indice().dom[dom] || [];
+export const idsArea = a => indice().area[a] || [];
+/** id delle entità di un dispositivo: non modificare l'elenco restituito */
+export const idsDispositivo = d => indice().disp[d] || [];
 export const isAdmin = () => !!UI.user?.is_admin;
 export let conn = null;
 
@@ -72,11 +100,20 @@ export const isManual = () => LAYOUT.mode === "manual";
 export const excluded = id => (isManual() ? manualKind(id) && !(LAYOUT.include || []).includes(id) : (LAYOUT.exclude || []).includes(id))
   || (!!areaOf(id) && (LAYOUT.hiddenAreas || []).includes(areaOf(id)));
 /** tutte le entità di un dominio che hanno senso in una plancia (senza filtri del wizard) */
-export const allEnts = (dom, pred = () => true) => Object.keys(S).filter(id => id.startsWith(dom + ".") && !REG[id]?.hidden && REG[id]?.cat == null && pred(id, S[id]));
+const BASE = {}, VIS = {}; let baseG = -1, visV = -1;
+function base(dom) {
+  if (baseG !== VERS.gen) { baseG = VERS.gen; for (const k in BASE) delete BASE[k]; }
+  return BASE[dom] || (BASE[dom] = idsDi(dom).filter(id => !REG[id]?.hidden && REG[id]?.cat == null));
+}
+function visibili(dom) {
+  if (visV !== VERS.ver) { visV = VERS.ver; for (const k in VIS) delete VIS[k]; }
+  return VIS[dom] || (VIS[dom] = base(dom).filter(id => !excluded(id) && !(isManual() ? false : defaultOff(id))));
+}
+export const allEnts = (dom, pred) => pred ? base(dom).filter(id => pred(id, S[id])) : base(dom).slice();
 /** entità visibili: come sopra, meno quelle tolte nel wizard */
-export const ents = (dom, pred = () => true) => allEnts(dom, pred).filter(id => !excluded(id) && !(isManual() ? false : defaultOff(id)));
+export const ents = (dom, pred) => pred ? visibili(dom).filter(id => pred(id, S[id])) : visibili(dom).slice();
 export const areaOf = id => LAYOUT.rooms?.[id] || REG[id]?.area || null;
-export const inArea = (area, dom, pred) => ents(dom, pred).filter(id => areaOf(id) === area);
+export const inArea = (area, dom, pred) => { const A = new Set(idsArea(area)); return visibili(dom).filter(id => A.has(id) && (!pred || pred(id, S[id]))); };
 export const deviceClass = id => attr(id, "device_class");
 /** nome breve: toglie il nome della stanza davanti ("Cucina Luce" → "Luce") */
 export function shortName(id) {
@@ -110,7 +147,7 @@ function climateSensor(area, dc) {
     if (NON_STANZA.test(id + " " + nmHA(id))) continue;
     let p = 0, dev = REG[id]?.device;
     const altro = dc === "temperature" ? "humidity" : "temperature";
-    if (dev && Object.keys(S).some(x => x !== id && REG[x]?.device === dev && deviceClass(x) === altro)) p += 2;   // termoigrometro vero
+    if (dev && tutteLeEntita().some(x => x !== id && REG[x]?.device === dev && deviceClass(x) === altro)) p += 2;   // termoigrometro vero
     if (dc === "temperature" && /temp|temperatura/i.test(nmHA(id))) p += 1;
     if (dc === "temperature") { const v = val(id); if (v != null && (v < 5 || v > 40)) p -= 3; }
     if (p > top) { top = p; best = id; }
@@ -158,12 +195,12 @@ export function luciComando(ids, on) {
 const TV_PIATT = ["androidtv_remote", "androidtv", "apple_tv", "samsungtv", "webostv", "braviatv", "philips_js", "roku", "vizio", "panasonic_viera", "ps4", "xbox", "firetv"];
 /** il telecomando (remote.*) di un lettore: sullo stesso dispositivo, altrimenti con lo stesso nome */
 export function remotoDi(id) {
-  const dev = REG[id]?.device, R = Object.keys(S).filter(x => x.startsWith("remote."));
+  const dev = REG[id]?.device, R = idsDi("remote");
   return (dev && R.find(x => REG[x]?.device === dev)) || R.find(x => nmHA(x).toLowerCase() === nmHA(id).toLowerCase()) || null;
 }
 /** il lettore (media_player) di un telecomando, se c'è */
 export function lettoreDi(rid) {
-  const dev = REG[rid]?.device, M = Object.keys(S).filter(x => x.startsWith("media_player."));
+  const dev = REG[rid]?.device, M = idsDi("media_player");
   return (dev && M.find(x => REG[x]?.device === dev)) || M.find(x => nmHA(x).toLowerCase() === nmHA(rid).toLowerCase()) || null;
 }
 /** è uno schermo (TV, decoder, box, console) e non una cassa? Prima la correzione dell'amministratore (LAYOUT.mdTv, pagina Media → ✏️) */
@@ -489,7 +526,9 @@ export function render(now) {
       $("#pageTitle").textContent = P.title;
       document.title = P.title + " · 'Nduja";
       renderNav(); renderStrip();
+      const t0 = performance.now();
       patch($("#main"), P.render());
+      durataRender = durataRender * .6 + (performance.now() - t0) * .4;
       P.after?.();
       if (UI.sheet) patch($("#sheet"), `<div class="grab"></div>` + UI.sheet());
     } catch (e) { console.error(e); }
@@ -626,14 +665,15 @@ async function loadRegistry() {
   (ar || []).forEach(a => AREAS[a.area_id] = { name: LAYOUT.areaNames?.[a.area_id] || a.name, nameHA: a.name, floor: a.floor_id, icon: a.icon });
   (dr || []).forEach(d => DEVICES[d.id] = { name: d.name_by_user || d.name, area: d.area_id, model: d.model, maker: d.manufacturer, disabled: !!d.disabled_by });
   (er?.entities || []).forEach(e => REG[e.ei] = { area: e.ai || (e.di && DEVICES[e.di]?.area) || null, device: e.di || null, hidden: !!e.hb, cat: e.ec ?? null, platform: e.pl, labels: e.lb || [] });
+  nuovaGen();
 }
 async function loadConfig() {
-  try { const c = await ws({ type: "nduja_dashboard/config" }); UI.opt = c.options || {}; UI.version = c.version || ""; for (const k in LAYOUT) delete LAYOUT[k]; Object.assign(LAYOUT, c.layout || {}); } catch {}
+  try { const c = await ws({ type: "nduja_dashboard/config" }); UI.opt = c.options || {}; UI.version = c.version || ""; for (const k in LAYOUT) delete LAYOUT[k]; Object.assign(LAYOUT, c.layout || {}); nuovaGen(); } catch {}
 }
 /** salva le scelte del wizard in Home Assistant (solo amministratori) */
 export async function saveLayout(layout) {
   await ws({ type: "nduja_dashboard/save_layout", layout });
-  for (const k in LAYOUT) delete LAYOUT[k]; Object.assign(LAYOUT, layout); render();
+  for (const k in LAYOUT) delete LAYOUT[k]; Object.assign(LAYOUT, layout); nuovaGen(); render();
 }
 /** pagina all'apertura della plancia, scelta per ogni dispositivo in ⚙️ Impostazioni (sGet "start"):
     "home", "colpo" (Colpo d'occhio, per il tablet a muro) oppure, se non scegli, l'ultima aperta (come sempre) */
@@ -644,6 +684,7 @@ function toState(id, c) {
   return { entity_id: id, state: c.s, attributes: c.a || {}, last_changed: lc, last_updated: c.lu ? new Date(c.lu * 1000).toISOString() : lc };
 }
 function onEntities(m) {
+  if (m.a || m.r) nuovaGen(); else VERS.ver++;
   if (m.a) for (const id in m.a) S[id] = toState(id, m.a[id]);
   if (m.r) for (const id of m.r) delete S[id];
   if (m.c) for (const id in m.c) {
@@ -662,14 +703,16 @@ function onEntities(m) {
 /* Gli stati cambiano anche più volte al secondo (sensori di potenza, lettori…): ridisegnare tutta la pagina
    a ogni cambio fa scattare i telefoni. Qui ridisegno al massimo ogni 400 ms e mai mentre il dito è sullo schermo;
    i tocchi dell'utente continuano a ridisegnare subito. */
-let ultimoRender = 0, attesaRender = null, tocco = false;
+let ultimoRender = 0, attesaRender = null, tocco = false, durataRender = 0;
 function renderDaStati() {
   if (attesaRender) return;
   attesaRender = setTimeout(() => {
     attesaRender = null;
     if (tocco) return renderDaStati();
     ultimoRender = performance.now(); render();
-  }, Math.max(0, (document.body.classList.contains("lite") ? 900 : 400) - (performance.now() - ultimoRender)));   // in modalità leggera ridisegno meno spesso
+  }, Math.max(0, Math.max(document.body.classList.contains("lite") ? 900 : 400, durataRender * 4) - (performance.now() - ultimoRender)));
+  /* in modalità leggera ridisegno meno spesso; e se un ridisegno costa tanto (tablet lento, casa enorme) lascio almeno
+     tre volte quel tempo libero tra un ridisegno e l'altro, così tocchi e animazioni restano fluidi */
 }
 document.addEventListener("pointerdown", () => { tocco = true; }, { passive: true });
 for (const ev of ["pointerup", "pointercancel"]) document.addEventListener(ev, () => { setTimeout(() => { tocco = false; }, 120); }, { passive: true });

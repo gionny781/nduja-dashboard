@@ -1,6 +1,6 @@
 /* Home: saluto e riepilogo, meteo, stanze (per piano), persone, scene, cose da sistemare.
    Tutto viene dalle aree e dai dispositivi di Home Assistant: niente da configurare. */
-import { S, HOME_EXTRA, PAGES, AREAS, FLOORS, UI, ACT, CHG, t, LOC, esc, fnum, attr, ok, val, nm, ents, inArea, areaOf, areasSorted, roomTemp, roomHum,
+import { idsArea, S, HOME_EXTRA, PAGES, AREAS, FLOORS, UI, ACT, CHG, t, LOC, esc, fnum, attr, ok, val, nm, ents, inArea, areaOf, areasSorted, roomTemp, roomHum,
   openings, lightsOn, luci, isLightSwitch, isOn, card, empty, lightTile, climateCard, entityRow, openSheet, closeSheet, page, WX, HVAC, forecast, deviceClass, shortName, svc, toast, ago, weatherEnt, LAYOUT, isAdmin, saveLayout, utenteCfg, VISTE, manca, linkBtn, myHA, ordina } from "../core.js";
 import { item, addBtn, scegli, isTemp, isHum, cambia } from "../edit.js";
 import { personeCard } from "../people.js";
@@ -67,7 +67,7 @@ function stanza(a) {
   </button>`;
 }
 function stanze() {
-  const A = areasSorted(UI.edit).filter(a => Object.keys(S).some(id => areaOf(id) === a));
+  const A = areasSorted(UI.edit).filter(a => idsArea(a).length > 0);
   if (!A.length) return card(t("🏠 Stanze", "🏠 Rooms"), empty(t("Nessuna area configurata in Home Assistant: crea le aree (Impostazioni → Aree) e assegna i dispositivi.", "No areas yet: create areas in Home Assistant (Settings → Areas) and assign your devices.")) + (isAdmin() ? manca(t("Con le aree la Home mostra le stanze e arriva la Mappa.", "With areas, Home shows your rooms and the Map arrives."), linkBtn(t("Aree di Home Assistant", "Home Assistant areas"), myHA("areas"), "pri")) : ""), { cls: "span3" });
   const perPiano = {}; A.forEach(a => (perPiano[AREAS[a].floor || "_"] = perPiano[AREAS[a].floor || "_"] || []).push(a));
   const piani = Object.keys(perPiano).sort((x, y) => (FLOORS[x]?.level ?? 99) - (FLOORS[y]?.level ?? 99));

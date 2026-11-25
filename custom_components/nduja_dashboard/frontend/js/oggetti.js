@@ -14,7 +14,7 @@
            stato(id) ("ok" | "warn" | "run" | "bad" | "na": il colore della scheda), comandi(id) → [pulsante], dati(id) → [[icona, testo, classe]],
            extra(id) (html sotto i comandi), gesti(id) → { tocco, lungo, aiuto }, imposta(id, valore, quale) (quadrante), altro(id) (facoltativo) }
    pulsante = { act, id, v, ic, txt, pri, tieni: "frase" (si tiene premuto: serve per sbloccare e spegnere), off (disattivato), cls } */
-import { ACT, CHG, LAYOUT, fnum, UI, HOME_EXTRA, IT, t, esc, sGet, sSet, openSheet, closeSheet, render, go, isAdmin, toast, sicuro, card, PAGES, utenteCfg } from "./core.js";
+import { memoVer, ACT, CHG, LAYOUT, fnum, UI, HOME_EXTRA, IT, t, esc, sGet, sSet, openSheet, closeSheet, render, go, isAdmin, toast, sicuro, card, PAGES, utenteCfg } from "./core.js";
 import { cambia } from "./edit.js";
 
 export const OGGETTI = {};
@@ -327,9 +327,9 @@ document.addEventListener("keydown", e => {
 });
 
 /* ---------- Home: «Oggetti in primo piano» ---------- */
-const tutti = () => Object.entries(OGGETTI).sort(([, a], [, b]) => a.ordine - b.ordine).flatMap(([tipo, d]) => { try { return d.elenco().map(id => tipo + ":" + id); } catch { return []; } });
+const tutti = memoVer(() => Object.entries(OGGETTI).sort(([, a], [, b]) => a.ordine - b.ordine).flatMap(([tipo, d]) => { try { return d.elenco().map(id => tipo + ":" + id); } catch { return []; } }));
 /** senza scelta: uno per tipo (quello acceso o in movimento, se c'è; casse e TV solo se suonano o sono accese), fino a sei */
-function automatici() {
+const automatici = memoVer(() => {
   const C = [];
   for (const [tipo, d] of Object.entries(OGGETTI).sort(([, a], [, b]) => a.ordine - b.ordine)) {
     let L = []; try { L = d.elenco(); } catch {}
@@ -341,8 +341,8 @@ function automatici() {
   /* più di sei: tengo prima quelli accesi o in movimento, sempre nell'ordine dei tipi */
   const tieni = new Set([...C.filter(x => x.vivo), ...C.filter(x => !x.vivo)].slice(0, 6));
   return C.filter(x => tieni.has(x)).map(x => x.k);
-}
-const scelti = () => Array.isArray(LAYOUT.oggetti?.home) ? LAYOUT.oggetti.home.filter(esiste) : automatici();
+});
+const scelti = memoVer(() => Array.isArray(LAYOUT.oggetti?.home) ? LAYOUT.oggetti.home.filter(esiste) : automatici());
 function piccola(k) {
   const [tipo, id] = parti(k), d = OGGETTI[tipo], st = d.stato(id) || "na", col = tinta(d, id);
   return `<button class="og1hm st-${st}${col ? " tinta" : ""}" data-act="ogApri" data-k="${esc(k)}"${col ? ` style="--ocd:${col.d};--ocl:${col.l}"` : ""}><span class="og1hd">${d.disegno(id, "sm")}</span>

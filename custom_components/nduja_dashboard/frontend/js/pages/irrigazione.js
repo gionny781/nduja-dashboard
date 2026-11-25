@@ -11,7 +11,7 @@
    con ⚙️ su «Programmi e meteo» le soglie della pioggia (probabilità, mm, domani o le prossime ore), fin quando dura la pausa, le durate
    (di partenza e pulsanti rapidi; per zona con ✏️), l'umidità del terreno (soglie e sensori) e i calendari dei programmi.
    Chi non tocca niente vede la pagina di sempre: 60%, 2 mm, domani; pausa fino a domani alle 23:59; 10 minuti; 5·10·15·30; secco sotto il 25%, bagnato sopra il 60%. */
-import { S, REG, ACT, CHG, UI, LAYOUT, HOME_EXTRA, VISTE, t, esc, nm, nmHA, ok, attr, ents, allEnts, areaOf, AREAS, card, page, svc, svcResp, ws, api,
+import { VERS, tutteLeEntita, idsDispositivo, S, REG, ACT, CHG, UI, LAYOUT, HOME_EXTRA, VISTE, t, esc, nm, nmHA, ok, attr, ents, allEnts, areaOf, AREAS, card, page, svc, svcResp, ws, api,
   sGet, sSet, toast, render, go, isAdmin, openSheet, closeSheet, cached, forecast, weatherEnt, WX, hhmm, LOC, deviceClass, domain, etichettaNduja, myHA } from "../core.js";
 import { scegli, cambia } from "../edit.js";
 import { casa, casaCambia } from "../casa.js";
@@ -37,7 +37,7 @@ const NO_PROG = /rain.?delay|ritardo|standby|program|schedul|auto(matic)?.?water
 const NO_ALTRO = /luc[ei]|light|lamp|presa|plug|clima|riscald|heat|termo|caldaia|boiler|\bgas\b|\btv\b|allarm|alarm|zon[ae].?(giorno|notte|day|night)|(giorno|notte).?zon/i;
 const NO_VALV = /principal|main|generale|perdita|leak|shut.?off|contatore|meter|\bgas\b/i;
 const testo = id => id + " " + nmHA(id);
-const fratelli = id => { const d = REG[id]?.device; return d ? Object.keys(S).filter(x => x !== id && REG[x]?.device === d) : []; };
+const fratelli = id => { const d = REG[id]?.device; return d ? idsDispositivo(d).filter(x => x !== id) : []; };
 function eZona(id) {
   const d = domain(id), p = REG[id]?.platform || "", s = testo(id);
   if (d !== "switch" && d !== "valve") return false;
@@ -70,12 +70,12 @@ const base = id => id.split(".")[1].replace(/_(zone|station_enabled|station|manu
 /** tra le entità sorelle quella che passa il test; se sullo stesso dispositivo ci sono più zone, solo quella col nome della zona */
 function sorella(id, test) {
   const F = fratelli(id), L = F.filter(test), b = base(id), molte = F.filter(x => eZona(x)).length > 0;
-  return (molte ? L.find(x => x.includes(b)) : L.find(x => x.includes(b)) || L[0]) || Object.keys(S).find(x => x !== id && x.split(".")[1].startsWith(b + "_") && test(x)) || null;
+  return (molte ? L.find(x => x.includes(b)) : L.find(x => x.includes(b)) || L[0]) || tutteLeEntita().find(x => x !== id && x.split(".")[1].startsWith(b + "_") && test(x)) || null;
 }
 /** contesto di una zona: integrazione, sensore «in funzione», tempo che manca, prossima partenza (rifatto a ogni disegno) */
 const CX = new Map(); let cxT = 0;
 function ctx(id) {
-  const n = performance.now(); if (n - cxT > 80) { CX.clear(); cxT = n; }
+  if (cxT !== VERS.ver) { CX.clear(); cxT = VERS.ver; }   // rifatto solo quando cambia uno stato
   if (!CX.has(id)) CX.set(id, contesto(id));
   return CX.get(id);
 }

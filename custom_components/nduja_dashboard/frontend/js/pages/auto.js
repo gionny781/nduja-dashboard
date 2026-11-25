@@ -2,7 +2,7 @@
    con la sua integrazione (Tesla, BMW, Volkswagen, Kia/Hyundai, Renault, Polestar, Mercedes…).
    Tutto viene dal dispositivo dell'auto: batteria, autonomia, ricarica, clima, serrature, posizione e comandi.
    La foto è quella dell'integrazione; se non c'è, la cerco su Wikipedia con marca e modello. */
-import { S, REG, DEVICES, ACT, CHG, LAYOUT, UI, STRIP, HOME_EXTRA, DEFAULT_OFF, t, LOC, esc, fnum, nm, ok, val, attr, unit, W, card, empty, page,
+import { VERS, memoGen, S, REG, DEVICES, ACT, CHG, LAYOUT, UI, STRIP, HOME_EXTRA, DEFAULT_OFF, t, LOC, esc, fnum, nm, ok, val, attr, unit, W, card, empty, page,
   svc, toast, go, isAdmin, shortName, deviceClass, km, ago, sGet, sSet, render, openSheet, closeSheet, sicuro, myHA, manca } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 
@@ -77,7 +77,7 @@ function eAuto(dev) {
 }
 /** dispositivi delle auto (id del dispositivo), in ordine di nome */
 export function auto() {
-  const k = Object.keys(S).length + ":" + Object.keys(DEVICES).length + ":" + JSON.stringify(LAYOUT.cars || {});
+  const k = VERS.gen;   // cambia con le entità, il registro e le scelte della casa (core.js)
   if (memo.k === k) return memo.L;
   const H = LAYOUT.cars?._hide || [], agg = (LAYOUT.cars?._add || []).filter(d => DEVICES[d] && !DEVICES[d].disabled);
   const L = [...new Set([...Object.keys(DEVICES).filter(eAuto), ...agg])].filter(d => !H.includes(d)).sort((a, b) => nomeAuto(a).localeCompare(nomeAuto(b), LOC));
@@ -92,7 +92,7 @@ const basso = d => { const v = +conf(d).basso; return v > 0 && v < 100 ? v : 15;
 const coloreBatt = (d, b) => b == null ? "var(--tx3)" : b < basso(d) ? "var(--red)" : b < Math.min(100, basso(d) * 2) ? "var(--orange)" : "var(--green)";
 
 /* i comandi dell'auto non finiscono nelle altre pagine (clima, prese, sicurezza…) */
-const AUTO_DEV = () => new Set(auto());
+const AUTO_DEV = memoGen(() => new Set(auto()));
 DEFAULT_OFF.push(id => { const d = REG[id]?.device; return !!d && AUTO_DEV().has(d); });
 
 /* ---------- foto ---------- */

@@ -4,7 +4,7 @@
    con ✏️ scegli tu nome, aspetto e qualsiasi sensore; con ＋ ne aggiungi di nuovi.
    Aspetto per fermo, in funzione e finito: le animazioni della plancia (disegni.js), le tue immagini o GIF (/local/…) oppure l'icona.
    Lo stesso aspetto compare nella pagina, nella scheda della Home e nella mappa (nella stanza della presa o del sensore). */
-import { S, REG, ACT, CHG, LAYOUT, UI, HOME_EXTRA, VISTE, AREAS, t, esc, nm, ok, val, attr, allEnts, deviceClass, watts, W, fnum, ago, hhmm, card, empty, page, svc, toast,
+import { memoGen, memoVer, tutteLeEntita, S, REG, ACT, CHG, LAYOUT, UI, HOME_EXTRA, VISTE, AREAS, t, esc, nm, ok, val, attr, allEnts, deviceClass, watts, W, fnum, ago, hhmm, card, empty, page, svc, toast,
   openSheet, closeSheet, render, isAdmin, LOC, areaOf, go, ordina, domain, sGet, sSet } from "../core.js";
 import { TRASCINA } from "../trascina.js";
 import { scegli, cambia, fileEsiste, indirizzoLocale } from "../edit.js";
@@ -67,10 +67,11 @@ export function vista(a, k, key, cls = "") {
   return `<span class="apv1 ico2 ${cls}">${icona(a, k === "on")}</span>`;
 }
 /** elettrodomestici trovati da soli: per ogni tipo raccolgo i sensori di tutte le entità che lo nominano */
-function automatici() {
-  const out = [];
+/* le entità di ogni tipo si cercano solo quando cambiano le entità di casa (memoGen), non a ogni ridisegno */
+const trovati = memoGen(() => {
+  const out = [], tutte = tutteLeEntita();
   for (const [k, re, ic, nome] of TIPI()) {
-    const E = Object.keys(S).filter(id => KEY.test(id) && re.test(id + " " + nm(id)) && !REG[id]?.hidden && REG[id]?.cat == null);
+    const E = tutte.filter(id => KEY.test(id) && re.test(id + " " + nm(id)) && !REG[id]?.hidden && REG[id]?.cat == null);
     if (!E.length) continue;
     const pw = E.filter(id => id.startsWith("sensor.") && deviceClass(id) === "power" && !SCARTA.test(id));
     const en = E.filter(id => id.startsWith("sensor.") && deviceClass(id) === "energy" && !SCARTA.test(id));
@@ -78,13 +79,20 @@ function automatici() {
     const fine = E.filter(id => id.startsWith("sensor.") && (deviceClass(id) === "timestamp" && /complet|fine|end|finish/i.test(id) || /remaining|residuo|time_left/i.test(id)));
     const sw = E.filter(id => id.startsWith("switch.") && !SCARTA.test(id));
     if (!pw.length && !st.length && !sw.length) continue;
-    const best = L => L.find(id => ok(id) && (W(id) || 0) > 0) || L.find(ok) || L[0] || null;
-    out.push({ id: k, nome, icona: ic, power: best(pw), energy: en.find(ok) || en[0] || null, status: st[0] || null, end: fine[0] || null, switch: sw.sort((a, b) => a.length - b.length)[0] || null });
+    out.push({ k, ic, nome, pw, en, st, fine, sw });
   }
   return out;
-}
+});
+const automatici = memoVer(() => {
+  const out = [];
+  for (const { k, ic, nome, pw, en, st, fine, sw } of trovati()) {
+    const best = L => L.find(id => ok(id) && (W(id) || 0) > 0) || L.find(ok) || L[0] || null;
+    out.push({ id: k, nome, icona: ic, power: best(pw), energy: en.find(ok) || en[0] || null, status: st[0] || null, end: fine[0] || null, switch: [...sw].sort((a, b) => a.length - b.length)[0] || null });
+  }
+  return out;
+});
 /** gli elettrodomestici, nell'ordine scelto trascinando le schede in ✏️ Modifica (LAYOUT.ordine.elettrodomestici) */
-const elenco = () => ordina(Array.isArray(LAYOUT.appliances) ? LAYOUT.appliances : automatici(), "elettrodomestici", a => a.id);
+const elenco = memoVer(() => ordina(Array.isArray(LAYOUT.appliances) ? LAYOUT.appliances : automatici(), "elettrodomestici", a => a.id));
 TRASCINA.elettrodomestici = { nome: id => elenco().find(a => a.id === id)?.nome || "",
   salva: ({ ids }) => cambia(l => { const o = l.ordine?.elettrodomestici || []; l.ordine = { ...(l.ordine || {}), elettrodomestici: [...ids, ...o.filter(x => !ids.includes(x))] }; }) };
 POTENZE_EXTRA.push(() => elenco().map(a => a.power).filter(Boolean));

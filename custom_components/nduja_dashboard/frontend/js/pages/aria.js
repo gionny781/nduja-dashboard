@@ -19,7 +19,7 @@
    Radon       Bq/m³         50             100             300                            OMS: 100; Italia (D.Lgs. 101/2020): livello di riferimento 300
    Umidità     %          40–60           35–65           30–70        fuori da 30–70     muffe e acari sopra, aria secca sotto
    Il giudizio della stanza è quello della misura peggiore. */
-import { S, AREAS, FLOORS, REG, DEVICES, ACT, CHG, LAYOUT, UI, VISTE, HOME_EXTRA, PAGES, t, LOC, esc, nm, nmHA, ok, attr, unit, fnum, ents, allEnts, areaOf, areasSorted,
+import { VERS, S, AREAS, FLOORS, REG, DEVICES, ACT, CHG, LAYOUT, UI, VISTE, HOME_EXTRA, PAGES, t, LOC, esc, nm, nmHA, ok, attr, unit, fnum, ents, allEnts, areaOf, areasSorted,
   deviceClass, card, page, svc, toast, openSheet, closeSheet, render, isAdmin, ws, cached, sGet, sSet, utenteCfg, openings, isOn, durata, shortName, myHA } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 import { grafico, periodi, FASCE } from "../grafici.js";
@@ -140,7 +140,7 @@ function umiditaStanza(a, L) {
 let memo = { t: 0, k: null, v: null };
 /** tutti i sensori della pagina: { id, k (tipo), a (stanza o "_"), fuori } */
 export function sensori() {
-  const k = [LAYOUT.aria, LAYOUT.rooms, LAYOUT.sensors, LAYOUT.exclude, LAYOUT.include, LAYOUT.hiddenAreas, LAYOUT.mode, Object.keys(S).length];
+  const k = [LAYOUT.aria, LAYOUT.rooms, LAYOUT.sensors, LAYOUT.exclude, LAYOUT.include, LAYOUT.hiddenAreas, LAYOUT.mode, VERS.gen];
   if (memo.v && Date.now() - memo.t < 400 && k.every((x, i) => x === memo.k[i])) return memo.v;
   const c = C(), tolti = new Set(c.tolti || []), extra = (c.extra || []).filter(id => S[id] && !tolti.has(id));
   const trovati = ents("sensor", id => !tolti.has(id) && !!tipoDi(id) && fattore(tipoDi(id), unit(id)) != null);
