@@ -82,6 +82,7 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.55-dev ✅ | mar 24 nov | Schede oggetto (1): cancello, porta, robot, clima, lavatrice |
 | 0.7.56-dev ✅ | mar 24 nov | Schede oggetto (2): musica, TV e frasi ovunque |
 | 0.7.57-dev ✅ | mer 25 nov | Guida all'installazione illustrata e controllo finale |
+| 0.7.58-dev ✅ | mer 25 nov | Fluidità: animazioni ferme quando non si vedono, grafica automatica che si misura |
 
 ⏸️ **In standby:** «In auto: comandi per CarPlay e Android Auto» — si farà ufficialmente con l'app 'Nduja; la scheda è in `docs/sviluppo/standby/in-auto-carplay.md`.
 

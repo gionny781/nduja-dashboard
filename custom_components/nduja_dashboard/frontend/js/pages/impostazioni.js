@@ -10,6 +10,7 @@ import { controllaCard } from "../controlla.js";
 import { assistenteCard } from "../assistente.js";
 import { aggiungiCard } from "../aggiungi.js";
 import { schedeGrandi } from "../oggetti.js";
+import { esitoMisura, fpsMisurati, sogliaFps } from "../fluido.js";
 import { S, UI, AREAS, FLOORS, REG, ACT, CHG, LAYOUT, PAGES, t, LOC, esc, nm, ok, attr, allEnts, shortName, climateSensors,
   saveLayout, render, toast, go, page, ws, openSheet, isAdmin, deviceClass, HVAC, manualKind, excluded, tema, navMode, chiosco, sGet, sSet, grafica, leggera, applyTheme } from "../core.js";
 
@@ -166,12 +167,25 @@ function dispositivo() {
       ${ssMin() ? ssVoce() : ""}
       <small class="muted">${t("Dopo qualche minuto senza tocchi: orologio, analogico, cielo vivo, fotovoltaico, consumi, meteo, la giornata, la tua casa, un minimal per la notte, le tue foto o uno sfondo animato; oppure «Automatico» o «Alterna». Si sveglia al tocco.", "After a few minutes without touches: clock, analog, live sky, solar, energy use, weather, your day, your home, a night minimal, your photos or an animated background; or «Automatic» or «Rotate». Wakes on touch.")}</small></div>
     <div><b>${t("Grafica", "Graphics")}</b>${seg("liteSet", grafica(), [["auto", t("Automatica", "Auto")], ["1", "⚡ " + t("Leggera", "Light")], ["0", "✨ " + t("Completa", "Full")]])}
-      <small class="muted">${t("Leggera: senza effetto vetro sfocato e con lo sfondo fermo (anche quelli animati, salvo che tu scelga altrimenti in 🎨 Aspetto), molto più fluida su tablet Android e Fully Kiosk. «Automatica» la accende da sola sui dispositivi Android.", "Light: no blurred glass and a still background (animated ones too, unless you choose otherwise in 🎨 Appearance), much smoother on Android tablets and Fully Kiosk. «Auto» turns it on by itself on Android devices.")}${leggera() ? " ✓ " + t("Ora è attiva.", "Now on.") : ""}</small></div>
+      <small class="muted">${t("Leggera: senza effetto vetro sfocato e con lo sfondo fermo (anche quelli animati, salvo che tu scelga altrimenti in 🎨 Aspetto), molto più fluida su tablet Android e Fully Kiosk. «Automatica» la accende da sola sui dispositivi Android e su quelli dove misura che la plancia va a scatti.", "Light: no blurred glass and a still background (animated ones too, unless you choose otherwise in 🎨 Appearance), much smoother on Android tablets and Fully Kiosk. «Auto» turns it on by itself on Android devices and wherever it measures that the dashboard stutters.")}${leggera() ? " ✓ " + t("Ora è attiva.", "Now on.") : ""}</small>
+      ${graficaMisura()}</div>
     <div><b>${t("Modalità chiosco", "Kiosk mode")}</b>${seg("kioskSet", chiosco() ? "1" : "0", [["0", t("Spenta", "Off")], ["1", "🖥️ " + t("Attiva", "On")]])}
       <small class="muted">${t("Nasconde la barra laterale e l'intestazione di Home Assistant su questo dispositivo, a ogni apertura. Il pulsante ⛶ in alto mette a tutto schermo (dove il browser lo permette).", "Hides Home Assistant's sidebar and header on this device, every time. The ⛶ button at the top goes full screen (where the browser allows it).")}</small></div></div></section>`;
 }
 ACT.startSet = el => { sSet("start", el.dataset.v); render(true); toast(el.dataset.v === "colpo" ? "👁️ " + t("Si apre su Colpo d'occhio", "Opens on At a glance") : el.dataset.v === "home" ? "🏠 " + t("Si apre sulla Home", "Opens on Home") : t("Si apre sull'ultima pagina aperta", "Opens on the last page")); };
 ACT.ogSet = el => { sSet("oggetti", el.dataset.v); render(true); toast(el.dataset.v === "0" ? t("Oggetti con i pannelli di prima", "Objects with the previous panels") : "🖼️ " + t("Oggetti come schede grandi", "Objects as big cards")); };
+/** fluidità misurata su questo dispositivo (fluido.js): esito, pulsante per rimisurare e soglia degli scatti */
+function graficaMisura() {
+  const seg = (act, cur, opts) => `<div class="seg">${opts.map(([k, n]) => `<button class="${cur === k ? "act" : ""}" data-act="${act}" data-v="${k}">${n}</button>`).join("")}</div>`;
+  const e = esitoMisura(), fps = fpsMisurati();
+  const esito = e == null ? t("Fluidità non ancora misurata su questo dispositivo.", "Smoothness not measured yet on this device.")
+    : e === "1" ? t(`Ultima misura: ${fps} fotogrammi al secondo, va a scatti con la grafica completa.`, `Last check: ${fps} frames per second, full graphics stutters.`)
+    : t(`Ultima misura: ${fps} fotogrammi al secondo, fluida.`, `Last check: ${fps} frames per second, smooth.`);
+  return `<div class="row" style="gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px"><button class="btn sm" data-act="liteMisura">⏱️ ${t("Misura la fluidità", "Measure smoothness")}</button>
+      <span class="small muted">${esito}</span></div>
+    <div style="margin-top:6px"><span class="small">${t("Va a scatti sotto", "Stutters below")}</span> ${seg("liteSoglia", String(sogliaFps()), [["30", "30 fps"], ["40", "40 fps"], ["50", "50 fps"]])}
+      <small class="muted" style="display:block;margin-top:4px">${t("Con «Automatica», se la misura scende sotto questa soglia la plancia accende la grafica leggera su questo dispositivo. Più alta = più facile che la accenda.", "With «Auto», if the measurement drops below this threshold the dashboard turns on light graphics on this device. Higher = more likely to turn it on.")}</small></div>`;
+}
 ACT.liteSet = el => { sSet("lite", el.dataset.v); applyTheme(); render(true); };
 ACT.kioskSet = el => { if ((el.dataset.v === "1") !== chiosco()) ACT.kiosk(); };
 ACT.themeSet = el => { try { localStorage.setItem("nduja_theme", el.dataset.v); } catch {} ; ACT.theme && (document.body.classList.remove("light")); render(true); };

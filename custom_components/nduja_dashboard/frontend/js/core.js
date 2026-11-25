@@ -380,7 +380,7 @@ function morph(a, b) {
   if (a.getAttribute("data-drag") === "1") return;   // luce che si sta regolando col dito (luce.js) o elenco che si sta trascinando (trascina.js)
   /* un menu a tendina riusato per un'altra entità (o con altre voci): lo sostituisco, altrimenti mostrerebbe le voci vecchie */
   if (a.tagName === "SELECT" && a !== document.activeElement && a.innerHTML !== b.innerHTML) { a.replaceWith(b); return; }
-  for (const at of [...a.attributes]) if (!b.hasAttribute(at.name)) a.removeAttribute(at.name);
+  for (const at of [...a.attributes]) if (!b.hasAttribute(at.name) && at.name !== "data-nv") a.removeAttribute(at.name);   // data-nv: lo mette fluido.js (fuori schermo)
   for (const at of [...b.attributes]) if (a.getAttribute(at.name) !== at.value) a.setAttribute(at.name, at.value);
   if (a.tagName === "INPUT" && a.type === "range" && a !== dragging) a.value = b.getAttribute("value") ?? a.value;
   if (["INPUT", "TEXTAREA", "SELECT"].includes(a.tagName) && a.type !== "range") return;
@@ -402,9 +402,10 @@ function haScuro() {
   try { const h = parent.document.querySelector("home-assistant")?.hass; if (h?.themes && typeof h.themes.darkMode === "boolean") return h.themes.darkMode; } catch {}
   return matchMedia("(prefers-color-scheme: dark)").matches;
 }
-/** modalità leggera: niente sfocature né sfondo animato. «auto» = accesa sui dispositivi Android (Fully Kiosk, app di HA, Chrome) */
+/** modalità leggera: niente sfocature né sfondo animato. «auto» = accesa sui dispositivi Android (Fully Kiosk, app di HA, Chrome)
+    e su quelli dove la misura di fluido.js ha visto la plancia andare a scatti */
 export const grafica = () => sGet("lite") || "auto";
-export const leggera = () => grafica() === "1" || (grafica() === "auto" && /Android/i.test(navigator.userAgent));
+export const leggera = () => grafica() === "1" || (grafica() === "auto" && (/Android/i.test(navigator.userAgent) || sGet("liteAuto") === "1"));
 export function applyTheme() {
   applyKiosk();
   document.body.classList.toggle("lite", leggera());

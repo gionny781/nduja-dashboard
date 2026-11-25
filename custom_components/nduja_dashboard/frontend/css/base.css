@@ -360,3 +360,8 @@ input[type=range]{accent-color:var(--yellow);height:24px}
   .orb{bottom:calc(env(safe-area-inset-bottom) + 118px)}
   .shell{padding-bottom:130px}
 }
+
+/* ===== Fluidità (0.7.58): i disegni animati si fermano quando non si vedono =====
+   data-nv lo mette fluido.js sugli elementi fuori dallo schermo; sotto il salvaschermo si ferma tutta la pagina. */
+[data-nv],[data-nv] *,[data-nv] *::before,[data-nv] *::after{animation-play-state:paused!important}
+body.ss-on #main *,body.ss-on #main *::before,body.ss-on #main *::after,body.ss-on .rail *{animation-play-state:paused!important}

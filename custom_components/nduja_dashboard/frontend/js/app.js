@@ -7,6 +7,7 @@ import "./climadisegni.js";
 import "./luce.js";
 import "./salvaschermo.js";
 import "./sfondi.js";
+import "./fluido.js";
 import "./assistente.js";
 import "./grafici.js";
 import "./pages/benvenuto.js";
