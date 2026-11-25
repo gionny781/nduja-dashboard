@@ -256,3 +256,5 @@ body.light .m3c{background:radial-gradient(ellipse at 50% 35%,rgba(255,255,255,.
 body.light .m3b.on{background:rgba(255,159,10,.28)!important}
 body.light .mpm1 .mpo1.po{stroke:#b07a46!important}body.light .mpm1 .mpo1.fi{stroke:#4fb0ef!important}body.light .mpm1 .mpo1.fi2{stroke:rgba(255,255,255,.95)!important}
 body.light .mpm1 .mpo1.ap{stroke:#ff9f0a!important}body.light .mpm1 .mpo1.orf{stroke:#ff453a!important}
+/* lettore del manuale (manuale.js): fondo chiaro nel tema chiaro */
+body.light .mn1v{background:#eef2f8}

@@ -391,6 +391,8 @@ body.light .tr1ph{border:1.5px dashed rgba(0,0,0,0.238)!important;background:rgb
 body.light .vq1t{background:linear-gradient(180deg,rgba(0,0,0,0.050),rgba(0,0,0,0.022))!important;border:1px solid rgba(0,0,0,0.070)!important}
 body.light .vq1i{background:rgba(0,0,0,0.050)!important}
 body.light .vq1t.heat .vq1i,body.light .vq1t.cool .vq1i{background:rgba(0,0,0,0.070)!important}
+body.light .mn1{background:linear-gradient(135deg,rgba(255,159,10,.13),rgba(0,0,0,0.022) 65%)!important}
+body.light .mn1vb{background:rgba(0,0,0,0.030)!important}
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
 body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
@@ -649,4 +651,6 @@ body.light .m3c{background:radial-gradient(ellipse at 50% 35%,rgba(255,255,255,.
 body.light .m3b.on{background:rgba(255,159,10,.28)!important}
 body.light .mpm1 .mpo1.po{stroke:#b07a46!important}body.light .mpm1 .mpo1.fi{stroke:#4fb0ef!important}body.light .mpm1 .mpo1.fi2{stroke:rgba(255,255,255,.95)!important}
 body.light .mpm1 .mpo1.ap{stroke:#ff9f0a!important}body.light .mpm1 .mpo1.orf{stroke:#ff453a!important}
+/* lettore del manuale (manuale.js): fondo chiaro nel tema chiaro */
+body.light .mn1v{background:#eef2f8}
 

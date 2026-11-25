@@ -120,6 +120,8 @@ The **setup wizard** has eight steps: Start, Rooms, Lights, Climate, Devices, Ho
 
 Pages show up by themselves when your home has something that uses them (for example the Car page only if Home Assistant has a car).
 
+📖 **For everyday use** there's the [user manual as a PDF](custom_components/nduja_dashboard/frontend/manuale/Nduja-manuale-en.pdf): every page explained in plain words. It's also in the dashboard, at the top of **⚙️ Settings** («Open» or «Download PDF»).
+
 > The screenshots show the dashboard in Italian; it follows your Home Assistant language, so you'll see it in English.
 
 ---

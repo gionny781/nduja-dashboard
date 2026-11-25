@@ -120,6 +120,8 @@ La **procedura guidata** ha otto passi: Inizio, Stanze, Luci, Clima, Dispositivi
 
 Le pagine compaiono da sole quando in casa c'è qualcosa che le usa (per esempio la pagina Auto solo se Home Assistant ha un'auto).
 
+📖 **Per usare la plancia giorno per giorno** c'è il [manuale di istruzioni in PDF](custom_components/nduja_dashboard/frontend/manuale/Nduja-manuale-it.pdf): ogni pagina spiegata in parole semplici. Lo trovi anche nella plancia, in cima a **⚙️ Impostazioni** («Apri» o «Scarica PDF»).
+
 ---
 
 ## Prepara la casa

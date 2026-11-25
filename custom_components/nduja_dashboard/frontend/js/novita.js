@@ -5,6 +5,7 @@
    Serve anche a ＋ Aggiungi (edit.js) per la sezione «Suggeriti». */
 import { S, REG, AREAS, DEVICES, UI, ACT, LAYOUT, PAGES, HOOKS, DEFAULT_OFF, OPENING, t, LOC, esc, nm, ok, domain, deviceClass, areaOf, areasSorted,
   VISTE, isAdmin, isTV, tvInMedia, isManual, saveLayout, toast, openSheet, closeSheet, render, go, pronto } from "./core.js";
+import { manualeNovita } from "./manuale.js";
 
 /* tipi di dispositivi che la plancia ricorda */
 const TIPI = ["light", "climate", "switch", "cover", "fan", "media_player", "lock", "vacuum", "camera", "person", "scene"];
@@ -124,13 +125,14 @@ function foglio() {
 const nomi = L => { const n = L.slice(0, 3).map(id => esc(nm(id))).join(", "); const r = L.length - 3;
   return r > 0 ? n + (r === 1 ? t(" e un altro", " and 1 more") : t(` e altri ${r}`, ` and ${r} more`)) : n; };
 export function novitaHome() {
-  if (!isAdmin()) return "";
-  const L = nuovi(), C = autoNuove(); if (!L.length && !C.length) return "";
+  /* «C'è il manuale» la vedono tutti (finché su questo dispositivo non si tocca «Ho visto»); i dispositivi nuovi solo gli amministratori */
+  const M = manualeNovita(), L = isAdmin() ? nuovi() : [], C = isAdmin() ? autoNuove() : []; if (!L.length && !C.length && !M) return "";
   return `<section class="card span3 nv1">
     ${L.length ? `<div class="nv1r"><span class="nv1i" aria-hidden="true">✨</span><div class="nv1t"><b>${quanti(L.length)}</b><span>${nomi(L)}</span></div>
       <div class="nv1b"><button class="btn sm pri" data-act="nvApri">👀 ${t("Guarda", "Show me")}</button><button class="btn sm" data-act="nvVisto">👍 ${t("Ho visto", "Got it")}</button></div></div>` : ""}
     ${C.length ? `<div class="nv1r"><span class="nv1i" aria-hidden="true">🚗</span><div class="nv1t"><b>${esc(autoTesto())}</b><span>${t("Foto, batteria, ricarica e comandi in un posto solo.", "Photo, battery, charging and controls in one place.")}</span></div>
       <div class="nv1b"><button class="btn sm pri" data-act="nvAuto">🚗 ${t("Apri Auto", "Open Car")}</button>${L.length ? "" : `<button class="btn sm" data-act="nvVisto">👍 ${t("Ho visto", "Got it")}</button>`}</div></div>` : ""}
+    ${M}
   </section>`;
 }
 /** voci per la scheda Avvisi (solo amministratori) */

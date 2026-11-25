@@ -1,0 +1,30 @@
+{
+ "versione": "0.7.61-dev",
+ "data": "2026-11-25",
+ "it": {
+  "byte": 5440150,
+  "pagine": 55,
+  "indice": [
+   "Benvenuto",
+   "Installazione in breve",
+   "Le pagine, una per una",
+   "Su misura",
+   "Telefono e tablet",
+   "Problemi frequenti",
+   "Glossario"
+  ]
+ },
+ "en": {
+  "byte": 5385275,
+  "pagine": 55,
+  "indice": [
+   "Welcome",
+   "Installation in short",
+   "The pages, one by one",
+   "Your way",
+   "Phone and tablet",
+   "Common problems",
+   "Glossary"
+  ]
+ }
+}

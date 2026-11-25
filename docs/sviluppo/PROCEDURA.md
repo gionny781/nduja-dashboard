@@ -48,6 +48,9 @@ Ogni sessione programmata realizza **una sola scheda** (`docs/sviluppo/<versione
 1. Versione `<versione>` (es. `0.7.11-dev`) in `const.py` e `manifest.json`.
 2. In `CHANGELOG.md` aggiungi in cima la sezione `## <versione>` con punti 🇮🇹 e 🇬🇧 nello stile delle precedenti.
 3. Aggiorna il README (italiano e inglese) se cambia qualcosa di visibile.
+   Se l'anteprima cambia pagine o comandi (pagine nuove, pulsanti, gesti, testi visibili), **rigenera il manuale PDF**: aggiorna
+   i testi in `tools/manuale/pagine.mjs` e `testi.mjs` (italiano e inglese), poi `node tools/manuale/genera.mjs` (istruzioni in testa allo script).
+   Lo script si ferma se una pagina del menu non ha testo, se una pagina del manuale non sta in un foglio A4 o se un PDF supera i 6 MB.
 4. In `ROADMAP.md` spunta le voci fatte.
 5. Fai il commit su `main` con messaggio `<versione>: <titolo>`, che termina con queste due righe:
    ```

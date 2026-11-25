@@ -80,6 +80,8 @@
 
 📖 **Guida illustrata passo per passo:** [COME_INSTALLARE.md](COME_INSTALLARE.md) · **Illustrated step-by-step guide:** [HOW_TO_INSTALL.md](HOW_TO_INSTALL.md)
 
+📕 **Manuale di istruzioni (PDF), pagina per pagina:** [italiano](custom_components/nduja_dashboard/frontend/manuale/Nduja-manuale-it.pdf) · **User manual (PDF), page by page:** [English](custom_components/nduja_dashboard/frontend/manuale/Nduja-manuale-en.pdf) — 🇮🇹 anche nella plancia, in ⚙️ Impostazioni · 🇬🇧 also in the dashboard, in ⚙️ Settings
+
 | 🇮🇹 | 🇬🇧 |
 |---|---|
 | **1.** Impostazioni → **Marketplace** → **Aggiungi da link** → `gionny781/nduja-dashboard` → **Aggiungi** *(fino alla 2026.10: HACS → ⋮ → Archivi digitali personalizzati, categoria Integrazione)* | **1.** Settings → **Marketplace** → **Add from link** → `gionny781/nduja-dashboard` → **Add** *(up to 2026.10: HACS → ⋮ → Custom repositories, category Integration)* |
@@ -167,6 +169,7 @@
 - Le pagine compaiono solo se hai i dispositivi giusti. **✨ Cosa puoi aggiungere** (⚙️ Impostazioni, amministratori; anche in fondo alla Home in ✏️ Modifica) elenca le pagine e le schede che non hai ancora: cosa fanno, cosa serve, i passi con i link di Home Assistant e, se il dispositivo c'è già ma non l'ho riconosciuto, il pulsante per sceglierlo. «Non mi interessa» nasconde una voce. Le pagine che ci sono ma a cui manca qualcosa (per esempio un'auto senza il sensore della ricarica) lo dicono lì dove manca.
 - **🩺 Controlla Home Assistant** (⚙️ Impostazioni, solo amministratori): un controllo in parole semplici di stanze, piani, Energia, meteo, persone, dispositivi che non rispondono e versione di Home Assistant, con un pulsante che per ogni ⚠️ apre la schermata giusta di Home Assistant. Legge soltanto, non cambia niente.
 - Se la plancia non si collega o non parte, al posto della pagina bianca mostra **cosa controllare**, «Riprova» e i dettagli per l'assistenza.
+- **📖 Manuale di istruzioni** (⚙️ Impostazioni, in alto, per tutti): ogni pagina spiegata in parole semplici, in PDF da aprire, scaricare o stampare ([italiano](custom_components/nduja_dashboard/frontend/manuale/Nduja-manuale-it.pdf)). Dentro l'app di Home Assistant e in Fully Kiosk si apre a schermo intero nella plancia, con «Condividi» e «Salva».
 
 ---
 
@@ -242,6 +245,7 @@
 - Pages show up only when you have the matching devices. **✨ What you can add** (⚙️ Settings, admins; also at the bottom of Home in ✏️ Edit) lists the pages and cards you don't have yet: what they do, what they need, the steps with Home Assistant links and, if the device is already there but wasn't recognised, a button to pick it. «Not interested» hides an item. Pages already shown but missing something (e.g. a car without the charging sensor) say what's missing right there.
 - **🩺 Check Home Assistant** (⚙️ Settings, admins only): a plain-language check of rooms, floors, Energy, weather, people, devices that don't respond and the Home Assistant version, with a button to the right Home Assistant screen for each ⚠️. It only reads, it never changes anything.
 - If the dashboard can't connect or start, it shows **what to check**, «Try again» and the details for support instead of a blank page.
+- **📖 User manual** (⚙️ Settings, at the top, for everyone): every page explained in plain words, as a PDF to open, download or print ([English](custom_components/nduja_dashboard/frontend/manuale/Nduja-manuale-en.pdf)). Inside the Home Assistant app and Fully Kiosk it opens full screen in the dashboard, with «Share» and «Save».
 
 ---
 
