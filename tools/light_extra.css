@@ -1,5 +1,5 @@
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
-body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
+body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.66);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
 body.light .bg::before{opacity:.22}body.light .bg::after{opacity:.18}
 body.light .bg .chili{opacity:.14!important;filter:blur(10px) saturate(1.05)}
@@ -13,14 +13,19 @@ body.light select option{background:#fff!important;color:#1c1c1e}
 body.light .wel2b:first-child{background:linear-gradient(160deg,rgba(255,69,58,.14),rgba(255,255,255,.75))!important}
 body.light .rm1.lit{background:linear-gradient(160deg,rgba(255,200,40,.22),rgba(255,255,255,.7))!important}
 body.light .toast{background:rgba(255,255,255,.95);color:#1c1c1e}
-body.light [style*="#ffd60a"],body.light .pillv.sun{color:#b88600!important}
+body.light [style*="#ffd60a"],body.light .pillv.sun{color:#7f6a00!important}
+/* testi colorati scritti nello stile in linea (0.7.62: contrasto AA sul chiaro, come gli accenti scuriti da make_light_css.py) */
+body.light [style^="color:var(--orange)"],body.light [style*=";color:var(--orange)"],body.light [style*=" color:var(--orange)"]{color:#995d00!important}
+body.light [style^="color:#ff6961"],body.light [style*=";color:#ff6961"],body.light [style*=" color:#ff6961"]{color:#d60b00!important}
+body.light [style^="color:#30d158"],body.light [style*=";color:#30d158"],body.light [style*=" color:#30d158"]{color:#1b7b33!important}
+body.light [style^="color:#64d2ff"],body.light [style*=";color:#64d2ff"],body.light [style*=" color:#64d2ff"]{color:#0072a1!important}
 body.light [style*="#64d2ff"]{color:#0a7fd1!important}
 body.light .tt68 b[style*="#30d158"],body.light .og68 b[style*="#30d158"]{color:#1f9e45!important}
 body.light .en7k{background:rgba(255,255,255,.86)!important;color:#1c1c1e!important;border-color:rgba(0,0,0,.08)!important;box-shadow:0 6px 18px -10px rgba(31,45,80,.45)!important}
 body.light .en7t .en7k{background:rgba(0,0,0,.035)!important;box-shadow:none!important}
 body.light .en7k.sol b{color:#b88600}body.light .en7k.imp b{color:#e0352b}body.light .en7k.exp b{color:#1f9e45}body.light .en7k.casa b,body.light .en7k.ev b{color:#0a7fd1}body.light .en7k.bat b{color:#8a4fd6}
 body.light .en7::after{box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}body.light .en7{box-shadow:0 16px 36px -26px rgba(31,45,80,.55)}
-body.light .en7ai.top .tx>span em{color:#c26a00}
+body.light .en7ai.top .tx>span em{color:#8f5200}
 body.light .av2{color:#fff;background-color:#8e8e93;border-color:rgba(0,0,0,.12)}body.light .ps2.home .av2{border-color:var(--green)}
 body.light .av2 b{border-color:#fff}body.light .pb2{border-color:rgba(0,0,0,.35)}
 body.light .x3{background:rgba(0,0,0,.06)}
@@ -258,3 +263,15 @@ body.light .mpm1 .mpo1.po{stroke:#b07a46!important}body.light .mpm1 .mpo1.fi{str
 body.light .mpm1 .mpo1.ap{stroke:#ff9f0a!important}body.light .mpm1 .mpo1.orf{stroke:#ff453a!important}
 /* lettore del manuale (manuale.js): fondo chiaro nel tema chiaro */
 body.light .mn1v{background:#eef2f8}
+/* ---- 🔠 contrasto alto nel tema chiaro (0.7.62, leggibilita.js) ---- */
+body.light.hc{--tx:#000;--tx2:rgba(10,12,18,.9);--tx3:rgba(10,12,18,.8);--line:rgba(0,0,0,.3);--line2:rgba(0,0,0,.45)}
+body.light.hc .glass,body.light.hc .card,body.light.hc .rail,body.light.hc .tabbar,body.light.hc .more,body.light.hc .sheet{background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(250,251,253,.94))!important;border-color:rgba(0,0,0,.3)!important}
+body.light.hc .li,body.light.hc .tile,body.light.hc .stat,body.light.hc .pillv,body.light.hc .btn,body.light.hc .seg{border-color:rgba(0,0,0,.28)!important}
+body.light.hc :focus-visible{outline-color:#0a3d91}
+body.light .beta1{color:#8a5300!important;border-color:rgba(138,83,0,.45)!important}
+body.light .btn.bad{color:#b8140a}
+/* 0.7.62: contrasto AA nel tema chiaro — valori della scena dell'energia sulle etichette bianche, livello dell'allerta meteo, finestre aperte nelle stanze */
+body.light .en7k.sol b{color:#7a6500}body.light .en7k.imp b{color:#b8140a}body.light .en7k.exp b{color:#17702e}
+body.light .en7k.casa b,body.light .en7k.ev b{color:#006a95}body.light .en7k.bat b{color:#7438c2}
+body.light .mt1a .lvp{color:color-mix(in srgb,var(--lv) 52%,#000)}
+body.light .rm1 .ri i.al{color:#8a4f00}

@@ -41,11 +41,7 @@ const BASE = `http://127.0.0.1:${server.address().port}`;
 
 const browser = await chromium.launch({ executablePath: process.env.CHROME || "/opt/pw-browsers/chromium", args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] });
 
-/* le immagini delle telecamere e la mappa del robot disegnate in tools/mock, al posto del peperoncino di prova (come galleria.mjs) */
-const IMMAGINI = { "camera.porta_ingresso": "cam-ingresso.svg", "camera.garage": "cam-garage.svg", "camera.garage_sub_stream": "cam-garage.svg",
-  "camera.ambrogio_map": "mappa-robot.svg", "camera.ambrogio_map_data": "mappa-robot.svg" };
-const ENT = Object.fromEntries(Object.entries(IMMAGINI).map(([id, f]) => [id, [id === "camera.porta_ingresso" ? "recording" : "idle", { entity_picture: "/tools/mock/" + f }]]));
-const casa3d = readFileSync(join(ROOT, "tools/mock/casa3d.json"), "utf8").replace(/\n/g, "");
+const casa3d = readFileSync(join(ROOT, "custom_components/nduja_dashboard/frontend/esempio/casa3d.json"), "utf8").replace(/\n/g, "");
 
 /** apre il finto Home Assistant nella lingua giusta; restituisce { p, f } (pagina e frame della plancia) */
 async function apri(lang, s, w, h) {
@@ -59,10 +55,9 @@ async function apri(lang, s, w, h) {
   await p.clock.setFixedTime(new Date(s.ora || ORA));
   await p.goto(BASE + "/tools/mock/host.html");
   const ls = { nduja_manuale: "1", ...(s.ls || {}) };   // la riga «C'è il manuale» della Home non serve nelle schermate
-  ls.mockEnt = JSON.stringify({ ...ENT, ...JSON.parse(ls.mockEnt || "{}") });
   const lay = s.lay === "3d" ? casa3d : s.lay || "";
-  await p.evaluate(([lay, chiaro, ls]) => { localStorage.clear(); if (lay) localStorage.setItem("mockLayout", lay); if (chiaro) localStorage.setItem("nduja_theme", "light");
-    for (const [k, v] of Object.entries(ls)) localStorage.setItem(k, v); }, [lay, !!s.chiaro, ls]);
+  await p.evaluate(([lay, chiaro, ls, sess]) => { localStorage.clear(); sessionStorage.clear(); if (lay) localStorage.setItem("mockLayout", lay); if (chiaro) localStorage.setItem("nduja_theme", "light");
+    for (const [k, v] of Object.entries(ls)) localStorage.setItem(k, v); for (const [k, v] of Object.entries(sess)) sessionStorage.setItem(k, v); }, [lay, !!s.chiaro, ls, s.sess || {}]);
   await p.reload(); await p.waitForTimeout(2600);
   const f = p.frames()[1];
   await f.evaluate(id => location.hash = id, s.p); await p.waitForTimeout(1900);
@@ -213,6 +208,8 @@ for (const lang of LINGUE.length ? LINGUE : ["it", "en"]) {
   img.aggiungi = await scatto(lang, { p: "impostazioni", ls: { mockNoCar: "1", mockVia: "^(sensor|binary_sensor|calendar)\\.f1_|rain_bird|prato_dietro|orto_gocciolatore|zona_siepe" }, scorri: "#ag1" });
   img.salvaschermo = await scatto(lang, { p: "impostazioni", ls: { nduja_ssMin: "5", nduja_ssStile: "solare" }, clic: '[data-act="ssProva"] >> nth=0' });
   img.errore = await scatto(lang, { p: "home", ls: { mockNoData: "1" }, attesa: 16000 });
+  img.esempio = await scatto(lang, { p: "home", sess: { nduja_esempio: "1" }, attesa: 1500 });   // 🏡 casa di esempio, con la fascia in alto
+  img.leggibilita = await scatto(lang, { p: "impostazioni", ls: { nduja_testo: "1", nduja_contrasto: "1" }, scorri: ".dev1l" });
   for (const g of ["marketplace", "scarica", "riavvia", "integrazione", "apri"]) img["g-" + g] = await guida(`${g}-${lang}`);
   console.log(" fatto");
 

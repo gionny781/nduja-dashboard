@@ -1,7 +1,7 @@
 /* Luci: riepilogo (quante accese e dove, «Spegni tutto», scene di luce), poi le stanze per piano con le tessere grandi di luce.js.
    Con ✏️ Modifica: ＋ luci nascoste e interruttori che comandano una luce, ✕ toglie, trascina (o ◀ ▶) per l'ordine, ✏️ nome, stanza e icona. */
 import { S, AREAS, FLOORS, ACT, LAYOUT, UI, t, LOC, esc, nm, nmHA, ok, attr, ents, allEnts, areaOf, areasSorted, luci, luciContate, lightsOn, luciComando,
-  isLightGroup, isLightSwitch, membriLuce, deviceClass, lightTile, card, empty, page, isAdmin, openSheet, closeSheet, render, myHA } from "../core.js";
+  isLightGroup, isLightSwitch, membriLuce, deviceClass, lightTile, card, empty, page, isAdmin, openSheet, closeSheet, render, myHA, menoMoto } from "../core.js";
 import { cambia, mostra, scegli } from "../edit.js";
 import { luciPerStanza, iconaPiccola, svgLuce, iconaAuto, coloreDi } from "../luce.js";
 import { TRASCINA } from "../trascina.js";
@@ -107,7 +107,7 @@ function foglioAggiungi() {
 document.addEventListener("input", e => { if (e.target.id === "lu1q") { AG.q = e.target.value; render(); } });
 
 Object.assign(ACT, {
-  luVai: el => { const s = document.getElementById("lu-" + el.dataset.id); if (s) s.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); },
+  luVai: el => { const s = document.getElementById("lu-" + el.dataset.id); if (s) s.scrollIntoView({ behavior: menoMoto() ? "auto" : "smooth", block: "start" }); },
   luStanza: el => { const a = el.dataset.id, on = el.dataset.v === "1";
     const L = a === "#g" ? luciPerStanza().gruppi : luciContate(a === "_" ? null : a).filter(id => a !== "_" || !areaOf(id) || !AREAS[areaOf(id)]);
     const da = L.filter(id => ok(id) && (S[id].state === "on") !== on); if (da.length) luciComando(da, on); },

@@ -1,6 +1,7 @@
 /* 'Nduja Dashboard — avvio veloce: subito il nucleo, la Home e le Impostazioni;
    le altre pagine si caricano un attimo dopo, mentre la Home è già sullo schermo. */
 import { tuttePronte } from "./core.js";
+import "./leggibilita.js";
 import "./edit.js";
 import "./trascina.js";
 import "./climadisegni.js";

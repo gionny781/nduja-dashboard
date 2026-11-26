@@ -4,7 +4,7 @@
    al loro posto), 🛋️ Arredo (mobili da aggiungere, trascinare e ruotare); «🏠 Tetto e piani» sceglie tetto, altezze e pavimenti.
    In 3D (casa3d.js) la stessa pianta diventa la casa intera. La pianta in comune sta in pianta.js. */
 import { S, AREAS, ACT, CHG, LAYOUT, UI, t, esc, fnum, ok, isOn, inArea, areaOf, roomTemp, roomHum, lightsOn, luciContate, luciComando,
-  deviceClass, svc, toast, card, empty, page, sGet, sSet, render, isAdmin, openSheet, closeSheet, nm, moreInfo, myHA, manca, linkBtn, comeFare, leggera } from "../core.js";
+  deviceClass, svc, toast, card, empty, page, sGet, sSet, render, isAdmin, openSheet, closeSheet, nm, moreInfo, myHA, manca, linkBtn, comeFare, leggera, menoMoto } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 import { COL, mp, custom, nomeStanza, piani, posizioni, pezzi, righeDi, muri, proprietari, bordi, chiaveMuro, aperture, unita, mappaAperture, statoAp, usateAperture, propostePer, posCover,
   dispositivi, posOggetti, mobili, casaCfg, FINITURE, finitura, finituraAuto, moltPiano, TETTI, tetto } from "../pianta.js";
@@ -327,7 +327,7 @@ Object.assign(ACT, {
    Col mouse basta trascinare; col dito si tiene premuto un attimo (come in trascina.js), così la pagina scorre come sempre.
    Il punto si arrotonda al quarto di casella; si salva subito, con «Annulla». */
 let MV = null, mangiaMv = 0;
-const fermoMv = () => leggera() || matchMedia("(prefers-reduced-motion: reduce)").matches;
+const fermoMv = () => leggera() || menoMoto();
 document.addEventListener("pointerdown", e => {
   const el = e.target.closest?.("[data-mv]"); if (!el || !el.dataset.mv || !UI.edit || !isAdmin() || (e.pointerType === "mouse" && e.button !== 0)) return;
   if (e.target.closest(".dx,.mpa2t button")) return;

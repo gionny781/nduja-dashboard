@@ -9,7 +9,7 @@
    In Home la scheda «Formula 1» (HOME_EXTRA). Facoltativa l'automazione «'Nduja · Formula 1»: «Tra 15 minuti partono…»
    (i minuti si scelgono; si riscrive da sola quando cambiano fonti, sensori o minuti). */
 import { S, REG, ACT, CHG, UI, LAYOUT, HOME_EXTRA, t, LOC, esc, nmHA, ok, card, page, render, isAdmin,
-  openSheet, closeSheet, toast, cached, svcResp, ws, api, attr, etichettaNduja, linkHacs } from "../core.js";
+  ESEMPIO, openSheet, closeSheet, toast, cached, svcResp, ws, api, attr, etichettaNduja, linkHacs } from "../core.js";
 import { scegli, cambia } from "../edit.js";
 
 /* ================= valori ================= */
@@ -172,7 +172,7 @@ function dati() {
 }
 
 /* ================= ora di casa ================= */
-const tzCasa = () => { try { return parent.document.querySelector("home-assistant")?.hass?.config?.time_zone || undefined; } catch { return undefined; } };
+const tzCasa = () => { if (ESEMPIO) return undefined; try { return parent.document.querySelector("home-assistant")?.hass?.config?.time_zone || undefined; } catch { return undefined; } };
 const conTz = (d, o, tz = tzCasa()) => { try { return d.toLocaleString(LOC, { ...o, timeZone: tz }); } catch { return d.toLocaleString(LOC, o); } };
 const ore = (d, tz) => conTz(d, { hour: "2-digit", minute: "2-digit" }, tz);
 const chiaveG = d => conTz(d, { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\D/g, "");

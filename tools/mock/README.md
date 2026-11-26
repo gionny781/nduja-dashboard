@@ -3,6 +3,13 @@
 `host.html` simula Home Assistant (stati, aree, piani, servizi, salvataggio delle scelte in `localStorage`)
 e carica la plancia vera in un iframe. Serve per provare le modifiche senza un Home Assistant.
 
+**Dove vive il finto Home Assistant** (0.7.62): in `custom_components/nduja_dashboard/frontend/esempio/casa.js`, insieme ai suoi disegni
+(telecamere, copertine, foto, mappa del robot, pista, radar) e a `casa3d.json`. È lo stesso codice della **🏡 casa di esempio** della plancia:
+un'unica fonte. `host.html` lo apre con le scelte di prova `mock…` di `localStorage` e i messaggi in console; la casa di esempio lo apre
+in memoria (niente `localStorage`, niente messaggi). Le funzioni di prova (`mockStati`, `mockSvc`, `mockAlexa`…) restano su `window` di `host.html`.
+Per aggiungere entità o risposte finte si cambia `casa.js`: valgono per le prove e per la casa di esempio.
+Con `mockNoAree` Home Assistant non ha aree (la Home propone la casa di esempio).
+
 ```bash
 python3 -m http.server 8765 &          # dalla radice del repo
 npm i --no-save playwright-core        # una volta
@@ -25,7 +32,7 @@ Home Assistant (compare solo in ＋ Aggiungi). Le immagini `cam-hd.svg` e `cam-s
 
 **Clima animato** (0.7.25): `climate.soggiorno` raffresca con la ventola alta, `climate.cucina` scalda con la ventola bassa, `climate.termostato_corridoio`
 scalda, `climate.radiatore_lavanderia` è a riposo (`hvac_action: idle`), `climate.deumidificatore_lavanderia` deumidifica (ventola «2» di 3) e
-`climate.camera_ospiti` è spento e senza stanza. Per provare «Le mie immagini» vanno bene `/tools/mock/cam-hd.svg` e `/tools/mock/cam-sd.svg`.
+`climate.camera_ospiti` è spento e senza stanza. Per provare «Le mie immagini» vanno bene `/custom_components/nduja_dashboard/frontend/esempio/cam-hd.svg` e `…/esempio/cam-sd.svg`.
 
 **Energia** (0.7.26): `sun.sun` segue l'ora vera (alba alle 7, tramonto alle 18). Con `mockEnt` in `LS` cambi o togli qualsiasi entità finta:
 `{ "entity_id": ["stato", { attributi }] }` la cambia, `null` la toglie; negli attributi `"@+5h"` o `"@-30m"` diventano «adesso + 5 ore / − 30 minuti».
@@ -237,7 +244,7 @@ LS='{"mockCasa":"{\"colpo\":{\"rev\":1,\"dati\":{\"u1\":{\"t\":[{\"id\":\"a\",\"
 
 
 **Sfondi e salvaschermi** (0.7.52): lo sfondo del dispositivo è in `nduja_sfondo` (`{"id":"aurora","o":{"aurora":{"vel":3}}}`; id: `classico`, `tinta`, `sfumatura`, `grana`, `notte`, `immagine`, `vivo`, `aurora`, `onde`, `stelle`, `bokeh`, `cielo`), quello della casa in `aspetto.sfondo` dentro `mockLayout`, «animato anche in leggera» in `nduja_sfLite`.
-Per l'immagine va bene `/tools/mock/foto-mare.svg`. Con `mockEnVivo` produzione, consumo, batteria e rete cambiano ogni 3 secondi; le statistiche ogni 5 minuti (`period: "5minute"`) delle potenze disegnano il grafico dei consumi.
+Per l'immagine va bene `/custom_components/nduja_dashboard/frontend/esempio/foto-mare.svg`. Con `mockEnVivo` produzione, consumo, batteria e rete cambiano ogni 3 secondi; le statistiche ogni 5 minuti (`period: "5minute"`) delle potenze disegnano il grafico dei consumi.
 Stili nuovi del salvaschermo (`nduja_ssStile`): `solare`, `consumi`, `analogico`, `meteo`, `giornata`, `sfondo`, `alterna`; in Automatico `nduja_ssGiorno`, `nduja_ssNotteStile`, `nduja_ssSolAuto`, `nduja_ssSolW`. Togliendo i pannelli (`mockVia` = `inverter_pv` e `mockLayout` senza `energy`) il fotovoltaico sparisce dalla scelta e compare in «Cosa puoi aggiungere».
 ```bash
 LS='{"nduja_sfondo":"{\"id\":\"aurora\"}"}' node tools/mock/shot.mjs impostazioni 1280 1000 sfondo.png '[data-act="sfApri"] >> nth=0'
@@ -247,8 +254,8 @@ LS='{"nduja_ssMin":"5","nduja_ssStile":"solare","mockEnVivo":"1"}' node tools/mo
 **Casa in 3D** (0.7.53): `casa3d.json` è una casa di prova su due piani (va con `mockPiani`) con porte, finestre (sensori e tapparelle), arredo e tetto.
 `nduja_map3` = 3D, `nduja_map3cut` = quanto è aperta (0 = piano terra, 1 = primo piano, 2 = col tetto), `nduja_mapTool` = strumento di ✏️ (`stanze`, `aperture`, `disp`, `arredo`), `nduja_lite` = grafica leggera.
 ```bash
-LAYOUT="$(tr -d '\n' < tools/mock/casa3d.json)" LS='{"mockPiani":"1","nduja_map3":"1","nduja_map3cut":"0"}' node tools/mock/shot.mjs mappa 1280 1000 casa.png
-LAYOUT="$(tr -d '\n' < tools/mock/casa3d.json)" LS='{"mockPiani":"1","nduja_mapTool":"aperture"}' node tools/mock/shot.mjs mappa 1280 900 muri.png '[data-act="edToggle"]'
+LAYOUT="$(tr -d '\n' < custom_components/nduja_dashboard/frontend/esempio/casa3d.json)" LS='{"mockPiani":"1","nduja_map3":"1","nduja_map3cut":"0"}' node tools/mock/shot.mjs mappa 1280 1000 casa.png
+LAYOUT="$(tr -d '\n' < custom_components/nduja_dashboard/frontend/esempio/casa3d.json)" LS='{"mockPiani":"1","nduja_mapTool":"aperture"}' node tools/mock/shot.mjs mappa 1280 900 muri.png '[data-act="edToggle"]'
 ```
 
 **Natale** (0.7.54): `light.albero_di_natale_2` è un Twinkly (`twinkly`, in Soggiorno) acceso in «movie» con gli effetti, `select.albero_di_natale_modalita` la sua modalità

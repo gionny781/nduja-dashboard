@@ -6,7 +6,7 @@
    Col mouse basta trascinare; col dito (o la penna) si prende con una pressione lunga, così la pagina scorre come sempre.
    Al rilascio salva subito e compare «Annulla». Esc, o lasciarlo fuori posto, annulla. Mentre si trascina quell'elenco
    non viene ridisegnato (data-drag, vedi morph in core.js). ▲▼ e ◀▶ restano per la tastiera. */
-import { LAYOUT, UI, PAGES, t, toast, render, isAdmin, leggera, ordineNav, visible } from "./core.js";
+import { LAYOUT, UI, PAGES, t, toast, render, isAdmin, leggera, ordineNav, visible, menoMoto } from "./core.js";
 import { cambia } from "./edit.js";
 
 /** tipi di elenco trascinabili: { attivo, salva, maniglia, gruppo, puo, nome } */
@@ -15,7 +15,7 @@ export const TRASCINA = {};
 export const inModifica = () => UI.edit && isAdmin();
 
 const PRESA_MS = 350, SOGLIA_MOUSE = 6, SOGLIA_DITO = 9, BORDO = 64;
-const fermo = () => leggera() || matchMedia("(prefers-reduced-motion: reduce)").matches;
+const fermo = () => leggera() || menoMoto();
 let P = null;        // pressione in attesa (non ancora sollevato)
 let D = null;        // trascinamento in corso
 let mangiaClic = 0;  // dopo il rilascio il clic non deve aprire niente

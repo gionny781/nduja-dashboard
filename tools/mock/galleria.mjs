@@ -9,7 +9,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 
 const ORA = "2026-11-25T11:00";          // un mercoledì mattina con il sole: stessa ora per tutte, così le immagini restano coerenti
 const OUT = process.env.OUT || "docs/galleria", Q = +(process.env.Q || 0.8);
-const casa3d = () => import("node:fs").then(fs => fs.readFileSync("tools/mock/casa3d.json", "utf8").replace(/\n/g, ""));
+const casa3d = () => import("node:fs").then(fs => fs.readFileSync("custom_components/nduja_dashboard/frontend/esempio/casa3d.json", "utf8").replace(/\n/g, ""));
 
 /* nome del file · pagina · scelte del finto Home Assistant (LS) · clic sul tablet | clic sul telefono (facoltativi) */
 const G = [
@@ -60,11 +60,6 @@ const G = [
   { n: "errore", p: "home", ls: { mockNoData: "1" }, attesa: 16000 },
 ];
 
-/* per le schermate, al posto del peperoncino di prova: le immagini delle telecamere e la mappa del robot disegnate in tools/mock */
-const IMMAGINI = { "camera.porta_ingresso": "cam-ingresso.svg", "camera.garage": "cam-garage.svg", "camera.garage_sub_stream": "cam-garage.svg",
-  "camera.ambrogio_map": "mappa-robot.svg", "camera.ambrogio_map_data": "mappa-robot.svg" };
-const BASE = Object.fromEntries(Object.entries(IMMAGINI).map(([id, f]) => [id, [id === "camera.porta_ingresso" ? "recording" : "idle", { entity_picture: "/tools/mock/" + f }]]));
-
 const solo = process.argv.slice(2);
 const b = await chromium.launch({ executablePath: process.env.CHROME || "/opt/pw-browsers/chromium", args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] });
 mkdirSync(OUT, { recursive: true });
@@ -76,7 +71,6 @@ async function schermo(g, w, h, chiaro, tel) {
   await p.goto(`http://localhost:${process.env.PORT || 8765}/tools/mock/host.html`);
   const lay = g.lay === "3d" ? await casa3d() : g.lay || "";
   const ls = { ...(g.ls || {}), ...(tel && g.telLs || {}) };
-  ls.mockEnt = JSON.stringify({ ...BASE, ...JSON.parse(ls.mockEnt || "{}") });
   await p.evaluate(([lay, chiaro, ls]) => { localStorage.clear(); if (lay) localStorage.setItem("mockLayout", lay); if (chiaro) localStorage.setItem("nduja_theme", "light");
     for (const [k, v] of Object.entries(ls)) localStorage.setItem(k, v); }, [lay, chiaro, ls]);
   await p.reload(); await p.waitForTimeout(2500);

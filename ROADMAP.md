@@ -86,7 +86,7 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.59-dev ✅ | mer 25 nov | Veloce anche con migliaia di entità (tablet Android) |
 | 0.7.60-dev ✅ | mer 25 nov | Alexa: i tuoi Echo, volumi e messaggi |
 | 0.7.61-dev ✅ | mer 25 nov | Manuale di istruzioni in PDF dalle Impostazioni |
-| 0.7.62-dev | gio 26 nov | Casa di esempio, testo grande e contrasto alto |
+| 0.7.62-dev ✅ | gio 26 nov | Casa di esempio, testo grande e contrasto alto |
 | 0.7.63-dev | ven 27 nov | Copie di sicurezza automatiche e «Segnala un problema» |
 | 0.7.64-dev | sab 28 nov | Automazioni complete: crea, modifica, accendi e spegni |
 | 0.7.65-dev | dom 29 nov | Controllo finale prima della 0.8.0 |

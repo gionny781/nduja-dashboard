@@ -49,7 +49,8 @@
     if (pronta || shown || !document.body) return;
     shown = true; tema();
     var c = document.getElementById("connect"); if (c) c.classList.remove("show");
-    var fuori = window.parent === window && !window.NDUJA_APP;
+    var fuori = window.parent === window && !window.NDUJA_APP, esempio = false;
+    try { esempio = sessionStorage.getItem("nduja_esempio") === "1"; } catch (x) {}
     var d = document.createElement("div");
     d.id = "errore"; d.className = "err1"; d.setAttribute("role", "alertdialog"); d.setAttribute("aria-labelledby", "err1t");
     d.innerHTML = '<div class="glass err1b"><div class="err1h"><span>🌶️</span><div><h3 id="err1t">' + t("La plancia non riesce a partire", "The dashboard can't start") + "</h3><p>" +
@@ -59,11 +60,18 @@
       "<li>" + t("Che questo dispositivo sia in rete e raggiunga Home Assistant (Wi‑Fi, dati, VPN).", "That this device is online and can reach Home Assistant (Wi‑Fi, mobile data, VPN).") + "</li>" +
       "<li>" + t("Dopo un aggiornamento di 'Nduja: riavvia Home Assistant, poi ricarica la pagina (se serve, svuota la cache del browser o dell'app).", "After a 'Nduja update: restart Home Assistant, then reload the page (if needed, clear the browser's or app's cache).") + "</li>" +
       "<li>" + t("Se non si sistema, apri una segnalazione su GitHub e incolla i dettagli qui sotto.", "If it doesn't get fixed, open an issue on GitHub and paste the details below.") + "</li></ul>" +
-      '<div class="err1a"><button class="btn pri" type="button" id="err1r">↻ ' + t("Riprova", "Try again") + "</button></div>" +
+      '<div class="err1a"><button class="btn pri" type="button" id="err1r">↻ ' + t("Riprova", "Try again") + "</button>" +
+      (esempio ? '<button class="btn" type="button" id="err1x">' + t("Esci dalla casa di esempio", "Exit the sample home") + "</button>"
+        : '<button class="btn" type="button" id="err1e">👀 ' + t("Intanto guarda la casa di esempio", "Meanwhile, look at the sample home") + "</button>") + "</div>" +
       '<details class="err1d"><summary>' + t("Dettagli per l'assistenza", "Details for support") + '</summary><pre id="err1p"></pre></details></div>';
     document.body.appendChild(d);
     document.getElementById("err1p").textContent = dettagli();
     document.getElementById("err1r").onclick = function () { location.reload(); };
+    /* 🏡 casa di esempio (esempio.js): una casa finta dentro la plancia, senza Home Assistant; «Esci» riporta qui */
+    var e = document.getElementById("err1e");
+    var x = document.getElementById("err1x");
+    if (x) x.onclick = function () { try { sessionStorage.removeItem("nduja_esempio"); sessionStorage.removeItem("nduja_esempio_da"); } catch (y) {} location.reload(); };
+    if (e) e.onclick = function () { try { sessionStorage.setItem("nduja_esempio", "1"); sessionStorage.setItem("nduja_esempio_da", "home"); history.replaceState(null, "", "#home"); } catch (x) {} location.reload(); };
     d.querySelector("details").addEventListener("toggle", function () { document.getElementById("err1p").textContent = dettagli(); });
   }
   function controlla() {

@@ -48,8 +48,20 @@ export const isAdmin = () => !!UI.user?.is_admin;
 export let conn = null;
 
 export const $ = s => document.querySelector(s);
-export const sGet = k => { try { return localStorage.getItem("nduja_" + k); } catch { return null; } };
-export const sSet = (k, v) => { try { localStorage.setItem("nduja_" + k, v); } catch {} };
+/* ---------- 🏡 casa di esempio (esempio.js, 0.7.62) ----------
+   Accesa (sessionStorage «nduja_esempio», solo in questa scheda del browser) la plancia parla con il finto Home Assistant
+   in memoria di esempio/casa.js e non usa la connessione vera: niente arriva a Home Assistant e niente della casa vera viene letto.
+   Anche le scelte di questo dispositivo restano in memoria e spariscono uscendo; si leggono solo quelle dell'aspetto (tema, grafica,
+   leggibilità…), così la casa di esempio si vede come il resto della plancia. */
+export const ESEMPIO = (() => { try { return sessionStorage.getItem("nduja_esempio") === "1"; } catch { return false; } })();
+const ES_MEM = new Map(), ES_ASPETTO = ["theme", "lite", "liteAuto", "liteSoglia", "liteFps", "kiosk", "nav", "testo", "contrasto", "moto", "sfondo", "sfLite", "oggetti", "frasi", "manuale"];
+/** scelte di questo dispositivo (localStorage «nduja_…»): non toccano gli altri dispositivi */
+export const sGet = k => {
+  if (ESEMPIO && (ES_MEM.has(k) || !ES_ASPETTO.includes(k))) return ES_MEM.get(k) ?? null;
+  try { return localStorage.getItem("nduja_" + k); } catch { return null; }
+};
+export const sSet = (k, v) => { if (ESEMPIO) { ES_MEM.set(k, String(v)); return; } try { localStorage.setItem("nduja_" + k, v); } catch {} };
+export const sDel = k => { if (ESEMPIO) { ES_MEM.set(k, null); return; } try { localStorage.removeItem("nduja_" + k); } catch {} };
 
 /* ================= lingua ================= */
 const LANG = (() => { try { return (parent.document.documentElement.lang || navigator.language || "en").slice(0, 2); } catch { return (navigator.language || "en").slice(0, 2); } })();
@@ -331,6 +343,7 @@ export function sicuro(el, msg) {
 }
 /** apre la finestra «dettagli» di Home Assistant per un'entità */
 export function moreInfo(id) {
+  if (ESEMPIO) return toast("🏡 " + t("Nella casa di esempio i dettagli di Home Assistant non si aprono", "In the sample home Home Assistant's details don't open"));
   const e = new Event("hass-more-info", { bubbles: true, composed: true }); e.detail = { entityId: id };
   try { (parent.document.querySelector("home-assistant") || parent.document.body).dispatchEvent(e); } catch { /* fuori da HA */ }
 }
@@ -442,6 +455,9 @@ function haScuro() {
 /** modalità leggera: niente sfocature né sfondo animato. «auto» = accesa sui dispositivi Android (Fully Kiosk, app di HA, Chrome)
     e su quelli dove la misura di fluido.js ha visto la plancia andare a scatti */
 export const grafica = () => sGet("lite") || "auto";
+/** movimento ridotto (leggibilita.js, 0.7.62): «auto» segue il sistema (prefers-reduced-motion), «1» sempre, su questo dispositivo */
+export const motoScelta = () => sGet("moto") === "1" ? "1" : "auto";
+export const menoMoto = () => motoScelta() === "1" || (() => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; } })();
 export const leggera = () => grafica() === "1" || (grafica() === "auto" && (/Android/i.test(navigator.userAgent) || sGet("liteAuto") === "1"));
 export function applyTheme() {
   applyKiosk();
@@ -507,6 +523,22 @@ ACT.fullscreen = async () => {
 ACT.kiosk = () => { sSet("kiosk", chiosco() ? "0" : "1"); applyKiosk(); toast(chiosco() ? "🖥️ " + t("Modalità chiosco attiva", "Kiosk mode on") : t("Modalità chiosco spenta", "Kiosk mode off")); render(true); };
 document.addEventListener("fullscreenchange", () => render(true));
 try { parent.document.addEventListener("fullscreenchange", () => render(true)); } catch {}
+/** entra nella casa di esempio (da benvenuto, ⚙️ Impostazioni o dalla Home vuota): la plancia ripartirà con il finto Home Assistant */
+export function entraEsempio() {
+  try { sessionStorage.setItem("nduja_esempio", "1"); sessionStorage.setItem("nduja_esempio_da", UI.page || "home"); }
+  catch { return toast(t("Questo browser non permette la casa di esempio", "This browser doesn't allow the sample home"), true); }
+  try { history.replaceState(null, "", "#home"); } catch {}
+  location.reload();
+}
+/** esce dalla casa di esempio: torna alla casa vera, sulla pagina da cui era entrato */
+export function esciEsempio() {
+  let da = "home";
+  try { da = sessionStorage.getItem("nduja_esempio_da") || "home"; sessionStorage.removeItem("nduja_esempio"); sessionStorage.removeItem("nduja_esempio_da"); } catch {}
+  try { history.replaceState(null, "", "#" + da); } catch {}
+  location.reload();
+}
+ACT.esEntra = () => entraEsempio();
+ACT.esEsci = () => esciEsempio();
 let lastY = 0;
 window.addEventListener("scroll", () => { if (navMode() !== "auto") return; const y = window.scrollY; if (y < lastY - 8 || y < 40) navShow(); else if (y > lastY + 8) { document.body.classList.add("navhide"); clearTimeout(navT); } lastY = y; }, { passive: true });
 document.addEventListener("mousemove", e => { if (navMode() === "auto" && (e.clientX < 36 || e.clientY > innerHeight - 50)) navShow(); }, { passive: true });
@@ -611,6 +643,7 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet()
 
 /* ================= connessione ================= */
 async function getConn() {
+  if (ESEMPIO) return (await import("./esempio.js")).connessioneEsempio();
   try { if (window.parent !== window && window.parent.hassConnection) { const r = await window.parent.hassConnection; if (r?.conn) return r.conn; } } catch { /* origine diversa */ }
   /* dentro l'app 'Nduja per iPhone/iPad: collegamento diretto, senza l'interfaccia di Home Assistant */
   if (window.NDUJA_APP) {
@@ -629,6 +662,7 @@ async function getConn() {
 /** chiamata REST a Home Assistant con il token della sessione (serve per salvare le automazioni) */
 /** token della sessione di Home Assistant (per le chiamate REST e per caricare le foto) */
 export async function tokenHA() {
+  if (ESEMPIO) return "esempio";
   if (window.NDUJA_APP && !(window.parent !== window && window.parent.hassConnection)) return (await import("./appconn.js")).accessToken();
   const r = await window.parent.hassConnection, auth = r?.auth;
   if (!auth) throw new Error("no auth");
@@ -642,7 +676,9 @@ export async function api(method, path, body) {
   const tx = await res.text(); try { return JSON.parse(tx); } catch { return tx; }
 }
 /** apre una pagina di Home Assistant (fuori dalla plancia) */
-export function apriHA(path) { try { parent.history.pushState(null, "", path); parent.dispatchEvent(new CustomEvent("location-changed")); } catch { window.open(path, "_top"); } }
+export function apriHA(path) {
+  if (ESEMPIO) return toast("🏡 " + t("Nella casa di esempio le pagine di Home Assistant non si aprono", "In the sample home Home Assistant's pages don't open"));
+  try { parent.history.pushState(null, "", path); parent.dispatchEvent(new CustomEvent("location-changed")); } catch { window.open(path, "_top"); } }
 /** etichetta «'Nduja» sulle automazioni e sugli script creati dalla plancia: la crea se manca e la aggiunge
    senza togliere le altre. trova() restituisce l'entity_id appena Home Assistant lo crea. Se qualcosa non va, niente. */
 export async function etichettaNduja(trova) {

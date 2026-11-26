@@ -11,9 +11,10 @@ import { assistenteCard } from "../assistente.js";
 import { aggiungiCard } from "../aggiungi.js";
 import { manualeCard } from "../manuale.js";
 import { schedeGrandi } from "../oggetti.js";
+import { dimTesto, contrastoAlto } from "../leggibilita.js";
 import { esitoMisura, fpsMisurati, sogliaFps } from "../fluido.js";
 import { S, UI, AREAS, FLOORS, REG, ACT, CHG, LAYOUT, PAGES, t, LOC, esc, nm, ok, attr, allEnts, shortName, climateSensors,
-  saveLayout, render, toast, go, page, ws, openSheet, isAdmin, deviceClass, HVAC, manualKind, excluded, tema, navMode, chiosco, sGet, sSet, grafica, leggera, applyTheme } from "../core.js";
+  saveLayout, render, toast, go, page, ws, openSheet, isAdmin, deviceClass, HVAC, manualKind, excluded, tema, navMode, chiosco, sGet, sSet, sDel, grafica, leggera, applyTheme, ESEMPIO, motoScelta, menoMoto } from "../core.js";
 
 const DEV = ["cover", "switch", "fan", "lock", "media_player", "humidifier", "vacuum", "siren", "valve"];
 const OPEN = ["door", "window", "opening", "garage_door"];
@@ -27,7 +28,7 @@ const draft = () => {
    così se chiudi la plancia a metà riparti dal passo in cui eri */
 const BOZZA = "wizard";
 function salvaBozza() { if (W.d) sSet(BOZZA, JSON.stringify({ step: W.step, d: W.d, ts: Date.now() })); }
-export function cancellaBozza() { try { localStorage.removeItem("nduja_" + BOZZA); } catch {} W.ripreso = false; W.inCima = false; }
+export function cancellaBozza() { sDel(BOZZA); W.ripreso = false; W.inCima = false; }
 export function bozza() { try { const b = JSON.parse(sGet(BOZZA) || "null"); return b && b.d && Date.now() - (b.ts || 0) < 30 * 864e5 ? b : null; } catch { return null; } }
 (() => { const b = bozza(); if (b) { W.d = b.d; W.step = Math.max(0, Math.min(7, +b.step || 0)); W.ripreso = true; W.inCima = true; } })();
 const PASSI = () => [t("Inizio", "Start"), t("Stanze", "Rooms"), t("Luci", "Lights"), t("Clima", "Climate"), t("Dispositivi", "Devices"), t("Casa", "Home"), t("Pagine", "Pages"), t("Fine", "Done")];
@@ -158,6 +159,13 @@ function dispositivo() {
   const seg = (act, cur, opts) => `<div class="seg">${opts.map(([k, n]) => `<button class="${cur === k ? "act" : ""}" data-act="${act}" data-v="${k}">${n}</button>`).join("")}</div>`;
   return `<section class="card dev1"><div class="ch"><h2>📱 ${t("Questo dispositivo", "This device")}</h2></div>
     <div class="dev1g"><div><b>${t("Tema", "Theme")}</b>${seg("themeSet", tema(), [["auto", "◐ " + t("Automatico", "Auto")], ["light", "☀︎ " + t("Chiaro", "Light")], ["dark", "☾ " + t("Scuro", "Dark")]])}</div>
+    <div class="dev1l"><b>🔠 ${t("Leggibilità", "Readability")}</b>
+      <span class="small">${t("Dimensione del testo", "Text size")}</span>${seg("txSet", dimTesto(), [["0", t("Normale", "Normal")], ["1", t("Grande", "Large")], ["2", t("Molto grande", "Extra large")]])}
+      <small class="muted">${t("Ingrandisce testi, icone e tasti (+15% o +30%); i disegni restano come sono.", "Enlarges text, icons and buttons (+15% or +30%); drawings stay as they are.")}</small>
+      <span class="small">${t("Contrasto alto", "High contrast")}</span>${seg("hcSet", contrastoAlto() ? "1" : "0", [["0", t("Spento", "Off")], ["1", "◑ " + t("Acceso", "On")]])}
+      <small class="muted">${t("Testi pieni al posto di quelli grigi, bordi ben visibili sulle schede e un velo più coprente sotto il vetro, nel tema chiaro e in quello scuro.", "Solid text instead of grey, clearly visible card borders and a more opaque veil under the glass, in both light and dark themes.")}</small>
+      <span class="small">${t("Movimento ridotto", "Reduced motion")}</span>${seg("rmSet", motoScelta(), [["auto", t("Come il sistema", "Like the system")], ["1", "🐢 " + t("Sempre", "Always")]])}
+      <small class="muted">${t("Niente animazioni decorative (sfondi che si muovono, effetti, transizioni). «Come il sistema» lo accende da solo se il telefono o il computer chiede di ridurre il movimento", "No decorative animations (moving backgrounds, effects, transitions). «Like the system» turns it on by itself if the phone or computer asks to reduce motion")}: ${menoMoto() ? t("ora è attivo.", "now on.") : t("ora è spento.", "now off.")}</small></div>
     <div><b>${t("Pagina iniziale", "Start page")}</b>${seg("startSet", ["home", "colpo"].includes(sGet("start")) ? sGet("start") : "", [["", t("L'ultima aperta", "The last one")], ["home", "🏠 Home"], ["colpo", "👁️ " + t("Colpo d'occhio", "At a glance")]])}
       <small class="muted">${t("Cosa compare quando apri la plancia su questo dispositivo. «Colpo d'occhio» è l'ideale per il tablet a muro: le tue cose più importanti, grandi.", "What shows when you open the dashboard on this device. «At a glance» is ideal for a wall tablet: your most important things, big.")}</small></div>
     <div><b>${t("Apri gli oggetti come schede grandi", "Open objects as big cards")}</b>${seg("ogSet", schedeGrandi() ? "1" : "0", [["1", "🖼️ " + t("Schede grandi", "Big cards")], ["0", t("Pannelli di prima", "Previous panels")]])}
@@ -189,13 +197,22 @@ function graficaMisura() {
 }
 ACT.liteSet = el => { sSet("lite", el.dataset.v); applyTheme(); render(true); };
 ACT.kioskSet = el => { if ((el.dataset.v === "1") !== chiosco()) ACT.kiosk(); };
-ACT.themeSet = el => { try { localStorage.setItem("nduja_theme", el.dataset.v); } catch {} ; ACT.theme && (document.body.classList.remove("light")); render(true); };
+ACT.themeSet = el => { sSet("theme", el.dataset.v); ACT.theme && (document.body.classList.remove("light")); render(true); };
+
+/* 🏡 casa di esempio (esempio.js): per vedere com'è la plancia in una casa piena di cose, senza toccare la tua */
+function esempioCard() {
+  return `<section class="card es1c"><div class="row" style="gap:12px;flex-wrap:wrap"><span class="es1ci" aria-hidden="true">🏡</span>
+    <div style="flex:1;min-width:200px"><b>${t("Casa di esempio", "Sample home")}</b><div class="small muted">${ESEMPIO
+      ? t("Stai guardando la casa di esempio: niente di quello che tocchi arriva a Home Assistant. Uscendo torni alla tua casa, com'era.", "You're looking at the sample home: nothing you touch reaches Home Assistant. When you exit you're back to your home, as it was.")
+      : t("Una casa finta completa (luci, clima, energia, telecamere, elettrodomestici, auto…) per vedere cosa sa fare la plancia. Niente di quello che tocchi arriva a Home Assistant: la tua casa resta com'è.", "A complete pretend home (lights, climate, energy, cameras, appliances, cars…) to see what the dashboard can do. Nothing you touch reaches Home Assistant: your home stays as it is.")}</div></div>
+    ${ESEMPIO ? `<button class="btn warm" data-act="esEsci">${t("Esci dalla casa di esempio", "Exit the sample home")}</button>` : `<button class="btn pri" data-act="esEntra">👀 ${t("Prova la casa di esempio", "Try the sample home")}</button>`}</div></section>`;
+}
 
 const inCorso = () => W.inCima && !!W.d;
 function pagina() {
-  if (!isAdmin()) return `<div class="g">${manualeCard()}${dispositivo()}${aspettoCard()}${assistenteCard()}<section class="card small muted">${t("Le altre impostazioni le può cambiare solo un amministratore.", "Other settings can only be changed by an administrator.")}</section></div>`;
+  if (!isAdmin()) return `<div class="g">${manualeCard()}${esempioCard()}${dispositivo()}${aspettoCard()}${assistenteCard()}<section class="card small muted">${t("Le altre impostazioni le può cambiare solo un amministratore.", "Other settings can only be changed by an administrator.")}</section></div>`;
   const P = PASSI(), s = W.step, corpo = [passoInizio, passoStanze, passoLuci, passoClima, passoDispositivi, passoCasa, passoPagine, passoFine][s]();
-  const altre = `${manualeCard()}${dispositivo()}${aspettoCard()}${assistenteCard()}<section class="card rst1"><div class="row" style="gap:12px;flex-wrap:wrap"><span style="font-size:28px">🌶️</span>
+  const altre = `${manualeCard()}${esempioCard()}${dispositivo()}${aspettoCard()}${assistenteCard()}<section class="card rst1"><div class="row" style="gap:12px;flex-wrap:wrap"><span style="font-size:28px">🌶️</span>
       <div style="flex:1;min-width:200px"><b>${t("Ricomincia dal benvenuto", "Restart from the welcome screen")}</b><div class="small muted">${t("Riparte la configurazione da zero: scegli di nuovo Automatica o Manuale. Le pagine create da te restano.", "Setup starts over: choose Automatic or Manual again. Pages you created are kept.")}</div></div>
       <button class="btn warm" data-act="wzRestart">🔄 ${t("Riavvia il wizard", "Restart the wizard")}</button></div></section>
     <section class="card"><div class="ch"><h2>👥 ${t("Plancia per persona", "Per-person dashboard")}</h2></div>

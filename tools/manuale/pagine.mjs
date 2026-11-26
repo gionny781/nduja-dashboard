@@ -1062,9 +1062,11 @@ export const PAGINE = [
     id: "impostazioni", scatto: { p: "impostazioni" },
     it: {
       sotto: "Il manuale, le scelte di questo dispositivo e quelle della casa.",
-      serve: "In alto questo **manuale**. Poi **📱 Questo dispositivo** (tema, pagina iniziale, salvaschermo, grafica, chiosco), **🎨 Aspetto** (sfondi), **🎙️ Assistente vocale** e, per gli amministratori, la procedura guidata, la plancia per persona, ✨ Cosa puoi aggiungere e 🩺 Controlla Home Assistant.",
+      serve: "In alto questo **manuale** e la **🏡 casa di esempio**. Poi **📱 Questo dispositivo** (tema, leggibilità, pagina iniziale, salvaschermo, grafica, chiosco), **🎨 Aspetto** (sfondi), **🎙️ Assistente vocale** e, per gli amministratori, la procedura guidata, la plancia per persona, ✨ Cosa puoi aggiungere e 🩺 Controlla Home Assistant.",
       tocchi: [
         "**📖 Apri / ⬇️ Scarica PDF**: questo manuale.",
+        "**👀 Prova la casa di esempio**: una casa inventata dentro la plancia; niente arriva a Home Assistant.",
+        "**🔠 Leggibilità**: testo più grande, contrasto alto, movimento ridotto (solo su questo dispositivo).",
         "**Riavvia il wizard**: riparte da Automatica o Manuale (le pagine create da te restano).",
         "**⬇️ Esporta / ⬆️ Importa**: un file con tutte le scelte della plancia.",
       ],
@@ -1075,9 +1077,11 @@ export const PAGINE = [
     },
     en: {
       sotto: "The manual, this device's choices and the home's.",
-      serve: "At the top, this **manual**. Then **📱 This device** (theme, start page, screensaver, graphics, kiosk), **🎨 Appearance** (backgrounds), **🎙️ Voice assistant** and, for admins, the setup wizard, per-person dashboard, ✨ What you can add and 🩺 Check Home Assistant.",
+      serve: "At the top, this **manual** and the **🏡 sample home**. Then **📱 This device** (theme, readability, start page, screensaver, graphics, kiosk), **🎨 Appearance** (backgrounds), **🎙️ Voice assistant** and, for admins, the setup wizard, per-person dashboard, ✨ What you can add and 🩺 Check Home Assistant.",
       tocchi: [
         "**📖 Open / ⬇️ Download PDF**: this manual.",
+        "**👀 Try the sample home**: a made-up home inside the dashboard; nothing reaches Home Assistant.",
+        "**🔠 Readability**: larger text, high contrast, reduced motion (this device only).",
         "**Restart the wizard**: starts again from Automatic or Manual (pages you created are kept).",
         "**⬇️ Export / ⬆️ Import**: a file with every dashboard choice.",
       ],

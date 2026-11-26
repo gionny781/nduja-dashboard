@@ -5,7 +5,7 @@
   --warm:#ffb340; --warm2:#ff9f0a; --cool:var(--teal); --ok:var(--green); --bad:var(--red); --sun:var(--yellow); --vio:var(--purple);
   --glass:rgba(255,255,255,.07); --glass2:rgba(255,255,255,.11); --glass3:rgba(255,255,255,.17);
   --line:rgba(255,255,255,.11); --line2:rgba(255,255,255,.22);
-  --tx:#f5f7fb; --tx2:rgba(235,240,250,.68); --tx3:rgba(235,240,250,.42);
+  --tx:#f5f7fb; --tx2:rgba(235,240,250,.68); --tx3:rgba(235,240,250,.6);
   --r:26px; --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","Outfit","Helvetica Neue",system-ui,sans-serif;
   --mono:"SF Mono","JetBrains Mono",ui-monospace,monospace;
 }
@@ -63,10 +63,10 @@ input,select,textarea{font:inherit;color:var(--tx)}
 .g4{grid-template-columns:repeat(4,minmax(0,1fr))}
 .span2{grid-column:span 2}.span3{grid-column:span 3}.spanall{grid-column:1/-1}
 .card{padding:18px;min-width:0}
-.ch{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;position:relative;z-index:1}
+.ch{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 10px;margin-bottom:14px;position:relative;z-index:1}
 .ch h2{font-size:14px;font-weight:700;color:var(--tx);display:flex;align-items:center;gap:8px;letter-spacing:-.01em}
 .ch h2 .muted{font-weight:500}
-.ch a,.lnk{font-size:13px;font-weight:600;color:var(--blue);cursor:pointer;text-decoration:none}
+.ch a,.lnk{font-size:13px;font-weight:600;color:#5eb0ff;cursor:pointer;text-decoration:none}
 .sec{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);font-weight:700;margin:16px 2px 9px}
 .sec:first-child{margin-top:0}
 .muted{color:var(--tx3)}.small{font-size:12.5px}.mono{font-family:var(--mono)}
@@ -74,14 +74,14 @@ input,select,textarea{font:inherit;color:var(--tx)}
 .empty{color:var(--tx3);font-size:13px;padding:8px 2px}
 .tag{display:inline-block;padding:3px 8px;border-radius:8px;font-size:10px;font-weight:800;letter-spacing:.04em}
 .tag.ok{background:rgba(48,209,88,.16);color:var(--green)}.tag.bad{background:rgba(255,69,58,.17);color:var(--red)}
-.tag.warn{background:rgba(255,159,10,.17);color:var(--orange)}.tag.info{background:rgba(10,132,255,.18);color:#5eb0ff}
+.tag.warn{background:rgba(255,159,10,.17);color:var(--orange)}.tag.info{background:rgba(10,132,255,.18);color:#8cc6ff}
 
 /* pulsanti */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:999px;background:var(--glass2);border:1px solid var(--line);font-size:13.5px;font-weight:600;white-space:nowrap;transition:transform .15s,background .2s}
 .btn:active{transform:scale(.96)}
-.btn.pri{background:var(--blue);border-color:transparent;color:#fff;box-shadow:0 6px 18px -6px rgba(10,132,255,.7)}
+.btn.pri{background:#0a6fdc;border-color:transparent;color:#fff;box-shadow:0 6px 18px -6px rgba(10,132,255,.7)}
 .btn.warm{background:rgba(255,159,10,.18);border-color:rgba(255,159,10,.35);color:var(--orange)}
-.btn.bad{background:rgba(255,69,58,.15);border-color:rgba(255,69,58,.35);color:var(--red)}
+.btn.bad{background:rgba(255,69,58,.15);border-color:rgba(255,69,58,.35);color:#ff7b72}
 .btn.sm{padding:7px 12px;font-size:12.5px}
 .btn.ghost{background:transparent;border-color:transparent;color:var(--tx2)}.btn.ghost:hover{color:var(--tx);border-color:var(--line)}
 .row{display:flex;align-items:center;gap:10px}
@@ -365,3 +365,22 @@ input[type=range]{accent-color:var(--yellow);height:24px}
    data-nv lo mette fluido.js sugli elementi fuori dallo schermo; sotto il salvaschermo si ferma tutta la pagina. */
 [data-nv],[data-nv] *,[data-nv] *::before,[data-nv] *::after{animation-play-state:paused!important}
 body.ss-on #main *,body.ss-on #main *::before,body.ss-on #main *::after,body.ss-on .rail *{animation-play-state:paused!important}
+
+/* ===== 🔠 leggibilità (0.7.62, leggibilita.js): contrasto alto e movimento ridotto, scelti per dispositivo ===== */
+/* contrasto alto: testi pieni, bordi visibili, un velo più coprente sotto il vetro (il tema chiaro è in tools/light_extra.css) */
+body.hc{--tx:#fff;--tx2:rgba(245,248,252,.92);--tx3:rgba(245,248,252,.84);--line:rgba(255,255,255,.34);--line2:rgba(255,255,255,.52)}
+body.hc .glass,body.hc .card,body.hc .rail,body.hc .tabbar,body.hc .more,body.hc .sheet{background:linear-gradient(180deg,rgba(22,28,42,.9),rgba(14,18,30,.86));border-color:rgba(255,255,255,.34)}
+body.hc .card::after{opacity:.35}
+body.hc .li,body.hc .tile,body.hc .stat,body.hc .pillv,body.hc .btn,body.hc .seg{border-color:rgba(255,255,255,.3)}
+body.hc :focus-visible{outline:3px solid #ffd60a;outline-offset:2px}
+/* il riquadro del meteo sopra la scena: più scuro, così le scritte bianche si leggono anche con il cielo chiaro */
+body.hc .mt1o{background:rgba(8,14,28,.66)}
+/* i dispositivi non raggiungibili restano riconoscibili (dicono «non raggiungibile») ma si leggono */
+body.hc .tile.dis,body.hc .li.dis,body.hc .lt2.dis,body.hc .cm1.dis,body.hc .au1.dis,body.hc .ac1.dis{opacity:.75}
+/* movimento ridotto: lo sfondo resta fermo (con il sistema che lo chiede, o scelto in ⚙️ Impostazioni: leggibilita.js copia queste regole) */
+@media (prefers-reduced-motion:reduce){.bg::before,.bg::after{animation:none}}
+/* tasti piccoli: l'area che risponde al tocco arriva ad almeno 44×44 px anche dove il disegno è più piccolo (l'aspetto non cambia).
+   :where() = specificità zero: chi ha già una posizione (absolute, fixed…) la tiene */
+:where(.btn,.seg button,button.pillv,.pillv[data-act],.lt2d,.mpc1,.tst1b,.es1b,.ch a,.lnk,.lu1z button,.ma1ts button,.mu1cr button,.cn1,.x3,.tap1){position:relative}
+:where(.btn,.seg button,button.pillv,.pillv[data-act],.lt2d,.mpc1,.tst1b,.es1b,.ch a,.lnk,.lu1z button,.ma1ts button,.mu1cr button,.cn1,.x3,.tap1)::after{content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%);border-radius:inherit}
+.sw::before{content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%)}

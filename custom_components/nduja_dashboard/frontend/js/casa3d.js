@@ -7,12 +7,12 @@
    Si ridisegna solo quando serve (gesti, stati che cambiano), niente librerie esterne.
    Sopra il canvas restano in HTML i nomi delle stanze e i dispositivi (gli stessi pallini del 2D): si toccano come nel 2D,
    la pressione lunga apre i dettagli. Modalità leggera: niente bagliori, ombre e tegole; «Riduci movimento»: niente animazioni. */
-import { S, REG, FLOORS, AREAS, ACT, UI, LAYOUT, t, esc, fnum, isOn, ok, attr, sGet, sSet, render, leggera, moreInfo, go, roomTemp, lightsOn, inArea, deviceClass } from "./core.js";
+import { S, REG, FLOORS, AREAS, ACT, UI, LAYOUT, t, esc, fnum, isOn, ok, attr, sGet, sSet, render, leggera, moreInfo, go, roomTemp, lightsOn, inArea, deviceClass, menoMoto } from "./core.js";
 import { COL, piani, posizioni, pezzi, proprietari, bordi, mappaAperture, statoAp, unita, altezzaPiano, tetto, finitura, datiFinitura, esterna, posOggetti, nomeStanza, mobili, chiaveMuro } from "./pianta.js";
 import { pezziMobile } from "./arredo.js";
 import { coloreDi } from "./luce.js";
 
-const fermo = () => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; } };
+const fermo = () => menoMoto();
 const SOL = .07;                 // spessore del solaio tra un piano e l'altro
 const SP = .2;                   // spallette ai lati delle porte (la porta è larga il pezzo di muro meno 2 × SP)
 const CAM0 = { yaw: -32, el: 48, zoom: 1, px: 0, py: 0 };

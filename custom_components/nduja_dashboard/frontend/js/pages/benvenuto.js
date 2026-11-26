@@ -22,6 +22,8 @@ function scelta() {
       <button class="wel2b" data-act="wManual"><span class="i">🛠️</span><b>${t("Manuale", "Manual")}</b>
         <p>${t("Parti da una plancia vuota e scegli tu, sezione per sezione, le luci, il clima, le prese e tutto il resto.", "Start from an empty dashboard and choose, section by section, lights, climate, plugs and everything else.")}</p></button>
     </div>
+    <div class="wel2e"><button class="btn" data-act="esEntra">👀 ${t("Prima guarda una casa di esempio", "First, look at a sample home")}</button>
+      <small>${t("Una casa finta completa dentro la plancia: tocca e prova tutto, niente arriva a Home Assistant.", "A complete pretend home inside the dashboard: tap and try everything, nothing reaches Home Assistant.")}</small></div>
     <p class="wel2f">🧪 ${t("Versione beta: se qualcosa non va, segnalalo su GitHub.", "Beta version: if something is wrong, report it on GitHub.")}<br>${t("Potrai cambiare tutto quando vuoi: in ogni pagina c'è ✏️ Modifica, e in ⚙️ Impostazioni trovi la procedura guidata.", "You can change everything later: every page has ✏️ Edit, and ⚙️ Settings has the guided setup.")}
       <br><button class="lnk1" data-act="mnApri">📖 ${t("Come si usa ogni pagina? Apri il manuale di istruzioni", "How does each page work? Open the user manual")}</button></p>
   </div>`;

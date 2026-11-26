@@ -393,8 +393,192 @@ body.light .vq1i{background:rgba(0,0,0,0.050)!important}
 body.light .vq1t.heat .vq1i,body.light .vq1t.cool .vq1i{background:rgba(0,0,0,0.070)!important}
 body.light .mn1{background:linear-gradient(135deg,rgba(255,159,10,.13),rgba(0,0,0,0.022) 65%)!important}
 body.light .mn1vb{background:rgba(0,0,0,0.030)!important}
+:where(body.light) .pillv.sun{color:#756200}
+:where(body.light) .pillv.grid{color:#ce0b00}
+:where(body.light) .pillv.exp{color:#1a7631}
+:where(body.light) .pillv.bat{color:#1a7631}
+:where(body.light) .ch a,:where(body.light) .lnk{color:#0064c4}
+:where(body.light) .tag.ok{color:#1a7631}
+:where(body.light) .tag.bad{color:#ce0b00}
+:where(body.light) .tag.warn{color:#8f5700}
+:where(body.light) .tag.info{color:#0065c9}
+:where(body.light) .btn.warm{color:#8f5700}
+:where(body.light) .btn.bad{color:#ce0d00}
+:where(body.light) .hero .msg b{color:#0066b9}
+:where(body.light) .tbig.go{color:#8f5700}
+:where(body.light) .rm1 .ri i.on{color:#756200}
+:where(body.light) .rm1 .ri i.al{color:#8f5700}
+:where(body.light) .up69 .v em{color:#1a7631}
+:where(body.light) .up69 .sm.warn{color:#8f5700}
+:where(body.light) .nt69 a{color:#006b97}
+:where(body.light) .wz-steps .done i{color:#1a7631}
+:where(body.light) .note1{color:#8f5700}
+:where(body.light) .add1 span{color:#1a7631}
+:where(body.light) .en7k.sol b{color:#756200}
+:where(body.light) .en7k.imp b{color:#cc1000}
+:where(body.light) .en7k.exp b{color:#147532}
+:where(body.light) .en7k.casa b,:where(body.light) .en7k.ev b{color:#006b93}
+:where(body.light) .en7ai.top .tx>span em{color:#925800}
+:where(body.light) .hct1 b{color:#8f5700}
+:where(body.light) .ap1.on .aps1 b{color:#1a7631}
+:where(body.light) .ap1.done .aps1 b{color:#0064c4}
+:where(body.light) .mpd2 .dx{color:#cc0a00}
+:where(body.light) .mpd2.add{color:#1a7631}
+:where(body.light) .au2 .dx,:where(body.light) .dx{color:#cc0a00}
+:where(body.light) .mob1.add{color:#1a7631}
+:where(body.light) .mu1n em{color:#8f5700}
+:where(body.light) .mu1live{color:#ce0b00}
+:where(body.light) .mu1lr.ora b{color:#1a7631}
+:where(body.light) .ma1h a{color:#0063c7}
+:where(body.light) .mu1t>.mu1st.on{color:#756200}
+:where(body.light) .mu1az .btn.on{color:#756200}
+:where(body.light) .ma1q:first-child .ma1qe{color:#1a7631}
+:where(body.light) .car-bn em{color:#1a7631}
+:where(body.light) .pk1.sug1 .tx small em{color:#006b97}
+:where(body.light) .fl1.sug1h{color:#006b97}
+:where(body.light) .aph1 .on .tx span{color:#1a7631}
+:where(body.light) .aph1 .done .tx span{color:#0064c4}
+:where(body.light) .apf1 .fld1 small.ok{color:#1a7631}
+:where(body.light) .apf1 .fld1 small.no{color:#8f5700}
+:where(body.light) .clv5 em{color:#0064c4}
+:where(body.light) .st-closed em{color:#1a7631}
+:where(body.light) .st-open em{color:#8f5700}
+:where(body.light) .st-opening em,:where(body.light) .st-closing em{color:#0064c4}
+:where(body.light) .st-jammed em,:where(body.light) em.na{color:#ce0b00}
+:where(body.light) .st-closed .aci1{color:#1a7631}
+:where(body.light) .st-open .aci1{color:#8f5700}
+:where(body.light) .st-opening .aci1,:where(body.light) .st-closing .aci1{color:#0064c4}
+:where(body.light) .st-jammed .aci1{color:#ce0b00}
+:where(body.light) .acx1.warn{color:#8f5700}
+:where(body.light) .acpv1.st-closed b{color:#1a7631}
+:where(body.light) .acpv1.st-open b{color:#8f5700}
+:where(body.light) .acpv1:is(.st-opening,:where(body.light) .st-closing) b{color:#0064c4}
+:where(body.light) .s-ritardo em{color:#ce0b00}
+:where(body.light) .s-oggi em{color:#8f5700}
+:where(body.light) .fk1.fatto em{color:#1a7631}
+:where(body.light) .fkp1.me>span:last-child{color:#0064c4}
+:where(body.light) .fkx1{color:#1a7631}
+:where(body.light) .fkw1.sel button.on small{color:#0064c4}
+:where(body.light) .fkz1i{color:#006b97}
+:where(body.light) .fkok1>span{color:#1a7631}
+:where(body.light) .bcb1.warn{color:#8f5700}
+:where(body.light) .bcw1f small.poco{color:#8f5700}
+:where(body.light) .aut.pz .aut-t small{color:#8f5700}
+:where(body.light) .md1pw.on{color:#ce0b00}
+:where(body.light) .md1ap.ora small::before{color:#1a7631}
+:where(body.light) .ir1fc div.wet b{color:#0064c4}
+:where(body.light) .ir1hb .tx small{color:#0064c4}
+:where(body.light) .sq1min{color:#cc0d00}
+:where(body.light) .sq1min.ht{color:#8f5700}
+:where(body.light) .sq1cd0{color:#8f5700}
+:where(body.light) .sq1tr.su>span:first-child{color:#0063c7}
+:where(body.light) .sq1tr.giu>span:first-child{color:#ce0b00}
+:where(body.light) .sq1hr .lv{color:#cc0d00}
+:where(body.light) .sq1hr strong{color:#1a7631}
+:where(body.light) .fo1now{color:#cc0d00}
+:where(body.light) .fo1cd0{color:#8f5700}
+:where(body.light) .fo1se .st.ok{color:#1a7631}
+:where(body.light) .fo1se .st.nx{color:#8f5700}
+:where(body.light) .fo1se .st.in{color:#cc0d00}
+:where(body.light) .fo1or .tg.pit{color:#0064c4}
+:where(body.light) .fo1or .tg.out{color:#1a7631}
+:where(body.light) .fo1or .tg.rit{color:#cc0d00}
+:where(body.light) .fo1or .fl{color:#9d12e3}
+:where(body.light) .fo1rs .pt b{color:#1a7631}
+:where(body.light) .fo1pp.pref .tla{color:#756200}
+:where(body.light) .fo1hr .lv{color:#cc0d00}
+:where(body.light) .bt1.at .bt1w{color:#0064c4}
+:where(body.light) .bt1.r .bt1v>b{color:#ce0b00}
+:where(body.light) .bt1.o .bt1v>b{color:#8f5700}
+:where(body.light) .bt1w{color:#ce0b00}
+:where(body.light) .bt1w.ok{color:#1a7631}
+:where(body.light) .bt1n.o{color:#8f5700}
+:where(body.light) .bt1n.r{color:#ce0b00}
+:where(body.light) .bt1k.r b{color:#ce0b00}
+:where(body.light) .bt1k.g b{color:#1a7631}
+:where(body.light) .bt1k.o b{color:#8f5700}
+:where(body.light) .rt1ch .bad b{color:#ce0b00}
+:where(body.light) .rt1cn>b{color:#1a7631}
+:where(body.light) .rt1d.off .rt1dh .tx span{color:#ce0b00}
+:where(body.light) .rt1m.r b{color:#ce0b00}
+:where(body.light) .rt1h.bad .tx b{color:#ce0b00}
+:where(body.light) .cd1k.on b{color:#8f5700}
+:where(body.light) .cd1k.m b{color:#b23e00}
+:where(body.light) .cd1k.r b{color:#0064c4}
+:where(body.light) .cd1k.bad b{color:#ce0b00}
+:where(body.light) .cd1p.bassa>b,:where(body.light) .cd1p.alta>b{color:#ce0b00}
+:where(body.light) .cd1row .tx span.cd1hot{color:#8f5700}
+:where(body.light) .cd1ac.on .cd1at b{color:#b44000}
+:where(body.light) .cd1ac.on .cd1at span{color:#8f5700}
+:where(body.light) .cd1cod{color:#cc0a00}
+:where(body.light) .cd1mn.warn .tx span{color:#8f5700}
+:where(body.light) .cd1mn.bad .tx span{color:#ce0b00}
+:where(body.light) .cd1g span{color:#8f5700}
+:where(body.light) .cd1g.eu b{color:#8f5700}
+:where(body.light) .cd1hb.on .tx b{color:#8f5700}
+:where(body.light) .cd1hb.bad .tx b{color:#ce0b00}
+:where(body.light) .ktl1.nl .mt small,:where(body.light) .kthm1.nl .mt small{color:#0064c4}
+:where(body.light) .ktbk1{color:#0063c7}
+:where(body.light) .kthm2 .pillv b{color:#0064c4}
+:where(body.light) .ktpl2{color:#0064c4}
+:where(body.light) .ls1sb .n{color:#0064c4}
+:where(body.light) .ls1st.on{color:#756200}
+:where(body.light) .ls1d.ritardo{color:#ce0b00}
+:where(body.light) .ls1d.oggi{color:#8f5700}
+:where(body.light) .ls1d.domani{color:#756200}
+:where(body.light) .ls1zi{color:#006b97}
+:where(body.light) .ls1ok span{color:#1a7631}
+:where(body.light) .sc1h .tx>span b.r{color:#ce0b00}
+:where(body.light) .sc1h .tx>span b.o{color:#8f5700}
+:where(body.light) .sc1gh.scadute{color:#ce0b00}
+:where(body.light) .sc1gh.oggi{color:#8f5700}
+:where(body.light) .sc1r.s-ritardo .sc1dt b{color:#ce0b00}
+:where(body.light) .sc1q.ritardo{color:#ce0b00}
+:where(body.light) .sc1q.oggi{color:#8f5700}
+:where(body.light) .sc1q.domani{color:#756200}
+:where(body.light) .sc1zi{color:#006b97}
+:where(body.light) .mt1d.oggi .dn b{color:#0063c7}
+:where(body.light) .mt1d .dp{color:#006b97}
+:where(body.light) .mt1d .dp.hi{color:#006b97}
+:where(body.light) .mt1sr .tx em.si{color:#006b97}
+:where(body.light) .tp1sb.add>span:first-child{color:#1a7631}
+:where(body.light) .tp1wn{color:#8f5700}
+:where(body.light) .ar1me>button.x{color:#ce0b00}
+:where(body.light) .ar1ok{color:#1a7631}
+:where(body.light) .ar1fl.ko em{color:#8f5700}
+:where(body.light) .aq1u.k-acqua .aq1v b{color:#006b97}
+:where(body.light) .aq1u.k-gas .aq1v b{color:#8f5700}
+:where(body.light) .aq1k.on b{color:#006b97}
+:where(body.light) .aq1ps.ok b{color:#1a7631}
+:where(body.light) .aq1ps.ko b{color:#8f5700}
+:where(body.light) .aq1sp.ko .tx span{color:#ce0b00}
+:where(body.light) .aq1vv.chiusa .tx span{color:#8f5700}
+:where(body.light) .aq1hr.k-acqua .tx b em{color:#006b97}
+:where(body.light) .aq1hr.k-gas .tx b em{color:#8f5700}
+:where(body.light) .aq1hr.on .aq1hf{color:#006b97}
+:where(body.light) .vc1mk.no .tx span{color:#8f5700}
+:where(body.light) .pi1w .pw{color:#1a7631}
+:where(body.light) .pi1w .pw.s-fare{color:#8f5700}
+:where(body.light) .pi1w .pw.s-basso,:where(body.light) .pi1w .pw.s-alto{color:#ce0b00}
+:where(body.light) .pi1m.s-basso b,:where(body.light) .pi1m.s-alto b{color:#ce0b00}
+:where(body.light) .pi1r.oggi em{color:#8f5700}
+:where(body.light) .pi1r.tardi em{color:#ce0b00}
+:where(body.light) .pi1r.fatto .tx>span:first-of-type{color:#1a7631}
+:where(body.light) .pi1r .tx .pi1rn{color:#006b97}
+:where(body.light) .pi1x i{color:#1a7631}
+:where(body.light) .pi1ht .pi1pd{color:#006b97}
+:where(body.light) .pi1ok{color:#1a7631}
+:where(body.light) .btn.on1{color:#1a7631}
+:where(body.light) .pi1sz .hd .x{color:#ce0b00}
+:where(body.light) .ag1n .pi b{color:#756200}
+:where(body.light) .ag1vs span{color:#0064c4}
+:where(body.light) .ag1ok{color:#1a7631}
+:where(body.light) .ag1st li::before{color:#0064c4}
+:where(body.light) .ag1mci{color:#0064c4}
+:where(body.light) .vq1t[data-sure="1"]{color:#8f5700}
+:where(body.light) .lnk1{color:#8f5700}
 /* ---- tema chiaro: regole scritte a mano (vengono dopo quelle generate) ---- */
-body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.46);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
+body.light{--bg:#eef2f8;--tx:#1c1c1e;--tx2:rgba(28,28,30,.68);--tx3:rgba(28,28,30,.66);--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.16);--glass:rgba(255,255,255,.7);color-scheme:light}
 body.light .bg{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f8 55%,#e4e9f2 100%)}
 body.light .bg::before{opacity:.22}body.light .bg::after{opacity:.18}
 body.light .bg .chili{opacity:.14!important;filter:blur(10px) saturate(1.05)}
@@ -408,14 +592,19 @@ body.light select option{background:#fff!important;color:#1c1c1e}
 body.light .wel2b:first-child{background:linear-gradient(160deg,rgba(255,69,58,.14),rgba(255,255,255,.75))!important}
 body.light .rm1.lit{background:linear-gradient(160deg,rgba(255,200,40,.22),rgba(255,255,255,.7))!important}
 body.light .toast{background:rgba(255,255,255,.95);color:#1c1c1e}
-body.light [style*="#ffd60a"],body.light .pillv.sun{color:#b88600!important}
+body.light [style*="#ffd60a"],body.light .pillv.sun{color:#7f6a00!important}
+/* testi colorati scritti nello stile in linea (0.7.62: contrasto AA sul chiaro, come gli accenti scuriti da make_light_css.py) */
+body.light [style^="color:var(--orange)"],body.light [style*=";color:var(--orange)"],body.light [style*=" color:var(--orange)"]{color:#995d00!important}
+body.light [style^="color:#ff6961"],body.light [style*=";color:#ff6961"],body.light [style*=" color:#ff6961"]{color:#d60b00!important}
+body.light [style^="color:#30d158"],body.light [style*=";color:#30d158"],body.light [style*=" color:#30d158"]{color:#1b7b33!important}
+body.light [style^="color:#64d2ff"],body.light [style*=";color:#64d2ff"],body.light [style*=" color:#64d2ff"]{color:#0072a1!important}
 body.light [style*="#64d2ff"]{color:#0a7fd1!important}
 body.light .tt68 b[style*="#30d158"],body.light .og68 b[style*="#30d158"]{color:#1f9e45!important}
 body.light .en7k{background:rgba(255,255,255,.86)!important;color:#1c1c1e!important;border-color:rgba(0,0,0,.08)!important;box-shadow:0 6px 18px -10px rgba(31,45,80,.45)!important}
 body.light .en7t .en7k{background:rgba(0,0,0,.035)!important;box-shadow:none!important}
 body.light .en7k.sol b{color:#b88600}body.light .en7k.imp b{color:#e0352b}body.light .en7k.exp b{color:#1f9e45}body.light .en7k.casa b,body.light .en7k.ev b{color:#0a7fd1}body.light .en7k.bat b{color:#8a4fd6}
 body.light .en7::after{box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}body.light .en7{box-shadow:0 16px 36px -26px rgba(31,45,80,.55)}
-body.light .en7ai.top .tx>span em{color:#c26a00}
+body.light .en7ai.top .tx>span em{color:#8f5200}
 body.light .av2{color:#fff;background-color:#8e8e93;border-color:rgba(0,0,0,.12)}body.light .ps2.home .av2{border-color:var(--green)}
 body.light .av2 b{border-color:#fff}body.light .pb2{border-color:rgba(0,0,0,.35)}
 body.light .x3{background:rgba(0,0,0,.06)}
@@ -653,4 +842,16 @@ body.light .mpm1 .mpo1.po{stroke:#b07a46!important}body.light .mpm1 .mpo1.fi{str
 body.light .mpm1 .mpo1.ap{stroke:#ff9f0a!important}body.light .mpm1 .mpo1.orf{stroke:#ff453a!important}
 /* lettore del manuale (manuale.js): fondo chiaro nel tema chiaro */
 body.light .mn1v{background:#eef2f8}
+/* ---- 🔠 contrasto alto nel tema chiaro (0.7.62, leggibilita.js) ---- */
+body.light.hc{--tx:#000;--tx2:rgba(10,12,18,.9);--tx3:rgba(10,12,18,.8);--line:rgba(0,0,0,.3);--line2:rgba(0,0,0,.45)}
+body.light.hc .glass,body.light.hc .card,body.light.hc .rail,body.light.hc .tabbar,body.light.hc .more,body.light.hc .sheet{background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(250,251,253,.94))!important;border-color:rgba(0,0,0,.3)!important}
+body.light.hc .li,body.light.hc .tile,body.light.hc .stat,body.light.hc .pillv,body.light.hc .btn,body.light.hc .seg{border-color:rgba(0,0,0,.28)!important}
+body.light.hc :focus-visible{outline-color:#0a3d91}
+body.light .beta1{color:#8a5300!important;border-color:rgba(138,83,0,.45)!important}
+body.light .btn.bad{color:#b8140a}
+/* 0.7.62: contrasto AA nel tema chiaro — valori della scena dell'energia sulle etichette bianche, livello dell'allerta meteo, finestre aperte nelle stanze */
+body.light .en7k.sol b{color:#7a6500}body.light .en7k.imp b{color:#b8140a}body.light .en7k.exp b{color:#17702e}
+body.light .en7k.casa b,body.light .en7k.ev b{color:#006a95}body.light .en7k.bat b{color:#7438c2}
+body.light .mt1a .lvp{color:color-mix(in srgb,var(--lv) 52%,#000)}
+body.light .rm1 .ri i.al{color:#8a4f00}
 

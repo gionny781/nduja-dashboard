@@ -8,7 +8,7 @@
      niente 60 fps (il canvas va a 24 al secondo, 12 nelle miniature), tutto si ferma quando la pagina non si vede o c'è il
      salvaschermo, e con «Riduci movimento».
    Lo usa anche il salvaschermo «✨ Sfondo animato» (salvaschermo.js, montaSfondo). */
-import { ACT, CHG, FISSI, LAYOUT, UI, t, esc, sGet, sSet, ws, toast, openSheet, closeSheet, render, isAdmin, leggera } from "./core.js";
+import { ACT, CHG, FISSI, LAYOUT, UI, t, esc, sGet, sSet, sDel, ws, toast, openSheet, closeSheet, render, isAdmin, leggera, menoMoto } from "./core.js";
 import { cambia, indirizzoLocale, fileEsiste } from "./edit.js";
 import { mix } from "./scenaenergia.js";
 import { montaStile } from "./salvaschermo.js";
@@ -72,7 +72,6 @@ const scelto = () => diDispositivo() || diCasa();
 export const attuale = () => natAttivo() ? { id: natId(), o: scelto().o || {}, natale: true } : scelto();
 /** «animato anche con la grafica leggera» (per dispositivo) */
 const animaInLeggera = () => sGet("sfLite") === "1";
-const menoMoto = () => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; } };
 /** gli animati sono fermi? (grafica leggera, «riduci movimento») */
 export const fermo = () => menoMoto() || (leggera() && !animaInLeggera());
 const scuro = () => !document.body.classList.contains("light");
@@ -431,7 +430,7 @@ function sfogliaMedia() {
 /* ---------- azioni ---------- */
 Object.assign(ACT, {
   sfApri: el => { ED.dove = el.dataset.v === "casa" && isAdmin() ? "casa" : "disp"; openSheet(foglio); },
-  sfCasa: el => { if (el.dataset.v === "1") { try { localStorage.removeItem("nduja_sfondo"); } catch {} BG = null; render(true); toast("🏠 " + t("Sfondo della casa", "Home background")); }
+  sfCasa: el => { if (el.dataset.v === "1") { sDel("sfondo"); BG = null; render(true); toast("🏠 " + t("Sfondo della casa", "Home background")); }
     else if (!diDispositivo()) salvaCfg({ ...diCasa() }, "📱 " + t("Sfondo tuo: scegli qui sotto", "Your own background: pick below")); },
   sfScegli: el => { const c = inModifica(), id = el.dataset.v; salvaCfg({ id, o: c.daCasa ? { ...(diCasa().o || {}) } : (c.o || {}) }, `${INFO(id)[1]} ${INFO(id)[2]}`); },
   sfOpz: el => { const k = el.dataset.k, v = el.dataset.v; cambiaOpz(k, k === "uguali" ? v === "1" : ["vel", "int"].includes(k) ? +v : v); },
