@@ -236,7 +236,7 @@ export function toast(msg, err, azione) {
   const el = $("#toast"); toast._az = azione?.[1] || null;
   if (azione) el.innerHTML = `<span>${esc(msg)}</span><button class="tst1b" data-act="toastAz">${esc(azione[0])}</button>`; else el.textContent = msg;
   el.className = "toast show" + (err ? " err" : "") + (azione ? " az" : "");
-  clearTimeout(toast._t); toast._t = setTimeout(() => { el.className = "toast"; toast._az = null; }, azione ? 6500 : 2800);
+  clearTimeout(toast._t); toast._t = setTimeout(() => { el.className = "toast"; toast._az = null; }, Math.max(azione ? 6500 : 2800, Math.min(9000, String(msg).length * 55)));   // i messaggi lunghi restano il tempo di leggerli
 }
 export const ws = msg => conn.sendMessagePromise(msg);
 export async function svc(dom, service, data = {}, target) {

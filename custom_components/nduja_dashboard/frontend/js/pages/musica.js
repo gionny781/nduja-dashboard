@@ -120,13 +120,24 @@ async function apri() {
     const r = await ws({ type: "media_source/resolve_media", media_content_id: b.id, expires: 21600 })
       .catch(e => e?.code === "invalid_format" ? ws({ type: "media_source/resolve_media", media_content_id: b.id }) : Promise.reject(e));
     if (mio !== tok) return;
-    AU.src = r.url;
+    QUI.url = r.url; AU.src = r.url;
     await AU.play();
   } catch (e) {
     if (mio !== tok) return;
     if (e?.name === "NotAllowedError") { QUI.stato = "pausa"; render(); sessione(); return; }   // il browser vuole un tocco: resta pronto su ▶
     errore(e?.message || e?.code || "");
   }
+}
+/** da dove arriva un brano dei media di Home Assistant: «Jellyfin», «Plex»… (null per i file di casa e Music Assistant) */
+const fonteDi = id => { const m = /^media-source:\/\/([a-z0-9_]+)/.exec(id || ""); if (!m || ["media_source", "music_assistant"].includes(m[1])) return null;
+  const n = { jellyfin: "Jellyfin", plex: "Plex", dlna_dms: "DLNA", radio_browser: "Radio Browser", synology_dsm: "Synology", reolink: "Reolink" }[m[1]];
+  return n || m[1].replace(/_/g, " ").replace(/^./, c => c.toUpperCase()); };
+/** il motivo più probabile, quando il browser non suona: pagina https con il brano su http, oppure la fonte che non lo manda */
+function motivo(url, b) {
+  if (location.protocol === "https:" && /^http:/i.test(url || "")) return t("il brano arriva da un indirizzo http e il browser lo blocca in una pagina https", "the track comes from an http address and the browser blocks it on an https page");
+  const f = fonteDi(b?.id);
+  return f ? t(`${f} non manda il brano (o il formato non va in questo browser): prova ad ascoltarlo direttamente in ${f}`, `${f} isn't sending the track (or this browser can't play the format): try playing it directly in ${f}`)
+    : t("formato non supportato da questo browser", "format not supported by this browser");
 }
 function errore(msg) {
   QUI.stato = "errore"; QUI.err = msg; render(); sessione();
@@ -151,7 +162,7 @@ AU.addEventListener("playing", () => { if (!vero()) return; Object.assign(QUI, {
 AU.addEventListener("pause", () => { if (vero() && QUI.stato === "play" && !AU.ended) { QUI.stato = "pausa"; render(); sessione(); } });
 AU.addEventListener("waiting", () => { if (vero() && QUI.stato === "play") { QUI.attesa = true; render(); } });
 AU.addEventListener("ended", () => { if (vero()) avanti(1); });
-AU.addEventListener("error", () => { if (vero() && brano() && QUI.stato !== "") errore(AU.error?.code === 4 ? t("formato non supportato da questo browser", "format not supported by this browser") : ""); });
+AU.addEventListener("error", () => { if (vero() && brano() && QUI.stato !== "") errore(AU.error?.code === 4 || AU.error?.code === 2 ? motivo(QUI.url, brano()) : ""); });
 AU.addEventListener("loadedmetadata", () => { if (vero()) render(); });
 AU.addEventListener("timeupdate", avanzamento);
 /** aggiorna solo la barra e i minuti (senza ridisegnare la pagina a ogni secondo) */
@@ -314,8 +325,12 @@ async function suonaCartella(c) {
 }
 function suonaSu(chi, c) {
   if (chi === "qui") return;
-  svc("media_player", "play_media", { media_content_id: c.media_content_id, media_content_type: c.media_content_type || "music" }, { entity_id: chi })
-    .then(() => toast("▶ " + pulisci(c.title) + " · " + nm(chi))).catch(() => {});
+  ws({ type: "call_service", domain: "media_player", service: "play_media", service_data: { media_content_id: c.media_content_id, media_content_type: c.media_content_type || "music" }, target: { entity_id: chi } })
+    .then(() => toast("▶ " + pulisci(c.title) + " · " + nm(chi)))
+    .catch(e => { const f = fonteDi(c.media_content_id);
+      toast(f ? t(`${nm(chi)} non riesce a suonare «${pulisci(c.title)}»: ${f} non manda il brano. Prova ad ascoltarlo direttamente in ${f}`, `${nm(chi)} can't play «${pulisci(c.title)}»: ${f} isn't sending the track. Try playing it directly in ${f}`)
+        + (isMA(chi) ? t(", oppure aggiungi " + f + " in Music Assistant e cercalo lì.", ", or add " + f + " to Music Assistant and search it there.") : ".")
+        : t("Comando non riuscito: ", "Command failed: ") + (e?.message || e?.code || "play_media"), true); });
 }
 
 /* ================= Alexa: chiedi con i tipi che Alexa capisce ================= */
@@ -437,7 +452,9 @@ function foglioMA() {
 const CODA = {};
 function codaMA(id) {
   const k = "maq:" + id + ":" + S[id].state + ":" + (attr(id, "media_title") || "") + ":" + (attr(id, "media_content_id") || "");
-  const r = cached(k, 30000, () => svcResp("music_assistant", "get_queue", {}, id).then(x => x?.[id] || { vuota: true }).catch(() => ({ errore: true })));
+  /* senza coda attiva (per esempio un Nest Hub che mostra la plancia) non la chiedo: Home Assistant scriverebbe un errore nel registro ogni 30 s */
+  const senza = "active_queue" in (S[id].attributes || {}) && !attr(id, "active_queue");
+  const r = senza ? { vuota: true } : cached(k, 30000, () => svcResp("music_assistant", "get_queue", {}, id).then(x => x?.[id] || { vuota: true }).catch(() => ({ errore: true })));
   if (r) CODA[id] = r;
   const q = r || CODA[id];
   if (!q) return `<div class="mu1l">${t("Coda", "Queue")}</div><div class="mu1w" style="padding:8px 4px">${t("Carico…", "Loading…")}</div>`;

@@ -7,6 +7,8 @@ salvaschermo e avvisi senza errori; arrivo dalla 0.7.10.4 provato con il `LAYOUT
 Le cose rimaste della sezione 3 sono fatte (luci come scheda oggetto, dubbi chiariti, pulizie). Resta solo un consiglio che **non blocca**: confrontare una volta i disegni della
 guida con il Marketplace vero della 2026.11 (sezione 3). Il testo per il CHANGELOG della 0.8.0 è in `docs/sviluppo/0.8.0-note.md`; i risultati del controllo sono nella sezione 5.
 
+**0.7.65-dev1 (27 nov sera)**: provando sul suo Home Assistant Giovanni ha trovato che i brani di Jellyfin non partono né sulle casse né sul PC. La causa è fuori dalla plancia: il server Jellyfin risponde con un errore (5XX) all'indirizzo del brano, come dicono i registri di Music Assistant. Nella plancia corretti il messaggio (ora dice quale fonte non manda il brano e cosa fare) e le richieste della coda a una cassa senza coda, che riempivano il registro di Home Assistant. Prima di pubblicare la 0.8.0 conviene che Giovanni riprovi la Musica.
+
 Preparato con la 0.7.57-dev (25 novembre 2026), rileggendo le schede in `docs/sviluppo/`, la ROADMAP, il CHANGELOG e i tag GitHub; aggiornato con la 0.7.65-dev.
 Serve a Giovanni per decidere quando pubblicare la **0.8.0** ufficiale.
 
