@@ -77,6 +77,7 @@ body.light body.navauto.navhide .navh1{background:rgba(0,0,0,0.090)!important}
 body.light .ps2{background:rgba(0,0,0,0.028)!important;border:1px solid rgba(0,0,0,0.042)!important}
 body.light .av2{border:3px solid rgba(0,0,0,0.126)!important}
 body.light .ps2 small{color:var(--tx3,rgba(28,28,30,.45))!important}
+body.light .ad2{color:var(--tx3,rgba(28,28,30,.45))!important}
 body.light .pb2{border:1px solid rgba(0,0,0,0.245)!important}
 body.light .rfr1{background:rgba(0,0,0,0.020)!important}
 body.light .ev1{background:rgba(0,0,0,0.025)!important}
@@ -432,6 +433,7 @@ body.light .sg1v{background:rgba(0,0,0,0.030)!important}
 :where(body.light) .en7k.exp b{color:#147532}
 :where(body.light) .en7k.casa b,:where(body.light) .en7k.ev b{color:#006b93}
 :where(body.light) .en7ai.top .tx>span em{color:#925800}
+:where(body.light) .ds2 .v2.in{color:#1a7631}
 :where(body.light) .hct1 b{color:#8f5700}
 :where(body.light) .ap1.on .aps1 b{color:#1a7631}
 :where(body.light) .ap1.done .aps1 b{color:#0064c4}

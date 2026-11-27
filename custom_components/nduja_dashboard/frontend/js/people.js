@@ -28,14 +28,42 @@ function inCarica(pid) {
   return s === "on" || /charging|in carica|full|piena|ac|usb|wireless/.test(s) && !/not|non/.test(s);
 }
 
+/** dove si trova la persona: le coordinate della persona; se non le ha (es. la persona segue anche il tracker del router o del Wi-Fi),
+    quelle del suo tracker GPS più recente, come fanno le schede «person card» (0.7.65-dev2). Con ✏️ si sceglie a mano il tracker. */
+function posizione(pid) {
+  const a = S[pid].attributes, scelto = conf(pid).tracker;
+  const gps = id => S[id] && attr(id, "latitude") != null && attr(id, "longitude") != null;
+  if (scelto && gps(scelto)) return { lat: +attr(scelto, "latitude"), lon: +attr(scelto, "longitude"), da: scelto };
+  if (a.latitude != null && a.longitude != null) return { lat: +a.latitude, lon: +a.longitude, da: pid };
+  const T = (a.device_trackers || []).filter(gps).sort((x, y) => (S[y].last_updated || "").localeCompare(S[x].last_updated || ""));
+  return T[0] ? { lat: +attr(T[0], "latitude"), lon: +attr(T[0], "longitude"), da: T[0] } : null;
+}
+/** indirizzo corto dal sensore «posizione geocodificata» dell'app di Home Assistant sul telefono (se c'è) */
+function indirizzo(pid) {
+  const g = conf(pid).address || sulTelefono(pid, id => id.startsWith("sensor.") && /geocoded|posizione_geocodificata/i.test(id))[0];
+  if (!g || !ok(g)) return "";
+  const a = S[g].attributes, loc = a.locality || a.Locality || a.sub_administrative_area || "", via = a.thoroughfare || a.Thoroughfare || "";
+  return [via, loc].filter(Boolean).join(", ") || String(S[g].state).split(",").slice(0, 2).join(",").trim();
+}
+/* si avvicina o si allontana: confronto con la distanza di qualche minuto fa (ricordata in questa scheda del browser) */
+const PRIMA = (() => { try { return JSON.parse(sessionStorage.getItem("nduja_pplDist") || "{}"); } catch { return {}; } })();
+function verso(pid, d) {
+  if (d == null) { delete PRIMA[pid]; return 0; }
+  const ora = Date.now(), p = PRIMA[pid];
+  if (!p || ora - p.t > 30 * 60000) { PRIMA[pid] = { d, t: ora, v: 0 }; }
+  else if (ora - p.t > 90000 && Math.abs(d - p.d) > Math.max(0.2, p.d * 0.03)) { PRIMA[pid] = { d, t: ora, v: d < p.d ? -1 : 1 }; }
+  try { sessionStorage.setItem("nduja_pplDist", JSON.stringify(PRIMA)); } catch {}
+  return PRIMA[pid].v;
+}
 export function info(pid) {
   const p = S[pid], a = p.attributes, z = p.state;
-  const casa = z === "home", lat = a.latitude, lon = a.longitude;
-  const dist = !casa ? km(lat, lon, attr("zone.home", "latitude"), attr("zone.home", "longitude")) : null;
+  const casa = z === "home", pos = posizione(pid);
+  const dist = !casa && pos ? km(pos.lat, pos.lon, attr("zone.home", "latitude"), attr("zone.home", "longitude")) : null;
   const b = batteriaDi(pid);
   return { pid, nome: nm(pid), foto: a.entity_picture, casa, zona: z === "home" ? t("A casa", "Home") : z === "not_home" ? t("Fuori", "Away") : (S["zone." + z]?.attributes.friendly_name || z),
-    da: p.last_changed, dist, bat: b ? val(b) : null, carica: inCarica(pid) };
+    da: p.last_changed, dist, verso: casa ? 0 : verso(pid, dist), dove: casa ? "" : indirizzo(pid), bat: b ? val(b) : null, carica: inCarica(pid) };
 }
+const kmTesto = d => d < 1 ? Math.round(d * 1000) + " m" : fnum(d, d < 10 ? 1 : 0) + " km";
 
 function scheda(i) {
   const bat = i.bat == null ? "" : `<span class="pb2 ${i.bat < 20 && !i.carica ? "low" : ""}"><i style="width:${Math.max(4, Math.min(100, i.bat))}%"></i></span><em>${Math.round(i.bat)}%${i.carica ? " ⚡" : ""}</em>`;
@@ -43,7 +71,9 @@ function scheda(i) {
     <span class="av2" style="${i.foto ? `background-image:url('${esc(i.foto)}')` : ""}">${i.foto ? "" : esc(i.nome[0] || "?")}<b></b></span>
     <strong>${esc(i.nome)}</strong>
     <span class="zn2">${i.casa ? "🏠" : "📍"} ${esc(i.zona)}</span>
-    <small>${t("da", "for")} ${esc(ago(i.da).replace(t(" fa", " ago"), ""))}${i.dist != null && conf(i.pid).noDist !== true ? ` · ${i.dist < 1 ? Math.round(i.dist * 1000) + " m" : fnum(i.dist, i.dist < 10 ? 1 : 0) + " km"}` : ""}</small>
+    <small>${t("da", "for")} ${esc(ago(i.da).replace(t(" fa", " ago"), ""))}</small>
+    ${i.dist != null && conf(i.pid).noDist !== true ? `<span class="ds2">${esc(t(`${kmTesto(i.dist)} da casa`, `${kmTesto(i.dist)} from home`))}${i.verso < 0 ? ` · <b class="v2 in">↘ ${t("si avvicina", "coming closer")}</b>` : i.verso > 0 ? ` · <b class="v2 out">↗ ${t("si allontana", "moving away")}</b>` : ""}</span>` : ""}
+    ${i.dove ? `<span class="ad2">📌 ${esc(i.dove)}</span>` : ""}
     ${bat ? `<span class="bt2">📱 ${bat}</span>` : ""}
   </button>`;
 }
@@ -68,6 +98,8 @@ function config() {
     <label class="fld1"><span>${t("Nome nella plancia", "Name in the dashboard")}</span><input id="ppl1n" type="text" value="${esc(LAYOUT.names?.[pid] || "")}" placeholder="${esc(nmHA(pid))}"></label>
     ${sel("battery", BAT, "🔋 " + t("Batteria del telefono", "Phone battery"), !conf(pid).battery && batteriaDi(pid))}
     ${sel("charging", CH, "⚡ " + t("Sensore di ricarica", "Charging sensor"))}
+    ${sel("tracker", allEnts("device_tracker", id => attr(id, "latitude") != null), "📍 " + t("Posizione da (tracker GPS)", "Location from (GPS tracker)"), !conf(pid).tracker && posizione(pid)?.da !== pid && posizione(pid)?.da)}
+    ${sel("address", allEnts("sensor", id => /geocoded|posizione_geocodificata/i.test(id)), "📌 " + t("Indirizzo (posizione geocodificata)", "Address (geocoded location)"))}
     <label class="row" style="gap:8px;margin-top:12px"><input type="checkbox" data-chg="pplDist" ${c.noDist ? "" : "checked"}> ${t("Mostra la distanza da casa", "Show distance from home")}</label>
     <button class="btn pri" data-act="pplSave" style="margin-top:14px">💾 ${t("Salva", "Save")}</button>`;
 }

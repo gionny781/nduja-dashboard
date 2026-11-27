@@ -82,7 +82,8 @@ function effettiCard() {
   const spento = !st.disp;
   return card(`✨ ${t("Modalità ed effetti", "Modes and effects")}`, `${spento ? `<p class="small muted" style="margin:-4px 0 10px">${t("Si scelgono quando l'albero è collegato.", "You can pick them when the tree is connected.")}</p>` : ""}
     ${O.length ? `<div class="fl1" style="margin-top:0">${t("Modalità", "Mode")}</div><div class="na1md">${O.map(o => `<button class="${st.modo === o ? "on" : ""}" data-act="natModo" data-v="${esc(o)}" ${spento ? "disabled" : ""}><span>${ICO_MODO[o] || "•"}</span>${esc(nomeModo(o))}</button>`).join("")}</div>` : ""}
-    ${E.length ? `<div class="fl1">${t("Effetti", "Effects")}</div><div class="na1ef">${E.map(e => `<button class="${st.eff === e && st.anim ? "on" : ""}" data-act="natEff" data-v="${esc(e)}" ${spento ? "disabled" : ""}>${esc(nomeEffetto(e))}</button>`).join("")}</div>
+    ${E.length ? `<div class="fl1">${t("Effetti", "Effects")}</div>${E.length <= 16 ? `<div class="na1ef">${E.map(e => `<button class="${st.eff === e && st.anim ? "on" : ""}" data-act="natEff" data-v="${esc(e)}" ${spento ? "disabled" : ""}>${esc(nomeEffetto(e))}</button>`).join("")}</div>`
+      : `<select class="lu3es" data-chg="natEffSel" ${spento ? "disabled" : ""} aria-label="${t("Effetto", "Effect")}">${st.anim && E.includes(st.eff) ? "" : `<option value="" selected>${t("Scegli un effetto…", "Pick an effect…")}</option>`}${E.map(e => `<option value="${esc(e)}" ${st.eff === e && st.anim ? "selected" : ""}>${esc(nomeEffetto(e))}</option>`).join("")}</select>`}
       <p class="small muted" style="margin-top:8px">${t("Toccando un effetto l'albero passa da solo alla modalità «Animazione».", "Tapping an effect switches the tree to «Movie» mode by itself.")}</p>` : ""}`, { cls: "span2 na1fx" });
 }
 /** le altre luci e prese di festa */
@@ -201,6 +202,7 @@ Object.assign(ACT, {
     luciComando(L, on).then(() => toast(on ? "🎄 " + t("Buon Natale! Luci accese: ", "Merry Christmas! Lights on: ") + L.length : "⏻ " + t("Luci di festa spente", "Festive lights off"))); },
   natCol: el => svc("light", "turn_on", { rgb_color: rgbDa(el.dataset.v) }, { entity_id: el.dataset.id }),
   natEff: el => { const id = albero(); if (id) svc("light", "turn_on", { effect: el.dataset.v }, { entity_id: id }); },
+
   natModo: el => { const m = modoDi(albero()); if (m) svc("select", "select_option", { option: el.dataset.v }, { entity_id: m }); },
   natCfg: () => openSheet(schedaPeriodo),
   natApri: () => { closeSheet(); go("natale"); },
@@ -270,3 +272,4 @@ page("natale", { title: t("Natale", "Christmas"), short: t("Natale", "Xmas"), ic
   show: () => (inMenu() && haQualcosa()) || isAdmin(), render: pagina });
 /* fuori periodo la pagina non è nel menu (ma si apre da ⚙️) */
 Object.defineProperty(PAGES.natale, "hiddenNav", { get: () => !inMenu(), enumerable: true, configurable: true });
+CHG.natEffSel = el => { const id = albero(); if (id && el.value) svc("light", "turn_on", { effect: el.value }, { entity_id: id }); };

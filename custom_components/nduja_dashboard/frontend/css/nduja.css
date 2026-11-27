@@ -280,6 +280,10 @@ body.light.navauto.navhide .navh1{background:rgba(0,0,0,.2)}
 .ps2 strong{font-size:15px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .zn2{font-size:12.5px;font-weight:600;color:var(--tx2)}
 .ps2 small{font-size:11.5px;color:var(--tx3,rgba(235,235,245,.45))}
+/* distanza da casa, verso e indirizzo (0.7.65-dev2) */
+.ds2{font-size:12px;font-weight:600;color:var(--tx2);margin-top:3px;text-align:center;line-height:1.3}
+.ds2 .v2{font-weight:700}.ds2 .v2.in{color:var(--green)}.ds2 .v2.out{color:var(--orange,#ff9f0a)}
+.ad2{font-size:11.5px;color:var(--tx3,rgba(235,235,245,.45));max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
 .bt2{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11.5px;color:var(--tx2)}
 .bt2 em{font-style:normal;font-weight:700}
 .pb2{width:34px;height:8px;border-radius:3px;border:1px solid rgba(255,255,255,.35);padding:1px;display:inline-flex}
@@ -1625,6 +1629,7 @@ a.btn{color:var(--tx);text-decoration:none}.car-c.on{background:rgba(10,132,255,
 .lu3s.add{display:grid;place-items:center;background:rgba(255,255,255,.07);border:1.5px dashed rgba(255,255,255,.3);color:var(--yellow);font-size:18px;box-shadow:none}
 .lu3s.add.on{border-style:solid;border-color:var(--yellow)}
 .lu3e{display:flex;flex-wrap:wrap;gap:6px;max-height:190px;overflow:auto;padding:2px}
+.lu3es{width:100%;padding:11px 13px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid var(--line);font-size:15px;color:inherit}
 .lu3e button{padding:7px 13px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08);font-size:12.5px;font-weight:600}
 .lu3e button.on{background:var(--blue);border-color:transparent;color:#fff}
 .lu3m .tx{flex:1;min-width:0;text-align:left}

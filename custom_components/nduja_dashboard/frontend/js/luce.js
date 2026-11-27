@@ -2,7 +2,7 @@
    gesti (tocco = accendi/spegni, trascina in orizzontale = luminosità, pressione lunga = dettagli),
    foglio dei dettagli (luminosità, bianco, colori con i preferiti, effetti, luci del gruppo), icone disegnate per 'Nduja.
    La tessera compare ovunque ci sia una luce (pagina Luci, stanze della Home, pagine e schede create da te). */
-import { S, ACT, LAYOUT, UI, VISTE, t, esc, nm, ok, attr, areaOf, AREAS, shortName, svc, toast, openSheet, closeSheet, render, moreInfo,
+import { S, ACT, CHG, LAYOUT, UI, VISTE, t, esc, nm, ok, attr, areaOf, AREAS, shortName, svc, toast, openSheet, closeSheet, render, moreInfo,
   isAdmin, sGet, sSet, luci, membriLuce, isLightGroup, isLightSwitch, saveLayout } from "./core.js";
 import { TRASCINA } from "./trascina.js";
 import { registra, quadrante, apriOggetto, schedeGrandi, em, quanto, tintaDi } from "./oggetti.js";
@@ -254,7 +254,10 @@ function sezioni(id, st) {
           <div class="small muted" style="margin-top:6px">${giaFav ? t("★ toglie questo colore dai preferiti.", "★ removes this colour from favourites.") : cur ? t("☆ salva il colore di adesso.", "☆ saves the current colour.") : t("Scegli un colore, poi ☆ per salvarlo.", "Pick a colour, then ☆ to save it.")}</div></div></div>`);
   }
   const E = a.effect_list || [];
-  if (E.length && !isLightSwitch(id)) parti.push(`<div class="fl1">${t("Effetti", "Effects")}</div><div class="lu3e">${E.map(x => `<button class="${a.effect === x ? "on" : ""}" data-act="luEff" data-id="${id}" data-v="${esc(x)}">${esc(x)}</button>`).join("")}</div>`);
+  /* pochi effetti: pulsanti; tanti (WLED, Govee, Hue… anche 100-200): un elenco a tendina, senza riempire la scheda (0.7.65-dev2) */
+  if (E.length && !isLightSwitch(id)) parti.push(`<div class="fl1">${t("Effetti", "Effects")}${E.length > 12 ? ` <span class="small muted">· ${E.length}</span>` : ""}</div>` + (E.length <= 12
+    ? `<div class="lu3e">${E.map(x => `<button class="${a.effect === x ? "on" : ""}" data-act="luEff" data-id="${id}" data-v="${esc(x)}">${esc(x)}</button>`).join("")}</div>`
+    : `<select class="lu3es" data-chg="luEffSel" data-id="${id}" aria-label="${t("Effetto", "Effect")}">${E.includes(a.effect) ? "" : `<option value="" selected>${t("Scegli un effetto…", "Pick an effect…")}</option>`}${E.map(x => `<option value="${esc(x)}" ${a.effect === x ? "selected" : ""}>${esc(x)}</option>`).join("")}</select>`));
   const M = membriLuce(id).filter(m => S[m]);
   if (M.length) parti.push(`<div class="fl1">${t("Luci del gruppo", "Lights in the group")}</div><div class="stack">${M.map(m => { const s2 = stato(m);
     return `<div class="li lu3m ${ok(m) ? "" : "dis"}"><span class="lu4 ${s2.on ? "on" : ""}" style="${stile(s2)}">${svgLuce(iconaDi(m))}</span><button class="tx" data-act="luDet" data-id="${m}"><b>${esc(nm(m))}</b><span>${!ok(m) ? t("non raggiungibile", "unavailable") : s2.on ? (s2.b != null && dimmerabile(m) ? s2.b + "%" : t("accesa", "on")) : t("spenta", "off")} ›</span></button>
@@ -265,6 +268,7 @@ const fondo = id => `<div class="row" style="gap:8px;margin-top:16px;flex-wrap:w
     ${isAdmin() ? `<button class="btn sm" data-act="edItem" data-id="${id}" data-page="${isLightSwitch(id) ? "lu:sw" : ""}">✏️ ${t("Nome, stanza e icona", "Name, room and icon")}</button>` : ""}
     <button class="btn sm" data-act="luHA" data-id="${id}">⚙️ ${t("Altro in Home Assistant", "More in Home Assistant")}</button></div>`;
 
+CHG.luEffSel = el => { if (el.value) svc("light", "turn_on", { effect: el.value }, { entity_id: el.dataset.id }); };
 Object.assign(ACT, {
   luDet: el => apri(el.dataset.id),
   luTog: el => accendiSpegni(el.dataset.id),
