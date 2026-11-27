@@ -100,6 +100,7 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.65-dev2 ✅ | sab 28 nov | Correttiva (da Facebook): luci con tanti effetti in un elenco a tendina; posizione e distanza da casa di tutte le persone, si avvicina o si allontana, indirizzo |
 | 0.7.65.2 ✅ | sab 28 nov | **Aggiornamento normale per tutti** (stesso contenuto della dev2): da ora niente più `-dev` |
 | 0.7.66 | sab 28 nov | Energia senza fotovoltaico (solo contatore, fasce, bolletta) e stazione meteo |
+| 0.7.67 | dom 29 nov | Riassunto della casa con l'intelligenza artificiale (Gemini, OpenAI… o il tuo testo) |
 | **0.8.0** | lun 30 nov | **Versione definitiva** (solo se il controllo dice «pronta») |
 
 ⏸️ **In standby:** «In auto: comandi per CarPlay e Android Auto» — si farà ufficialmente con l'app 'Nduja; la scheda è in `docs/sviluppo/standby/in-auto-carplay.md`.
