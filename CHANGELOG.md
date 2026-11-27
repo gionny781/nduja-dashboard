@@ -3,6 +3,10 @@
 > 🇮🇹 'Nduja Dashboard è in **beta**: funziona, ma può cambiare e avere difetti. Segnalali nelle Issues.
 > 🇬🇧 'Nduja Dashboard is in **beta**: it works, but it may change and have bugs. Please report them in Issues.
 
+## 0.7.65.2
+- 🇮🇹 **Per tutti, senza più anteprime**: è lo stesso contenuto della 0.7.65-dev2, pubblicato come **aggiornamento normale**. Chi aveva la 0.7.10.4 riceve tutte le novità delle anteprime 0.7.11–0.7.65 (vedi sotto) e da ora ogni nuova versione arriva da sola, **senza attivare l'interruttore Pre-release**. Dopo l'aggiornamento **riavvia Home Assistant**.
+- 🇬🇧 **For everyone, no more previews**: same content as 0.7.65-dev2, published as a **normal update**. Anyone on 0.7.10.4 gets everything from the 0.7.11–0.7.65 previews (see below), and from now on every new version arrives by itself, **without turning on the Pre-release switch**. After updating, **restart Home Assistant**.
+
 ## 0.7.65-dev2
 > 🧪 Anteprima / preview: nel Marketplace con l'interruttore Pre-release, in HACS con «Mostra versioni beta» · in the Marketplace with the Pre-release switch, in HACS with «Show beta versions».
 - 🇮🇹 **Luci con tanti effetti** (segnalato da un utente): le strisce WLED, Govee e simili hanno anche 100-200 effetti, e la scheda della luce li mostrava tutti come pulsanti. Ora fino a 12 effetti restano pulsanti; oltre, compare **un elenco a tendina** con il numero degli effetti e quello scelto adesso. Lo stesso nella pagina Natale, oltre i 16 effetti.

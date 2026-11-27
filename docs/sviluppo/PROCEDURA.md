@@ -1,4 +1,8 @@
-# Procedura per le versioni di anteprima (0.7.x-dev)
+# Procedura per le nuove versioni (0.7.x)
+
+> **Dal 28 novembre 2026 niente più `-dev`** (decisione di Giovanni): ogni versione esce come **aggiornamento normale**, che arriva a tutti da solo.
+> Numeri: la scheda `docs/sviluppo/0.7.N-dev.md` si pubblica come **`0.7.N`**; una correttiva della stessa versione come **`0.7.N.1`**, `0.7.N.2`…
+> Per contare a che punto siamo, `0.7.N`, `0.7.N.M` e le vecchie `0.7.N-devM` valgono tutte **0.7.N**. I nomi dei file delle schede restano `0.7.N-dev.md`.
 
 Fino alla versione ufficiale **0.8.0** le novità escono come **anteprime**: release GitHub segnate come
 *pre-release*. HACS le mostra solo a chi attiva «Mostra versioni beta» per 'Nduja. Chi usa la versione ufficiale
@@ -13,7 +17,7 @@ Ogni sessione programmata realizza **una sola scheda** (`docs/sviluppo/<versione
 2. Leggi `README.md`, `CHANGELOG.md`, `ROADMAP.md`, `THIRD_PARTY_LICENSES.md`, questa procedura e la scheda di oggi.
    Leggi sempre `frontend/js/core.js`, `edit.js`, `app.js` e i file indicati nella scheda.
 3. **Versione nel manifest**:
-   - se è quella «prima» indicata nella scheda, procedi;
+   - se è quella «prima» indicata nella scheda (contano solo i numeri `0.7.N`: `0.7.65.2` e `0.7.65-dev1` sono tutte 0.7.65), procedi;
    - se è più indietro, perché un'anteprima precedente non è uscita, controlla i rami `wip-*`. Fai comunque la versione di oggi partendo da `main`, senza mescolare lavori non finiti, e avvisa Giovanni nel messaggio finale;
    - se è già la versione di oggi o una successiva, fermati e scrivi a Giovanni.
 
@@ -44,8 +48,8 @@ Ogni sessione programmata realizza **una sola scheda** (`docs/sviluppo/<versione
 5. Se hai toccato `base.css` o `nduja.css`: `python3 tools/make_light_css.py`.
 6. Se qualcosa non è all'altezza, **non pubblicare**: fai push sul ramo `wip-<versione>` e scrivi a Giovanni cosa manca.
 
-## 4. Pubblicazione come anteprima
-1. Versione `<versione>` (es. `0.7.11-dev`) in `const.py` e `manifest.json`.
+## 4. Pubblicazione
+1. Versione `<versione>` (es. `0.7.66`, correttiva `0.7.66.1`; **mai** `-dev`) in `const.py` e `manifest.json`.
 2. In `CHANGELOG.md` aggiungi in cima la sezione `## <versione>` con punti 🇮🇹 e 🇬🇧 nello stile delle precedenti.
 3. Aggiorna il README (italiano e inglese) se cambia qualcosa di visibile.
    Se l'anteprima cambia pagine o comandi (pagine nuove, pulsanti, gesti, testi visibili), **rigenera il manuale PDF**: aggiorna
@@ -57,9 +61,9 @@ Ogni sessione programmata realizza **una sola scheda** (`docs/sviluppo/<versione
    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
    Claude-Session: <link di questa sessione, se disponibile>
    ```
-6. `git push origin main`. Il workflow Release crea da solo una **pre-release**, perché la versione finisce con `-dev`.
+6. `git push origin main`. Il workflow Release crea da solo una **release normale** («latest»), che Home Assistant propone come aggiornamento a tutti. Per questo il controllo del punto 3 deve essere rigoroso: se non è all'altezza, ramo `wip-*`.
 7. Verifica:
-   - la release con `gh api repos/gionny781/nduja-dashboard/releases/tags/v<versione>`: deve avere `prerelease: true`;
+   - la release con `gh api repos/gionny781/nduja-dashboard/releases/tags/v<versione>`: deve avere `prerelease: false`;
    - il workflow Validate con `gh run list -R gionny781/nduja-dashboard -L 3`.
    Se fallisce, correggi e ripubblica.
 

@@ -16,7 +16,7 @@
 
 ![Home: tablet in tema scuro, telefono in tema chiaro / Home: tablet in dark theme, phone in light theme](docs/galleria/home.webp)
 
-> 🧪 **BETA** — 🇮🇹 la plancia è giovane: funziona, ma può cambiare e avere difetti; segnalali nelle [Issues](https://github.com/gionny781/nduja-dashboard/issues). Le novità verso la 0.8.0 escono come anteprime (`-dev`). · 🇬🇧 young project: it works, but may change and have bugs; please report them in [Issues](https://github.com/gionny781/nduja-dashboard/issues). What's new on the way to 0.8.0 comes out as previews (`-dev`).
+> 🧪 **BETA** — 🇮🇹 la plancia è giovane: funziona, ma può cambiare e avere difetti; segnalali nelle [Issues](https://github.com/gionny781/nduja-dashboard/issues). Ogni novità arriva a tutti come normale aggiornamento: Home Assistant te lo segnala da solo. · 🇬🇧 young project: it works, but may change and have bugs; please report them in [Issues](https://github.com/gionny781/nduja-dashboard/issues). Every new feature reaches everyone as a normal update: Home Assistant tells you by itself.
 
 ---
 
@@ -85,7 +85,7 @@
 | 🇮🇹 | 🇬🇧 |
 |---|---|
 | **1.** Impostazioni → **Marketplace** → **Aggiungi da link** → `gionny781/nduja-dashboard` → **Aggiungi** *(fino alla 2026.10: HACS → ⋮ → Archivi digitali personalizzati, categoria Integrazione)* | **1.** Settings → **Marketplace** → **Add from link** → `gionny781/nduja-dashboard` → **Add** *(up to 2026.10: HACS → ⋮ → Custom repositories, category Integration)* |
-| **2.** Apri **'Nduja Dashboard** → **Scarica** *(anteprime: interruttore **Pre-release** del dispositivo Marketplace)* | **2.** Open **'Nduja Dashboard** → **Download** *(previews: the Marketplace device's **Pre-release** switch)* |
+| **2.** Apri **'Nduja Dashboard** → **Scarica** | **2.** Open **'Nduja Dashboard** → **Download** |
 | **3.** Riavvia Home Assistant | **3.** Restart Home Assistant |
 | **4.** Impostazioni → Dispositivi e servizi → **Aggiungi integrazione** → **'Nduja Dashboard** | **4.** Settings → Devices & services → **Add integration** → **'Nduja Dashboard** |
 | **5.** Apri **🌶️ 'Nduja** nella barra laterale e scegli **Automatica** o **Manuale** | **5.** Open **🌶️ 'Nduja** in the sidebar and pick **Automatic** or **Manual** |
