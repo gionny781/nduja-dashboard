@@ -9,7 +9,7 @@
    def = { nome(), icona, ordine, pagina, elenco() → [id], esiste(id), titolo(id), luogo(id), frase(id) (html con <em>),
            semplice(id) (testo semplice, quando la frase è spenta), avviso(id) (facoltativo: la frase per gli Avvisi, in terza persona),
            trova(entity_id) (facoltativo: l'oggetto di un'entità, se l'id dell'oggetto non è l'entità stessa),
-           soloVivo (nella Home automatica solo se acceso o in movimento), colore(id) (facoltativo: { d, l } colori per tema scuro e chiaro),
+           soloVivo (nella Home automatica solo se acceso o in movimento), soloScelta (mai nella Home automatica: solo se scelto con ⚙️), colore(id) (facoltativo: { d, l } colori per tema scuro e chiaro),
            disegno(id, misura "xl" | "sm"), centro(id) (facoltativo: al posto del disegno, per esempio il quadrante del clima),
            stato(id) ("ok" | "warn" | "run" | "bad" | "na": il colore della scheda), comandi(id) → [pulsante], dati(id) → [[icona, testo, classe]],
            extra(id) (html sotto i comandi), gesti(id) → { tocco, lungo, aiuto }, imposta(id, valore, quale) (quadrante), altro(id) (facoltativo) }
@@ -332,6 +332,7 @@ const tutti = memoVer(() => Object.entries(OGGETTI).sort(([, a], [, b]) => a.ord
 const automatici = memoVer(() => {
   const C = [];
   for (const [tipo, d] of Object.entries(OGGETTI).sort(([, a], [, b]) => a.ordine - b.ordine)) {
+    if (d.soloScelta) continue;   // le luci (0.7.65): nella Home ci sono già le stanze; in primo piano solo se le scegli con ⚙️
     let L = []; try { L = d.elenco(); } catch {}
     if (!L.length) continue;
     const vivo = L.find(id => { try { return ["run", "heat", "cool", "dry", "warn", "bad"].includes(d.stato(id)); } catch { return false; } });
@@ -359,7 +360,7 @@ function cfg() {
   const auto = !Array.isArray(LAYOUT.oggetti?.home), S1 = new Set(scelti()), L = tutti();
   const perTipo = {}; L.forEach(k => (perTipo[parti(k)[0]] = perTipo[parti(k)[0]] || []).push(k));
   return `<div class="sh-head"><div><h3>✨ ${t("Oggetti in primo piano", "Featured objects")}</h3><div class="small muted">${t("Vale per tutta la casa.", "It applies to the whole home.")}</div></div><button class="x" data-act="sheetClose">×</button></div>
-    <button class="li ${auto ? "sel1" : ""}" data-act="ogAuto"><span class="ic">✨</span><div class="tx"><b>${t("Automatico", "Automatic")}</b><span>${t("Uno per tipo: quello acceso o in movimento, se c'è. Casse e TV solo quando suonano o sono accese.", "One per kind: the one that's on or moving, if any. Speakers and TVs only when playing or on.")}</span></div></button>
+    <button class="li ${auto ? "sel1" : ""}" data-act="ogAuto"><span class="ic">✨</span><div class="tx"><b>${t("Automatico", "Automatic")}</b><span>${t("Uno per tipo: quello acceso o in movimento, se c'è. Casse e TV solo quando suonano o sono accese; le luci solo se le scegli qui sotto.", "One per kind: the one that's on or moving, if any. Speakers and TVs only when playing or on; lights only if you pick them below.")}</span></div></button>
     <p class="small muted" style="margin:12px 0 6px;line-height:1.45">${t("Oppure scegli tu: nella scheda compaiono nell'ordine di questo elenco. Toccandoli si apre la loro scheda grande.", "Or pick them yourself: they show in the order of this list. Tap one to open its big card.")}</p>
     ${Object.entries(perTipo).map(([tipo, K2]) => `<div class="fl1">${OGGETTI[tipo].icona} ${esc(OGGETTI[tipo].nome())}</div>
       <div class="stack">${K2.map(k => `<label class="li rfc1"><input type="checkbox" data-chg="ogScelta" data-k="${esc(k)}" ${S1.has(k) ? "checked" : ""}><span class="og1cd">${OGGETTI[tipo].disegno(parti(k)[1], "sm")}</span><div class="tx"><b>${esc(OGGETTI[tipo].titolo(parti(k)[1]))}</b><span>${esc(OGGETTI[tipo].luogo?.(parti(k)[1]) || "")}</span></div></label>`).join("")}</div>`).join("")

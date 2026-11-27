@@ -19,7 +19,7 @@ Quindi 'Nduja **prepara i comandi giusti** e spiega come metterli in auto. Non s
 
 ## A) Sezione «🚗 In auto»
 Va nella pagina Auto. Se l'auto non c'è, va in ⚙️ Impostazioni. Si scelgono fino a 8 comandi per la guida, con proposte automatiche:
-- **Apri cancello**, **Apri/chiudi garage**: dagli Accessi della 0.7.13.
+- **Apri cancello**, **Apri/chiudi garage**: dagli Accessi della 0.7.20.
 - **Sto arrivando**: luci dell'ingresso, clima di casa acceso, allarme disattivato se c'è.
 - **Esco di casa**: tutto spento, tapparelle giù se c'è la 0.7.42, allarme attivato.
 - **Clima casa** acceso/spento.

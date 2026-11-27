@@ -321,3 +321,11 @@ stanze ed etichette («Sera», «Promemoria», «Sicurezza»), la cronologia fin
 node tools/mock/automazioni.mjs              # configurazioni attese, giro salva → riapri → salva, frasi, velocità
 TANTE=3000 node tools/mock/automazioni.mjs   # con 3000 entità in più
 ```
+
+**Velocità con tante entità** (0.7.65): con `mockTanteMix` le `mockTante` entità in più sono una casa grande più vera (sensori di ogni tipo, molti «diagnostici», porte, finestre,
+movimento, prese, luci, una tapparella ogni 90, aggiornamenti, tracker e numeri), divise nelle stanze dal nome e su un dispositivo ogni 6 entità; senza, restano N sensori di luce come prima.
+`velocita.mjs` misura il ridisegno di ogni pagina con la CPU rallentata (i risultati della 0.7.65 sono in `docs/sviluppo/VERSO-0.8.0.md`).
+```bash
+node tools/mock/velocita.mjs                          # tutte le pagine, 3000 entità in più, CPU 6×
+PAGES=home,mappa RATE=4 node tools/mock/velocita.mjs
+```

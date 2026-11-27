@@ -23,7 +23,7 @@ export const SFONDI = () => [
   ["sfumatura", "🌈", t("Sfumatura", "Gradient"), t("Due colori e la direzione", "Two colours and a direction"), false],
   ["grana", "📜", t("Carta", "Paper"), t("Un colore con la grana della carta", "A colour with a paper grain"), false],
   ["notte", "🌑", t("Notte", "Night"), t("Scurissimo, per la camera", "Very dark, for the bedroom"), false],
-  ["immagine", "🖼️", t("La tua immagine", "Your image"), t("Dai Media o da /local/, sfocata e scurita a piacere", "From Media or /local/, blurred and dimmed as you like"), false],
+  ["immagine", "🖼️", t("La tua immagine", "Your image"), t("Dai Media o da /local/, sfocata e con un velo a piacere", "From Media or /local/, blurred and veiled as you like"), false],
   ["vivo", "🌶️", t("'Nduja classico", "'Nduja classic"), t("Le luci che si muovono piano", "The slowly moving lights"), true],
   ["aurora", "🌌", t("Aurora", "Aurora"), t("Veli di luce che ondeggiano lenti", "Veils of light swaying slowly"), true],
   ["onde", "🌊", t("Onde", "Waves"), t("Onde morbide che scorrono", "Soft waves rolling by"), true],

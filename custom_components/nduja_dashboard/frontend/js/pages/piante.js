@@ -18,7 +18,7 @@
    Scelte della casa (amministratori) in LAYOUT.piante = { pioggia: { pr, mm, slitta (false = non slittare) }, batt, avvisi, sete, promemoria: { persone, altri, ora, meteo } }. */
 import { S, REG, AREAS, DEVICES, ACT, CHG, UI, LAYOUT, VISTE, PAGES, t, LOC, esc, nmHA, ok, val, attr, unit, fnum, allEnts, areaOf, areasSorted,
   deviceClass, page, toast, openSheet, closeSheet, render, isAdmin, ws, api, cached, weatherEnt, forecast, WX, utenteCfg, etichettaNduja,
-  sicuro, ready, go, tokenHA } from "../core.js";
+  sicuro, ready, go, tokenHA, idsDispositivo, VERS } from "../core.js";
 import { cambia, scegli, indirizzoLocale } from "../edit.js";
 import { casa, casaCambia, casaErrore } from "../casa.js";
 import { zone as zoneIrr } from "./irrigazione.js";
@@ -80,14 +80,14 @@ function misura(id) {
 }
 /* sensori di umidità che non sono di una pianta */
 const NON_PIANTA = /\b(aria|air|room|stanza|wall|muro|legno|wood|leak|perdit|allag|flood)\b/i;
-const fratelli = id => { const d = REG[id]?.device; return d ? Object.keys(S).filter(x => x !== id && REG[x]?.device === d) : []; };
+const fratelli = id => { const d = REG[id]?.device; return d ? idsDispositivo(d).filter(x => x !== id) : []; };
 const CORE = { moisture: "umidita", brightness: "luce", temperature: "temp", conductivity: "cond", battery: "batt" };
 const pulisci = n => { const s = String(n || "").replace(/umidit[aà]\s*(del\s*)?(terreno|suolo)|soil\s*moisture|moisture|umidit[aà]|sensore|sensor/gi, " ").replace(/\s+/g, " ").trim(); return s ? s[0].toUpperCase() + s.slice(1) : String(n || ""); };
 
 /** piante trovate da sole: { id, ent, sens:{misura:id}, nome, area } */
-let TC = null, TT = 0;
+let TC = null, TT = -1;
 function trovate() {
-  const n = performance.now(); if (TC && n - TT < 80) return TC;
+  const n = VERS.gen; if (TC && n === TT) return TC;   // rifatte solo quando cambiano le entità, il registro o le scelte (0.7.65; prima a ogni disegno)
   const out = [], usati = new Set();
   for (const id of allEnts("plant")) {
     const sens = {}, sc = attr(id, "sensors");

@@ -4,7 +4,7 @@
    Le auto le gestisce la pagina Auto: qui dico solo che ne è arrivata una nuova.
    Serve anche a ＋ Aggiungi (edit.js) per la sezione «Suggeriti». */
 import { S, REG, AREAS, DEVICES, UI, ACT, LAYOUT, PAGES, HOOKS, DEFAULT_OFF, OPENING, t, LOC, esc, nm, ok, domain, deviceClass, areaOf, areasSorted,
-  VISTE, isAdmin, isTV, tvInMedia, isManual, saveLayout, toast, openSheet, closeSheet, render, go, pronto } from "./core.js";
+  VISTE, isAdmin, isTV, tvInMedia, isManual, saveLayout, toast, openSheet, closeSheet, render, go, pronto, tutteLeEntita, memoGen } from "./core.js";
 import { manualeNovita } from "./manuale.js";
 
 /* tipi di dispositivi che la plancia ricorda */
@@ -26,7 +26,7 @@ function caricaAuto() {
   import("./pages/auto.js").then(m => { autoFn = m.auto; }).catch(e => { console.warn("nduja auto", e); autoFn = () => []; }).finally(() => render());
 }
 const auto = () => { try { return autoFn ? autoFn() : []; } catch { return []; } };
-const pronti = () => pronto() && !!autoFn && Object.keys(S).length > 0;
+const pronti = () => pronto() && !!autoFn && tutteLeEntita().length > 0;
 
 /* ---------- entità comparse da poco: aspetto qualche secondo che arrivino anche i registri ---------- */
 let PRIMA = null;
@@ -36,12 +36,14 @@ function matura(id) {
   return Date.now() - PRIMA[id] >= ATTESA;
 }
 
+/** le entità che la plancia ricorda, senza le nascoste: ripassate solo quando cambiano le entità o il registro (0.7.65) */
+const seguiteUtili = memoGen(() => tutteLeEntita().filter(id => seguita(id) && utile(id)));
 /** dispositivi nuovi: non ancora visti, non nascosti, non di configurazione, non doppioni e non di un'auto */
 export function nuovi() {
   if (!pronti() || !Array.isArray(LAYOUT.seen)) return [];
   if (!PRIMA) { PRIMA = {}; for (const k of Object.keys(S)) PRIMA[k] = 0; }   // quelle che c'erano all'apertura valgono subito
   const V = new Set(LAYOUT.seen), car = new Set(auto());
-  return Object.keys(S).filter(id => !V.has(id) && seguita(id) && utile(id) && !car.has(REG[id]?.device) && !doppione(id) && matura(id))
+  return seguiteUtili().filter(id => !V.has(id) && !car.has(REG[id]?.device) && !doppione(id) && matura(id))
     .sort((a, b) => nm(a).localeCompare(nm(b), LOC));
 }
 /** auto nuove (id del dispositivo) */

@@ -6,7 +6,7 @@
    { nomi, tipi, sens: { dispositivo: { ruolo: id | "none" } }, inet, ospiti, extra, tolti, avvisa: { dispositivo: true|false }, soglie: { o, r } }.
    In Home la scheda «Rete» (HOME_EXTRA). La pagina compare solo se trova qualcosa. */
 import { S, REG, DEVICES, ACT, CHG, UI, LAYOUT, HOME_EXTRA, VISTE, t, LOC, esc, fnum, nm, nmHA, ok, val, attr, unit, card, empty, page, svc, ws, cached,
-  toast, openSheet, closeSheet, render, isAdmin, sicuro, deviceClass, domain, ago, durata, sGet, sSet, myHA, linkIntegrazione, manca, linkBtn, comeFare } from "../core.js";
+  toast, openSheet, closeSheet, render, isAdmin, sicuro, deviceClass, domain, ago, durata, sGet, sSet, myHA, linkIntegrazione, manca, linkBtn, comeFare, VERS, idsDi } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 import { statistiche, linea } from "../grafici.js";
 import { qrSvg, wifiQR } from "../qr.js";
@@ -17,7 +17,7 @@ const SERVER = /^(systemmonitor|glances|proxmoxve|synology_dsm|truenas|qnap|unra
 const STAMPANTE = /^(ipp|brother|hp_printer|epson_printer|epson)$/;
 const UPS = /^(nut|apcupsd)$/;
 const SPEED = /^(speedtestdotnet|fastdotcom|speedtest|librespeed|ookla)$/;
-const NOME_ROUTER = /router|modem|fritz|gateway|\bwan\b|vodafone station|sky ?hub|tim ?hub|zte|livebox|\bdeco\b|omada|mikrotik|openwrt|airport|eero|starlink|unifi dream|\budm\b|\bucg\b|\busg\b/i;
+const NOME_ROUTER = /router|modem|fritz|gateway|\bwan\b|vodafone station|sky ?(hub|wi-?fi)|tim ?hub|zte|livebox|\bdeco\b|omada|mikrotik|openwrt|airport|eero|starlink|unifi dream|\budm\b|\bucg\b|\busg\b/i;
 const NOME_SERVER = /\bnas\b|server|proxmox|\bpve\b|synology|diskstation|truenas|unraid|qnap|raspberry|raspi|\brpi\b|mini ?pc|\bnuc\b|beelink|glances|system monitor|\bvm\b|docker|portainer|homelab|workstation/i;
 const INTERNET_PING = /google|cloudflare|quad9|opendns|internet|8[._]8[._]8[._]8|1[._]1[._]1[._]1|9[._]9[._]9[._]9|\bdns\b|wan/i;
 
@@ -129,7 +129,7 @@ function puntiRouter(k, E) {
 
 /** tutto quello che trovo, una volta ogni tanto (memo sugli stati) */
 function trovaTutto() {
-  const c = conf(), key = Object.keys(S).length + ":" + Object.keys(DEVICES).length + ":" + JSON.stringify(c);
+  const c = conf(), key = VERS.gen + ":" + Object.keys(DEVICES).length + ":" + JSON.stringify(c);
   if (memo.k === key && memo.v) return memo.v;
   const G = perDispositivo(), tolti = new Set(c.tolti || []), D = [], U = [], ST = [];
   const extra = new Set((c.extra || []).map(id => REG[id]?.device || id).filter(k => G[k]));
@@ -176,14 +176,14 @@ function internetOra() {
   let down = rates.find(x => GIU.test(testo(x))) || null, up = rates.find(x => SU.test(testo(x)) && x !== down) || null;
   let maxDown = RE.find(x => isRate(x) && MAX.test(testo(x)) && GIU.test(testo(x))) || null, maxUp = RE.find(x => isRate(x) && MAX.test(testo(x)) && SU.test(testo(x))) || null;
   /* stato: connettività del router, poi ping verso internet */
-  const pingNet = Object.keys(S).filter(x => x.startsWith("binary_sensor.") && !REG[x]?.hidden && (piatt(x) === "ping" || /ping/.test(x)) && INTERNET_PING.test(testo(x)));
+  const pingNet = idsDi("binary_sensor").filter(x => !REG[x]?.hidden && (piatt(x) === "ping" || /ping/.test(x)) && INTERNET_PING.test(testo(x)));
   const conn = RE.filter(x => x.startsWith("binary_sensor.") && deviceClass(x) === "connectivity");
   let stato = conn.find(x => /wan|internet|connection|connessione|connected|online/i.test(testo(x))) || conn[0] || pingNet[0] || null;
   let ip = RE.find(x => x.startsWith("sensor.") && IP4.test(S[x].state) && /external|public|wan|pubblic|esterno/i.test(testo(x)))
-    || Object.keys(S).find(x => x.startsWith("sensor.") && piatt(x) === "dnsip" && IP4.test(S[x].state)) || null;
+    || idsDi("sensor").find(x => piatt(x) === "dnsip" && IP4.test(S[x].state)) || null;
   let daQuando = RE.find(x => deviceClass(x) === "timestamp" && /connection|connessione|wan|online/i.test(testo(x))) || null;
   /* speedtest */
-  const SP = [...ST, ...Object.keys(S).filter(x => x.startsWith("sensor.") && /speedtest|fast_com|librespeed/.test(x) && !ST.includes(x))].filter(x => x.startsWith("sensor."));
+  const SP = [...ST, ...idsDi("sensor").filter(x => /speedtest|fast_com|librespeed/.test(x) && !ST.includes(x))].filter(x => x.startsWith("sensor."));
   let sd = SP.find(x => /download|scaric/i.test(testo(x))) || (SP.find(x => /fast_com/.test(x)) ?? null), su = SP.find(x => /upload|caric/i.test(testo(x)) && !/download/i.test(testo(x))) || null,
     sp = SP.find(x => /ping|latenz|latency/i.test(testo(x))) || null;
   const s = { stato: scelto("stato"), down: scelto("down"), up: scelto("up"), ip: scelto("ip"), sd: scelto("sd"), su: scelto("su"), sp: scelto("sp") };

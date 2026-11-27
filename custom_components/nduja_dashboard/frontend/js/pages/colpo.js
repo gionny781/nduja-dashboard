@@ -7,7 +7,7 @@
    Tessera: { id, k: "e" entità | "b" blocco | "g" gruppo | "a" stanza, x: cosa (entity_id, chiave, "luci|casa", area), d: "s"|"m"|"l", n?, i? } */
 import { S, ACT, CHG, UI, AREAS, FLOORS, PAGES, COLPO, VISTE, t, LOC, esc, fnum, nm, ok, attr, unit, W, watts, ago, hhmm, domain, deviceClass, isOn, areaOf,
   areasSorted, roomTemp, roomHum, lightsOn, luci, luciContate, luciComando, isLightSwitch, ents, weatherEnt, card, empty, svc, toast, sicuro, moreInfo,
-  openSheet, closeSheet, render, go, page, isAdmin, utenteCfg, visible, ws, HVAC, REG, LAYOUT } from "../core.js";
+  openSheet, closeSheet, render, go, page, isAdmin, utenteCfg, visible, ws, HVAC, REG, LAYOUT, idsDispositivo, idsArea } from "../core.js";
 import { casa, casaCambia, casaErrore } from "../casa.js";
 import { TRASCINA, riordina } from "../trascina.js";
 import { blocchiHome } from "./home.js";
@@ -115,7 +115,7 @@ const valida = T => T && typeof T.id === "string" && ["e", "b", "g", "a"].includ
 const mia = () => { const v = sez()?.stato === "ok" && io() ? sez().dati?.[io()] : null; return v && Array.isArray(v.t) ? v : null; };
 /** stanze principali per la proposta: quelle con la temperatura e più cose dentro (al massimo 4), nell'ordine della casa */
 function principali() {
-  const A = areasSorted().filter(a => roomTemp(a) != null), n = a => Object.keys(S).filter(id => areaOf(id) === a).length;
+  const A = areasSorted().filter(a => roomTemp(a) != null), n = a => idsArea(a).length;
   const top = new Set([...A].sort((x, y) => n(y) - n(x)).slice(0, 4));
   return A.filter(a => top.has(a));
 }
@@ -186,7 +186,7 @@ function contenuto(id, T) {
   if (un) { r.cls = "dis"; r.sub = t("non raggiungibile", "unavailable"); return r; }
   if (["switch", "fan", "input_boolean", "humidifier", "siren", "valve"].includes(d)) {
     r.cls = on ? "on" : ""; r.v = d === "valve" ? (on ? t("Aperta", "Open") : t("Chiusa", "Closed")) : on ? t("Acceso", "On") : t("Spento", "Off");
-    if (d === "switch" && REG[id]?.device) { const p = Object.keys(S).find(x => x.startsWith("sensor.") && REG[x]?.device === REG[id].device && deviceClass(x) === "power");   // presa con il consumo
+    if (d === "switch" && REG[id]?.device) { const p = idsDispositivo(REG[id].device).find(x => x.startsWith("sensor.") && deviceClass(x) === "power");   // presa con il consumo
       if (p && on && W(p) != null) r.sub = "⚡ " + watts(W(p)); }
     if (d === "fan" && on && a.percentage != null) r.sub = Math.round(a.percentage) + "%";
   } else if (d === "climate") {

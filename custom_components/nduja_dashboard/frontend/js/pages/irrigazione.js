@@ -67,10 +67,13 @@ VISTE.irrTutte = () => [...zone(), ...Object.keys(S).filter(id => /^(switch|valv
 
 /** nome dell'oggetto senza i suffissi delle integrazioni («prato_station_enabled» → «prato») */
 const base = id => id.split(".")[1].replace(/_(zone|station_enabled|station|manual_watering|watering|valve|switch|enabled)$/, "");
+/** entità il cui nome comincia come la zona («prato_…»): ripassate una volta sola finché non cambiano le entità (0.7.65) */
+const SIM = new Map(); let simG = -1;
+function simili(b) { if (simG !== VERS.gen) { SIM.clear(); simG = VERS.gen; } if (!SIM.has(b)) SIM.set(b, tutteLeEntita().filter(x => x.split(".")[1].startsWith(b + "_"))); return SIM.get(b); }
 /** tra le entità sorelle quella che passa il test; se sullo stesso dispositivo ci sono più zone, solo quella col nome della zona */
 function sorella(id, test) {
   const F = fratelli(id), L = F.filter(test), b = base(id), molte = F.filter(x => eZona(x)).length > 0;
-  return (molte ? L.find(x => x.includes(b)) : L.find(x => x.includes(b)) || L[0]) || tutteLeEntita().find(x => x !== id && x.split(".")[1].startsWith(b + "_") && test(x)) || null;
+  return (molte ? L.find(x => x.includes(b)) : L.find(x => x.includes(b)) || L[0]) || simili(b).find(x => x !== id && test(x)) || null;
 }
 /** contesto di una zona: integrazione, sensore «in funzione», tempo che manca, prossima partenza (rifatto a ogni disegno) */
 const CX = new Map(); let cxT = 0;

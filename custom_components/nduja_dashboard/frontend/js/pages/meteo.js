@@ -14,7 +14,7 @@
        radar: { cam: entity_id | "none", url: "", min: 5 }, pioggiaPr: % da cui la pioggia è «probabile» (senza = 50) }
    Scelte di questo dispositivo: nduja_meteoEnt (meteo da mostrare), nduja_meteoOre (24 | 48), nduja_meteoRadar (cam | url). */
 import { S, REG, AREAS, ACT, CHG, LAYOUT, VISTE, PAGES, utenteCfg, IT, t, LOC, esc, fnum, nm, nmHA, ok, attr, unit, deviceClass, allEnts, areaOf, page,
-  forecast, weatherEnt, WX, hhmm, sGet, sSet, render, openSheet, closeSheet, isAdmin, toast, durata, linkIntegrazione } from "../core.js";
+  forecast, weatherEnt, WX, hhmm, sGet, sSet, render, openSheet, closeSheet, isAdmin, toast, durata, linkIntegrazione, memoVer, idsDispositivo, idsDi, memoGen } from "../core.js";
 import { cambia, scegli, indirizzoLocale } from "../edit.js";
 import { scena, sole } from "../scenaenergia.js";
 
@@ -30,7 +30,7 @@ const soglPioggia = () => { const v = +C().pioggiaPr; return PR.includes(v) ? v 
 /* ---------- quale meteo ---------- */
 /** il meteo di questa pagina: quello scelto su questo dispositivo, altrimenti quello di casa */
 export const meteoPagina = () => { const s = sGet("meteoEnt"); return s && S[s] ? s : weatherEnt(); };
-const meteiTutti = () => Object.keys(S).filter(id => id.startsWith("weather.") && !REG[id]?.hidden);
+const meteiTutti = () => idsDi("weather").filter(id => !REG[id]?.hidden);
 /* funzioni del meteo (WeatherEntityFeature): previsioni giornaliere, orarie, due volte al giorno */
 const F_GIORNO = 1, F_ORA = 2, F_META = 4;
 const puo = (w, f) => ((+attr(w, "supported_features") || 0) & f) === f;
@@ -189,7 +189,8 @@ function allerteDi(id) {
   return out.filter(o => { const f = Date.parse(o.a); return isNaN(f) || f > Date.now(); });
 }
 /** fonti di allerte trovate da sole (per integrazione o per nome) */
-export function fontiAuto() {
+export const fontiAuto = memoGen(() => fontiTrovate());   // nomi, integrazioni e categorie cambiano solo col registro (0.7.65)
+function fontiTrovate() {
   return Object.keys(S).filter(id => /^(sensor|binary_sensor)\./.test(id) && (PIATT_ALL.test(REG[id]?.platform || "")
     || (!REG[id]?.hidden && REG[id]?.cat == null && NOME_ALL.test(id + " " + nmHA(id)) && !NON_ALL.test(id + " " + nmHA(id)) && !(id.startsWith("binary_sensor.") && deviceClass(id)))));
 }
@@ -258,15 +259,19 @@ const METEO_DC = ["humidity", "wind_speed", "wind_direction", "precipitation", "
 const RISCALDA = /caldaia|boiler|ariston|vaillant|viessmann|vicare|remeha|baxi|buderus|bosch|immergas|otgw|opentherm|ebusd|pompa.?di.?calore|heat.?pump|daikin|mitsubishi|panasonic|nibe|clima|climate|termostat|thermostat/i;
 function punti(id, k) {
   let p = 0; const dev = REG[id]?.device;
-  if (dev && Object.keys(S).some(x => x !== id && REG[x]?.device === dev && x.startsWith("sensor.") && METEO_DC.includes(deviceClass(x)) && deviceClass(x) !== deviceClass(id))) p += 3;
+  if (dev && idsDispositivo(dev).some(x => x !== id && x.startsWith("sensor.") && METEO_DC.includes(deviceClass(x)) && deviceClass(x) !== deviceClass(id))) p += 3;
   if (/meteo|weather|stazione|station|ecowitt|netatmo|tempest|davis|ambient/i.test(testoDi(id) + " " + (REG[id]?.platform || ""))) p += 2;
   if (RISCALDA.test(nomeV(id) + " " + (REG[id]?.platform || ""))) p -= 3;
   if (k === "pioggia") { const s = nomeV(id); p += (/daily|giorn|oggi|today|(^|[^a-z])day|24h/i.test(s) ? 2 : 0) - (/hour|orari|rate|event|week|settim|month|mese|year|anno|total|totale|yesterday|ieri/i.test(s) ? 3 : 0); }
   return p;
 }
-function autoSensore(k) {
+/* con migliaia di entità la scelta costa: la rifaccio una volta sola finché nessuno stato cambia (memoVer, 0.7.65) e calcolo i punti una volta per sensore */
+const AUTO_M = {};
+function autoSensore(k) { return (AUTO_M[k] || (AUTO_M[k] = memoVer(() => trovaSensore(k))))(); }
+function trovaSensore(k) {
   if (k === "piove") return allEnts("binary_sensor", id => deviceClass(id) === "moisture" && /rain|pioggia|piov/i.test(nomeV(id)) && !daPrevisione(id)).sort()[0] || null;
-  return allEnts("sensor", id => !daPrevisione(id) && numerico(id) && AUTO[k](id)).sort((a, b) => punti(b, k) - punti(a, k) || a.localeCompare(b))[0] || null;
+  const L = allEnts("sensor", id => !daPrevisione(id) && numerico(id) && AUTO[k](id)), P = new Map(L.map(id => [id, punti(id, k)]));
+  return L.sort((a, b) => P.get(b) - P.get(a) || a.localeCompare(b))[0] || null;
 }
 /** il sensore di casa di un tipo: quello scelto, altrimenti quello trovato */
 export function sensore(k) { const v = C().sensori?.[k]; if (v === "none") return null; if (v && S[v]) return v; return autoSensore(k); }
@@ -309,7 +314,7 @@ function sensoriCard(w, D) {
 }
 
 /* ================= E) radar ================= */
-const radarAuto = () => Object.keys(S).filter(id => id.startsWith("camera.") && (/radar|rainviewer|precipit|regen|buienradar/i.test(nomeV(id)) || /^(rainviewer|buienradar)$/.test(REG[id]?.platform || ""))).sort()[0] || null;
+const radarAuto = () => idsDi("camera").filter(id => (/radar|rainviewer|precipit|regen|buienradar/i.test(nomeV(id)) || /^(rainviewer|buienradar)$/.test(REG[id]?.platform || ""))).sort()[0] || null;
 function radarCam() { const r = C().radar || {}; if (r.cam === "none") return null; if (r.cam && S[r.cam]) return r.cam; return radarAuto(); }
 const radarUrl = () => indirizzoLocale(C().radar?.url || "");
 const radarMin = () => lim(+C().radar?.min || 5, 1, 120);
@@ -552,7 +557,7 @@ const RICHIEDE = {
   passi: [t("Impostazioni → Dispositivi e servizi → ＋ Aggiungi integrazione → «Meteorologisk institutt (Met.no)», con la posizione di casa.", "Settings → Devices & services → ＋ Add integration → «Meteorologisk institutt (Met.no)», with your home location.")],
   link: [[t("Aggiungi Met.no", "Add Met.no"), linkIntegrazione("met")]],
   anteprima: [["⛅", t("Poco nuvoloso", "Partly cloudy"), t("umidità 64% · vento 9 km/h", "humidity 64% · wind 9 km/h"), "18°"]] };
-page("meteo", { richiede: RICHIEDE, title: t("Meteo", "Weather"), short: t("Meteo", "Weather"), icon: "🌦️", order: 16,
+page("meteo", { richiede: RICHIEDE, title: t("Meteo", "Weather"), short: t("Meteo", "Weather"), icon: "🌦️", order: 16.5,
   show: () => !!meteoPagina(),
   badge: () => { try { return allerte().some(a => a.lv >= 3); } catch { return false; } },
   render: pagina });

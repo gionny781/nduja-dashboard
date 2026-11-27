@@ -9,7 +9,7 @@
    In Home la scheda «Formula 1» (HOME_EXTRA). Facoltativa l'automazione «'Nduja · Formula 1»: «Tra 15 minuti partono…»
    (i minuti si scelgono; si riscrive da sola quando cambiano fonti, sensori o minuti). */
 import { S, REG, ACT, CHG, UI, LAYOUT, HOME_EXTRA, t, LOC, esc, nmHA, ok, card, page, render, isAdmin,
-  ESEMPIO, openSheet, closeSheet, toast, cached, svcResp, ws, api, attr, etichettaNduja, linkHacs } from "../core.js";
+  ESEMPIO, openSheet, closeSheet, toast, cached, svcResp, ws, api, attr, etichettaNduja, linkHacs, VERS } from "../core.js";
 import { scegli, cambia } from "../edit.js";
 
 /* ================= valori ================= */
@@ -62,7 +62,7 @@ let memoF = { k: "", F: null };
 /** le entità della F1: prossima gara, classifiche, ultima gara, dati in diretta (F1 Sensor), calendari e Team Tracker */
 function fonti() {
   /* ricontrollo ogni 30 secondi: un sensore che torna disponibile porta i suoi attributi senza cambiare il numero di entità */
-  const c = C(), k = Object.keys(S).length + "|" + Object.keys(REG).length + "|" + JSON.stringify([c.extra, c.tolte, c.sensori]) + "|" + Math.floor(Date.now() / 3e4);
+  const c = C(), k = VERS.gen + "|" + JSON.stringify([c.extra, c.tolte, c.sensori]) + "|" + Math.floor(Date.now() / 3e4);
   if (memoF.k === k) return memoF.F;
   const ids = Object.keys(S).sort(), via = new Set(c.tolte || []), extra = (c.extra || []).filter(id => S[id]);
   const find = f => ids.find(id => !via.has(id) && f(id, A(id))) || null;

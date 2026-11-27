@@ -486,5 +486,5 @@ const RICHIEDE = {
   serve: t("Una TV, un decoder o un box in Home Assistant (Samsung, LG webOS, Android TV, Apple TV, Chromecast…).", "A TV, set-top box or streamer in Home Assistant (Samsung, LG webOS, Android TV, Apple TV, Chromecast…)."),
   passi: [t("Impostazioni → Dispositivi e servizi → ＋ Aggiungi integrazione: cerca la marca o il sistema del dispositivo e segui i passi.", "Settings → Devices & services → ＋ Add integration: search for the device's brand or system and follow the steps."), t("Una TV presa per una cassa: sceglila qui sotto e passa dalla Musica a questa pagina.", "A TV taken for a speaker: pick it below and it moves from Music to this page.")],
   link: [[t("Aggiungi un'integrazione", "Add an integration"), myHA("integrations")]], scegli: ["mdTvAdd", t("Una TV che non ho riconosciuto", "A TV I didn't recognise")] };
-page("media", { richiede: RICHIEDE, title: "Media", short: "Media", icon: "📺", order: 34, editable: true,
+page("media", { richiede: RICHIEDE, title: "Media", short: "Media", icon: "📺", order: 34.5, editable: true,
   show: () => chiavi().length > 0 || (isAdmin() && casse().length > 0), badge: () => schermi().some(id => S[id]?.state === "playing"), render: pagina });

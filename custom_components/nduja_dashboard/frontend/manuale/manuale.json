@@ -1,8 +1,8 @@
 {
- "versione": "0.7.64-dev",
+ "versione": "0.7.65-dev",
  "data": "2026-11-27",
  "it": {
-  "byte": 5966822,
+  "byte": 5966744,
   "pagine": 59,
   "indice": [
    "Benvenuto",
@@ -15,7 +15,7 @@
   ]
  },
  "en": {
-  "byte": 5911111,
+  "byte": 5911271,
   "pagine": 59,
   "indice": [
    "Welcome",

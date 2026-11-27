@@ -409,6 +409,26 @@ body.lite .og2pr{transition:none}
   .og1g.hold .og1r rect,.og1k.tieni.hold s{transition:none!important}
 }
 
+/* ---------- luci (0.7.65): la lampada col colore e la luminosità veri (luce.js) ---------- */
+.lu7{position:relative;display:grid;place-items:center;width:min(250px,56vw);aspect-ratio:1;--b:0}
+.lu7.md2{width:100%}.lu7.sm{width:54px}.og1cd .lu7{width:40px}.og1hd .lu7{width:56px}
+.lu7 svg{position:relative;width:100%;height:100%;overflow:visible}
+.lu7a{position:absolute;inset:-6%;border-radius:50%;background:radial-gradient(closest-side,rgba(var(--lr),.55),rgba(var(--lr),.16) 55%,transparent);opacity:0;transition:opacity .45s,background .45s;pointer-events:none}
+.lu7.on .lu7a{opacity:calc(.25 + .75 * var(--b))}
+.lu7 .ln,.lu7 .sh{fill:none;stroke:rgba(235,240,250,.62);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.lu7 .sh{fill:rgba(255,255,255,.06)}
+.lu7 .g,.lu7 .g2{fill:rgba(255,255,255,.08);transition:fill .45s,fill-opacity .45s}
+.lu7.on .g{fill:var(--lc);fill-opacity:calc(.45 + .55 * var(--b))}
+.lu7.on .g2{fill:var(--lb);fill-opacity:calc(.3 + .5 * var(--b))}
+.lu7.on .sh{fill:var(--lb);fill-opacity:calc(.12 + .3 * var(--b));stroke:var(--lc)}
+.lu7 .co{fill:var(--lc);opacity:0;transition:opacity .45s}
+.lu7.on .co{opacity:calc(.05 + .2 * var(--b))}
+.lu7.na{opacity:.45;filter:grayscale(1)}
+.lu7.sm .ln,.lu7.sm .sh,.og1cd .lu7 .ln,.og1cd .lu7 .sh{stroke-width:8}
+.og-luce .og1qd{width:50%;top:43%}
+.lu7p{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-1px;box-shadow:0 0 0 1px rgba(255,255,255,.25)}
+.og1 .lu7x{margin-top:4px}
+
 /* ---------- tema chiaro (a mano) ---------- */
 body.light .og1k{background:rgba(255,255,255,.75);border-color:rgba(28,28,30,.12)}
 body.light .og1k.pri{background:rgba(10,132,255,.14);border-color:rgba(10,132,255,.55);color:#0b5cc2}
@@ -442,3 +462,8 @@ body.light .og2dh{background:#eef1f6;box-shadow:0 0 0 3px rgba(255,255,255,.5)}
 body.light .og2tv .og2gw{background:radial-gradient(closest-side,color-mix(in srgb,var(--tcl) 40%,transparent),transparent)}
 body.light .og2tv.on .og2gw{opacity:.5}
 body.light .og-cs .w{stroke-width:3.6}
+body.light .lu7 .ln,body.light .lu7 .sh{stroke:rgba(28,28,30,.55)}body.light .lu7:not(.on) .sh{fill:rgba(28,28,30,.04)}
+body.light .lu7:not(.on) .g,body.light .lu7:not(.on) .g2{fill:rgba(28,28,30,.08)}
+body.light .lu7.on .g2,body.light .lu7.on .sh{fill:var(--lc);fill-opacity:calc(.14 + .26 * var(--b))}
+body.light .lu7.on .lu7a{opacity:calc(.18 + .5 * var(--b))}
+body.light .lu7p{box-shadow:0 0 0 1px rgba(28,28,30,.2)}

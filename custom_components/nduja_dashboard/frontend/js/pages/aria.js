@@ -20,7 +20,7 @@
    Umidità     %          40–60           35–65           30–70        fuori da 30–70     muffe e acari sopra, aria secca sotto
    Il giudizio della stanza è quello della misura peggiore. */
 import { VERS, S, AREAS, FLOORS, REG, DEVICES, ACT, CHG, LAYOUT, UI, VISTE, HOME_EXTRA, PAGES, t, LOC, esc, nm, nmHA, ok, attr, unit, fnum, ents, allEnts, areaOf, areasSorted,
-  deviceClass, card, page, svc, toast, openSheet, closeSheet, render, isAdmin, ws, cached, sGet, sSet, utenteCfg, openings, isOn, durata, shortName, myHA } from "../core.js";
+  deviceClass, card, page, svc, toast, openSheet, closeSheet, render, isAdmin, ws, cached, sGet, sSet, utenteCfg, openings, isOn, durata, shortName, myHA, idsDispositivo } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 import { grafico, periodi, FASCE } from "../grafici.js";
 
@@ -134,8 +134,9 @@ function diFuori(id) {
 function umiditaStanza(a, L) {
   if (!L.length) return [];
   const sc = LAYOUT.sensors?.[a]?.hum; if (sc === "none") return []; if (sc && L.includes(sc)) return [sc];
-  const punti = id => { let p = 0; const dev = REG[id]?.device; if (dev && Object.keys(S).some(x => x !== id && REG[x]?.device === dev && deviceClass(x) === "temperature")) p += 2; if (/umid|humid/i.test(nmHA(id))) p += 1; if (!ok(id)) p -= 3; return p; };
-  return [[...L].sort((x, y) => punti(y) - punti(x) || x.localeCompare(y))[0]];
+  const punti = id => { let p = 0; const dev = REG[id]?.device; if (dev && idsDispositivo(dev).some(x => x !== id && deviceClass(x) === "temperature")) p += 2; if (/umid|humid/i.test(nmHA(id))) p += 1; if (!ok(id)) p -= 3; return p; };
+  const P = new Map(L.map(id => [id, punti(id)]));
+  return [[...L].sort((x, y) => P.get(y) - P.get(x) || x.localeCompare(y))[0]];
 }
 let memo = { t: 0, k: null, v: null };
 /** tutti i sensori della pagina: { id, k (tipo), a (stanza o "_"), fuori } */
@@ -176,7 +177,7 @@ function tipoDispAuto(id) {
 /** scelto a mano in ✏️ del dispositivo, altrimenti riconosciuto da solo */
 function tipoDisp(id) { const v = C().dispTipi?.[id]; return ["purif", "deum", "umid"].includes(v) ? v : tipoDispAuto(id); }
 const acceso = id => ok(id) && S[id].state === "on";
-const stessoDisp = (id, pred) => { const dev = REG[id]?.device; return dev ? Object.keys(S).filter(x => x !== id && REG[x]?.device === dev && pred(x)) : []; };
+const stessoDisp = (id, pred) => { const dev = REG[id]?.device; return dev ? idsDispositivo(dev).filter(x => x !== id && pred(x)) : []; };
 /** stato del filtro: { pct, testo, cambia, id } oppure null */
 function filtro(id) {
   const vic = stessoDisp(id, x => /filt/i.test(testo(x)) && /^(sensor|binary_sensor)\./.test(x));

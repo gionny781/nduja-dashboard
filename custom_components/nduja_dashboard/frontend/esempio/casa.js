@@ -574,8 +574,32 @@ export function casaFinta(O = {}) {
     "automation.tv_scenario": st("on", { friendly_name: "Sera: scenario TV", id: "ha_scelta", last_triggered: faOre(20) }),
     "event.telecomando_ikea_azione": st(faOre(2), { friendly_name: "Telecomando IKEA azione", device_class: "button", event_types: ["on", "off", "brightness_move_up", "brightness_move_down"], event_type: "on" }),
   });
+  const MIX_CAT = {};   // categoria delle entità di mockTanteMix (1 diagnostica, 2 configurazione), letta dal registro qui sotto
   { const n = +localStorage.getItem("mockTante") || 0;
-    for (let i = 0; i < n; i++) ENT["sensor.finto_" + i] = st(String(i % 50), { friendly_name: "Sensore finto " + i, unit_of_measurement: "lx", device_class: "illuminance" });
+    /* mockTanteMix (0.7.65): al posto dei soli sensori di luce, una casa grande più vera, divisa nelle stanze (dal nome):
+       sensori di ogni tipo, porte, finestre e movimento, prese, luci, tapparelle, aggiornamenti e tracker */
+    const MIX = localStorage.getItem("mockTanteMix"), STZ = ["soggiorno", "cucina", "corridoio", "lavanderia", "esterno", ""];
+    /* una casa vera ha soprattutto sensori, molti «diagnostici» (d: 1): su 30 entità 23 sensori, una presa, una luce, un aggiornamento,
+       un tracker, un numero e, una volta su tre, una tapparella */
+    const T = (d, dc, u, v, diag) => [d, dc, u, v, diag], R = n => () => String(Math.random() * n | 0);
+    const TIPI = [T("sensor", "temperature", "°C", () => (18 + Math.random() * 6).toFixed(1)), T("sensor", "humidity", "%", R(70)), T("sensor", "power", "W", R(300)), T("sensor", "power", "W", R(30)),
+      T("sensor", "energy", "kWh", () => (Math.random() * 900).toFixed(2)), T("sensor", "energy", "kWh", () => (Math.random() * 90).toFixed(2)), T("sensor", "battery", "%", R(100), 1), T("sensor", "battery", "%", R(100), 1),
+      T("sensor", "illuminance", "lx", R(500)), T("sensor", "voltage", "V", () => "230", 1), T("sensor", "voltage", "V", () => "229", 1), T("sensor", "signal_strength", "dBm", () => "-60", 1),
+      T("sensor", "signal_strength", "dBm", () => "-71", 1), T("sensor", "signal_strength", "dBm", () => "-55", 1), T("sensor", "", "", R(99), 1), T("sensor", "", "", () => "ok", 1), T("sensor", "", "", () => "idle"),
+      T("binary_sensor", "motion", "", () => Math.random() < .1 ? "on" : "off"), T("binary_sensor", "door", "", () => "off"), T("binary_sensor", "window", "", () => "off"), T("binary_sensor", "connectivity", "", () => "on", 1),
+      T("switch", "", "", () => Math.random() < .3 ? "on" : "off"), T("light", "", "", () => Math.random() < .2 ? "on" : "off"), T("update", "", "", () => "off", 2), T("device_tracker", "", "", () => "home"),
+      T("number", "", "", () => "5", 2), T("sensor", "temperature", "°C", () => (17 + Math.random() * 7).toFixed(1)), T("sensor", "power", "W", R(80)), T("sensor", "energy", "kWh", () => (Math.random() * 50).toFixed(2)),
+      T("cover", "", "", () => "closed")];
+    let i0 = 0;
+    for (let i = 0; i < n; i++) {
+      if (!MIX) { ENT["sensor.finto_" + i] = st(String(i % 50), { friendly_name: "Sensore finto " + i, unit_of_measurement: "lx", device_class: "illuminance" }); continue; }
+      let [d, dc, u, v, diag] = TIPI[i % TIPI.length]; const giro = i / TIPI.length | 0;
+      if (d === "cover" && giro % 3) [d, dc, u, v, diag] = TIPI[0];
+      const a = STZ[giro % STZ.length], id = `${d}.finto_${a ? a + "_" : ""}${i}`, A = { friendly_name: `Finto ${a} ${dc || d} ${i}` };
+      if (diag) MIX_CAT[id] = diag;
+      if (dc) A.device_class = dc; if (u) A.unit_of_measurement = u; if (d === "light") { A.supported_color_modes = ["brightness"]; A.brightness = 128; } if (d === "cover") A.current_position = 0;
+      ENT[id] = st(v(), A, 600 + i);
+    }
     for (let i = 0; i < Math.round(n / 30); i++) ENT["automation.finta_" + i] = st(i % 3 ? "on" : "off", { friendly_name: "Automazione finta " + i, id: "finta_" + i, last_triggered: faOre(i + 1) }); }
   const AUTO_CFG = {
     "123": { id: "123", alias: "Luci giardino al tramonto", description: "", trigger: [{ platform: "sun", event: "sunset", offset: "-00:15:00" }], condition: [{ condition: "state", entity_id: "person.anna", state: "home" }],
@@ -652,6 +676,7 @@ export function casaFinta(O = {}) {
     di: ALEXA[id] ? "dev_ax_" + id.split(".")[1] : /tv_soggiorno$/.test(id) && !/apple/.test(id) ? "dev_tv" : /apple_tv_/.test(id) ? "dev_atv" : /google_tv_/.test(id) ? "dev_gtv" : id === "media_player.lg_camera" ? "dev_lg" : id === "media_player.casa_tutta" ? "dev_cgrp" : id.includes("model_3") ? "dev_car" : id.startsWith("camera.campanello") ? "dev_bell" : id.startsWith("camera.giardino") ? "dev_reo" : id.startsWith("camera.cortile") ? "dev_cort" : id.includes("ambrogio") ? "dev_v" : id.includes("mario") ? "dev_g" : id.includes("anna") ? "dev_c" : id.includes("ariston") ? "dev_a" : null })) };
   /* batterie (0.7.35): dispositivi e categoria «diagnostica» (ec: 1) come in Home Assistant */
   for (const e of REG.entities) {
+    if (MIX_CAT[e.ei]) e.ec = MIX_CAT[e.ei]; if (e.ei.includes(".finto_") && localStorage.getItem("mockTanteMix")) { const m = e.ei.match(/_(\d+)$/); if (m) e.di = "dev_finto_" + (+m[1] / 6 | 0); }
     const m = e.ei.match(/^(?:sensor|binary_sensor|lock)\.(trv_soggiorno|movimento_corridoio|fumo_cucina|telecomando_ikea|serratura_ingresso|allagamento_lavanderia|valvola_bagno)/);
     if (m) e.di = "dev_b_" + m[1]; if (e.ei === "binary_sensor.finestra_soggiorno" || e.ei === "sensor.finestra_soggiorno_battery") e.di = "dev_b_finestra";
     if (/_battery(_low)?$/.test(e.ei) && !/iphone|model_3/.test(e.ei)) e.ec = 1;
@@ -1157,6 +1182,7 @@ export function casaFinta(O = {}) {
           .map(([type, subtype]) => ({ platform: "device", domain: "zha", device_id: m.device_id, type, subtype, metadata: {} })) : [];
         /* pausa di un'automazione: spengo e salvo la scadenza nella sezione «pause» (il vero lo fa Home Assistant) */
         case "nduja_dashboard/pausa": {
+          if (localStorage.getItem("mockNoCasa")) throw { code: "unknown_command", message: "Unknown command." };   // Python della 0.7.10.x (non riavviato)
           const C = JSON.parse(localStorage.getItem("mockCasa") || "{}"), x = C.pause || { rev: 0, dati: {} }, d = { ...x.dati };
           if (m.minuti) { d[m.entity_id] = new Date(Date.now() + m.minuti * 6e4).toISOString(); window.mockStato?.(m.entity_id, "off"); }
           else { delete d[m.entity_id]; window.mockStato?.(m.entity_id, "on"); }
@@ -1165,7 +1191,9 @@ export function casaFinta(O = {}) {
           return { fino: d[m.entity_id] || null }; }
         case "nduja_dashboard/config": await copieAvvio(); return { version: VER, options: {}, layout: LAYOUT };
         case "nduja_dashboard/save_layout": LAYOUT = m.layout; localStorage.setItem("mockLayout", JSON.stringify(LAYOUT)); copieChi(); return { ok: true };
-        case "nduja_dashboard/copie_lista": case "nduja_dashboard/copie_crea": case "nduja_dashboard/copie_get": case "nduja_dashboard/copie_elimina": case "nduja_dashboard/copie_ripristina": return mockCopie(m);
+        case "nduja_dashboard/copie_lista": case "nduja_dashboard/copie_crea": case "nduja_dashboard/copie_get": case "nduja_dashboard/copie_elimina": case "nduja_dashboard/copie_ripristina":
+          if (localStorage.getItem("mockNoCasa")) throw { code: "unknown_command", message: "Unknown command." };
+          return mockCopie(m);
         case "config/entity_registry/list_for_display": return REG;
         case "config/entity_registry/list": return REG_FULL();
         case "config/device_registry/list": return [...Object.entries(ALEXA).map(([id, model]) => ({ id: "dev_ax_" + id.split(".")[1], name: ENT[id]?.a.friendly_name || id, manufacturer: "Amazon", model })), { id: "dev_twinkly", name: "Albero di Natale", manufacturer: "LEDWORKS", model: "Twinkly Strings" }, { id: "dev_cgrp", name: "Tutta la casa", manufacturer: "Google Inc.", model: "Google Cast Group" }, { id: "dev_g", name: "iPhone di Mario" }, { id: "dev_c", name: "iPhone di Anna" }, { id: "dev_a", name: "Ariston", manufacturer: "Ariston", model: "Caldaia demo" }, { id: "dev_otgw", name: "OpenTherm Gateway", manufacturer: "Demo", model: "OpenTherm Gateway" }, { id: "dev_tv", name: "TV soggiorno", manufacturer: "Samsung", model: "QE55 demo" }, { id: "dev_atv", name: "Apple TV soggiorno", manufacturer: "Apple", model: "Apple TV 4K" },

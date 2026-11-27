@@ -5,7 +5,7 @@
    Scelte in LAYOUT.tapparelle = { extra:[], tolte:[], lati:{id:"n|e|s|o"}, aspetto:{id:tipo}, finestre:{id:sensore|"none"},
    meta: %, scenari:[{ id, nome, icona, passi:[{ dove, cosa:"su|giu|pos", pos }] }], auto:{ sole, caldo (rot = casa girata di ± gradi), finestra }, firme:{ id: impronta } } */
 import { S, AREAS, FLOORS, REG, ACT, CHG, LAYOUT, UI, VISTE, HOME_EXTRA, HOOKS, t, LOC, esc, nm, nmHA, ok, attr, ents, allEnts, areaOf, areasSorted,
-  deviceClass, card, page, svc, toast, openSheet, closeSheet, render, isAdmin, api, etichettaNduja, sGet, sSet, go, weatherEnt, unit, fnum, pronto, myHA } from "../core.js";
+  deviceClass, card, page, svc, toast, openSheet, closeSheet, render, isAdmin, api, etichettaNduja, sGet, sSet, go, weatherEnt, unit, fnum, pronto, myHA, VERS, memoGen, idsDi } from "../core.js";
 import { TRASCINA, salvaOrdine } from "../trascina.js";
 import { cambia, scegli } from "../edit.js";
 import { accessi } from "./sicurezza.js";
@@ -31,8 +31,8 @@ const ordine = () => { const A = areasSorted(true); return id => { const i = A.i
     La Mappa, la Home e le Prese la chiedono molte volte per disegno: la tengo per un attimo, finché le scelte non cambiano. */
 let memo = { t: 0, k: null, v: [] };
 export function tutte() {
-  const k = [LAYOUT.tapparelle, LAYOUT.accessi, LAYOUT.include, LAYOUT.exclude, LAYOUT.show, LAYOUT.hiddenAreas, LAYOUT.rooms, LAYOUT.names, LAYOUT.mode, LAYOUT.ordine, LAYOUT.areaOrder, Object.keys(S).length];
-  if (Date.now() - memo.t < 400 && memo.k && k.every((x, i) => x === memo.k[i])) return memo.v;
+  const k = [LAYOUT.tapparelle, LAYOUT.accessi, LAYOUT.include, LAYOUT.exclude, LAYOUT.show, LAYOUT.hiddenAreas, LAYOUT.rooms, LAYOUT.names, LAYOUT.mode, LAYOUT.ordine, LAYOUT.areaOrder, VERS.ver];
+  if (memo.k && k.every((x, i) => x === memo.k[i])) return memo.v;   // VERS.ver: rifatta solo quando cambia qualcosa (0.7.65; prima contava tutte le entità a ogni chiamata)
   const c = C(), tolte = new Set(c.tolte || []), extra = (c.extra || []).filter(id => S[id]), acc = idAccessi();
   const L = [...new Set([...ents("cover", id => eTapparella(id) && !acc.has(id) && !tolte.has(id)), ...extra])];
   /* per stanza; dentro la stanza nell'ordine scelto trascinando in ✏️ Modifica (LAYOUT.ordine.tapparelle), poi per nome */
@@ -83,7 +83,7 @@ const meta = () => clamp(Math.round(+C().meta || 50), 5, 95);
 
 /** sensore della finestra: scelto con ✏️, altrimenti uno dello stesso dispositivo, altrimenti l'unico della stanza se c'è una sola tapparella */
 const FIN = ["window", "opening", "door"];
-const sensoriFinestra = () => allEnts("binary_sensor", x => FIN.includes(deviceClass(x)));
+const sensoriFinestra = memoGen(() => allEnts("binary_sensor", x => FIN.includes(deviceClass(x))));
 function finestraAuto(id) {
   const Fs = sensoriFinestra(), dev = REG[id]?.device;
   if (dev) { const x = Fs.find(s => REG[s]?.device === dev); if (x) return x; }
@@ -411,7 +411,7 @@ const CFG = { sole: cfgSole, caldo: cfgCaldo, finestra: cfgFinestra };
 const impronta = c => { const s = JSON.stringify({ ...c, alias: undefined, description: undefined }); let h = 5381; for (let i = 0; i < s.length; i++) h = (h * 33 ^ s.charCodeAt(i)) >>> 0; return h.toString(36); };
 const oggetti = () => [...scenari().map(s => ({ tipo: "script", id: SCRIPT(s), cfg: () => scriptCfg(s) })),
   ...Object.keys(AID).filter(k => AU(k).on).map(k => ({ tipo: "automation", id: AID[k], cfg: CFG[k] }))];
-const entitaDi = o => o.tipo === "script" ? (S["script." + o.id] ? "script." + o.id : null) : Object.keys(S).find(e => e.startsWith("automation.") && attr(e, "id") === o.id) || null;
+const entitaDi = o => o.tipo === "script" ? (S["script." + o.id] ? "script." + o.id : null) : idsDi("automation").find(e => attr(e, "id") === o.id) || null;
 async function scrivi(o, cfg) {
   const nuova = !entitaDi(o);
   await api("POST", `/api/config/${o.tipo}/config/${o.id}`, o.tipo === "automation" ? { id: o.id, ...cfg } : cfg);

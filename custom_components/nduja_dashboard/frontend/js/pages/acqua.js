@@ -11,7 +11,7 @@
      perditeExtra:[id], perditeTolte:[id], prezzoAcqua: €/unità, prezzoGas: €/unità, avviso:{ on, min, portata }, inUso: minuti, mediaGiorni: giorni }
    La valuta è quella di Home Assistant; il periodo dello Storico si ricorda su ogni dispositivo (aqStor). */
 import { S, ACT, CHG, UI, LAYOUT, VISTE, HOME_EXTRA, PAGES, t, LOC, esc, fnum, nm, nmHA, ok, val, attr, unit, allEnts, deviceClass, card, page,
-  svc, ws, cached, toast, openSheet, closeSheet, render, isAdmin, utenteCfg, durata, ago, sicuro, sGet, sSet, myHA } from "../core.js";
+  svc, ws, cached, toast, openSheet, closeSheet, render, isAdmin, utenteCfg, durata, ago, sicuro, sGet, sSet, myHA, memoGen } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 import { statistiche, barre } from "../grafici.js";
 
@@ -158,11 +158,13 @@ const GAS = /(^| )gas( |$)|metano|methane|propan|gpl|lpg/;
 const isFlusso = id => id.startsWith("sensor.") && (deviceClass(id) === "volume_flow_rate" || UF[uf(id)] != null) && !NON_FLUSSO.test(testo(id));
 /** portata in L/min */
 const lmin = id => { const v = val(id); if (v == null) return null; return v * (UF[uf(id)] ?? 1); };
+/* i sensori di portata cambiano solo con le entità o il registro: li cerco una volta sola (0.7.65) */
+const flussiAcqua = memoGen(() => allEnts("sensor", id => isFlusso(id) && !GAS.test(testo(id)))), flussiGas = memoGen(() => allEnts("sensor", id => isFlusso(id) && GAS.test(testo(id))));
 /** il sensore di portata dell'acqua o del gas: quello scelto, altrimenti il più adatto (soloAuto: ignora la scelta) */
 export function flusso(k, soloAuto) {
   const v = soloAuto ? null : C()[k === "acqua" ? "flussoAcqua" : "flussoGas"];
   if (v === "none") return null; if (v && S[v]) return v;
-  const L = allEnts("sensor", id => isFlusso(id) && (k === "gas" ? GAS.test(testo(id)) : !GAS.test(testo(id))));
+  const L = (k === "gas" ? flussiGas : flussiAcqua)();
   return L.find(id => ok(id) && /acqua|water|idric|portata|flow|gas|metano/.test(testo(id))) || L.find(ok) || L[0] || null;
 }
 const flussoTxt = (k, id) => {

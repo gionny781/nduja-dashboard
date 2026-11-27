@@ -5,7 +5,7 @@
      extra: [entity_id aggiunti a mano], nascosti: [chiavi], d: { chiave: { soglia, tipo, qta, nome, cambio: ISO } } }
    La chiave è il dispositivo di Home Assistant; per un'entità senza dispositivo è l'entity_id.
    Qui c'è solo la logica: la pagina è pages/batterie.js, gli avvisi «pila scarica» sono in avvisi.js. */
-import { S, REG, DEVICES, AREAS, LAYOUT, UI, nm, nmHA, ok, attr, unit, deviceClass, areaOf, pronto, render } from "./core.js";
+import { S, REG, DEVICES, AREAS, LAYOUT, UI, nm, nmHA, ok, attr, unit, deviceClass, areaOf, pronto, render, tutteLeEntita } from "./core.js";
 
 export const SOGLIA = 20;          // avviso sotto il 20% se l'utente non sceglie altro
 export const MUTO_GG = 7;          // nessuna notizia dal dispositivo da tanti giorni: forse è scarico o scollegato (predefinito)
@@ -66,7 +66,7 @@ function esclusi() {
      cambiare (da cambiare), extra (aggiunta a mano), nascosta } */
 let memo = { k: "", v: [] };
 export function batterie({ tutte = false } = {}) {
-  const k = Object.keys(S).length + ":" + JSON.stringify(conf()) + ":" + !!MOD + ":" + Math.floor(Date.now() / 30000) + ":" + JSON.stringify(LAYOUT.names || {}) + JSON.stringify(LAYOUT.rooms || {});
+  const k = tutteLeEntita().length + ":" + JSON.stringify(conf()) + ":" + !!MOD + ":" + Math.floor(Date.now() / 30000) + ":" + JSON.stringify(LAYOUT.names || {}) + JSON.stringify(LAYOUT.rooms || {});
   /* gli stati cambiano spesso: ricalcolo al massimo ogni secondo */
   if (memo.k === k && Date.now() - memo.t < 1000) return tutte ? memo.v : memo.v.filter(b => !b.nascosta);
   const ES = esclusi(), X = extra(), H = nascosti(), G = {}, PD = {};

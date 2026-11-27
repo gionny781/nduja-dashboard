@@ -1,7 +1,7 @@
 /* Persone: foto, dove sono e da quando, distanza da casa, batteria del telefono (e se è in carica).
    Il telefono si trova da solo tra i dispositivi della persona; con ✏️ si sceglie a mano. */
 import { S, REG, ACT, CHG, LAYOUT, UI, t, esc, fnum, nm, nmHA, ok, val, attr, ents, ago, km, card, saveLayout, toast, openSheet, closeSheet,
-  deviceClass, allEnts, ordina } from "./core.js";
+  deviceClass, allEnts, ordina, idsDispositivo } from "./core.js";
 import { item, addBtn } from "./edit.js";
 import { TRASCINA, salvaOrdine } from "./trascina.js";
 
@@ -11,14 +11,14 @@ const conf = pid => (LAYOUT.people || {})[pid] || {};
 /** telefono della persona: il primo tracker che sembra un telefono (altrimenti il primo GPS) */
 function telefono(pid) {
   const tr = (attr(pid, "device_trackers") || []).filter(id => S[id]);
-  const conBatt = id => { const d = REG[id]?.device; return d && Object.keys(S).some(x => REG[x]?.device === d && x.startsWith("sensor.") && deviceClass(x) === "battery" && ok(x)); };
+  const conBatt = id => { const d = REG[id]?.device; return d && idsDispositivo(d).some(x => x.startsWith("sensor.") && deviceClass(x) === "battery" && ok(x)); };
   const punti = id => (TELEFONO.test(id + nm(id)) ? 4 : 0) + (conBatt(id) ? 3 : 0) + (attr(id, "source_type") === "gps" ? 1 : 0) + (ok(id) ? 1 : 0) - (/watch|ipad|[._]tab[._]|tablet|lenovo/i.test(id) ? 5 : 0);
   return tr.sort((a, b) => punti(b) - punti(a))[0] || null;
 }
 /** sensori dello stesso dispositivo del telefono */
 function sulTelefono(pid, pred) {
   const tel = telefono(pid), dev = tel && REG[tel]?.device;
-  return dev ? Object.keys(S).filter(id => REG[id]?.device === dev && pred(id)) : [];
+  return dev ? idsDispositivo(dev).filter(id => pred(id)) : [];
 }
 const batteriaDi = pid => conf(pid).battery || sulTelefono(pid, id => id.startsWith("sensor.") && deviceClass(id) === "battery")[0] || null;
 function inCarica(pid) {

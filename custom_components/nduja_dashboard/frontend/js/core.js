@@ -159,7 +159,7 @@ function climateSensor(area, dc) {
     if (NON_STANZA.test(id + " " + nmHA(id))) continue;
     let p = 0, dev = REG[id]?.device;
     const altro = dc === "temperature" ? "humidity" : "temperature";
-    if (dev && tutteLeEntita().some(x => x !== id && REG[x]?.device === dev && deviceClass(x) === altro)) p += 2;   // termoigrometro vero
+    if (dev && idsDispositivo(dev).some(x => x !== id && deviceClass(x) === altro)) p += 2;   // termoigrometro vero
     if (dc === "temperature" && /temp|temperatura/i.test(nmHA(id))) p += 1;
     if (dc === "temperature") { const v = val(id); if (v != null && (v < 5 || v > 40)) p -= 3; }
     if (p > top) { top = p; best = id; }
@@ -704,7 +704,10 @@ async function loadRegistry() {
   nuovaGen();
 }
 async function loadConfig() {
-  try { const c = await ws({ type: "nduja_dashboard/config" }); UI.opt = c.options || {}; UI.version = c.version || ""; for (const k in LAYOUT) delete LAYOUT[k]; Object.assign(LAYOUT, c.layout || {}); nuovaGen(); } catch {}
+  try { const c = await ws({ type: "nduja_dashboard/config" }); UI.opt = c.options || {}; UI.version = c.version || "";
+    /* rileggo le scelte anche a ogni ritorno sulla finestra: se non sono cambiate non rifaccio niente (con migliaia di entità costa, 0.7.65) */
+    const L = c.layout || {}; if (JSON.stringify(L) === JSON.stringify(LAYOUT)) return;
+    for (const k in LAYOUT) delete LAYOUT[k]; Object.assign(LAYOUT, L); nuovaGen(); } catch {}
 }
 /** salva le scelte del wizard in Home Assistant (solo amministratori) */
 export async function saveLayout(layout) {

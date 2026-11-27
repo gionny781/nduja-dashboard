@@ -5,6 +5,7 @@
 import { S, ACT, LAYOUT, UI, VISTE, t, esc, nm, ok, attr, areaOf, AREAS, shortName, svc, toast, openSheet, closeSheet, render, moreInfo,
   isAdmin, sGet, sSet, luci, membriLuce, isLightGroup, isLightSwitch, saveLayout } from "./core.js";
 import { TRASCINA } from "./trascina.js";
+import { registra, quadrante, apriOggetto, schedeGrandi, em, quanto, tintaDi } from "./oggetti.js";
 
 /* ---------- icone (disegni originali, 24×24; la parte .g si accende col colore della lampada) ---------- */
 const P = {
@@ -199,6 +200,8 @@ document.addEventListener("keydown", e => {
 let DID = null, PILA = [];
 /** apre i dettagli di una luce; se c'era già un foglio (la stanza della Home, il gruppo) «‹» ci riporta lì */
 export function apri(id) {
+  /* con le schede grandi (oggetti.js, di partenza) la luce si apre come gli altri oggetti; con «Pannelli di prima» il foglio dei dettagli */
+  if (schedeGrandi() && S[id] && (id.startsWith("light.") || isLightSwitch(id))) return apriOggetto("luce:" + id);
   if (UI.sheet === dettaglio) { if (DID !== id) PILA.push({ id: DID }); } else PILA = UI.sheet ? [{ fn: UI.sheet }] : [];
   DID = id; openSheet(dettaglio);
 }
@@ -225,6 +228,12 @@ function dettaglio() {
   const parti = [`<button class="lu3p ${st.on ? "on" : ""}" data-act="luTog" data-id="${id}" style="${stile(st)}"><span>⏻</span>${st.on ? t("Spegni", "Turn off") : t("Accendi", "Turn on")}</button>`];
   if (dim) parti.push(`<div class="lu3b ${st.on ? "on" : ""}" data-lug="b" data-id="${id}" role="slider" tabindex="0" aria-label="${t("Luminosità", "Brightness")}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${st.b || 0}" style="${stile(st)}">
       <i class="lf2"></i><span class="lu3bt">☀︎ ${t("Luminosità", "Brightness")}</span><b data-lup>${st.on && st.b != null ? st.b + "%" : t("spenta", "off")}</b></div>`);
+  parti.push(...sezioni(id, st));
+  return testa + `<div class="lu3">${parti.join("")}</div>` + fondo(id);
+}
+/** bianco, colori (con i preferiti), effetti e luci del gruppo: nel foglio dei dettagli e nella scheda oggetto */
+function sezioni(id, st) {
+  const a = S[id].attributes, parti = [];
   if (haBianchi(id)) {
     const [k0, k1] = limitiK(id), k = st.k && !st.hs ? st.k : null, x = k ? (clamp(k, k0, k1) - k0) / (k1 - k0 || 1) * 100 : null;
     const W = BIANCHI().map(([v, n]) => [clamp(v, k0, k1), n]).filter((v, i, L) => L.findIndex(w => Math.abs(w[0] - v[0]) < 300) === i);
@@ -250,7 +259,7 @@ function dettaglio() {
   if (M.length) parti.push(`<div class="fl1">${t("Luci del gruppo", "Lights in the group")}</div><div class="stack">${M.map(m => { const s2 = stato(m);
     return `<div class="li lu3m ${ok(m) ? "" : "dis"}"><span class="lu4 ${s2.on ? "on" : ""}" style="${stile(s2)}">${svgLuce(iconaDi(m))}</span><button class="tx" data-act="luDet" data-id="${m}"><b>${esc(nm(m))}</b><span>${!ok(m) ? t("non raggiungibile", "unavailable") : s2.on ? (s2.b != null && dimmerabile(m) ? s2.b + "%" : t("accesa", "on")) : t("spenta", "off")} ›</span></button>
       ${ok(m) ? `<button class="sw ${s2.on ? "on" : ""}" data-act="luTog" data-id="${m}" aria-label="${esc(nm(m))}"><i></i></button>` : ""}</div>`; }).join("")}</div>`);
-  return testa + `<div class="lu3">${parti.join("")}</div>` + fondo(id);
+  return parti;
 }
 const fondo = id => `<div class="row" style="gap:8px;margin-top:16px;flex-wrap:wrap">
     ${isAdmin() ? `<button class="btn sm" data-act="edItem" data-id="${id}" data-page="${isLightSwitch(id) ? "lu:sw" : ""}">✏️ ${t("Nome, stanza e icona", "Name, room and icon")}</button>` : ""}
@@ -307,3 +316,82 @@ export function luciPerStanza() {
 }
 /** luci di una stanza, come nella pagina Luci (per la finestra della stanza nella Home) */
 export const luciStanza = a => luciPerStanza().stanze[a] || [];
+
+/* ---------- scheda oggetto (oggetti.js, 0.7.65): la lampada disegnata con il colore e la luminosità veri ----------
+   Quattro forme originali, scelte dall'icona della luce: sospesa (lampadina, lampadario, plafoniera, faretti), da tavolo o da terra
+   (lampada, piantana, applique), striscia LED e lanterna (esterno). Le parti .g prendono il colore vero e si accendono con la luminosità;
+   l'alone e il cono di luce crescono con la luminosità. Le luci regolabili hanno il cerchio della luminosità da trascinare. */
+const FORMA = { lampadina: "so", lampadario: "so", plafoniera: "so", faretti: "so", lampada: "ta", piantana: "ta", applique: "ta", led: "st", esterno: "la" };
+const DIS = {
+  so: `<path class="ln" d="M100 0v50"/><rect class="ln" x="92" y="50" width="16" height="12" rx="3"/><path class="co" d="M68 104h64l46 92H22z"/>
+    <circle class="g" cx="100" cy="98" r="15"/><path class="sh" d="M54 100c0-24 20-38 46-38s46 14 46 38z"/>`,
+  ta: `<path class="co" d="M66 112h68l38 80H28z"/><circle class="g" cx="100" cy="96" r="13"/><path class="sh g2" d="M76 46h48l22 64H54z"/>
+    <path class="ln" d="M100 110v62"/><rect class="ln" x="72" y="172" width="56" height="10" rx="5"/>`,
+  st: `<path class="co" d="M18 116h164l14 52H4z"/><rect class="ln" x="14" y="90" width="172" height="22" rx="8"/>
+    ${[34, 66, 100, 134, 166].map(x => `<rect class="g" x="${x - 9}" y="95" width="18" height="12" rx="3"/>`).join("")}`,
+  la: `<path class="ln" d="M100 6v20M86 26h28"/><path class="co" d="M64 150h72l38 46H26z"/><path class="ln" d="M70 52l30-24 30 24z"/>
+    <rect class="g2" x="74" y="56" width="52" height="82" rx="4"/><circle class="g" cx="100" cy="98" r="12"/><path class="ln" d="M74 56h52v82H74zM100 56v82M66 140h68M84 140v10h32v-10"/>`,
+};
+/** il disegno della lampada: misura "xl" (scheda), "md2" (dentro il cerchio), "sm" (Home e liste) */
+export function disegnoLuce(id, m = "xl") {
+  const st = S[id] ? stato(id) : { on: false, rgb: [255, 194, 112], b: 0 }, f = FORMA[iconaDi(id)] || "so";
+  return `<span class="lu7 ${m} f-${f} ${st.on ? "on" : ""} ${S[id] && !ok(id) ? "na" : ""}" style="${stile(st)}" aria-hidden="true"><i class="lu7a"></i><svg viewBox="0 0 200 200">${DIS[f]}</svg></span>`;
+}
+/** il colore a parole: «luce calda», «bianco freddo», «rossa»… */
+function coloreParole(st) {
+  if (st.k && !st.hs) return st.k < 3300 ? t("luce calda", "warm white") : st.k < 5000 ? t("bianco naturale", "neutral white") : t("bianco freddo", "cool white");
+  if (!st.hs || st.hs[1] < .18) return "";
+  const h = st.hs[0];
+  return h < 15 || h >= 340 ? t("rossa", "red") : h < 42 ? t("arancione", "orange") : h < 68 ? t("gialla", "yellow") : h < 160 ? t("verde", "green")
+    : h < 200 ? t("azzurra", "cyan") : h < 255 ? t("blu", "blue") : h < 295 ? t("viola", "purple") : t("rosa", "pink");
+}
+const membriAccesi = id => { const M = membriLuce(id).filter(m => S[m]); return [M.filter(m => stato(m).on).length, M.length]; };
+function fraseLuce(id) {
+  if (!ok(id)) return t(`${em("Non ti sento")}: controlla che sia alimentata e collegata.`, `${em("I can't hear you")}: check it's powered and connected.`);
+  const st = stato(id), c = coloreParole(st), eff = attr(id, "effect"), da = S[id].last_changed ? (Date.now() - new Date(S[id].last_changed)) / 1000 : null;
+  const col = c ? ", " + em(c) : "", effetto = st.on && eff && !/^(none|nessuno|nessun effetto|no effect|off|solid|normal|normale)$/i.test(String(eff).trim()) ? " " + t(`Effetto ${em(eff)}.`, `Effect ${em(eff)}.`) : "";
+  if (isLightGroup(id)) {
+    const [k, n] = membriAccesi(id);
+    if (n && !k) return t(`Siamo ${em("tutte spente")}`, `We're ${em("all off")}`) + ` (${n}).`;
+    if (n && k < n) return t(`${k === 1 ? "Accesa" : "Accese"} ${em(k + " su " + n)}`, `${em(k + " of " + n)} on`) + (dimmerabile(id) && st.b != null ? t(", al ", ", at ") + em(st.b + "%") : "") + col + "." + effetto;
+    if (n) return t(`Siamo ${em("tutte accese")} (${n})`, `We're ${em("all on")} (${n})`) + (dimmerabile(id) && st.b != null ? t(", al ", ", at ") + em(st.b + "%") : "") + col + "." + effetto;
+  }
+  if (!st.on) return t(`Sono ${em("spenta")}`, `I'm ${em("off")}`) + (da != null && da > 90 ? t(" da ", " for ") + quanto(da) : "") + ".";
+  if (dimmerabile(id) && st.b != null) return t(`Sono accesa ${em("al " + st.b + "%")}`, `I'm on ${em("at " + st.b + "%")}`) + col + "." + effetto;
+  return t(`Sono ${em("accesa")}`, `I'm ${em("on")}`) + col + "." + effetto;
+}
+function sempliceLuce(id) {
+  if (!ok(id)) return t("Non raggiungibile", "Unavailable");
+  const st = stato(id);
+  return [st.on ? t("Accesa", "On") : t("Spenta", "Off"), st.on && dimmerabile(id) && st.b != null ? st.b + "%" : "", st.on ? coloreParole(st) : ""].filter(Boolean).join(" · ");
+}
+const hexDi = c => "#" + c.map(v => v.toString(16).padStart(2, "0")).join("");
+function gestoLuce(id) {
+  const g = ok(id);
+  return `<div class="og1g ${g ? "ges" : ""}" ${g ? `data-og="luce:${esc(id)}" role="button" tabindex="0" aria-label="${esc(stato(id).on ? t("Spegni", "Turn off") : t("Accendi", "Turn on"))}"` : ""}>${disegnoLuce(id, "md2")}</div>`;
+}
+registra("luce", {
+  nome: () => t("Luci", "Lights"), icona: "💡", ordine: 35, pagina: "luci", soloScelta: true,
+  elenco: () => luci(), esiste: id => !!S[id] && (id.startsWith("light.") || isLightSwitch(id)),
+  titolo: id => nm(id), luogo: id => [AREAS[areaOf(id)]?.name, isLightGroup(id) && "▦ " + t("gruppo", "group"), isLightSwitch(id) && "🔌 " + t("interruttore", "switch")].filter(Boolean).join(" · "),
+  stato: id => !ok(id) ? "na" : stato(id).on ? "run" : "off",
+  colore: id => { if (!ok(id)) return null; const st = stato(id); return st.on ? tintaDi(hexDi(st.rgb)) : null; },
+  frase: fraseLuce, semplice: sempliceLuce,
+  disegno: (id, m) => disegnoLuce(id, m),
+  centro: id => {
+    if (!dimmerabile(id) || !ok(id)) return "";
+    const st = stato(id);
+    return quadrante("luce:" + id, { min: 0, max: 100, step: 1, tasto: 5, u: "%", v: st.on ? st.b ?? 100 : 0, colore: "var(--oc)", off: !st.on, spentoTxt: t("Spenta", "Off"),
+      dentro: gestoLuce(id), nomi: { 1: t("Luminosità", "Brightness") }, sotto: st.on ? t("luminosità", "brightness") : "" });
+  },
+  imposta: (id, v) => { luminosita(id, Math.round(v)); render(true); },
+  comandi: id => { const off = !ok(id), st = S[id] ? stato(id) : { on: false }, B = [{ act: "luTog", id, ic: "⏻", txt: st.on ? t("Spegni", "Turn off") : t("Accendi", "Turn on"), pri: !st.on, off, cls: st.on ? "bad" : "" }];
+    if (dimmerabile(id) && st.on) B.push({ act: "ogLuPasso", id, v: -10, ic: "−", txt: "10%", off }, { act: "ogLuPasso", id, v: 10, ic: "+", txt: "10%", off });
+    return B; },
+  dati: id => { if (!ok(id)) return []; const st = stato(id), [k, n] = isLightGroup(id) ? membriAccesi(id) : [0, 0];
+    return [st.on && dimmerabile(id) && st.b != null ? ["☀︎", st.b + "%"] : null, st.on && coloreParole(st) ? [`<b class="lu7p" style="background:${css(st.rgb)}"></b>`, esc(coloreParole(st))] : null,
+      n ? ["▦", esc(t(`${k} su ${n} accese`, `${k} of ${n} on`))] : null]; },
+  extra: id => ok(id) ? `<div class="lu3 lu7x">${sezioni(id, stato(id)).join("")}</div>` + fondo(id) : fondo(id),
+  gesti: id => ok(id) ? { tocco: () => accendiSpegni(id), aiuto: dimmerabile(id) ? t("Trascina il cerchio per la luminosità · tocca la lampada per accendere o spegnere", "Drag the ring for the brightness · tap the lamp to turn it on or off") : t("Tocca la lampada per accendere o spegnere", "Tap the lamp to turn it on or off") } : {},
+});
+ACT.ogLuPasso = el => { const id = el.dataset.id; if (!S[id] || !ok(id)) return; luminosita(id, clamp((stato(id).b || 0) + +el.dataset.v, 1, 100)); render(true); };

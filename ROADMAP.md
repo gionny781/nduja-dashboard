@@ -54,14 +54,19 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.27-dev ✅ | lun 26 ott | Luci rifatte |
 | 0.7.28-dev ✅ | lun 26 ott | Musica: ascolta su questo dispositivo, Alexa, Google, Sonos |
 | 0.7.29-dev ✅ | lun 26 ott | Musica: Music Assistant e «Sposta su…» |
+| 0.7.29-dev1 ✅ | lun 26 ott | Correttiva: avvisi sul telefono per la pioggia con le finestre aperte e per gli aggiornamenti |
+| 0.7.29-dev2 ✅ | mar 27 ott | Correttiva: l'avviso «aggiornamento disponibile» entra davvero nell'automazione |
 | 0.7.30-dev ✅ | gio 29 ott | Media: TV, telecomando virtuale, app di streaming |
 | 0.7.31-dev ✅ | gio 29 ott | Irrigazione animata |
 | 0.7.32-dev ✅ | gio 29 ott | La mia squadra (calcio) |
 | 0.7.33-dev ✅ | ven 30 ott | Formula 1 |
 | 0.7.34-dev ✅ | ven 30 ott | Salvaschermo nuovo (della plancia, tuo o automatico) |
+| 0.7.34-dev1 ✅ | gio 29 ott | Correttiva: grafica leggera per tablet Android e Fully Kiosk |
 | 0.7.35-dev ✅ | ven 30 ott | Batterie |
 | 0.7.36-dev ✅ | ven 30 ott | Rete e server (modem, mini PC, NAS, UPS) |
 | 0.7.37-dev ✅ | ven 30 ott | Caldaia |
+| 0.7.37-dev1 ✅ | ven 30 ott | Correttiva: niente più avvisi «elettrodomestico finito» falsi |
+| 0.7.37-dev2 ✅ | ven 30 ott | Correttiva: soglie degli elettrodomestici scelte da te |
 | 0.7.38-dev ✅ | ven 30 ott | Chat di famiglia |
 | 0.7.39-dev ✅ | ven 30 ott | Liste: spesa e cose da fare |
 | 0.7.40-dev ✅ | ven 30 ott | Scadenze e promemoria |
@@ -72,6 +77,7 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.45-dev ✅ | gio 5 nov | Assistente vocale (Assist) |
 | 0.7.46-dev ✅ | gio 5 nov | Piante e giardino |
 | 0.7.47-dev ✅ | gio 5 nov | Autonomia (1): tutto regolabile dalla plancia — da Aggiornamenti a Energia |
+| 0.7.47-dev1 ✅ | ven 6 nov | Correttiva: pronta per il Marketplace di Home Assistant 2026.11 (al posto di HACS) |
 | 0.7.48-dev ✅ | ven 6 nov | Autonomia (2): tutto regolabile dalla plancia — da Faccende in poi |
 | 0.7.49-dev ✅ | gio 19 nov | «Cosa puoi aggiungere»: la plancia dice cosa manca e come attivarlo |
 | 0.7.50-dev ✅ | sab 21 nov | Trascina e sposta (drag & drop): menu, Home, stanze, elementi |
@@ -79,7 +85,7 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.52-dev ✅ | dom 22 nov | Sfondi e salvaschermi da scegliere (anche fotovoltaico in tempo reale) |
 | 0.7.53-dev ✅ | lun 23 nov | La tua casa in 3D: piani, tetto, porte, finestre, luci e arredo |
 | 0.7.54-dev ✅ | lun 23 nov | Natale: pagina delle luci di festa (Twinkly), sfondo e salvaschermo |
-| 0.7.55-dev ✅ | mar 24 nov | Schede oggetto (1): cancello, porta, robot, clima, lavatrice |
+| 0.7.55-dev ✅ | mar 24 nov | Schede oggetto (1): cancello, porta, robot, clima, lavatrice, asciugatrice e lavastoviglie |
 | 0.7.56-dev ✅ | mar 24 nov | Schede oggetto (2): musica, TV e frasi ovunque |
 | 0.7.57-dev ✅ | mer 25 nov | Guida all'installazione illustrata e controllo finale |
 | 0.7.58-dev ✅ | mer 25 nov | Fluidità: animazioni ferme quando non si vedono, grafica automatica che si misura |
@@ -89,7 +95,7 @@ Quando tutto sarà perfetto uscirà la **0.8.0** ufficiale. Le schede di lavoro 
 | 0.7.62-dev ✅ | gio 26 nov | Casa di esempio, testo grande e contrasto alto |
 | 0.7.63-dev ✅ | ven 27 nov | Copie di sicurezza automatiche e «Segnala un problema» |
 | 0.7.64-dev ✅ | ven 27 nov | Automazioni complete: crea, modifica, accendi e spegni |
-| 0.7.65-dev | dom 29 nov | Controllo finale prima della 0.8.0 |
+| 0.7.65-dev ✅ | dom 29 nov | Controllo finale prima della 0.8.0 |
 | **0.8.0** | lun 30 nov | **Versione definitiva** (solo se il controllo dice «pronta») |
 
 ⏸️ **In standby:** «In auto: comandi per CarPlay e Android Auto» — si farà ufficialmente con l'app 'Nduja; la scheda è in `docs/sviluppo/standby/in-auto-carplay.md`.

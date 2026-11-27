@@ -1,7 +1,7 @@
 /* Robot aspirapolvere: stato, batteria, mappa, comandi, pulizia per stanza, impostazioni rapide e manutenzione.
    Tutto viene dal dispositivo del robot; con ✏️ (amministratori) si scelgono, per ogni robot, in LAYOUT.vacuums[id]:
    { map: camera | "none", quick: [select], passate: 2|3 (pulizia per stanza), ricambi: % (rosso sotto), noManut: [sensori da non mostrare] } */
-import { S, REG, ACT, CHG, LAYOUT, VISTE, AREAS, render, openSheet, UI, t, IT, esc, nm, ok, val, attr, ents, card, empty, page, svc, ws, cached, toast, isAdmin, shortName, deviceClass, DEFAULT_OFF, myHA, areaOf, fnum } from "../core.js";
+import { S, REG, ACT, CHG, LAYOUT, VISTE, AREAS, render, openSheet, UI, t, IT, esc, nm, ok, val, attr, ents, card, empty, page, svc, ws, cached, toast, isAdmin, shortName, deviceClass, DEFAULT_OFF, myHA, areaOf, fnum, idsDispositivo, idsDi } from "../core.js";
 import { item, addBtn, scegli, cambia } from "../edit.js";
 import { registra, tocca, schedeGrandi, em, articolo, frase } from "../oggetti.js";
 import { disegnoRobot } from "../disegni.js";
@@ -16,7 +16,7 @@ const RIC_DEF = 15;
 const sottoRic = id => { const v = +conf(id).ricambi; return v >= 1 && v <= 80 ? Math.round(v) : RIC_DEF; };
 /** passate per la pulizia delle stanze (1 come prima, 2 o 3 se scelte in ✏️) */
 const passate = id => [2, 3].includes(+conf(id).passate) ? +conf(id).passate : 1;
-const delDispositivo = (id, pred) => { const d = REG[id]?.device; return d ? Object.keys(S).filter(x => x !== id && REG[x]?.device === d && pred(x)) : []; };
+const delDispositivo = (id, pred) => { const d = REG[id]?.device; return d ? idsDispositivo(d).filter(x => x !== id && pred(x)) : []; };
 const MAPPA = x => x.startsWith("camera.") && /map/i.test(x) && !/data|wifi/i.test(x);
 /* le mappe dei robot non sono telecamere: fuori dalla pagina Telecamere finché non le aggiungi */
 DEFAULT_OFF.push(id => id.startsWith("camera.") && /(^|_)map(_\d+)?$|map_data|wifi_map/.test(id));
@@ -65,7 +65,7 @@ function manutenzione(id, tutti = false) {
   const no = new Set(tutti ? [] : conf(id).noManut || []);
   return delDispositivo(id, x => x.startsWith("sensor.") && /_left$/.test(x) && attr(x, "unit_of_measurement") === "%" && ok(x) && !no.has(x)).map(x => {
     const k = x.replace(/^sensor\./, "").replace(/_left$/, ""), base = k.split("_")[0], cosa = k.slice(base.length + 1);
-    const reset = Object.keys(S).find(b => b === `button.${base}_reset_${cosa}` || (b.startsWith("button.") && REG[b]?.device === REG[id]?.device && b.endsWith("reset_" + cosa)));
+    const reset = idsDi("button").find(b => b === `button.${base}_reset_${cosa}` || (b.startsWith("button.") && REG[b]?.device === REG[id]?.device && b.endsWith("reset_" + cosa)));
     return { id: x, v: val(x), reset };
   });
 }

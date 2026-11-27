@@ -157,7 +157,7 @@ export const PAGINE = [
       tocchi: [
         "**Tocco**: accende o spegne.",
         "**Trascina in orizzontale** sulla tessera: luminosità.",
-        "**Pressione lunga** (o ⋯): dettagli con bianco caldo/freddo, ruota dei colori, ☆ colori preferiti ed effetti.",
+        "**Pressione lunga** (o ⋯): la **scheda grande** con la lampada disegnata del colore vero, il **cerchio della luminosità** da trascinare, bianco caldo/freddo, ruota dei colori, ☆ colori preferiti ed effetti.",
       ],
       sola: "Riconosce i **gruppi di luci** senza contarle due volte e mostra «▦ 2» con le luci del gruppo.",
       consigli: [
@@ -171,7 +171,7 @@ export const PAGINE = [
       tocchi: [
         "**Tap**: on or off.",
         "**Drag sideways** on the tile: brightness.",
-        "**Long press** (or ⋯): details with warm/cool white, colour wheel, ☆ favourite colours and effects.",
+        "**Long press** (or ⋯): the **big card** with the lamp drawn in its real colour, the **brightness dial** to drag, warm/cool white, colour wheel, ☆ favourite colours and effects.",
       ],
       sola: "It recognises **light groups** without counting lights twice and shows «▦ 2» with the group's lights.",
       consigli: [
@@ -1173,11 +1173,11 @@ export const PAGINE = [
     it: {
       titolo: "Schede oggetto",
       sotto: "Tocchi un oggetto e lui ti risponde.",
-      serve: "Cancello, porta con serratura, robot, clima, lavatrice, asciugatrice, lavastoviglie, casse e TV hanno una **scheda grande**: l'oggetto disegnato al centro si muove con lo stato vero (il cancello scorre, la chiave gira, l'oblò gira) e in alto **una frase come se parlasse** («Sono chiuso. Tutto tranquillo.»). Sotto i comandi più usati, grandi.",
+      serve: "Cancello, porta con serratura, robot, clima, luci, lavatrice, asciugatrice, lavastoviglie, casse e TV hanno una **scheda grande**: l'oggetto disegnato al centro si muove con lo stato vero (il cancello scorre, la chiave gira, l'oblò gira) e in alto **una frase come se parlasse** («Sono chiuso. Tutto tranquillo.»). Sotto i comandi più usati, grandi.",
       tocchi: [
         "**Tocco**: l'azione principale (apri o chiudi, pausa, accendi).",
         "**Tocco lungo** (un anello si riempie): sblocca la porta, apri e tieni aperto il cancello, muto per le casse.",
-        "**Cerchio da trascinare**: temperatura del clima e volume delle casse.",
+        "**Cerchio da trascinare**: temperatura del clima, luminosità delle luci e volume delle casse.",
       ],
       sola: "Si aprono toccando l'oggetto nella sua pagina, nella Home o nella scheda «✨ Oggetti in primo piano».",
       consigli: [
@@ -1188,11 +1188,11 @@ export const PAGINE = [
     en: {
       titolo: "Object cards",
       sotto: "Tap an object and it answers.",
-      serve: "Gate, door lock, robot vacuum, climate, washing machine, dryer, dishwasher, speakers and TVs have a **big card**: the object drawn in the middle moves with its real state (the gate slides, the key turns, the drum spins) and at the top **a sentence as if it were talking** («I'm closed. All quiet.»). Below are the most used controls, big.",
+      serve: "Gate, door lock, robot vacuum, climate, lights, washing machine, dryer, dishwasher, speakers and TVs have a **big card**: the object drawn in the middle moves with its real state (the gate slides, the key turns, the drum spins) and at the top **a sentence as if it were talking** («I'm closed. All quiet.»). Below are the most used controls, big.",
       tocchi: [
         "**Tap**: the main action (open or close, pause, turn on).",
         "**Long press** (a ring fills up): unlock the door, open and keep the gate open, mute a speaker.",
-        "**Dial to drag**: climate temperature and speaker volume.",
+        "**Dial to drag**: climate temperature, light brightness and speaker volume.",
       ],
       sola: "They open when you tap the object on its page, on Home or in the «✨ Featured objects» card.",
       consigli: [

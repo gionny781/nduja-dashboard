@@ -4,7 +4,7 @@
    flusso della diretta e dell'anteprima (con il metodo di ognuno) e 🗂 Gruppi (schede separate, facoltative).
    Tutto si salva nel layout (LAYOUT.telecamere, LAYOUT.camOrder, names, rooms): vale su tutti i dispositivi. */
 import { S, REG, ACT, CHG, UI, AREAS, FLOORS, LAYOUT, t, LOC, esc, nm, nmHA, ok, attr, card, empty, page, render, sGet, sSet, DEFAULT_OFF,
-  openSheet, closeSheet, cached, ws, areaOf, areasSorted, excluded, defaultOff, myHA, linkIntegrazione } from "../core.js";
+  openSheet, closeSheet, cached, ws, areaOf, areasSorted, excluded, defaultOff, myHA, linkIntegrazione, idsDi } from "../core.js";
 import { cambia, scegli, mostra } from "../edit.js";
 import { TRASCINA } from "../trascina.js";
 import { anteprima, telecamere, flussi, proposta, gruppiCam, gruppoDi, padreDi, fotoCam, METODI, NOME_METODO } from "../video.js";
@@ -60,7 +60,7 @@ function perche(id, L) {
 const miniatura = id => ok(id) && attr(id, "entity_picture") ? `<img class="cmt1" src="${esc(fotoCam(id))}" alt="" loading="lazy">` : `<span class="cmt1">📷</span>`;
 function aggiungi() {
   const L = telecamere(), dentro = new Set(L), q = AG.q.toLowerCase();
-  const C = Object.keys(S).filter(id => id.startsWith("camera.") && !dentro.has(id))
+  const C = idsDi("camera").filter(id => !dentro.has(id))
     .filter(id => !q || (nm(id) + " " + id + " " + (AREAS[areaOf(id)]?.name || "")).toLowerCase().includes(q))
     .sort((a, b) => nm(a).localeCompare(nm(b), LOC));
   const riga = id => { const w = perche(id, L);

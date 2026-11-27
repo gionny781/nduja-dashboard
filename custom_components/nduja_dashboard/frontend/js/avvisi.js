@@ -13,7 +13,7 @@
    i numeri degli avvisi di questo file (minuti della porta, ore e probabilità della pioggia, telefono scarico…)
    e quali mostrare nella Home; valgono per tutta la casa (LAYOUT.avvisi). */
 import { S, ACT, CHG, LAYOUT, PAGES, VISTE, utenteCfg, t, esc, nm, ok, val, attr, ents, allEnts, isOn, ago, deviceClass, areaOf, openings, shortName, card, render, sGet, sSet, weatherEnt, forecast,
-  ws, cached, api, toast, openSheet, closeSheet, isAdmin, etichettaNduja } from "./core.js";
+  ws, cached, api, toast, openSheet, closeSheet, isAdmin, etichettaNduja, idsDi } from "./core.js";
 import { cambia } from "./edit.js";
 import { ritiri, chip, haRaccolta } from "./raccolta.js";
 import { pericoli } from "./pages/sicurezza.js";
@@ -122,7 +122,7 @@ export function avvisi() {
   try { A.push(...(VISTE.scadenzeAvvisi?.() || [])); } catch {}   // scadenze di oggi e scadute (pages/scadenze.js)
   try { A.push(...(VISTE.pianteAvvisi?.() || [])); } catch {}   // piante da annaffiare o concimare, piante con sete (pages/piante.js)
   A.push(...novitaAvvisi());   // dispositivi nuovi e auto nuove (solo amministratori)
-  const U = Object.keys(S).filter(id => id.startsWith("update.") && S[id].state === "on");
+  const U = idsDi("update").filter(id => S[id].state === "on");
   if (U.length && inHome("aggiornamenti")) A.push({ k: "up:" + U.join(","), ic: "⬆️", b: `${U.length} ${t(U.length === 1 ? "aggiornamento" : "aggiornamenti", U.length === 1 ? "update" : "updates")}`, s: U.slice(0, 3).map(id => esc(String(attr(id, "title") || nm(id)).replace(/\s*(update|aggiornamento)$/i, ""))).join(", "), go: "aggiornamenti" });
   const N = nascosti();
   return A.filter(a => !N[a.k]);
@@ -179,7 +179,7 @@ function automazione(c) {
   }
   const fin = ents("binary_sensor", id => deviceClass(id) === "window"), w = weatherEnt();
   if (tipo("pioggia") && fin.length && w) T.push({ trigger: "state", entity_id: w, to: ["rainy", "pouring", "lightning-rainy", "hail", "snowy-rainy"], not_from: ["rainy", "pouring", "lightning-rainy", "hail", "snowy-rainy"], id: "pioggia" });
-  const up = Object.keys(S).filter(id => id.startsWith("update."));   // gli update hanno quasi sempre una categoria (config): allEnts li scarterebbe
+  const up = idsDi("update").slice();   // gli update hanno quasi sempre una categoria (config): allEnts li scarterebbe
   if (tipo("aggiornamento") && up.length) T.push({ trigger: "state", entity_id: up, from: "off", to: "on", id: "aggiornamento" });
   const msg = "{% set n = trigger.to_state.name %}{% if trigger.id == 'pericolo' %}🚨 {{ n }}: " + t("rilevato!", "detected!") + "{% elif trigger.id == 'allarme' %}🚨 " + t("Allarme scattato", "Alarm triggered") + ": {{ n }}{% elif trigger.id == 'porta' %}🚪 {{ n }} " + t(`aperta da ${R.portaMin} minuti`, `open for ${R.portaMin} minutes`) + "{% elif trigger.id == 'elettro' %}🧺 {{ n | regex_replace('(?i)\\s*(power|potenza|consumo)$', '') }} " + t("ha finito", "is done") + "{% elif trigger.id == 'pioggia' %}🌧️ " + t("Inizia a piovere e ci sono finestre aperte", "It's starting to rain and windows are open") + "{% elif trigger.id == 'aggiornamento' %}⬆️ " + t("Aggiornamento disponibile", "Update available") + ": {{ state_attr(trigger.entity_id, 'title') or n }} {{ state_attr(trigger.entity_id, 'latest_version') or '' }}{% elif trigger.id == 'batteria_bassa' %}🪫 {{ n | regex_replace('(?i)\\s*(battery|batteria)(\\s*(low|bassa))?$', '') }}: " + t("pila scarica", "battery low") + "{% elif trigger.id == 'batteria_attr' %}🪫 {{ n }} " + t("al", "at") + " {{ trigger.to_state.attributes.battery_level }}%{% else %}🪫 {{ n }} " + t("al", "at") + " {{ trigger.to_state.state }}%{% endif %}";
   return { id: "nduja_avvisi", alias: "'Nduja · " + t("avvisi sul telefono", "phone alerts"), description: t("Creata da 'Nduja Dashboard (Home → Avvisi → 📱)", "Created by 'Nduja Dashboard (Home → Alerts → 📱)"),

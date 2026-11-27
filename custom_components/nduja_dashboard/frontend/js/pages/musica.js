@@ -16,7 +16,7 @@ const ha = (id, f) => ((attr(id, "supported_features") || 0) & f) === f;
 const acceso = id => ok(id) && !["off", "standby", "unavailable", "unknown"].includes(S[id].state);
 const suona = id => S[id]?.state === "playing";
 const tipo = id => { const d = String(attr(id, "device_class") || ""); return d === "tv" || /tv|televis|samsung|lg_|bravia|chromecast|fire|apple_tv|shield/i.test(id) ? "📺" : d === "speaker" || /echo|alexa|sonos|nest|home|speaker|cassa|google/i.test(id) ? "🔊" : "🎵"; };
-const STATO = () => ({ playing: t("In riproduzione", "Playing"), paused: t("In pausa", "Paused"), idle: t("Acceso", "Idle"), on: t("Acceso", "On"), off: t("Spento", "Off"), standby: "Standby", buffering: t("Carica…", "Buffering…") });
+const STATO = () => ({ playing: t("In riproduzione", "Playing"), paused: t("In pausa", "Paused"), idle: t("Acceso", "Idle"), on: t("Acceso", "On"), off: t("Spento", "Off"), standby: "Standby", buffering: t("Carica…", "Buffering…"), unavailable: t("Non raggiungibile", "Unavailable"), unknown: t("Stato sconosciuto", "Unknown state") });
 
 function lettore(id, piccolo = false) {
   const a = S[id].attributes, on = acceso(id), img = a.entity_picture, vol = a.volume_level;

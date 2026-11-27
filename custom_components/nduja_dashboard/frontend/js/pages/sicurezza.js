@@ -2,7 +2,7 @@
    telecamere (anteprime, diretta al tocco col lettore di video.js), porte e finestre aperte, fumo, gas, acqua, monossido, movimento. I sensori di pericolo accesi finiscono anche negli Avvisi della Home.
    ⚙️ (amministratori): LAYOUT.sicurezza = { noPericoli:[] (trovati da soli ma senza allarme), pericoli:[] (aggiunti a mano), movimenti: quanti (0 = scheda nascosta), camere: "no" | id di un gruppo } */
 import { S, REG, ACT, CHG, UI, LAYOUT, HOME_EXTRA, VISTE, t, LOC, esc, fnum, nm, nmHA, ok, attr, ents, isOn, ago, card, empty, page, svc, toast, openSheet, closeSheet, render,
-  deviceClass, openings, shortName, areaOf, AREAS, isAdmin, domain, sicuro, PAGES, excluded, myHA, ordina, COLPO } from "../core.js";
+  deviceClass, openings, shortName, areaOf, AREAS, isAdmin, domain, sicuro, PAGES, excluded, myHA, ordina, COLPO, idsDispositivo } from "../core.js";
 import { item, addBtn, scegli, cambia } from "../edit.js";
 import { TRASCINA, riordina, salvaOrdine } from "../trascina.js";
 import { anteprima, telecamere, gruppiCam, gruppoDi } from "../video.js";
@@ -193,7 +193,7 @@ const aperturaDi = a => ["scorrevole", "battente"].includes(a.apertura) ? a.aper
 const disegnoDi = a => formaDi(a) === "cancelletto" ? "cancelletto" : aperturaDi(a);
 /* «tieni aperto»: un interruttore, pulsante o script del cancello che lo tiene aperto (scelto in ✏️, altrimenti trovato dal nome) */
 const TIENI = /tieni.?apert|keep.?open|hold.?open|sempre.?apert|always.?open|apertura.?(fissa|permanente)|fermo.?apert|open.?hold/i;
-const tieniAuto = id => { const d = REG[id]?.device; return d ? Object.keys(S).find(x => x !== id && REG[x]?.device === d && /^(switch|button|input_boolean|script|input_button)\./.test(x) && TIENI.test(x + " " + nmHA(x))) || null : null; };
+const tieniAuto = id => { const d = REG[id]?.device; return d ? idsDispositivo(d).find(x => x !== id && /^(switch|button|input_boolean|script|input_button)\./.test(x) && TIENI.test(x + " " + nmHA(x))) || null : null; };
 const tieniDi = a => a.tieni === "none" ? null : a.tieni && S[a.tieni] ? a.tieni : tieniAuto(a.id);
 const tieniAcceso = a => { const h = tieniDi(a); return !!h && /^(switch|input_boolean)\./.test(h) && S[h].state === "on"; };
 async function tieniAperto(a, on) {
@@ -266,7 +266,7 @@ function statoPorta(a) {
   return { k, aperta: ap || k === "open" || k === "opening" };
 }
 const battPorta = id => { const v = attr(id, "battery_level"); if (v != null && !isNaN(+v)) return +v;
-  const d = REG[id]?.device, b = d && Object.keys(S).find(x => x.startsWith("sensor.") && REG[x]?.device === d && deviceClass(x) === "battery" && ok(x)); return b ? +S[b].state : null; };
+  const d = REG[id]?.device, b = d && idsDispositivo(d).find(x => x.startsWith("sensor.") && deviceClass(x) === "battery" && ok(x)); return b ? +S[b].state : null; };
 const sogliaBatt = () => { const v = +LAYOUT.batterie?.soglia; return v > 0 && v < 100 ? v : 20; };   // la stessa soglia della pagina Batterie
 const puoAprire = id => !!((+attr(id, "supported_features") || 0) & 1);
 const nessunoInCasa = () => { const P = ents("person"); return P.length > 0 && P.every(p => S[p].state !== "home"); };

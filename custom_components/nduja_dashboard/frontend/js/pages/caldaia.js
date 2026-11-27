@@ -8,7 +8,7 @@
    I circuiti della caldaia (clima che non sono il termostato di una stanza) escono dalla pagina Clima finché questa pagina
    è accesa; i termostati veri restano dove sono. In Home la scheda «Caldaia» (HOME_EXTRA). */
 import { S, REG, DEVICES, ACT, CHG, UI, LAYOUT, HOME_EXTRA, DEFAULT_OFF, VISTE, t, IT, LOC, esc, fnum, nm, nmHA, ok, val, attr, unit, card, page, svc, ws, cached,
-  toast, openSheet, closeSheet, render, isAdmin, deviceClass, domain, utenteCfg, sGet, sSet, myHA } from "../core.js";
+  toast, openSheet, closeSheet, render, isAdmin, deviceClass, domain, utenteCfg, sGet, sSet, myHA, VERS } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 import { statistiche, barre } from "../grafici.js";
 
@@ -91,7 +91,7 @@ function eCaldaia(k, E) {
 }
 let memo = { k: "", v: null };
 function trovaTutto() {
-  const c = conf(), key = Object.keys(S).length + ":" + Object.keys(REG).length + ":" + Object.keys(DEVICES).length + ":" + JSON.stringify([c.extra, c.tolti]);
+  const c = conf(), key = VERS.gen + ":" + Object.keys(DEVICES).length + ":" + JSON.stringify([c.extra, c.tolti]);
   if (memo.k === key && memo.v) return memo.v;
   const G = perDispositivo(), tolti = new Set(c.tolti || []), D = [];
   const extra = new Set((c.extra || []).map(id => REG[id]?.device || id).filter(k => G[k]));

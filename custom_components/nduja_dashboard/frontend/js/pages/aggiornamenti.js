@@ -1,12 +1,12 @@
 /* Aggiornamenti: installa dalla plancia quello che Home Assistant propone (Home Assistant, componenti aggiuntivi,
    Marketplace/HACS, firmware). Novità, backup prima di installare, avanzamento, «Installa tutti» (Home Assistant per ultimo), versioni saltate. */
-import { S, ACT, CHG, VISTE, LAYOUT, esc, card, svc, ws, toast, render, openSheet, page, t, isAdmin } from "../core.js";
+import { S, ACT, CHG, VISTE, LAYOUT, esc, card, svc, ws, toast, render, openSheet, page, t, isAdmin, idsDi } from "../core.js";
 import { cambia } from "../edit.js";
 
 const F = { INSTALL: 1, VERSION: 2, PROGRESS: 4, BACKUP: 8, NOTES: 16 };
 const has = (id, f) => ((S[id]?.attributes?.supported_features || 0) & f) === f;
 const A = id => S[id]?.attributes || {};
-const tutte = () => Object.keys(S).filter(id => id.startsWith("update."));
+const tutte = () => idsDi("update").slice();
 const disponibili = () => tutte().filter(id => S[id].state === "on");
 const saltati = () => tutte().filter(id => S[id].state === "off" && A(id).skipped_version && A(id).skipped_version === A(id).latest_version && A(id).installed_version !== A(id).latest_version);
 const installando = id => A(id).in_progress === true || typeof A(id).in_progress === "number";

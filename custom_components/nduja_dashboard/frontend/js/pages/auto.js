@@ -3,7 +3,7 @@
    Tutto viene dal dispositivo dell'auto: batteria, autonomia, ricarica, clima, serrature, posizione e comandi.
    La foto è quella dell'integrazione; se non c'è, la cerco su Wikipedia con marca e modello. */
 import { VERS, memoGen, S, REG, DEVICES, ACT, CHG, LAYOUT, UI, STRIP, HOME_EXTRA, DEFAULT_OFF, t, LOC, esc, fnum, nm, ok, val, attr, unit, W, card, empty, page,
-  svc, toast, go, isAdmin, shortName, deviceClass, km, ago, sGet, sSet, render, openSheet, closeSheet, sicuro, myHA, manca } from "../core.js";
+  svc, toast, go, isAdmin, shortName, deviceClass, km, ago, sGet, sSet, render, openSheet, closeSheet, sicuro, myHA, manca, idsDispositivo } from "../core.js";
 import { cambia, scegli } from "../edit.js";
 
 /* integrazioni delle auto più diffuse (dominio della piattaforma) */
@@ -18,7 +18,7 @@ const lunghezza = id => /^(km|mi|m)$/i.test(unit(id));
 
 /* ---------- riconoscimento delle auto ---------- */
 let memo = { k: "", L: [] };
-function entitaDi(dev) { return Object.keys(S).filter(id => REG[id]?.device === dev && !REG[id]?.hidden); }
+function entitaDi(dev) { return (dev ? idsDispositivo(dev) : Object.keys(S).filter(id => REG[id]?.device === dev)).filter(id => !REG[id]?.hidden); }
 /** sensori trovati da soli (senza le correzioni dell'utente) */
 function rilevati(dev) {
   const E = entitaDi(dev), sens = E.filter(x => x.startsWith("sensor.") && ok(x)), trova = (L, f) => L.find(f) || null;
@@ -353,4 +353,4 @@ const RICHIEDE = {
     t("La trovo da sola quando ha la batteria e l'autonomia o la posizione; altrimenti sceglila qui sotto.", "I find it by myself when it has battery and range or location; otherwise pick it below.")],
   link: [[t("Aggiungi un'integrazione", "Add an integration"), myHA("integrations")]], scegli: ["carAdd", t("Ce l'ho già: scegli l'auto", "I have one: pick the car")],
   anteprima: [["🚗", "Auto", t("in carica · 312 km", "charging · 312 km"), "72%", 72]] };
-page("auto", { richiede: RICHIEDE, title: t("Auto", "Car"), short: "Auto", icon: "🚗", order: 33, show: () => auto().length > 0 || (isAdmin() && (LAYOUT.cars?._hide || []).some(d => DEVICES[d])), badge: () => auto().some(d => inRicarica(ruoli(d))), render: pagina });
+page("auto", { richiede: RICHIEDE, title: t("Auto", "Car"), short: "Auto", icon: "🚗", order: 33.5, show: () => auto().length > 0 || (isAdmin() && (LAYOUT.cars?._hide || []).some(d => DEVICES[d])), badge: () => auto().some(d => inRicarica(ruoli(d))), render: pagina });

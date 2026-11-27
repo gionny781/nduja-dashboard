@@ -13,7 +13,7 @@
    Uso: un segnaposto <div class="vp1" data-keep data-cam="camera.x" data-ruolo="diretta|anteprima"></div> nel codice della pagina;
    il lettore si monta da solo quando compare e si smonta quando sparisce. data-cam è la telecamera della plancia: il flusso
    e il metodo li leggo dalle scelte fatte con ✏️ (diretta = flusso principale, anteprima = flusso leggero, in piccolo e senza comandi). */
-import { S, REG, ACT, LAYOUT, UI, conn, t, esc, nm, nmHA, ok, attr, ws, sGet, sSet, openSheet, closeSheet, render, areaOf, AREAS, toast, $, LOC, ents, excluded, isManual, HOOKS } from "./core.js";
+import { S, REG, ACT, LAYOUT, UI, conn, t, esc, nm, nmHA, ok, attr, ws, sGet, sSet, openSheet, closeSheet, render, areaOf, AREAS, toast, $, LOC, ents, excluded, isManual, HOOKS, idsDi } from "./core.js";
 
 const ORDINE = ["webrtc", "hls", "mjpeg", "foto"];
 const NOME = { webrtc: "WebRTC", hls: "HLS", mjpeg: "MJPEG", foto: t("Foto", "Photo") };
@@ -42,7 +42,7 @@ const SEGNI = /_(sub|main)(_?stream)?(?=_|$)|_(hd|sd|fluent|clear)(?=_|$)/g;
 /** vero se l'entità sembra il flusso leggero di una telecamera */
 export const leggero = id => SEGNO_LEGGERO.test(OBJ(id)) || /\b(sub|sd|fluent)\b/i.test(nmHA(id));
 const radice = id => OBJ(id).replace(SEGNI, "");
-const tutteCam = () => Object.keys(S).filter(id => id.startsWith("camera."));
+const tutteCam = () => idsDi("camera").slice();
 const dispositivo = id => REG[id]?.device || null;
 /* telecamere tecniche dello stesso apparecchio che non contano come «principale» (mappe, istantanee, PTZ…) */
 const TECNICA = /map|snapshot|istantane|ptz|transcod/i;

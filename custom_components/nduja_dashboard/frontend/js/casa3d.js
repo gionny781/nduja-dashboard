@@ -7,7 +7,7 @@
    Si ridisegna solo quando serve (gesti, stati che cambiano), niente librerie esterne.
    Sopra il canvas restano in HTML i nomi delle stanze e i dispositivi (gli stessi pallini del 2D): si toccano come nel 2D,
    la pressione lunga apre i dettagli. Modalità leggera: niente bagliori, ombre e tegole; «Riduci movimento»: niente animazioni. */
-import { S, REG, FLOORS, AREAS, ACT, UI, LAYOUT, t, esc, fnum, isOn, ok, attr, sGet, sSet, render, leggera, moreInfo, go, roomTemp, lightsOn, inArea, deviceClass, menoMoto } from "./core.js";
+import { S, REG, FLOORS, AREAS, ACT, UI, LAYOUT, t, esc, fnum, isOn, ok, attr, sGet, sSet, render, leggera, moreInfo, go, roomTemp, lightsOn, inArea, deviceClass, menoMoto, idsDispositivo } from "./core.js";
 import { COL, piani, posizioni, pezzi, proprietari, bordi, mappaAperture, statoAp, unita, altezzaPiano, tetto, finitura, datiFinitura, esterna, posOggetti, nomeStanza, mobili, chiaveMuro } from "./pianta.js";
 import { pezziMobile } from "./arredo.js";
 import { coloreDi } from "./luce.js";
@@ -222,7 +222,7 @@ function corpo(fl, k, g, z0, aperto) {
 const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
 function stanzaRobot(k) {
   const dev = REG[k]?.device, nomi = [attr(k, "current_room"), attr(k, "room"), attr(k, "current_segment")?.name ?? attr(k, "current_segment"), attr(k, "segment_name"),
-    ...(dev ? Object.keys(S).filter(x => x.startsWith("sensor.") && REG[x]?.device === dev && /current_room|current_segment|_room$/.test(x)).map(x => S[x].state) : [])].map(norm).filter(n => n && !["unknown", "unavailable", "none"].includes(n));
+    ...(dev ? idsDispositivo(dev).filter(x => x.startsWith("sensor.") && /current_room|current_segment|_room$/.test(x)).map(x => S[x].state) : [])].map(norm).filter(n => n && !["unknown", "unavailable", "none"].includes(n));
   if (!nomi.length) return null;
   for (const fl of M.floors) for (const a of fl.stanze) { const n = norm(nomeStanza(a, fl.f)); if (nomi.some(x => x === n || (x.length > 3 && (n.includes(x) || x.includes(n))))) return { fl, a }; }
   return null;

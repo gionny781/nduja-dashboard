@@ -9,7 +9,7 @@
    In Home la scheda «La mia squadra» (HOME_EXTRA). Facoltativa l'automazione «'Nduja · squadra»: avviso sul telefono
    al gol o a fine partita, creata su richiesta; si riscrive da sola quando cambiano squadre e fonti. */
 import { S, REG, ACT, CHG, UI, LAYOUT, HOME_EXTRA, HOOKS, t, LOC, esc, nmHA, allEnts, card, page, render, go, isAdmin, ok, pronto,
-  openSheet, closeSheet, toast, cached, svcResp, ws, api, attr, etichettaNduja, sGet, sSet, hhmm, linkHacs } from "../core.js";
+  openSheet, closeSheet, toast, cached, svcResp, ws, api, attr, etichettaNduja, sGet, sSet, hhmm, linkHacs, VERS } from "../core.js";
 import { scegli, cambia } from "../edit.js";
 
 /* ================= riconoscimento ================= */
@@ -46,7 +46,7 @@ const mostra = k => !(C().off || []).includes(k);
    (o se li aggiungi tu). Poi le correzioni di ✏️: fonti unite a mano (con) e fonti tolte (via) */
 let memoR = { k: "", L: [] };
 function rileva() {
-  const c = C(), k = Object.keys(S).length + "|" + Object.keys(REG).length + "|" + JSON.stringify([c.extra, c.tolte, Object.values(c.cfg || {}).map(o => [o.con, o.via])]);
+  const c = C(), k = VERS.gen + "|" + JSON.stringify([c.extra, c.tolte, Object.values(c.cfg || {}).map(o => [o.con, o.via])]);
   if (memoR.k === k) return memoR.L;
   let T = [];
   const metti = (id, tipo, nomi, nome) => {
@@ -625,5 +625,5 @@ const RICHIEDE = {
   link: [[t("Team Tracker in HACS", "Team Tracker in HACS"), linkHacs("vasqued2", "ha-teamtracker")], [t("Guida di Team Tracker", "Team Tracker guide"), DOC_TT]],
   scegli: ["sqAdd", t("Scegli un sensore o un calendario", "Pick a sensor or a calendar")],
   anteprima: [["⚽", t("Casa – Ospiti", "Home – Away"), t("in diretta · 67'", "live · 67'"), "2–1"]] };
-page("squadra", { richiede: RICHIEDE, title: t("La mia squadra", "My team"), short: t("Squadra", "Team"), icon: "⚽", order: 43, editable: true,
+page("squadra", { richiede: RICHIEDE, title: t("La mia squadra", "My team"), short: t("Squadra", "Team"), icon: "⚽", order: 43.5, editable: true,
   show: () => squadre().length > 0, badge: () => squadre().some(q => q.live), render: pagina });
