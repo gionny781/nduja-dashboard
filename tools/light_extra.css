@@ -275,3 +275,8 @@ body.light .en7k.sol b{color:#7a6500}body.light .en7k.imp b{color:#b8140a}body.l
 body.light .en7k.casa b,body.light .en7k.ev b{color:#006a95}body.light .en7k.bat b{color:#7438c2}
 body.light .mt1a .lvp{color:color-mix(in srgb,var(--lv) 52%,#000)}
 body.light .rm1 .ri i.al{color:#8a4f00}
+/* automazioni (0.7.64): frase, chip dei dispositivi, interruttore in pausa */
+body.light .auf1{background:rgba(10,132,255,.08);border-color:rgba(10,100,220,.3)}
+body.light .auch1c{background:rgba(10,132,255,.12);border-color:rgba(10,100,220,.4)}
+body.light .aufc{border-color:rgba(0,0,0,.25)}
+body.light .aut.pz .aut-sw .sw{background:rgba(200,120,0,.5)}

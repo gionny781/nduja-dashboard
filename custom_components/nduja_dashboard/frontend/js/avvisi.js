@@ -63,6 +63,8 @@ export function soglie(id) {
   return { on: +s.threshold || 15, off: +s.fineW || 5, min: +s.fineMin || 3, ciclo: s.cicloMin === 0 ? 0 : (+s.cicloMin || 10), avviso: s.avviso !== false };
 }
 const elettro = () => [...new Set([...allEnts("sensor", id => deviceClass(id) === "power" && ELETTRO.test(id + " " + nm(id)) && ok(id)), ...POTENZE_EXTRA.flatMap(f => { try { return f(); } catch { return []; } }).filter(id => S[id] && ok(id))])];
+/** i sensori di potenza degli elettrodomestici che la plancia segue (anche per «Quando un elettrodomestico finisce» delle automazioni) */
+export const elettrodomestici = () => elettro();
 /** stato del ciclo di un sensore di potenza: { on: inizio (ms) o 0, fine: fine dell'ultimo ciclo (ms) } */
 export const ciclo = id => EL[id] || { on: 0, fine: 0 };
 let EL = {}; try { EL = JSON.parse(sGet("appl") || "{}"); } catch {}

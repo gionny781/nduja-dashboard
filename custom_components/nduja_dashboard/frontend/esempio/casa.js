@@ -559,6 +559,63 @@ export function casaFinta(O = {}) {
     ENT["binary_sensor.meteoalarm"] = st(al === "no" ? "off" : "on", { friendly_name: "Meteoalarm", attribution: "Information provided by MeteoAlarm", ...(al === "no" ? {} : { awareness_level: L[0], awareness_type: L[1], headline: L[2], description: L[3],
       event: L[2], severity: L[0].split("; ")[2], certainty: "Likely", onset: iso(Date.now() - 2 * h), effective: iso(Date.now() - 3 * h), expires: iso(Date.now() + 20 * h), sender_name: "Servizio meteo di prova" }) }); }
   if (!localStorage.getItem("mockNoRadar")) ENT["camera.radar_pioggia"] = st("idle", { friendly_name: "Radar pioggia", entity_picture: IMG + "radar-demo.svg?token=finto", supported_features: 0 });
+  /* automazioni (0.7.64): altre automazioni «fatte in Home Assistant» con la loro configurazione (AUTO_CFG: alcune si modificano nel costruttore,
+     altre si leggono soltanto), la cronologia finta (trace/list, trace/get), un telecomando IKEA con un'entità event.* e i suoi device trigger.
+     LS mockTante = N: N sensori e N/30 automazioni in più, per provare la velocità con migliaia di entità */
+  const faOre = h => new Date(Date.now() - h * 3600e3).toISOString();
+  Object.assign(ENT, {
+    "automation.notte_tapparelle": st("on", { friendly_name: "Notte: tapparelle giù", id: "ha_notte", last_triggered: faOre(9) }),
+    "automation.porta_ingresso_aperta": st("on", { friendly_name: "Porta ingresso aperta", id: "ha_porta", last_triggered: faOre(30) }),
+    "automation.corridoio_notte": st("on", { friendly_name: "Luce del portico col movimento", id: "ha_movimento", last_triggered: faOre(0.4) }),
+    "automation.telecomando_soggiorno": st("on", { friendly_name: "Telecomando: lampadario", id: "ha_pulsante", last_triggered: faOre(2) }),
+    "automation.aggiorna_meteo": st("on", { friendly_name: "Aggiorna il meteo", id: "ha_tempo", last_triggered: faOre(0.1) }),
+    "automation.allarme_scattato": st("on", { friendly_name: "Allarme scattato: luci e avviso", id: "ha_allarme", last_triggered: faOre(200) }),
+    "automation.consumo_alto": st("off", { friendly_name: "Consumo alto", id: "ha_consumo", last_triggered: faOre(50) }),
+    "automation.tv_scenario": st("on", { friendly_name: "Sera: scenario TV", id: "ha_scelta", last_triggered: faOre(20) }),
+    "event.telecomando_ikea_azione": st(faOre(2), { friendly_name: "Telecomando IKEA azione", device_class: "button", event_types: ["on", "off", "brightness_move_up", "brightness_move_down"], event_type: "on" }),
+  });
+  { const n = +localStorage.getItem("mockTante") || 0;
+    for (let i = 0; i < n; i++) ENT["sensor.finto_" + i] = st(String(i % 50), { friendly_name: "Sensore finto " + i, unit_of_measurement: "lx", device_class: "illuminance" });
+    for (let i = 0; i < Math.round(n / 30); i++) ENT["automation.finta_" + i] = st(i % 3 ? "on" : "off", { friendly_name: "Automazione finta " + i, id: "finta_" + i, last_triggered: faOre(i + 1) }); }
+  const AUTO_CFG = {
+    "123": { id: "123", alias: "Luci giardino al tramonto", description: "", trigger: [{ platform: "sun", event: "sunset", offset: "-00:15:00" }], condition: [{ condition: "state", entity_id: "person.anna", state: "home" }],
+      action: [{ service: "light.turn_on", target: { entity_id: "light.giardino" }, data: { brightness_pct: 80 } }], mode: "single" },
+    "456": { id: "456", alias: "Raccolta differenziata", description: "", triggers: [{ trigger: "time", at: "20:00:00" }], conditions: [{ condition: "time", weekday: ["sun", "tue", "thu"] }],
+      actions: [{ action: "notify.mobile_app_telefono_demo", data: { message: "Stasera esponi la raccolta", title: "♻️ Raccolta" } }], mode: "single" },
+    "789": { id: "789", alias: "Vecchia automazione", description: "", triggers: [{ trigger: "template", value_template: "{{ states('sensor.temp_soggiorno') | float(0) > 28 }}" }], conditions: [],
+      actions: [{ action: "switch.turn_on", target: { entity_id: "switch.relay_1" } }], mode: "single" },
+    "irr1": { id: "irr1", alias: "Irrigazione serale", description: "", triggers: [{ trigger: "time", at: "21:00:00" }], conditions: [{ condition: "state", entity_id: "weather.forecast_casa", state: "sunny" }],
+      actions: [{ action: "script.turn_on", target: { entity_id: "script.nduja_irrigazione" }, data: { variables: { zona: "switch.rain_bird_sprinkler_1", minuti: 15 } } }], mode: "single" },
+    "ha_notte": { id: "ha_notte", alias: "Notte: tapparelle giù", description: "Ogni sera feriale", triggers: [{ trigger: "time", at: "23:00:00" }], conditions: [{ condition: "time", weekday: ["mon", "tue", "wed", "thu", "fri"] }],
+      actions: [{ action: "cover.set_cover_position", target: { entity_id: ["cover.tapparella_soggiorno", "cover.tapparella_cucina"] }, data: { position: 0 } }, { action: "light.turn_off", target: { entity_id: ["light.soggiorno", "light.led_tv_soggiorno"] } }], mode: "restart" },
+    "ha_porta": { id: "ha_porta", alias: "Porta ingresso aperta", triggers: [{ trigger: "state", entity_id: "binary_sensor.porta_ingresso", to: "on", for: "00:05:00" }],
+      actions: [{ action: "notify.notify", data: { message: "La porta d'ingresso è aperta da 5 minuti" } }] },
+    "ha_movimento": { id: "ha_movimento", alias: "Luce del portico col movimento", triggers: [{ trigger: "state", entity_id: ["binary_sensor.movimento_ingresso"], to: "on" }],
+      conditions: [{ condition: "state", entity_id: "sun.sun", state: "below_horizon" }],
+      actions: [{ action: "light.turn_on", target: { entity_id: "light.giardino_portico" }, data: { brightness_pct: 40 } }, { delay: { minutes: 2 } }, { action: "light.turn_off", target: { entity_id: "light.giardino_portico" } }], mode: "restart" },
+    "ha_pulsante": { id: "ha_pulsante", alias: "Telecomando: lampadario", triggers: [{ trigger: "device", domain: "zha", device_id: "dev_b_telecomando_ikea", type: "remote_button_short_press", subtype: "turn_on" }],
+      actions: [{ action: "light.toggle", target: { entity_id: "light.soggiorno" } }] },
+    "ha_tempo": { id: "ha_tempo", alias: "Aggiorna il meteo", triggers: [{ trigger: "time_pattern", minutes: "/15" }], actions: [{ action: "homeassistant.update_entity", target: { entity_id: "weather.forecast_casa" } }] },
+    "ha_allarme": { id: "ha_allarme", alias: "Allarme scattato: luci e avviso", triggers: [{ trigger: "state", entity_id: "alarm_control_panel.alarmo", to: "triggered" }],
+      actions: [{ action: "light.turn_on", target: { entity_id: ["light.giardino", "light.soggiorno"] } }, { action: "notify.alexa_media", data: { message: "Attenzione, è scattato l'allarme", target: ["media_player.echo_cucina"], data: { type: "announce" } } },
+        { action: "notify.notify", data: { message: "🚨 Allarme scattato", title: "Allarme" } }] },
+    "ha_consumo": { id: "ha_consumo", alias: "Consumo alto", triggers: [{ trigger: "numeric_state", entity_id: "sensor.grid_power", above: 3000, for: { minutes: 2 } }],
+      actions: [{ action: "notify.mobile_app_iphone_di_mario", data: { message: "Consumo alto: spegni qualcosa" } }] },
+    "ha_scelta": { id: "ha_scelta", alias: "Sera: scenario TV", triggers: [{ trigger: "state", entity_id: "media_player.tv_soggiorno", to: "on" }],
+      actions: [{ choose: [{ conditions: [{ condition: "sun", after: "sunset" }], sequence: [{ action: "scene.turn_on", target: { entity_id: "scene.film" } }] }] }, { action: "light.turn_on", target: { area_id: "soggiorno" } }] },
+  };
+  /* la cronologia finta: le ultime esecuzioni di ogni automazione con l'id */
+  const descr = c => { const x = (c.triggers || c.trigger || [])[0] || {}, p = x.trigger || x.platform, e = [].concat(x.entity_id || [])[0];
+    return p === "state" ? "state of " + e : p === "numeric_state" ? "numeric state of " + e : p === "time_pattern" ? "time pattern" : p || "time"; };
+  const TRACCE = {};
+  const tracce = id => {
+    if (TRACCE[id]) return TRACCE[id];
+    const e = Object.values(ENT).find(x => x.a?.id === id && x.a.last_triggered), c = AUTO_CFG[id] || {}; if (!e) return (TRACCE[id] = []);
+    const t0 = new Date(e.a.last_triggered).getTime(), N = id.startsWith("finta_") ? 2 : 5;
+    return (TRACCE[id] = Array.from({ length: N }, (_, i) => { const s = t0 - i * (id === "ha_tempo" ? 9e5 : 864e5 * (1 + (i % 2))), ex = id === "ha_movimento" && i === 1 ? "failed_conditions" : id === "ha_allarme" && i === 2 ? "error" : "finished";
+      return { domain: "automation", item_id: id, run_id: id + "_r" + i, state: "stopped", script_execution: ex, timestamp: { start: new Date(s).toISOString(), finish: new Date(s + 1200).toISOString() },
+        trigger: i === 3 ? "triggered by action automation.trigger" : descr(c), last_step: ex === "failed_conditions" ? "condition/0" : "action/0", ...(ex === "error" ? { error: "Entity media_player.echo_cucina is unavailable" } : {}) }; }));
+  };
   /* LS mockVia = espressione regolare: toglie tutte le entità finte il cui id le somiglia (es. "^sensor\\.f1_|rain_bird"), per provare «Cosa puoi aggiungere» (0.7.49) */
   { const v = localStorage.getItem("mockVia"); if (v) { const re = new RegExp(v); for (const id of Object.keys(ENT)) if (re.test(id)) delete ENT[id]; } }
   /* LS mockEnt = { entity_id: [stato, {attributi}] | null (la toglie) } cambia gli stati finti; "@+5h" / "@-30m" negli attributi = adesso + 5 ore / − 30 minuti */
@@ -598,6 +655,13 @@ export function casaFinta(O = {}) {
     const m = e.ei.match(/^(?:sensor|binary_sensor|lock)\.(trv_soggiorno|movimento_corridoio|fumo_cucina|telecomando_ikea|serratura_ingresso|allagamento_lavanderia|valvola_bagno)/);
     if (m) e.di = "dev_b_" + m[1]; if (e.ei === "binary_sensor.finestra_soggiorno" || e.ei === "sensor.finestra_soggiorno_battery") e.di = "dev_b_finestra";
     if (/_battery(_low)?$/.test(e.ei) && !/iphone|model_3/.test(e.ei)) e.ec = 1;
+  }
+  /* automazioni (0.7.64): stanze ed etichette, come in Home Assistant */
+  for (const e of REG.entities) {
+    const L = { "automation.notte_tapparelle": ["sera"], "automation.raccolta": ["promemoria"], "automation.porta_ingresso_aperta": ["sicurezza", "promemoria"], "automation.allarme_scattato": ["sicurezza"], "automation.tv_scenario": ["sera"] }[e.ei]; if (L) e.lb = L;
+    const A = { "automation.luci_giardino": "esterno", "automation.corridoio_notte": "esterno", "automation.porta_ingresso_aperta": "corridoio", "automation.notte_tapparelle": "soggiorno", "automation.telecomando_soggiorno": "soggiorno", "automation.tv_scenario": "soggiorno", "automation.irrigazione_serale": "esterno" }[e.ei];
+    if (A) e.ai = A; else if (e.ei.startsWith("automation.") && e.ai) e.ai = null;
+    if (e.ei === "event.telecomando_ikea_azione") { e.di = "dev_b_telecomando_ikea"; e.ai = "soggiorno"; }
   }
   /* qualità dell'aria (0.7.43): dispositivi (il purificatore ha i suoi sensori) e il servizio di fuori */
   for (const e of REG.entities) {
@@ -896,12 +960,12 @@ export function casaFinta(O = {}) {
       if (localStorage.getItem("mockNoUpload")) return Promise.resolve(new Response("Only jpeg, png, and gif images are allowed", { status: 400 }));
       return Promise.resolve(new Response(JSON.stringify({ id: "f1nt0a5b6c7d8e9f", filesize: f?.size || 0, name: f?.name, content_type: f?.type, uploaded_at: new Date().toISOString() }), { status: 200, headers: { "Content-Type": "application/json" } })); }
     const mm = String(url).match(/\/api\/config\/(script|automation)\/config\/([\w-]+)/); if (!mm) return null;
-    const [, tipo, id] = mm, eid = tipo + "." + id, corpo = o?.body ? JSON.parse(o.body) : {};
+    const [, tipo, id] = mm, eid = Object.keys(ENT).find(e => e.startsWith(tipo + ".") && ENT[e].a?.id === id) || tipo + "." + id, corpo = o?.body ? JSON.parse(o.body) : {};
     console.log("API", o?.method || "GET", url, o?.body || "");
     if (o?.method === "DELETE") { delete ENT[eid]; delete MOCK_CFG[eid]; setTimeout(() => window.mockStati?.({ r: [eid] }), 100); }
-    else if (o?.method === "POST") { MOCK_CFG[eid] = corpo; ENT[eid] = st(tipo === "script" ? "off" : "on", { friendly_name: corpo.alias, id }); setTimeout(() => window.mockStati?.({ a: { [eid]: ENT[eid] } }), 300); }
+    else if (o?.method === "POST") { MOCK_CFG[eid] = corpo; ENT[eid] = st(ENT[eid] && tipo === "automation" ? ENT[eid].s : tipo === "script" ? "off" : "on", { ...(ENT[eid]?.a || {}), friendly_name: corpo.alias, id }); setTimeout(() => window.mockStati?.({ a: { [eid]: ENT[eid] } }), 300); }
     /* GET (0.7.48): la configurazione salvata in questa sessione, se c'è (scadenze controlla a quali telefoni scrive l'automazione) */
-    else if (MOCK_CFG[eid]) return Promise.resolve(new Response(JSON.stringify(MOCK_CFG[eid]), { status: 200, headers: { "Content-Type": "application/json" } }));
+    else if (MOCK_CFG[eid] || (tipo === "automation" && AUTO_CFG[id])) return Promise.resolve(new Response(JSON.stringify(MOCK_CFG[eid] || AUTO_CFG[id]), { status: 200, headers: { "Content-Type": "application/json" } }));
     return Promise.resolve(new Response(JSON.stringify({ result: "ok" }), { status: 200, headers: { "Content-Type": "application/json" } }));
   }
   /* assistente vocale (0.7.45): pipeline finte, conversation/process con un «cervello» di prova e assist_pipeline/run con l'audio
@@ -1077,6 +1141,20 @@ export function casaFinta(O = {}) {
         case "todo/item/move": { const L = TODO[m.entity_id]; if (!(TODO_F[m.entity_id] & 8)) throw { code: "not_supported", message: "To-do list does not support To-do item reordering" };
           const i = L.findIndex(x => x.uid === m.uid); if (i < 0) throw { code: "failed", message: "uid" }; const [x] = L.splice(i, 1);
           L.splice(m.previous_uid ? L.findIndex(y => y.uid === m.previous_uid) + 1 : 0, 0, x); console.log("WS", JSON.stringify(m)); setTimeout(() => todoInvia(m.entity_id), 60); return null; }
+        /* automazioni (0.7.64): configurazione, cronologia, prova delle azioni, pulsanti dei dispositivi */
+        case "automation/config": { const e = ENT[m.entity_id]; if (!e) throw { code: "not_found", message: "Entity not found" };
+          const c = MOCK_CFG[m.entity_id] || AUTO_CFG[e.a.id]; if (!c) throw { code: "not_found", message: "Entity not found" }; return { config: JSON.parse(JSON.stringify(c)) }; }
+        case "trace/list": if (localStorage.getItem("mockNoAdmin")) throw { code: "unauthorized", message: "Unauthorized" }; return JSON.parse(JSON.stringify(tracce(m.item_id)));
+        case "trace/get": { const r = tracce(m.item_id).find(x => x.run_id === m.run_id); if (!r) throw { code: "not_found", message: "not found" };
+          const c = Object.entries(ENT).find(([, x]) => x.a?.id === m.item_id), cfg = (c && MOCK_CFG[c[0]]) || AUTO_CFG[m.item_id] || { actions: [] }, A = cfg.actions || cfg.action || [], C = cfg.conditions || cfg.condition || [], tr = { "trigger/0": [{ path: "trigger/0", timestamp: r.timestamp.start }] };
+          C.forEach((_, i) => { tr["condition/" + i] = [{ path: "condition/" + i, timestamp: r.timestamp.start, result: { result: !(r.script_execution === "failed_conditions" && i === 0) } }]; });
+          if (r.script_execution !== "failed_conditions") A.forEach((_, i) => { tr["action/" + i] = [{ path: "action/" + i, timestamp: r.timestamp.start, ...(r.script_execution === "error" && i === 1 ? { error: r.error } : {}) }]; });
+          return { ...r, config: cfg, trace: tr, context: { id: "ctx" } }; }
+        case "execute_script": { console.log("EXECUTE", JSON.stringify(m.sequence));
+          for (const a of m.sequence || []) if (a.action) { const [domain, service] = a.action.split("."); await conn.sendMessagePromise({ type: "call_service", domain, service, service_data: a.data || {}, target: a.target }).catch(() => {}); }
+          return { context: { id: "ctx" }, response: null }; }
+        case "device_automation/trigger/list": return m.device_id === "dev_b_telecomando_ikea" ? [["remote_button_short_press", "turn_on"], ["remote_button_short_press", "turn_off"], ["remote_button_long_press", "dim_up"], ["remote_button_long_press", "dim_down"]]
+          .map(([type, subtype]) => ({ platform: "device", domain: "zha", device_id: m.device_id, type, subtype, metadata: {} })) : [];
         /* pausa di un'automazione: spengo e salvo la scadenza nella sezione «pause» (il vero lo fa Home Assistant) */
         case "nduja_dashboard/pausa": {
           const C = JSON.parse(localStorage.getItem("mockCasa") || "{}"), x = C.pause || { rev: 0, dati: {} }, d = { ...x.dati };
@@ -1147,8 +1225,8 @@ export function casaFinta(O = {}) {
           return { url: brano(m.media_content_id), mime_type: "audio/wav" };
         case "auth/sign_path": return { path: /\/chat_foto\//.test(m.path) ? IMG + "cam-hd.svg?authSig=finto" : m.path + "?authSig=finto" };
         case "get_config": return { version: "2026.10.1", location_name: "Casa", currency: localStorage.getItem("mockValuta") || "EUR" };
-        case "config/label_registry/list": return JSON.parse(localStorage.getItem("mockLabels") || '[{"label_id":"festa","name":"Natale"}]');
-        case "config/label_registry/create": { const L = JSON.parse(localStorage.getItem("mockLabels") || '[{"label_id":"festa","name":"Natale"}]'), l = { label_id: "nduja", name: m.name, icon: m.icon }; L.push(l); localStorage.setItem("mockLabels", JSON.stringify(L)); console.log("WS", JSON.stringify(m)); return l; }
+        case "config/label_registry/list": return JSON.parse(localStorage.getItem("mockLabels") || '[{"label_id":"festa","name":"Natale"},{"label_id":"sera","name":"Sera"},{"label_id":"promemoria","name":"Promemoria"},{"label_id":"sicurezza","name":"Sicurezza"}]');
+        case "config/label_registry/create": { const L = JSON.parse(localStorage.getItem("mockLabels") || '[{"label_id":"festa","name":"Natale"},{"label_id":"sera","name":"Sera"},{"label_id":"promemoria","name":"Promemoria"},{"label_id":"sicurezza","name":"Sicurezza"}]'), l = { label_id: "nduja", name: m.name, icon: m.icon }; L.push(l); localStorage.setItem("mockLabels", JSON.stringify(L)); console.log("WS", JSON.stringify(m)); return l; }
         case "config/entity_registry/get": return { entity_id: m.entity_id, labels: ["casa"], ...(m.entity_id.startsWith("media_player.ma_") ? { config_entry_id: "ma_finta", platform: "music_assistant" } : {}) };
         case "config/entity_registry/update": console.log("WS", JSON.stringify(m)); return { entity_entry: { entity_id: m.entity_id, labels: m.labels } };
         case "call_service":
@@ -1197,6 +1275,10 @@ export function casaFinta(O = {}) {
             if (nuovo === "returning") MOV[id] = setTimeout(() => { e.s = "docked"; e.a = { ...e.a, status: "charging", charging: true }; manda(); }, 9000); }
           /* tapparelle (0.7.42): si muovono davvero, un 5% ogni 350 ms (quelle senza posizione in 3 secondi) */
           if (m.domain === "cover") mockCover(m);
+          /* automazioni (0.7.64): accese, spente, eseguite */
+          if (m.domain === "automation") for (const id of [].concat(m.target?.entity_id || m.service_data?.entity_id || [])) { const e = ENT[id]; if (!e) continue;
+            if (m.service === "trigger") e.a = { ...e.a, last_triggered: new Date().toISOString() }; else e.s = m.service === "toggle" ? (e.s === "on" ? "off" : "on") : m.service === "turn_on" ? "on" : "off";
+            setTimeout(() => window.mockStati?.({ c: { [id]: { "+": { s: e.s, a: e.a } } } }), 80); }
           /* aria (0.7.43): purificatori, umidificatori e deumidificatori cambiano davvero */
           if (["fan", "humidifier", "homeassistant", "number"].includes(m.domain)) mockAria(m);
           /* luci e interruttori: lo stato cambia davvero, come in Home Assistant (anche i membri dei gruppi) */

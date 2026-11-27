@@ -311,3 +311,13 @@ cambiandola tra un caricamento e l'altro compare la copia «prima dell'aggiornam
 ```bash
 LS='{"mockVersione":"0.7.63-dev"}' node tools/mock/shot.mjs impostazioni 1280 900 copie.png '[data-act="cpApri"]'
 ```
+
+**Automazioni** (0.7.64): oltre a `automation.luci_giardino`, `raccolta`, `vecchia` e `irrigazione_serale` ci sono altre automazioni «fatte in Home Assistant» con la loro
+configurazione (`AUTO_CFG` in `casa.js`: alcune si modificano nel costruttore, altre — modello, `time_pattern`, `choose`, script con variabili — si leggono soltanto),
+stanze ed etichette («Sera», «Promemoria», «Sicurezza»), la cronologia finta (`trace/list`, `trace/get`, con una esecuzione fermata dalle condizioni e una con errore),
+`execute_script` («Prova ora»), il telecomando IKEA con `event.telecomando_ikea_azione` e i suoi `device_automation/trigger/list`. Con `mockNoAdmin` la cronologia risponde
+`unauthorized`; con `mockTante` = N ci sono N sensori e N/30 automazioni in più (velocità). La prova completa del costruttore e delle ricette:
+```bash
+node tools/mock/automazioni.mjs              # configurazioni attese, giro salva → riapri → salva, frasi, velocità
+TANTE=3000 node tools/mock/automazioni.mjs   # con 3000 entità in più
+```

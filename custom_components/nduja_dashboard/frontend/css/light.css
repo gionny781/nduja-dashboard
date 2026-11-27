@@ -190,6 +190,15 @@ body.light .bcc1 button{background:rgba(0,0,0,0.025)!important}
 body.light .bcdt1{background:rgba(0,0,0,0.040)!important}
 body.light .aut-i{background:rgba(0,0,0,0.035)!important}
 body.light .aut-x:hover,body.light .aut-x:focus-visible{background:rgba(0,0,0,0.025)!important}
+body.light .au1gr select{background:rgba(0,0,0,0.040)!important}
+body.light .au1na{background:rgba(0,0,0,0.020)!important}
+body.light .aufc{border:1px solid rgba(0,0,0,0.280)!important}
+body.light .au3h select{background:rgba(0,0,0,0.040)!important}
+body.light .auch1c button:hover,body.light .auch1c button:focus-visible{background:rgba(0,0,0,0.050)!important}
+body.light .auch1a{border:1.5px dashed rgba(0,0,0,0.210)!important}
+body.light .au1st{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.042)!important}
+body.light .aur1b{background:rgba(0,0,0,0.030)!important;border:1px solid rgba(0,0,0,0.056)!important}
+body.light .aur1b:hover,body.light .aur1b:focus-visible{background:rgba(0,0,0,0.050)!important}
 body.light .md1now{background:rgba(0,0,0,0.030)!important}
 body.light .md1pw{background:rgba(0,0,0,0.050)!important;border:1px solid rgba(0,0,0,0.070)!important}
 body.light .md1at{background:rgba(0,0,0,0.040)!important;border:1px solid rgba(0,0,0,0.056)!important}
@@ -468,6 +477,12 @@ body.light .sg1v{background:rgba(0,0,0,0.030)!important}
 :where(body.light) .bcb1.warn{color:#8f5700}
 :where(body.light) .bcw1f small.poco{color:#8f5700}
 :where(body.light) .aut.pz .aut-t small{color:#8f5700}
+:where(body.light) .au3o{color:#006b97}
+:where(body.light) .au1st.ok .au1ste{color:#1a7631}
+:where(body.light) .au1st.bad .au1ste{color:#ce0b00}
+:where(body.light) .au1st.info .au1ste{color:#0063c7}
+:where(body.light) .au1st.warn .au1ste{color:#8f5700}
+:where(body.light) .bad1{color:#ce0b00}
 :where(body.light) .md1pw.on{color:#ce0b00}
 :where(body.light) .md1ap.ora small::before{color:#1a7631}
 :where(body.light) .ir1fc div.wet b{color:#0064c4}
@@ -858,4 +873,9 @@ body.light .en7k.sol b{color:#7a6500}body.light .en7k.imp b{color:#b8140a}body.l
 body.light .en7k.casa b,body.light .en7k.ev b{color:#006a95}body.light .en7k.bat b{color:#7438c2}
 body.light .mt1a .lvp{color:color-mix(in srgb,var(--lv) 52%,#000)}
 body.light .rm1 .ri i.al{color:#8a4f00}
+/* automazioni (0.7.64): frase, chip dei dispositivi, interruttore in pausa */
+body.light .auf1{background:rgba(10,132,255,.08);border-color:rgba(10,100,220,.3)}
+body.light .auch1c{background:rgba(10,132,255,.12);border-color:rgba(10,100,220,.4)}
+body.light .aufc{border-color:rgba(0,0,0,.25)}
+body.light .aut.pz .aut-sw .sw{background:rgba(200,120,0,.5)}
 

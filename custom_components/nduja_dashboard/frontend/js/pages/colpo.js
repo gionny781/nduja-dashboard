@@ -23,21 +23,21 @@ const nuovoId = () => Date.now().toString(36) + Math.random().toString(36).slice
 /* ================= cosa si può mettere ================= */
 /** domini che si possono aggiungere come tessera */
 const DOMINI = ["light", "switch", "fan", "input_boolean", "climate", "cover", "lock", "valve", "scene", "script", "button", "input_button", "sensor", "binary_sensor",
-  "number", "input_number", "person", "camera", "media_player", "alarm_control_panel", "humidifier", "vacuum", "siren"];
+  "number", "input_number", "person", "camera", "media_player", "alarm_control_panel", "humidifier", "vacuum", "siren", "automation"];
 const FILTRI = () => [["", t("Tutti", "All")], ["luci", "💡 " + t("Luci", "Lights")], ["prese", "🔌 " + t("Interruttori", "Switches")], ["clima", "🌡️ " + t("Clima", "Climate")],
-  ["tapp", "🪟 " + t("Tapparelle e cancelli", "Covers and gates")], ["serr", "🔒 " + t("Serrature", "Locks")], ["scene", "🎬 " + t("Scene e script", "Scenes and scripts")],
+  ["tapp", "🪟 " + t("Tapparelle e cancelli", "Covers and gates")], ["serr", "🔒 " + t("Serrature", "Locks")], ["scene", "🎬 " + t("Scene, script e automazioni", "Scenes, scripts and automations")],
   ["sens", "📈 " + t("Sensori", "Sensors")], ["pers", "👤 " + t("Persone", "People")], ["cam", "📷 " + t("Telecamere", "Cameras")], ["media", "📺 Media"], ["altro", "• " + t("Altro", "Other")]];
 function gruppoDom(id) {
   const d = domain(id);
   if (d === "light" || isLightSwitch(id)) return "luci";
-  return { switch: "prese", input_boolean: "prese", fan: "prese", climate: "clima", humidifier: "clima", cover: "tapp", valve: "tapp", lock: "serr", scene: "scene", script: "scene",
+  return { switch: "prese", input_boolean: "prese", fan: "prese", climate: "clima", humidifier: "clima", cover: "tapp", valve: "tapp", lock: "serr", scene: "scene", script: "scene", automation: "scene",
     button: "scene", input_button: "scene", sensor: "sens", binary_sensor: "sens", number: "sens", input_number: "sens", person: "pers", camera: "cam", media_player: "media" }[d] || "altro";
 }
 const aggiungibile = id => DOMINI.includes(domain(id)) && !REG[id]?.hidden;
 
 /* icone di partenza */
 const ICO_DOM = { switch: "🔌", fan: "🌀", input_boolean: "🔘", climate: "🌡️", cover: "🪟", lock: "🔒", valve: "🚰", scene: "🎬", script: "▶️", button: "⏺", input_button: "⏺",
-  sensor: "📈", binary_sensor: "🔘", number: "🔢", input_number: "🔢", person: "👤", camera: "📷", media_player: "📺", alarm_control_panel: "🛡️", humidifier: "💧", vacuum: "🤖", siren: "🚨" };
+  sensor: "📈", binary_sensor: "🔘", number: "🔢", input_number: "🔢", person: "👤", camera: "📷", media_player: "📺", alarm_control_panel: "🛡️", humidifier: "💧", vacuum: "🤖", siren: "🚨", automation: "🔁" };
 const ICO_DC = { temperature: "🌡️", humidity: "💧", power: "⚡", energy: "⚡", battery: "🔋", illuminance: "☀️", carbon_dioxide: "🫧", pm25: "🌫️", pm10: "🌫️", gas: "🔥",
   water: "🚰", pressure: "🧭", wind_speed: "💨", precipitation: "🌧️", voltage: "⚡", current: "⚡", monetary: "💶", duration: "⏱️", timestamp: "🕒",
   door: "🚪", window: "🪟", garage_door: "🚗", opening: "🚪", motion: "🏃", occupancy: "👤", presence: "👤", moisture: "💧", smoke: "🔥", carbon_monoxide: "☠️",
@@ -206,6 +206,12 @@ function contenuto(id, T) {
   } else if (d === "lock") {
     const L = s.state === "locked"; r.cls = L ? "" : "on"; r.v = L ? t("Chiusa", "Locked") : s.state === "unlocked" ? t("Aperta", "Unlocked") : s.state;
     r.sub = L ? t("tocca per aprire", "tap to unlock") : t("tocca per chiudere", "tap to lock");
+  } else if (d === "automation") {
+    /* automazione (0.7.64): interruttore; in pausa dice fino a quando (pages/automazioni.js) */
+    const pz = VISTE.autoPausa?.(id), acc = s.state === "on" && !pz;
+    r.cls = acc ? "on" : ""; r.v = pz ? t("In pausa", "Paused") : acc ? t("Accesa", "On") : t("Spenta", "Off"); r.txt = true;
+    r.sub = pz ? t("fino a ", "until ") + hhmm(pz) : a.last_triggered ? t("ultima volta ", "last ran ") + ago(a.last_triggered) : t("mai partita", "never ran");
+    if (T.d !== "s") r.ctl = `<span class="sw ${acc ? "on" : ""}" aria-hidden="true"><i></i></span>`;
   } else if (d === "scene" || d === "script" || d === "button" || d === "input_button") {
     r.cls = d === "script" && s.state === "on" ? "on" : ""; r.sub = d === "script" && s.state === "on" ? t("in corso…", "running…") : d === "scene" ? t("tocca per attivarla", "tap to activate") : t("tocca per avviarlo", "tap to run");
   } else if (d === "sensor" || d === "number" || d === "input_number") {
@@ -337,6 +343,7 @@ function tocco(el) {
   if (d === "scene" || d === "script") return svc(d, "turn_on", {}, tg).then(() => toast((d === "scene" ? "🎬 " : "▶️ ") + nomeT(T)));
   if (d === "button" || d === "input_button") return svc(d, "press", {}, tg).then(() => toast("⏺ " + nomeT(T)));
   if (d === "climate") return svc("climate", s === "off" ? "turn_on" : "turn_off", {}, tg);
+  if (d === "automation") return VISTE.autoTocca ? VISTE.autoTocca(id) : svc("automation", s === "on" ? "turn_off" : "turn_on", {}, tg);
   if (d === "media_player") return svc("media_player", ["playing", "paused"].includes(s) ? "media_play_pause" : "toggle", {}, tg);
   if (d === "alarm_control_panel" && COLPO.allarme) return openSheet(() => `<div class="sh-head"><div><h3>🛡️ ${esc(t("Allarme", "Alarm"))}</h3></div><button class="x" data-act="sheetClose">×</button></div><div class="stack">${COLPO.allarme.render()}</div>`);
   if (d === "vacuum") return svc("vacuum", s === "cleaning" ? "return_to_base" : "start", {}, tg);

@@ -991,29 +991,29 @@ export const PAGINE = [
   {
     id: "automazioni", scatto: { p: "automazioni" },
     it: {
-      sotto: "Le automazioni come tasti, e i Momenti.",
-      serve: "Ogni automazione è un tasto: verde accesa, grigio spenta. La **pausa** la ferma per un po' e Home Assistant la riaccende da solo. Un costruttore semplice crea automazioni nuove; i **Momenti** sono pulsanti della Home che fanno più cose insieme.",
+      sotto: "Accendi, spegni, metti in pausa e crea le automazioni.",
+      serve: "Ogni automazione ha un **interruttore** e «ultima volta: 2 h fa», divise per stanza o etichetta. Toccandone una leggi **in italiano cosa fa** e le ultime 5 volte che è partita. Il costruttore **Quando → Solo se → Allora** e le **ricette pronte** ne creano di nuove senza YAML.",
       tocchi: [
-        "**Tocco**: accende o spegne l'automazione.",
-        "**⋯**: pausa (1 ora, 4 ore, fino a domattina, una settimana), Esegui adesso, Mostra in Home, Nascondi da qui.",
-        "**＋ Nuova automazione**: il costruttore semplice. I Momenti si creano dalla Home, con «＋ Nuovo momento».",
+        "**Nome**: la frase, la cronologia, la **pausa** (1 ora, 4 ore, fino a domattina, a scelta), Esegui, Modifica, Duplica. **Spegni tutte** di un gruppo chiede un secondo tocco.",
+        "**＋ Nuova automazione**: soglie, porte aperte da N minuti, movimento, pulsanti, elettrodomestico finito, allarme, calendario, pioggia; luci col colore, «per N minuti», tapparelle, clima, Alexa. **Prova ora** fa subito le azioni.",
+        "**📚 Ricette pronte**: solo per i dispositivi che hai; salva o ritocca.",
       ],
-      sola: "Le automazioni e gli script creati dalla plancia hanno l'etichetta «'Nduja» in Home Assistant.",
+      sola: "Quelle fatte in Home Assistant si modificano qui solo se il costruttore le riscrive identiche; prima di cambiarne una tiene la versione di prima («Rimetti com'era prima»).",
       consigli: [
-        "Le preferite in «Mostra in Home» diventano una scheda della Home.",
+        "Chi non è amministratore accende, spegne e mette in pausa. I **Momenti** si creano dalla Home.",
       ],
     },
     en: {
-      sotto: "Automations as buttons, and Moments.",
-      serve: "Each automation is a button: green on, grey off. **Pause** stops it for a while and Home Assistant turns it back on by itself. A simple builder creates new automations; **Moments** are Home buttons that do several things at once.",
+      sotto: "Turn on, off, pause and create automations.",
+      serve: "Every automation has a **switch** and «last ran: 2 h ago», grouped by room or label. Tap one to read **in plain words what it does** and its latest 5 runs. The **When → Only if → Then** builder and the **ready-made recipes** create new ones without YAML.",
       tocchi: [
-        "**Tap**: turns the automation on or off.",
-        "**⋯**: pause (1 hour, 4 hours, until morning, a week), Run now, Show on Home, Hide from here.",
-        "**＋ New automation**: the simple builder. Moments are created on Home, with «＋ New moment».",
+        "**Name**: the sentence, the history, the **pause** (1 hour, 4 hours, until morning, your choice), Run, Edit, Duplicate. **Turn all off** for a group needs a second tap.",
+        "**＋ New automation**: thresholds, doors open for N minutes, motion, buttons, appliance done, alarm, calendar, rain; lights with colour, «for N minutes», covers, climate, Alexa. **Try now** runs the actions right away.",
+        "**📚 Ready-made recipes**: only for the devices you have; save or fine-tune.",
       ],
-      sola: "Automations and scripts created by the dashboard get the «'Nduja» label in Home Assistant.",
+      sola: "Automations made in Home Assistant are edited here only if the builder rewrites them identically; before changing one it keeps the previous version («Put back as it was»).",
       consigli: [
-        "Favourites in «Show on Home» become a Home card.",
+        "Non-admins can turn on, off and pause. **Moments** are created on Home.",
       ],
     },
   },
