@@ -161,7 +161,7 @@ export const TESTI = {
           { ol: [
             "Controlla che il dispositivo sia in rete e raggiunga Home Assistant (Wi-Fi, dati, VPN).",
             "**Dopo un aggiornamento** di 'Nduja: **riavvia Home Assistant**, poi ricarica la pagina; se serve, svuota la cache del browser o dell'app.",
-            "Tocca **Riprova**. Se non si sistema, apri una segnalazione su GitHub e incolla i **Dettagli per l'assistenza** che trovi sotto «Riprova».",
+            "Tocca **Riprova**. Se non si sistema, tocca **🐞 Segnala il problema**: la plancia prepara la segnalazione per GitHub con i dettagli che servono, senza dati personali.",
           ] },
           { h: "Vedo una casa che non è la mia" },
           { p: "Sei nella **casa di esempio**: lo dice la fascia arancione in alto. Tocca **Esci** e torni alla tua casa, com'era. Niente di quello che hai toccato lì è arrivato a Home Assistant." },
@@ -376,7 +376,7 @@ export const TESTI = {
           { ol: [
             "Check that the device is online and can reach Home Assistant (Wi-Fi, mobile data, VPN).",
             "**After updating** 'Nduja: **restart Home Assistant**, then reload the page; if needed, clear the browser's or app's cache.",
-            "Tap **Try again**. If it doesn't fix itself, open an issue on GitHub and paste the **Details for support** you find under «Try again».",
+            "Tap **Try again**. If it doesn't fix itself, tap **🐞 Report the problem**: the dashboard prepares the GitHub report with the details needed, no personal data.",
           ] },
           { h: "I see a home that isn't mine" },
           { p: "You're in the **sample home**: the orange strip at the top says so. Tap **Exit** and you're back to your home, as it was. Nothing you touched there reached Home Assistant." },

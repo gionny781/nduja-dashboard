@@ -1,0 +1,6 @@
+# le segnalazioni preparate dalla plancia arrivano già compilate (titolo e testo nell'indirizzo): servono le segnalazioni libere
+blank_issues_enabled: true
+contact_links:
+  - name: "📖 Manuale di istruzioni · User manual"
+    url: https://github.com/gionny781/nduja-dashboard#readme
+    about: "Come si usa ogni pagina (anche in PDF da ⚙️ Impostazioni) · How every page works (also as a PDF from ⚙️ Settings)"

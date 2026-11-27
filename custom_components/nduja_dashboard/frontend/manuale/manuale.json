@@ -1,9 +1,9 @@
 {
- "versione": "0.7.62-dev",
- "data": "2026-11-26",
+ "versione": "0.7.63-dev",
+ "data": "2026-11-27",
  "it": {
-  "byte": 5730606,
-  "pagine": 57,
+  "byte": 5924630,
+  "pagine": 59,
   "indice": [
    "Benvenuto",
    "Installazione in breve",
@@ -15,8 +15,8 @@
   ]
  },
  "en": {
-  "byte": 5674321,
-  "pagine": 57,
+  "byte": 5859597,
+  "pagine": 59,
   "indice": [
    "Welcome",
    "Installation in short",

@@ -5,6 +5,21 @@
 //   clic = selettori da toccare separati da |, ora = ora ferma, chiaro = tema chiaro, scorri = selettore da portare in cima, alto = altezza dello schermo.
 // Testi: **grassetto**; «tocchi» e «consigli» sono elenchi. Niente termini tecnici se non servono.
 
+/* copie di sicurezza per la schermata (0.7.63): quattro copie inventate; all'apertura il finto Home Assistant aggiunge «prima dell'aggiornamento a 0.7.63» */
+const COPIE_PROVA = (() => {
+  const dati = {}, copie = [
+    ["giorno", "2026-11-25T02:12:00+00:00", "Mario", "0.7.62-dev", {}],
+    ["guidata", "2026-11-23T17:40:00+00:00", "Mario", "0.7.62-dev", {}],
+    ["giorno", "2026-11-22T02:12:00+00:00", "Anna, Mario", "0.7.62-dev", {}],
+    ["aggiornamento", "2026-11-20T08:05:00+00:00", null, "0.7.61-dev", { da: "0.7.61-dev", a: "0.7.62-dev" }],
+  ].map(([motivo, ts, chi, versione, param], i) => {
+    const j = JSON.stringify({ casa: { faccende: { lavori: Array.from({ length: 30 + i * 9 }, (_, k) => ({ id: "f" + k, nome: "Faccenda " + k })) } }, layout: { configured: true, prova: i } });
+    dati["h" + i] = { j, byte: 2600 + i * 700, grezzi: j.length };
+    return { id: "c" + i, ts, motivo, param, chi, versione, h: "h" + i };
+  });
+  return JSON.stringify({ versione: "0.7.62-dev", copie, dati, chi: [] });
+})();
+
 export const PAGINE = [
   {
     id: "home", scatto: { p: "home" },
@@ -1062,32 +1077,94 @@ export const PAGINE = [
     id: "impostazioni", scatto: { p: "impostazioni" },
     it: {
       sotto: "Il manuale, le scelte di questo dispositivo e quelle della casa.",
-      serve: "In alto questo **manuale** e la **🏡 casa di esempio**. Poi **📱 Questo dispositivo** (tema, leggibilità, pagina iniziale, salvaschermo, grafica, chiosco), **🎨 Aspetto** (sfondi), **🎙️ Assistente vocale** e, per gli amministratori, la procedura guidata, la plancia per persona, ✨ Cosa puoi aggiungere e 🩺 Controlla Home Assistant.",
+      serve: "In alto questo **manuale** e la **🏡 casa di esempio**. Poi **📱 Questo dispositivo** (tema, leggibilità, pagina iniziale, salvaschermo, grafica, chiosco), **🎨 Aspetto** (sfondi), **🎙️ Assistente vocale** e, per gli amministratori, la procedura guidata, la plancia per persona, ✨ Cosa puoi aggiungere, 🩺 Controlla Home Assistant e 🛟 Copie di sicurezza. Per tutti c'è 🐞 Segnala un problema.",
       tocchi: [
         "**📖 Apri / ⬇️ Scarica PDF**: questo manuale.",
         "**👀 Prova la casa di esempio**: una casa inventata dentro la plancia; niente arriva a Home Assistant.",
         "**🔠 Leggibilità**: testo più grande, contrasto alto, movimento ridotto (solo su questo dispositivo).",
         "**Riavvia il wizard**: riparte da Automatica o Manuale (le pagine create da te restano).",
-        "**⬇️ Esporta / ⬆️ Importa**: un file con tutte le scelte della plancia.",
+        "**⬇️ Esporta / ⬆️ Importa**: un file con tutte le scelte della plancia (prima di importare la plancia fa una copia di sicurezza).",
       ],
       sola: "Chi non è amministratore vede solo le scelte del suo dispositivo, l'aspetto e l'assistente vocale.",
       consigli: [
-        "Esporta le impostazioni ogni tanto: è il backup della tua plancia.",
+        "Le **copie di sicurezza** si fanno da sole; «Esporta» serve per avere un file tuo o per portare la plancia su un altro Home Assistant.",
       ],
     },
     en: {
       sotto: "The manual, this device's choices and the home's.",
-      serve: "At the top, this **manual** and the **🏡 sample home**. Then **📱 This device** (theme, readability, start page, screensaver, graphics, kiosk), **🎨 Appearance** (backgrounds), **🎙️ Voice assistant** and, for admins, the setup wizard, per-person dashboard, ✨ What you can add and 🩺 Check Home Assistant.",
+      serve: "At the top, this **manual** and the **🏡 sample home**. Then **📱 This device** (theme, readability, start page, screensaver, graphics, kiosk), **🎨 Appearance** (backgrounds), **🎙️ Voice assistant** and, for admins, the setup wizard, per-person dashboard, ✨ What you can add, 🩺 Check Home Assistant and 🛟 Safety copies. Everyone has 🐞 Report a problem.",
       tocchi: [
         "**📖 Open / ⬇️ Download PDF**: this manual.",
         "**👀 Try the sample home**: a made-up home inside the dashboard; nothing reaches Home Assistant.",
         "**🔠 Readability**: larger text, high contrast, reduced motion (this device only).",
         "**Restart the wizard**: starts again from Automatic or Manual (pages you created are kept).",
-        "**⬇️ Export / ⬆️ Import**: a file with every dashboard choice.",
+        "**⬇️ Export / ⬆️ Import**: a file with every dashboard choice (before importing, the dashboard makes a safety copy).",
       ],
       sola: "Non-admins only see their device's choices, appearance and voice assistant.",
       consigli: [
-        "Export your settings now and then: it's your dashboard's backup.",
+        "**Safety copies** are made by themselves; «Export» is for keeping a file of your own or moving the dashboard to another Home Assistant.",
+      ],
+    },
+  },
+  {
+    id: "copie", dopo: "impostazioni", icona: "🛟", scatto: { p: "impostazioni", ls: { mockVersione: "0.7.63-dev", mockCopie: COPIE_PROVA }, clic: '[data-act="cpApri"]', attesa: 1200 },
+    it: {
+      titolo: "Copie di sicurezza",
+      sotto: "Le scelte della casa si salvano da sole: se qualcosa va storto, torni indietro.",
+      serve: "Home Assistant salva da solo una **copia delle scelte della casa** (scelte della plancia e dati di Colpo d'occhio, Faccende, Bacheca, Liste, Piante…) **prima di ogni cambiamento grosso** (procedura guidata, importazione, ripristino, «Ricomincia dal benvenuto», aggiornamento di 'Nduja) e **una volta al giorno** se qualcosa è cambiato. Tiene le ultime 10 copie più l'ultima di ognuna delle 3 versioni di 'Nduja più recenti; sono compresse e stanno in Home Assistant, quindi valgono per tutti i dispositivi.",
+      tocchi: [
+        "**⚙️ Impostazioni → 🛟 Copie di sicurezza → Apri**: l'elenco con data, motivo, chi ha fatto il cambiamento e dimensione.",
+        "**↩️ Ripristina**: dice cosa cambierà, poi rimette la copia; prima fa una copia di adesso, così puoi sempre tornare indietro.",
+        "**⬇️**: scarica la copia come file (si ricarica con «Importa le impostazioni»). **🗑**: la elimina (tocca due volte).",
+      ],
+      sola: "Solo per gli amministratori. Ripristinare non tocca dispositivi né automazioni di Home Assistant; restano fuori le cose del momento, come le pause delle automazioni e l'irrigazione in corso.",
+      consigli: [
+        "Le copie sono anche nei backup di Home Assistant: se rifai Home Assistant da un backup, tornano anche loro.",
+      ],
+    },
+    en: {
+      titolo: "Safety copies",
+      sotto: "The home's choices save themselves: if something goes wrong, you go back.",
+      serve: "Home Assistant saves by itself a **copy of the home's choices** (dashboard choices and the data of At a glance, Chores, Board, Lists, Plants…) **before every big change** (setup wizard, import, restore, «Restart from the welcome screen», 'Nduja update) and **once a day** if something changed. It keeps the latest 10 copies plus the latest of each of the 3 most recent 'Nduja versions; they're compressed and stored in Home Assistant, so they apply to every device.",
+      tocchi: [
+        "**⚙️ Settings → 🛟 Safety copies → Open**: the list with date, reason, who made the change and size.",
+        "**↩️ Restore**: tells you what will change, then puts the copy back; first it makes a copy of now, so you can always go back.",
+        "**⬇️**: downloads the copy as a file (load it back with «Import settings»). **🗑**: deletes it (tap twice).",
+      ],
+      sola: "Admins only. Restoring doesn't touch Home Assistant devices or automations; things of the moment stay out, like automation pauses and watering in progress.",
+      consigli: [
+        "The copies are also in Home Assistant's backups: if you rebuild Home Assistant from a backup, they come back too.",
+      ],
+    },
+  },
+  {
+    id: "segnala", dopo: "impostazioni", icona: "🐞", scatto: { p: "impostazioni", clic: '[data-act="sgApri"]' },
+    it: {
+      titolo: "Segnala un problema",
+      sotto: "Qualcosa non va o hai un'idea? Un tocco e la segnalazione è pronta.",
+      serve: "**⚙️ Impostazioni → 🐞 Segnala un problema** (anche nella schermata «La plancia non riesce a partire») prepara una segnalazione per GitHub: scegli il tipo (non funziona, si vede male, va lento, idea), scrivi cosa è successo e la plancia aggiunge da sola **i dettagli che servono**: versioni di 'Nduja e di Home Assistant, browser e dispositivo, lingua, grafica e fluidità, quante entità e pagine, la pagina aperta e gli ultimi errori con file e riga.",
+      tocchi: [
+        "**Tocco su una riga dei dettagli**: la togli (diventa barrata); il riquadro sotto mostra **esattamente** cosa verrà inviato.",
+        "**↗ Apri su GitHub**: apre la segnalazione già compilata; se il testo è troppo lungo lo copia negli appunti e ti dice di incollarlo.",
+        "**📋 Copia**: mette tutto negli appunti, per incollarlo dove vuoi.",
+      ],
+      sola: "**Niente dati personali**: niente nomi di entità, indirizzi IP o web, posizione o persone. Non parte niente da solo: la invii tu, su GitHub (serve un account gratuito).",
+      consigli: [
+        "Scrivi cosa stavi facendo e cosa ti aspettavi: aiuta più di ogni dettaglio tecnico.",
+      ],
+    },
+    en: {
+      titolo: "Report a problem",
+      sotto: "Something's wrong or have an idea? One tap and the report is ready.",
+      serve: "**⚙️ Settings → 🐞 Report a problem** (also on the «The dashboard can't start» screen) prepares a GitHub report: pick the kind (doesn't work, looks wrong, slow, idea), write what happened and the dashboard adds **the details needed** by itself: 'Nduja and Home Assistant versions, browser and device, language, graphics and smoothness, how many entities and pages, the open page and the latest errors with file and line.",
+      tocchi: [
+        "**Tap a details line**: it's removed (struck through); the box below shows **exactly** what will be sent.",
+        "**↗ Open on GitHub**: opens the report already filled in; if the text is too long it copies it to the clipboard and tells you to paste it.",
+        "**📋 Copy**: puts everything on the clipboard, to paste wherever you like.",
+      ],
+      sola: "**No personal data**: no entity names, IP or web addresses, location or people. Nothing is sent by itself: you send it, on GitHub (a free account is needed).",
+      consigli: [
+        "Write what you were doing and what you expected: it helps more than any technical detail.",
       ],
     },
   },

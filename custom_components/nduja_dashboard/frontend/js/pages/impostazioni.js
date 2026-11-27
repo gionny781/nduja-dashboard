@@ -10,15 +10,18 @@ import { controllaCard } from "../controlla.js";
 import { assistenteCard } from "../assistente.js";
 import { aggiungiCard } from "../aggiungi.js";
 import { manualeCard } from "../manuale.js";
+import { copiaPrima, copieCard } from "../copie.js";
+import { casaRicarica } from "../casa.js";
+import { segnalaCard } from "../segnala.js";
 import { schedeGrandi } from "../oggetti.js";
 import { dimTesto, contrastoAlto } from "../leggibilita.js";
 import { esitoMisura, fpsMisurati, sogliaFps } from "../fluido.js";
 import { S, UI, AREAS, FLOORS, REG, ACT, CHG, LAYOUT, PAGES, t, LOC, esc, nm, ok, attr, allEnts, shortName, climateSensors,
-  saveLayout, render, toast, go, page, ws, openSheet, isAdmin, deviceClass, HVAC, manualKind, excluded, tema, navMode, chiosco, sGet, sSet, sDel, grafica, leggera, applyTheme, ESEMPIO, motoScelta, menoMoto } from "../core.js";
+  saveLayout, mettiLayout, render, toast, go, page, ws, openSheet, isAdmin, deviceClass, HVAC, manualKind, excluded, tema, navMode, chiosco, sGet, sSet, sDel, grafica, leggera, applyTheme, ESEMPIO, motoScelta, menoMoto } from "../core.js";
 
 const DEV = ["cover", "switch", "fan", "lock", "media_player", "humidifier", "vacuum", "siren", "valve"];
 const OPEN = ["door", "window", "opening", "garage_door"];
-const W = { step: 0, d: null, ripreso: false, inCima: false };
+const W = { step: 0, d: null, ripreso: false, inCima: false, copia: false };   // copia: copia di sicurezza già fatta in questa procedura
 const BASE = () => ({ mode: "auto", hiddenAreas: [], areaOrder: [], exclude: [], include: [], sensors: {}, pages: {}, weather: null });
 const draft = () => {
   if (!W.d) W.d = JSON.parse(JSON.stringify({ ...BASE(), ...LAYOUT }));
@@ -210,7 +213,7 @@ function esempioCard() {
 
 const inCorso = () => W.inCima && !!W.d;
 function pagina() {
-  if (!isAdmin()) return `<div class="g">${manualeCard()}${esempioCard()}${dispositivo()}${aspettoCard()}${assistenteCard()}<section class="card small muted">${t("Le altre impostazioni le può cambiare solo un amministratore.", "Other settings can only be changed by an administrator.")}</section></div>`;
+  if (!isAdmin()) return `<div class="g">${manualeCard()}${esempioCard()}${dispositivo()}${aspettoCard()}${assistenteCard()}${segnalaCard()}<section class="card small muted">${t("Le altre impostazioni le può cambiare solo un amministratore.", "Other settings can only be changed by an administrator.")}</section></div>`;
   const P = PASSI(), s = W.step, corpo = [passoInizio, passoStanze, passoLuci, passoClima, passoDispositivi, passoCasa, passoPagine, passoFine][s]();
   const altre = `${manualeCard()}${esempioCard()}${dispositivo()}${aspettoCard()}${assistenteCard()}<section class="card rst1"><div class="row" style="gap:12px;flex-wrap:wrap"><span style="font-size:28px">🌶️</span>
       <div style="flex:1;min-width:200px"><b>${t("Ricomincia dal benvenuto", "Restart from the welcome screen")}</b><div class="small muted">${t("Riparte la configurazione da zero: scegli di nuovo Automatica o Manuale. Le pagine create da te restano.", "Setup starts over: choose Automatic or Manual again. Pages you created are kept.")}</div></div>
@@ -222,6 +225,8 @@ function pagina() {
       <p class="small muted" style="margin-top:10px">${t("In ogni pagina c'è ✏️ Modifica in alto: ＋ aggiungi, ✏️ cambia, ✕ togli.", "Every page has ✏️ Edit at the top: ＋ add, ✏️ change, ✕ remove.")}</p></section>
     ${aggiungiCard()}
     ${controllaCard()}
+    ${copieCard()}
+    ${segnalaCard()}
 `;
   const guida = `<section class="card wz1">
     <div class="wz-steps">${P.map((n, i) => `<button class="${i === s ? "act" : i < s ? "done" : ""}" data-act="wzGo" data-v="${i}"><i>${i < s ? "✓" : i + 1}</i><span>${n}</span></button>`).join("")}</div>
@@ -247,7 +252,7 @@ Object.assign(ACT, conBozza({
   wzSalta: () => { salta(W.step); W.ripreso = false; ACT.wzGo({ dataset: { v: W.step + 1 } }); toast("⏭️ " + t("Saltato: potrai farlo quando vuoi da ⚙️ Impostazioni.", "Skipped: you can do it any time from ⚙️ Settings.")); },
   wzDaCapo: () => { const m = draft().mode; cancellaBozza(); W.d = null; draft().mode = m; W.step = 0; W.inCima = true; render(true); },
   wzAnnulla: () => {
-    W.d = null; W.step = 0; cancellaBozza();
+    W.d = null; W.step = 0; W.copia = false; cancellaBozza();
     toast(t("Nessuna modifica salvata.", "Nothing was changed."));
     go(LAYOUT.configured ? "home" : "benvenuto");
   },
@@ -276,15 +281,17 @@ Object.assign(ACT, conBozza({
   },
   wzRestart: async el => {
     if (el.dataset.sure !== "1") { el.dataset.sure = "1"; el.textContent = t("Sicuro? Tocca ancora", "Sure? Tap again"); setTimeout(() => { if (el.isConnected) { el.dataset.sure = ""; el.textContent = "🔄 " + t("Riavvia il wizard", "Restart the wizard"); } }, 3500); return; }
-    try { await saveLayout({ configured: false, customPages: LAYOUT.customPages || [] }); W.d = null; W.step = 0; cancellaBozza(); go("benvenuto"); }
+    await copiaPrima("predefiniti");
+    try { await saveLayout({ configured: false, customPages: LAYOUT.customPages || [] }); W.d = null; W.step = 0; W.copia = false; cancellaBozza(); go("benvenuto"); }
     catch (e) { toast(t("Non riuscito: ", "Failed: ") + (e.message || e.code), true); }
   },
   wzReset: () => { W.d = { mode: draft().mode, hiddenAreas: [], areaOrder: [], exclude: [], include: [], sensors: {}, pages: {}, weather: null, customPages: draft().customPages || [] }; render(); },
   wzSave: async () => {
-    try { await saveLayout({ ...draft(), customPages: LAYOUT.customPages || [], ...visti(), configured: true }); toast("💾 " + t("Impostazioni salvate", "Settings saved")); if (W.step === PASSI().length - 1) { W.step = 0; W.d = null; cancellaBozza(); go("home"); } else W.ripreso = false; }
+    if (!W.copia) { W.copia = true; await copiaPrima("guidata"); }   // una copia di sicurezza per procedura, prima del primo salvataggio
+    try { await saveLayout({ ...draft(), customPages: LAYOUT.customPages || [], ...visti(), configured: true }); toast("💾 " + t("Impostazioni salvate", "Settings saved")); if (W.step === PASSI().length - 1) { W.step = 0; W.d = null; W.copia = false; cancellaBozza(); go("home"); } else W.ripreso = false; }
     catch (e) { toast(t("Non salvato: ", "Not saved: ") + (e.message || e.code), true); }
   },
-  wzAuto: () => saveLayout({ ...LAYOUT, configured: true }).then(() => toast("👍 " + t("Ok, mostro tutto. Puoi cambiare idea in ⚙️ Impostazioni.", "Ok, showing everything. You can change it in ⚙️ Settings."))).catch(() => {}),
+  wzAuto: async () => { await copiaPrima("guidata"); return saveLayout({ ...LAYOUT, configured: true }).then(() => toast("👍 " + t("Ok, mostro tutto. Puoi cambiare idea in ⚙️ Impostazioni.", "Ok, showing everything. You can change it in ⚙️ Settings."))).catch(() => {}); },
 }));
 /* ---------- plancia per persona ---------- */
 let UT = null;
@@ -323,9 +330,14 @@ ACT.cfgImport = () => {
   i.onchange = async () => {
     try {
       const d = JSON.parse(await i.files[0].text()), l = d.layout || d;
-      if (typeof l !== "object" || Array.isArray(l)) throw new Error(t("file non valido", "invalid file"));
-      if (!confirm(t("Sostituire tutte le scelte della plancia con quelle del file?", "Replace every dashboard choice with the file's?"))) return;
-      await saveLayout(l); toast("⬆️ " + t("Impostazioni importate", "Settings imported")); go("home");
+      if (!l || typeof l !== "object" || Array.isArray(l)) throw new Error(t("file non valido", "invalid file"));
+      /* i file scaricati dalle copie di sicurezza hanno anche i dati della casa (Faccende, Bacheca, Liste…) */
+      const casa = d.layout && d.casa && typeof d.casa === "object" && !Array.isArray(d.casa) ? d.casa : null;
+      if (!confirm(casa ? t("Sostituire tutte le scelte della plancia e i dati della casa (Colpo d'occhio, Faccende, Bacheca, Liste…) con quelli del file? Prima faccio una copia di sicurezza di adesso.", "Replace every dashboard choice and the home data (At a glance, Chores, Board, Lists…) with the file's? First I make a safety copy of now.")
+        : t("Sostituire tutte le scelte della plancia con quelle del file? Prima faccio una copia di sicurezza di adesso.", "Replace every dashboard choice with the file's? First I make a safety copy of now."))) return;
+      await ws({ type: "nduja_dashboard/copie_ripristina", dati: casa ? { layout: l, casa } : { layout: l } });   // fa prima la copia «prima dell'importazione»
+      mettiLayout(l); if (casa) casaRicarica();
+      toast("⬆️ " + t("Impostazioni importate", "Settings imported")); go("home");
     } catch (e) { toast(t("Non importato: ", "Not imported: ") + (e.message || e), true); }
   };
   i.click();
@@ -342,12 +354,12 @@ page("impostazioni", { title: t("Impostazioni", "Settings"), short: t("Impost.",
 /** dal benvenuto: modalità manuale, si parte da zero e si va ai passi */
 export function startManual() {
   W.d = JSON.parse(JSON.stringify({ hiddenAreas: [], areaOrder: [], sensors: {}, pages: {}, weather: null, ...LAYOUT, mode: "manual", include: [], exclude: [] }));
-  W.step = 1; W.ripreso = false; W.inCima = true; salvaBozza(); go("impostazioni");
+  W.step = 1; W.ripreso = false; W.inCima = true; W.copia = false; salvaBozza(); go("impostazioni");
 }
 /** dal riepilogo dell'automatica: «voglio scegliere io», si parte con tutto acceso */
 export function startAuto() {
   W.d = JSON.parse(JSON.stringify({ ...BASE(), ...LAYOUT, mode: "auto" }));
-  W.step = 1; W.ripreso = false; W.inCima = true; salvaBozza(); go("impostazioni");
+  W.step = 1; W.ripreso = false; W.inCima = true; W.copia = false; salvaBozza(); go("impostazioni");
 }
 /** riprende la procedura guidata lasciata a metà */
 export function riprendi() { const b = bozza(); if (b) { W.d = b.d; W.step = b.step; W.ripreso = true; W.inCima = true; } go("impostazioni"); }

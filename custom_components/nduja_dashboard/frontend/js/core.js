@@ -709,8 +709,10 @@ async function loadConfig() {
 /** salva le scelte del wizard in Home Assistant (solo amministratori) */
 export async function saveLayout(layout) {
   await ws({ type: "nduja_dashboard/save_layout", layout });
-  for (const k in LAYOUT) delete LAYOUT[k]; Object.assign(LAYOUT, layout); nuovaGen(); render();
+  mettiLayout(layout);
 }
+/** usa subito delle scelte già salvate in Home Assistant (per esempio una copia di sicurezza appena ripristinata, copie.js) */
+export function mettiLayout(layout) { for (const k in LAYOUT) delete LAYOUT[k]; Object.assign(LAYOUT, layout); nuovaGen(); render(); }
 /** pagina all'apertura della plancia, scelta per ogni dispositivo in ⚙️ Impostazioni (sGet "start"):
     "home", "colpo" (Colpo d'occhio, per il tablet a muro) oppure, se non scegli, l'ultima aperta (come sempre) */
 export const paginaIniziale = () => ["home", "colpo"].includes(sGet("start")) ? sGet("start") : sGet("page") || "home";

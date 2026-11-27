@@ -1,6 +1,7 @@
 /* Primo avvio: la plancia chiede se trovare tutto in automatico o partire da zero.
    Con «Automatica» mostra prima un riepilogo di quello che ha trovato; se la procedura guidata
    era rimasta a metà su questo dispositivo, propone di riprenderla. */
+import { copiaPrima } from "../copie.js";
 import { ACT, LAYOUT, t, page, saveLayout, toast, go, allEnts, AREAS, FLOORS, PAGES, LOC, esc, render } from "../core.js";
 import { startManual, startAuto, bozza, riprendi, cancellaBozza } from "./impostazioni.js";
 import "../manuale.js";
@@ -57,6 +58,7 @@ Object.assign(ACT, {
   wAuto: () => { V.riepilogo = true; render(true); window.scrollTo(0, 0); },
   wIndietro: () => { V.riepilogo = false; render(true); },
   wAutoOk: async () => {
+    await copiaPrima("guidata");   // copia di sicurezza (copie.js): utile quando si ricomincia dal benvenuto con scelte già fatte
     try { await saveLayout({ ...LAYOUT, mode: "auto", configured: true }); cancellaBozza(); V.riepilogo = false; toast("✨ " + t("Fatto! Per togliere o aggiungere usa ✏️ Modifica in ogni pagina.", "Done! To remove or add things use ✏️ Edit on every page.")); go("home"); }
     catch (e) { toast(t("Non salvato: ", "Not saved: ") + (e.message || e.code), true); }
   },

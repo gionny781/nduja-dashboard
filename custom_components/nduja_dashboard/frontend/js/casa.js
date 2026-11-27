@@ -53,6 +53,8 @@ export async function casaCambia(sez, fn, msg) {
 
 /* cambiati da un altro dispositivo: rileggo le sezioni che sto usando */
 const ricarica = () => { for (const s of Object.keys(D)) if (!inVolo.has(s)) carica(s); };
+/** rilegge subito tutte le sezioni in uso (dopo il ripristino di una copia di sicurezza, copie.js) */
+export const casaRicarica = ricarica;
 ready.then(() => {
   if (!conn) return;
   conn.subscribeMessage(ev => { const s = ev?.sezione; if (s && D[s] && D[s].rev !== ev.rev) carica(s); }, { type: "nduja_dashboard/casa_subscribe" })

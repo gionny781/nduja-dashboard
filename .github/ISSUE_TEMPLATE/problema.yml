@@ -1,0 +1,36 @@
+name: "🐞 Problema · Problem"
+description: "Qualcosa non funziona, si vede male o va lento · Something doesn't work, looks wrong or is slow"
+title: "[Problema] "
+labels: ["problema"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Il modo più facile:** nella plancia apri ⚙️ Impostazioni → 🐞 Segnala un problema: compila da sola questa pagina, con i dettagli che servono e senza dati personali.
+        **The easiest way:** in the dashboard open ⚙️ Settings → 🐞 Report a problem: it fills in this page by itself, with the details needed and no personal data.
+  - type: dropdown
+    id: tipo
+    attributes:
+      label: "Tipo · Type"
+      options:
+        - "🐞 Non funziona · Doesn't work"
+        - "🎨 Si vede male · Looks wrong"
+        - "🐢 Va lento · It's slow"
+    validations:
+      required: true
+  - type: textarea
+    id: cosa
+    attributes:
+      label: "Cosa è successo · What happened"
+      description: "Cosa stavi facendo, cosa ti aspettavi e cosa è successo invece · What you were doing, what you expected and what happened instead"
+      placeholder: "Nella pagina Clima, toccando + la temperatura non cambia. · On the Climate page, tapping + doesn't change the temperature."
+    validations:
+      required: true
+  - type: textarea
+    id: dettagli
+    attributes:
+      label: "Dettagli raccolti dalla plancia · Details collected by the dashboard"
+      description: "Versione di 'Nduja e di Home Assistant, browser e dispositivo, ultimi errori. Niente nomi di entità, indirizzi IP o persone. · 'Nduja and Home Assistant versions, browser and device, latest errors. No entity names, IP addresses or people."
+      render: text
+    validations:
+      required: false

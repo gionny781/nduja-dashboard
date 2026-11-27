@@ -1,0 +1,34 @@
+name: "💡 Idea · Idea"
+description: "Una cosa che vorresti nella plancia · Something you'd like in the dashboard"
+title: "[Idea] "
+labels: ["idea"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Puoi scriverla anche dalla plancia: ⚙️ Impostazioni → 🐞 Segnala un problema → 💡 Idea.
+        You can also write it from the dashboard: ⚙️ Settings → 🐞 Report a problem → 💡 Idea.
+  - type: dropdown
+    id: tipo
+    attributes:
+      label: "Tipo · Type"
+      options:
+        - "💡 Idea · Idea"
+    validations:
+      required: true
+  - type: textarea
+    id: cosa
+    attributes:
+      label: "Cosa vorresti · What you'd like"
+      description: "Cosa vorresti fare e in quale pagina; se ti aiuta, com'è adesso · What you'd like to do and on which page; if it helps, how it is now"
+      placeholder: "Nella pagina Luci vorrei… · On the Lights page I'd like…"
+    validations:
+      required: true
+  - type: textarea
+    id: dettagli
+    attributes:
+      label: "Dettagli raccolti dalla plancia · Details collected by the dashboard"
+      description: "Facoltativo: versioni e dispositivo, senza dati personali · Optional: versions and device, no personal data"
+      render: text
+    validations:
+      required: false

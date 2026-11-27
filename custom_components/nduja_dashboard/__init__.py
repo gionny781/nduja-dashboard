@@ -20,6 +20,7 @@ from homeassistant.util import dt as dt_util
 from .chat import async_remove_chat, async_setup_chat
 from .const import (CONF_ADMIN, CONF_ICON, CONF_TITLE, DEFAULT_ICON, DEFAULT_TITLE,
                     DOMAIN, PANEL_URL, STATIC_URL, VERSION)
+from .copie import ESCLUSE, async_remove_copie, async_setup_copie, segna_chi
 from .piante import async_remove_piante, async_setup_piante
 
 FRONTEND_DIR = Path(__file__).parent / "frontend"
@@ -88,6 +89,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if "casa_store" not in data:
         data["casa_store"] = Store(hass, STORE_VERSION, STORE_CASA)
         data["casa"] = await data["casa_store"].async_load() or {}
+    # copie di sicurezza delle scelte (copie.py): anche quella «prima dell'aggiornamento», con i dati appena caricati
+    await async_setup_copie(hass, EVENT_LAYOUT, EVENT_CASA, SEZIONE, CASA_MAX_BYTES, CASA_MAX_SEZIONI)
     await async_setup_chat(hass)   # chat di famiglia (chat.py)
     async_setup_piante(hass, _casa_leggi, _casa_scrivi, EVENT_CASA, SEZIONE)   # piante: promemoria e irrigazione (piante.py)
     if not data.get("pause_avviate"):
@@ -138,6 +141,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     data.pop("casa", None)   # i file statici restano registrati fino al riavvio
     async_remove_piante(hass)
     await async_remove_chat(hass)
+    await async_remove_copie(hass)
 
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/config"})
@@ -160,6 +164,7 @@ async def ws_save_layout(hass: HomeAssistant, connection, msg) -> None:
     data["layout"] = layout
     if "store" in data:
         await data["store"].async_save(layout)
+    segna_chi(hass, connection)
     hass.bus.async_fire(EVENT_LAYOUT, {})
     connection.send_result(msg["id"], {"ok": True})
 
@@ -229,6 +234,8 @@ async def ws_casa_save(hass: HomeAssistant, connection, msg) -> None:
     rev = prima["rev"] + 1
     casa[nome] = {"rev": rev, "dati": msg["dati"]}   # cambio in memoria subito: il controllo di rev resta valido
     await store.async_save(casa)
+    if nome not in ESCLUSE:   # lo stato del momento non conta come cambiamento delle scelte
+        segna_chi(hass, connection)
     hass.bus.async_fire(EVENT_CASA, {"sezione": nome, "rev": rev, "user_id": connection.user.id})
     connection.send_result(msg["id"], {"sezione": nome, "rev": rev})
 

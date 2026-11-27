@@ -304,3 +304,10 @@ compare sopra la plancia il pulsante «🗣️ simula "Alexa"». `mockNoAlexaNot
 ```bash
 LS='{"mockProvaAlexa":"1"}' node tools/mock/shot.mjs alexa 1280 1100 alexa.png
 ```
+
+**Copie di sicurezza** (0.7.63): `copie_*` come `copie.py`, salvate in `mockCopie`. Con `mockVersione` il finto Home Assistant dichiara quella versione:
+cambiandola tra un caricamento e l'altro compare la copia «prima dell'aggiornamento». `mockCopiaGiorno()` fa la copia di ogni giorno,
+`mockCopieOre(n)` sposta indietro le date delle copie. `casa_get` senza sezione restituisce tutte le sezioni. La connessione finta dichiara `haVersion`.
+```bash
+LS='{"mockVersione":"0.7.63-dev"}' node tools/mock/shot.mjs impostazioni 1280 900 copie.png '[data-act="cpApri"]'
+```

@@ -974,8 +974,70 @@ export function casaFinta(O = {}) {
     const v = { "sensor.inverter_pv1_power": String(Math.round(sol * .43)), "sensor.inverter_pv2_power": (sol * .34 / 1000).toFixed(2), "sensor.inverter_pv3_power": String(Math.round(sol * .23)),
       "sensor.battery_power": String(Math.round(bat)), "sensor.grid_power": String(rete), "sensor.battery_soc": soc.toFixed(1), "sensor.lavatrice_power": String(Math.round(300 + 500 * Math.abs(Math.sin(k / 3)))) };
     const c = {}; for (const [id, x] of Object.entries(v)) if (ENT[id]) { ENT[id].s = x; c[id] = { "+": { s: x, lc: Date.now() / 1000 } }; } window.mockStati?.({ c }); }, 3000); }
+  /* copie di sicurezza (0.7.63): come copie.py, in mockCopie. All'avvio di una versione nuova (mockVersione) la copia «prima dell'aggiornamento»;
+     mockCopiaGiorno() fa la copia di ogni giorno; mockCopieOre(n) sposta indietro di n ore le date delle copie (per provare l'elenco) */
+  const VER = O.versione || localStorage.getItem("mockVersione") || "0.5.0-beta";
+  const COPIE_ESCLUSE = ["pause", "irrigazione"], COPIE_ULTIME = 10, COPIE_VERSIONI = 3;
+  const copieLeggi = () => { const d = JSON.parse(localStorage.getItem("mockCopie") || "{}"); return { versione: d.versione ?? null, copie: d.copie || [], dati: d.dati || {}, chi: d.chi || [] }; };
+  const copieScrivi = d => localStorage.setItem("mockCopie", JSON.stringify(d));
+  const ordJ = x => Array.isArray(x) ? x.map(ordJ) : x && typeof x === "object" ? Object.fromEntries(Object.keys(x).sort().map(k => [k, ordJ(x[k])])) : x;
+  const istantanea = () => { const C = JSON.parse(localStorage.getItem("mockCasa") || "{}");
+    return { layout: JSON.parse(JSON.stringify(LAYOUT || {})), casa: Object.fromEntries(Object.entries(C).filter(([k]) => !COPIE_ESCLUSE.includes(k)).map(([k, v]) => [k, v.dati || {}])) }; };
+  const impronta = j => { let a = 5381, b = 52711; for (let i = 0; i < j.length; i++) { const c = j.charCodeAt(i); a = (a * 33) ^ c; b = (b * 31) ^ c; } return (a >>> 0).toString(16) + (b >>> 0).toString(16); };
+  async function compresso(j) { try { const r = new Blob([j]).stream().pipeThrough(new CompressionStream("deflate")); return (await new Response(r).arrayBuffer()).byteLength; } catch { return j.length; } }
+  function copiePota(d) {
+    const tieni = new Set(d.copie.slice(0, COPIE_ULTIME).map(c => c.id)), viste = [];
+    for (const c of d.copie) { const v = c.versione || ""; if (viste.includes(v)) continue; viste.push(v); if (viste.length > COPIE_VERSIONI) break; tieni.add(c.id); }
+    d.copie = d.copie.filter(c => tieni.has(c.id));
+    const usati = new Set(d.copie.map(c => c.h)); for (const h of Object.keys(d.dati)) if (!usati.has(h)) delete d.dati[h];
+  }
+  async function copiaCrea(motivo, param = {}, chi = null, versione = VER, sempre = false) {
+    const d = copieLeggi(), snap = istantanea(), j = JSON.stringify(ordJ(snap)), h = impronta(j);
+    if (d.copie[0]?.h === h && !sempre) return d.copie[0];
+    if (!d.copie.length && !Object.keys(snap.layout).length && !Object.values(snap.casa).some(v => Object.keys(v).length)) return null;
+    if (!d.dati[h]) d.dati[h] = { j, byte: await compresso(j), grezzi: new Blob([j]).size };
+    const c = { id: Math.random().toString(16).slice(2, 14), ts: new Date().toISOString().slice(0, 19) + "+00:00", motivo, param: param || {}, chi, versione, h };
+    d.copie.unshift(c); d.chi = []; copiePota(d); copieScrivi(d); console.log("COPIA", motivo, JSON.stringify(param || {}), chi || ""); return c;
+  }
+  const copieChi = () => { const d = copieLeggi(), n = localStorage.getItem("mockNoAdmin") ? "Anna Demo" : "Mario Demo"; if (!d.chi.includes(n)) { d.chi.push(n); copieScrivi(d); } };
+  let copieAvviate = null;
+  const copieAvvio = () => copieAvviate || (copieAvviate = (async () => { const d = copieLeggi(); if (d.versione !== VER) { await copiaCrea("aggiornamento", { da: d.versione, a: VER }, null, d.versione || "", true); const e = copieLeggi(); e.versione = VER; copieScrivi(e); } })());
+  window.mockCopiaGiorno = () => copiaCrea("giorno", null, copieLeggi().chi.join(", ") || null);
+  window.mockCopieOre = n => { const d = copieLeggi(); d.copie.forEach((c, i) => { c.ts = new Date(new Date(c.ts).getTime() - (n + i * 7) * 36e5).toISOString().slice(0, 19) + "+00:00"; }); copieScrivi(d); };
+  async function mockCopie(m) {
+    const io = localStorage.getItem("mockNoAdmin") ? null : "Mario Demo";
+    if (!io) throw { code: "unauthorized", message: "Unauthorized" };
+    await copieAvvio();
+    const d = copieLeggi(), trova = id => d.copie.find(c => c.id === id);
+    switch (m.type.split("/")[1]) {
+      case "copie_lista": { const recenti = new Set(d.copie.slice(0, COPIE_ULTIME).map(c => c.id));
+        return { copie: d.copie.map(({ h, ...c }) => ({ ...c, byte: d.dati[h]?.byte || 0, grezzi: d.dati[h]?.grezzi || 0, tenuta: !recenti.has(c.id) })),
+          byte: Object.values(d.dati).reduce((a, x) => a + x.byte, 0), ultime: COPIE_ULTIME, versioni: COPIE_VERSIONI, versione: VER }; }
+      case "copie_crea": { const c = await copiaCrea(m.motivo, null, io); return { id: c?.id || null }; }
+      case "copie_get": { const c = trova(m.copia); if (!c) throw { code: "not_found", message: m.copia }; const { h, ...x } = c; return { ...x, ...JSON.parse(d.dati[h].j) }; }
+      case "copie_elimina": { if (!trova(m.copia)) throw { code: "not_found", message: m.copia }; d.copie = d.copie.filter(c => c.id !== m.copia); copiePota(d); copieScrivi(d); console.log("COPIA elimina", m.copia); return { ok: true }; }
+      case "copie_ripristina": {
+        let snap, motivo, param;
+        if (m.copia) { const c = trova(m.copia); if (!c) throw { code: "not_found", message: m.copia }; snap = JSON.parse(d.dati[c.h].j); motivo = "ripristino"; param = { ts: c.ts }; }
+        else { snap = m.dati; motivo = "importa"; param = {}; }
+        if (!snap || typeof snap.layout !== "object" || Array.isArray(snap.layout)) throw { code: "invalid_format", message: "dati non validi: layout" };
+        const prima = await copiaCrea(motivo, param, io, VER, true);
+        LAYOUT = JSON.parse(JSON.stringify(snap.layout)); localStorage.setItem("mockLayout", JSON.stringify(LAYOUT));
+        const cambiate = [];
+        if (snap.casa) { const C = JSON.parse(localStorage.getItem("mockCasa") || "{}");
+          for (const k of [...new Set([...Object.keys(snap.casa), ...Object.keys(C)])].sort()) { if (COPIE_ESCLUSE.includes(k)) continue;
+            const nuovi = snap.casa[k] || {}, x = C[k] || { rev: 0, dati: {} };
+            if (JSON.stringify(ordJ(x.dati || {})) === JSON.stringify(ordJ(nuovi))) continue;
+            C[k] = { rev: x.rev + 1, dati: JSON.parse(JSON.stringify(nuovi)) }; cambiate.push(k); }
+          localStorage.setItem("mockCasa", JSON.stringify(C));
+          cambiate.forEach(k => setTimeout(() => window.mockCasaEv?.({ sezione: k, rev: C[k].rev }), 30)); }
+        console.log("COPIA ripristina", m.copia || "file", JSON.stringify(cambiate)); return { ok: true, prima: prima?.id || null, casa: cambiate };
+      }
+    }
+    throw { code: "unknown_command", message: "Unknown command." };
+  }
   const conn = {
-    socket: SOCKET, connected: true,
+    socket: SOCKET, connected: true, haVersion: "2026.11.2",
     addEventListener() {}, subscribeEvents() { return Promise.resolve(() => {}); },
     subscribeMessage(cb, m) {
       if (m?.type === "camera/webrtc/offer") return offerta(cb, m);
@@ -997,10 +1059,12 @@ export function casaFinta(O = {}) {
           if (localStorage.getItem("mockNoCasa")) throw { code: "unknown_command", message: "Unknown command." };
           const C = JSON.parse(localStorage.getItem("mockCasa") || "{}");
           if (m.sezione === "piante" && !C.piante && localStorage.getItem("mockPianteDemo")) { C.piante = { rev: 1, dati: PIANTE_DEMO() }; localStorage.setItem("mockCasa", JSON.stringify(C)); }
+          if (m.type.endsWith("get") && !m.sezione) return { sezioni: C };   // tutte le sezioni (copie di sicurezza: cosa cambierà)
           const x = C[m.sezione] || { rev: 0, dati: {} };
           if (m.type.endsWith("get")) return { sezione: m.sezione, rev: x.rev, dati: x.dati };
           if (m.rev != null && m.rev !== x.rev) throw { code: "conflict", message: "rev " + x.rev };
           C[m.sezione] = { rev: x.rev + 1, dati: m.dati }; localStorage.setItem("mockCasa", JSON.stringify(C)); console.log("CASA", JSON.stringify(m));
+          if (!COPIE_ESCLUSE.includes(m.sezione)) copieChi();
           setTimeout(() => window.mockCasaEv?.({ sezione: m.sezione, rev: x.rev + 1 }), 30);
           return { sezione: m.sezione, rev: x.rev + 1 }; }
         /* chat di famiglia (0.7.38): mockChat = { conv: { id: { n, msg, letti } }, muti: [] }; mockChatDemo = conversazioni d'esempio */
@@ -1021,8 +1085,9 @@ export function casaFinta(O = {}) {
           C.pause = { rev: x.rev + 1, dati: d }; localStorage.setItem("mockCasa", JSON.stringify(C)); console.log("PAUSA", JSON.stringify(m));
           setTimeout(() => window.mockCasaEv?.({ sezione: "pause", rev: x.rev + 1 }), 30);
           return { fino: d[m.entity_id] || null }; }
-        case "nduja_dashboard/config": return { version: O.versione || "0.5.0-beta", options: {}, layout: LAYOUT };
-        case "nduja_dashboard/save_layout": LAYOUT = m.layout; localStorage.setItem("mockLayout", JSON.stringify(LAYOUT)); return { ok: true };
+        case "nduja_dashboard/config": await copieAvvio(); return { version: VER, options: {}, layout: LAYOUT };
+        case "nduja_dashboard/save_layout": LAYOUT = m.layout; localStorage.setItem("mockLayout", JSON.stringify(LAYOUT)); copieChi(); return { ok: true };
+        case "nduja_dashboard/copie_lista": case "nduja_dashboard/copie_crea": case "nduja_dashboard/copie_get": case "nduja_dashboard/copie_elimina": case "nduja_dashboard/copie_ripristina": return mockCopie(m);
         case "config/entity_registry/list_for_display": return REG;
         case "config/entity_registry/list": return REG_FULL();
         case "config/device_registry/list": return [...Object.entries(ALEXA).map(([id, model]) => ({ id: "dev_ax_" + id.split(".")[1], name: ENT[id]?.a.friendly_name || id, manufacturer: "Amazon", model })), { id: "dev_twinkly", name: "Albero di Natale", manufacturer: "LEDWORKS", model: "Twinkly Strings" }, { id: "dev_cgrp", name: "Tutta la casa", manufacturer: "Google Inc.", model: "Google Cast Group" }, { id: "dev_g", name: "iPhone di Mario" }, { id: "dev_c", name: "iPhone di Anna" }, { id: "dev_a", name: "Ariston", manufacturer: "Ariston", model: "Caldaia demo" }, { id: "dev_otgw", name: "OpenTherm Gateway", manufacturer: "Demo", model: "OpenTherm Gateway" }, { id: "dev_tv", name: "TV soggiorno", manufacturer: "Samsung", model: "QE55 demo" }, { id: "dev_atv", name: "Apple TV soggiorno", manufacturer: "Apple", model: "Apple TV 4K" },

@@ -393,6 +393,10 @@ body.light .vq1i{background:rgba(0,0,0,0.050)!important}
 body.light .vq1t.heat .vq1i,body.light .vq1t.cool .vq1i{background:rgba(0,0,0,0.070)!important}
 body.light .mn1{background:linear-gradient(135deg,rgba(255,159,10,.13),rgba(0,0,0,0.022) 65%)!important}
 body.light .mn1vb{background:rgba(0,0,0,0.030)!important}
+body.light .cp1r{background:rgba(0,0,0,0.025)!important}
+body.light .sg1l{background:rgba(0,0,0,0.025)!important}
+body.light .sg1l .bx::after{color:#1c1c1e!important}
+body.light .sg1v{background:rgba(0,0,0,0.030)!important}
 :where(body.light) .pillv.sun{color:#756200}
 :where(body.light) .pillv.grid{color:#ce0b00}
 :where(body.light) .pillv.exp{color:#1a7631}
