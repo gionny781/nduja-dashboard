@@ -14,8 +14,10 @@
        radar: { cam: entity_id | "none", url: "", min: 5 }, pioggiaPr: % da cui la pioggia è «probabile» (senza = 50) }
    Scelte di questo dispositivo: nduja_meteoEnt (meteo da mostrare), nduja_meteoOre (24 | 48), nduja_meteoRadar (cam | url). */
 import { S, REG, AREAS, ACT, CHG, LAYOUT, VISTE, PAGES, utenteCfg, IT, t, LOC, esc, fnum, nm, nmHA, ok, attr, unit, deviceClass, allEnts, areaOf, page,
-  forecast, weatherEnt, WX, hhmm, sGet, sSet, render, openSheet, closeSheet, isAdmin, toast, durata, linkIntegrazione, memoVer, idsDispositivo, idsDi, memoGen } from "../core.js";
+  forecast, weatherEnt, WX, hhmm, sGet, sSet, render, openSheet, closeSheet, isAdmin, toast, durata, linkIntegrazione, memoVer, idsDispositivo, idsDi, memoGen,
+  ws, cached, DEVICES, ago } from "../core.js";
 import { cambia, scegli, indirizzoLocale } from "../edit.js";
+import { statistiche, barre, grafico } from "../grafici.js";
 import { scena, sole } from "../scenaenergia.js";
 
 const C = () => LAYOUT.meteo || {};
@@ -229,7 +231,12 @@ VISTE.meteoAvvisi = () => {
 /* ================= C) sensori di casa ================= */
 /* integrazioni di previsione: i loro sensori non sono misure di casa */
 const PREV = /^(openweathermap|accuweather|pirateweather|tomorrowio|metoffice|meteo_france|weatherkit|aemet|ipma|nws|smhi|environment_canada|bom|open_meteo|met|met_eireann|meteoblue|weatherbit|visual_crossing|dwd_weather|meteoalarm|nws_alerts|weatheralerts|dpc|meteoswiss|knmi|ilmeteo|meteoam|weatherflow_forecast|openmeteo|yr|foreca|meteonorway)$/;
-const ESTERNO = /estern|outdoor|outside|fuori|balcon|terrazz|giardin|garden|cortile|yard|patio|veranda|meteo|weather|stazione|station|ecowitt|tempest|davis|ambient|netatmo|(^|[^a-z])wh\d/i;
+const ESTERNO = /estern|outdoor|outside|fuori|balcon|terrazz|giardin|garden|cortile|yard|patio|veranda|meteo|weather|stazione|station|ecowitt|tempest|davis|ambient|netatmo|weatherlink|weatherflow|(^|[^a-z])wh\d|(^|[^a-z])(ws|gw)[-_ ]?\d{4}|(^|[^a-z])st[-_]\d{6}/i;
+/* integrazioni delle stazioni meteo di casa (0.7.66): i loro sensori sono «fuori» anche senza un nome che lo dica (Tempest: «Air temperature») */
+const STAZ_PL = /^(ecowitt|ecowitt_iot|ecowitt_local|netatmo|weatherflow|weatherflow_cloud|ambient_station|ambient_network|davis_vantage|weatherlink|fineoffset|wh_fine_offset|weewx|meteobridge|wunderground|pws|awekas|smartweather)$/;
+/* modulo dentro casa (la base Netatmo: misura anche CO₂ o rumore) */
+const interno = id => { const d = REG[id]?.device; return !!d && idsDispositivo(d).some(x => ["carbon_dioxide", "sound_pressure"].includes(deviceClass(x)) || /noise|rumore/i.test(x)); };
+const esterno = id => (ESTERNO.test(testoDi(id)) || STAZ_PL.test(REG[id]?.platform || "")) && !interno(id);
 const NON_EST = /cpu|chip|batter|acqua|water|piscina|pool|frigo|fridge|freezer|congel|caldaia|boiler|mandata|ritorno|flow|return|dew|rugiada|feels|percepit|apparent|soil|terreno|suolo|interna|indoor|inside|(^|[^a-z])(min|max)([^a-z]|$)|forecast|previs|domani|tomorrow|setpoint|target|heat.?index|wind.?chill|chill|tesla|vehicle|veicol|(^|[^a-z])car([^a-z]|$)|model.?[3sxy]([^a-z]|$)/i;
 const testoDi = id => id + " " + nmHA(id) + " " + (AREAS[areaOf(id)]?.nameHA || "") + " " + (AREAS[areaOf(id)]?.name || "");
 const daPrevisione = id => PREV.test(REG[id]?.platform || "") || /forecast|previsione/i.test(id + " " + nmHA(id));
@@ -237,18 +244,26 @@ const numerico = id => ok(id) && !isNaN(parseFloat(S[id].state));
 const nomeV = id => id + " " + nmHA(id);
 const KIND = () => [
   ["temp", "🌡️", t("Temperatura esterna", "Outdoor temperature")], ["hum", "💧", t("Umidità esterna", "Outdoor humidity")],
+  ["percepita", "🤒", t("Temperatura percepita", "Feels-like temperature")], ["rugiada", "💦", t("Punto di rugiada", "Dew point")],
   ["pioggia", "🌧️", t("Pioggia di oggi (pluviometro)", "Rain today (rain gauge)")], ["intensita", "☔", t("Intensità della pioggia", "Rain rate")], ["piove", "🌂", t("Sensore di pioggia (sì/no)", "Rain sensor (yes/no)")],
   ["vento", "💨", t("Vento (anemometro)", "Wind (anemometer)")], ["raffica", "🌬️", t("Raffiche", "Gusts")], ["dir", "🧭", t("Direzione del vento", "Wind direction")],
   ["pressione", "⏱️", t("Pressione", "Pressure")], ["uv", "🕶️", t("Indice UV", "UV index")],
+  ["lux", "🔆", t("Luminosità esterna", "Outdoor brightness")], ["rad", "☀️", t("Radiazione solare", "Solar radiation")],
 ];
+/* sensori delle piante (Mi Flora…): la loro luce è quella all'ombra della pianta, non del cielo */
+const PIANTA = /flower|plant|piant|flora|soil|terreno|suolo|xiaomi_ble|miflora/i;
 /* trovati da soli: misure vere di casa */
 const AUTO = {
-  temp: id => deviceClass(id) === "temperature" && ESTERNO.test(testoDi(id)) && !NON_EST.test(nomeV(id)),
-  hum: id => deviceClass(id) === "humidity" && ESTERNO.test(testoDi(id)) && !NON_EST.test(nomeV(id)),
+  temp: id => deviceClass(id) === "temperature" && esterno(id) && !NON_EST.test(nomeV(id)),
+  hum: id => deviceClass(id) === "humidity" && esterno(id) && !NON_EST.test(nomeV(id)),
+  percepita: id => deviceClass(id) === "temperature" && /feels|percepit|apparent|heat.?index|wind.?chill/i.test(nomeV(id)) && esterno(id),
+  rugiada: id => deviceClass(id) === "temperature" && /dew|rugiada/i.test(nomeV(id)) && esterno(id),
+  lux: id => deviceClass(id) === "illuminance" && esterno(id) && !PIANTA.test(nomeV(id) + " " + (REG[id]?.platform || "")),
+  rad: id => (deviceClass(id) === "irradiance" || /^w\/m(²|2)$/i.test(unit(id))) && esterno(id) && !PIANTA.test(nomeV(id) + " " + (REG[id]?.platform || "")),
   pioggia: id => deviceClass(id) === "precipitation" || (/^(mm|in)$/.test(unit(id)) && /rain|pioggia|piogg|precip/i.test(nomeV(id)) && !/rate|intens|\/h/i.test(nomeV(id))),
   intensita: id => deviceClass(id) === "precipitation_intensity" || /^(mm|in)\/h$/.test(unit(id)),
   vento: id => deviceClass(id) === "wind_speed" && !/gust|raffic|max/i.test(nomeV(id)),
-  raffica: id => deviceClass(id) === "wind_speed" && /gust|raffic/i.test(nomeV(id)),
+  raffica: id => deviceClass(id) === "wind_speed" && /gust|raffic/i.test(nomeV(id)) && !/max|daily|giorn/i.test(nomeV(id)),
   dir: id => deviceClass(id) === "wind_direction" || (unit(id) === "°" && /wind|vento|bearing|direz/i.test(nomeV(id))),
   pressione: id => deviceClass(id) === "atmospheric_pressure" || (deviceClass(id) === "pressure" && /baro|atmos|relativ|absolut|sea|livello del mare|meteo|weather|ecowitt|netatmo|stazione|station/i.test(testoDi(id)) && !/caldaia|boiler|acqua|water|tire|tyre|pneum|gomm|(^|[^a-z])ch([^a-z]|$)/i.test(nomeV(id))),
   uv: id => /(^|[^a-z])uv([^a-z]|$)|uv_?index|uvi([^a-z]|$)|indice.?uv/i.test(nomeV(id)) && !/lamp|light|luce|steril/i.test(nomeV(id)),
@@ -262,6 +277,7 @@ function punti(id, k) {
   if (dev && idsDispositivo(dev).some(x => x !== id && x.startsWith("sensor.") && METEO_DC.includes(deviceClass(x)) && deviceClass(x) !== deviceClass(id))) p += 3;
   if (/meteo|weather|stazione|station|ecowitt|netatmo|tempest|davis|ambient/i.test(testoDi(id) + " " + (REG[id]?.platform || ""))) p += 2;
   if (RISCALDA.test(nomeV(id) + " " + (REG[id]?.platform || ""))) p -= 3;
+  if (k === "pressione") p += /relativ|sea|mare|slp|baromet/i.test(nomeV(id)) ? 1 : /absol|assolut|station.?press/i.test(nomeV(id)) ? -1 : 0;
   if (k === "pioggia") { const s = nomeV(id); p += (/daily|giorn|oggi|today|(^|[^a-z])day|24h/i.test(s) ? 2 : 0) - (/hour|orari|rate|event|week|settim|month|mese|year|anno|total|totale|yesterday|ieri/i.test(s) ? 3 : 0); }
   return p;
 }
@@ -286,7 +302,10 @@ const FILTRO = {
   dir: id => id.startsWith("sensor.") && (deviceClass(id) === "wind_direction" || unit(id) === "°" || /dir|bearing/i.test(nomeV(id))),
   pressione: id => id.startsWith("sensor.") && (["pressure", "atmospheric_pressure"].includes(deviceClass(id)) || /^(hpa|mbar|inhg|mmhg|kpa)$/i.test(unit(id))),
   uv: id => id.startsWith("sensor.") && !isNaN(parseFloat(S[id]?.state)),
+  lux: id => id.startsWith("sensor.") && (deviceClass(id) === "illuminance" || /^(lx|klx)$/i.test(unit(id))),
+  rad: id => id.startsWith("sensor.") && (deviceClass(id) === "irradiance" || /^w\/m(²|2)$/i.test(unit(id))),
 };
+FILTRO.percepita = FILTRO.rugiada = id => FILTRO.temp(id);
 FILTRO.raffica = FILTRO.vento;
 const valTxt = id => !ok(id) ? t("non raggiungibile", "unavailable") : id.startsWith("binary_sensor.") ? (S[id].state === "on" ? t("piove", "raining") : t("asciutto", "dry"))
   : isNaN(parseFloat(S[id].state)) ? esc(S[id].state) : fnum(parseFloat(S[id].state), Math.abs(parseFloat(S[id].state)) < 100 && parseFloat(S[id].state) % 1 ? 1 : 0) + (unit(id) ? " " + esc(unit(id)) : "");
@@ -311,6 +330,151 @@ function sensoriCard(w, D) {
       ${prev ? `<span class="pv"><small>${k === "pioggia" ? t("previsti oggi", "expected today") : t("previsione", "forecast")}</small>${prev}</span>` : ""}</button>`;
   };
   return `<section class="card mt1sc"><div class="ch"><h2>🏡 ${t("Sensori di casa", "Home sensors")}</h2><span class="small muted">${t("misure vere", "real readings")}</span></div><div class="mt1sl">${K.map(riga).join("")}</div></section>`;
+}
+
+/* ================= F) 🏡 la mia stazione (0.7.66) =================
+   I dati veri di casa prima delle previsioni: temperatura con la minima e la massima di oggi (e a che ora), percepita, umidità e rugiada,
+   pioggia di oggi, 7 giorni (o settimana), mese e anno, vento con raffica massima di oggi, pressione con la tendenza delle ultime 3 ore,
+   UV, luminosità e radiazione; grafici delle ultime 24 ore e 7 giorni; confronto con il meteo. Ecowitt, Netatmo, Davis/WeatherLink,
+   Tempest, Ambient Weather, Fine Offset o sensori sparsi (un termometro esterno e un pluviometro Zigbee): li trovo da solo, si correggono in ⚙️.
+   Scelte della casa: LAYOUT.meteo.usaStazione (la temperatura della stazione nella Home e nel Colpo d'occhio).
+   Scelte di questo dispositivo: nduja_stG (temp | pioggia | vento | pressione), nduja_stP (24h | 7g). */
+const ORA = 3600e3;
+/** c'è una stazione (o almeno un sensore esterno)? Solo accanto al meteo di casa */
+export const haStazione = () => ["temp", "pioggia", "vento", "pressione"].some(k => { const id = sensore(k); return id && S[id]; });
+/** storia di un sensore da un momento (cronologia di Home Assistant): [{ t, v }] (cache 5 minuti) */
+function storia(id, da) {
+  const r = cached("stH:" + id + ":" + Math.floor(da / 6e4), 5 * 6e4, () => ws({ type: "history/history_during_period", start_time: new Date(da).toISOString(), entity_ids: [id], minimal_response: true, no_attributes: true })
+    .then(x => (x?.[id] || []).map(s => ({ t: (s.lu || s.lc || 0) * 1000, v: parseFloat(s.s) })).filter(p => !isNaN(p.v))).catch(() => []));
+  return r;
+}
+/** minima e massima di oggi con l'ora: { min: { v, t }, max: { v, t } } (null = sto caricando) */
+function minMaxOggi(id) {
+  const H = storia(id, inizioOggi()); if (H === undefined) return null;
+  const L = [...H, ...(num(S[id]?.state) != null ? [{ t: Date.now(), v: num(S[id].state) }] : [])].filter(p => p.t >= inizioOggi() - 6e4);
+  if (!L.length) return {};
+  let mn = L[0], mx = L[0]; for (const p of L) { if (p.v < mn.v) mn = p; if (p.v > mx.v) mx = p; }
+  return { min: mn, max: mx };
+}
+/** pressione: quanto è cambiata nelle ultime 3 ore (hPa) */
+/** undefined = sto caricando, null = non lo so */
+function tendenza3h(id) {
+  const H = storia(id, Math.floor((Date.now() - 3.25 * ORA) / 6e5) * 6e5); if (H === undefined) return undefined; if (!H.length) return null;
+  const da = Date.now() - 3 * ORA, prima = H.find(p => p.t >= da - 10 * 6e4) || H[0], ora = num(S[id]?.state);
+  if (ora == null || Date.now() - prima.t < 1.5 * ORA) return null;
+  return hPa(ora, unit(id)) - hPa(prima.v, unit(id));
+}
+/** pioggia di un periodo: dal sensore di quel periodo se la stazione lo ha, altrimenti dalle statistiche */
+const PER_P = { sett: /week|settiman/i, mese: /month|mensil|mese/i, anno: /year|annual|anno/i };
+function sensorePeriodo(base, k) {
+  const dev = REG[base]?.device; if (!dev) return null;
+  return idsDispositivo(dev).find(id => id !== base && id.startsWith("sensor.") && (deviceClass(id) === "precipitation" || /^(mm|in)$/.test(unit(id))) && PER_P[k].test(nomeV(id)) && !/rate|intens|\/h/i.test(nomeV(id)) && numerico(id)) || null;
+}
+function cambioPeriodo(id, k) {
+  const q = k === "oggi" ? { calendar: { period: "day" } } : k === "7g" ? { rolling_window: { duration: { days: 7 } } } : { calendar: { period: k === "mese" ? "month" : "year" } };
+  return cached("stP:" + id + k + new Date().toDateString(), 10 * 6e4, () => ws({ type: "recorder/statistic_during_period", statistic_id: id, types: ["change"], ...q }).then(r => r?.change ?? null).catch(() => null));
+}
+/** somma dei massimi di ogni giorno (sensori «di oggi» senza state_class total): pioggia dal giorno da */
+function sommaMassimi(id, da) {
+  const r = statistiche([id], new Date(da), "day", ["max"]); if (r === undefined) return undefined;
+  const L = r?.[id] || []; return L.length ? L.reduce((a, p) => a + Math.max(0, p.max || 0), 0) : null;
+}
+function piogge(id) {
+  const tot = ["total", "total_increasing"].includes(attr(id, "state_class")), oggiS = /daily|giorn|oggi|today|(^|[^a-z])day/i.test(nomeV(id)) || !tot;
+  const ora = new Date(), mese0 = new Date(ora.getFullYear(), ora.getMonth(), 1).getTime(), anno0 = new Date(ora.getFullYear(), 0, 1).getTime();
+  const v = k => { const s = k !== "oggi" && k !== "7g" && sensorePeriodo(id, k); if (s) return { v: num(S[s].state), u: unit(s), da: "sens" };
+    if (k === "7g") { const s7 = sensorePeriodo(id, "sett"); if (s7) return { v: num(S[s7].state), u: unit(s7), da: "sett" }; }
+    if (k === "oggi" && oggiS) return { v: num(S[id].state), u: unit(id) };
+    if (tot) { const c = cambioPeriodo(id, k); return { v: c === undefined ? undefined : c, u: unit(id) }; }
+    const c = sommaMassimi(id, k === "7g" ? inizioOggi() - 6 * G : k === "mese" ? mese0 : anno0); return { v: c, u: unit(id) }; };
+  return { oggi: v("oggi"), g7: v("7g"), mese: v("mese"), anno: v("anno") };
+}
+const mm = (x, u = "mm") => x?.v === undefined ? "…" : x?.v == null ? "—" : fnum(x.v, x.v < 100 ? 1 : 0) + " " + esc(x.u || u);
+const SG = { get g() { const v = sGet("stG"); return ["temp", "pioggia", "vento", "pressione"].includes(v) ? v : "temp"; }, set g(v) { sSet("stG", v); },
+  get p() { return sGet("stP") === "7g" ? "7g" : "24h"; }, set p(v) { sSet("stP", v); } };
+Object.assign(ACT, { stG: el => { SG.g = el.dataset.v; render(); }, stP: el => { SG.p = el.dataset.v; render(); } });
+/** pioggia ora per ora (24 ore) o giorno per giorno (7 giorni) */
+function barrePioggia(id) {
+  const g7 = SG.p === "7g", da = g7 ? new Date(inizioOggi() - 6 * G) : new Date(Math.floor((Date.now() - 23 * ORA) / ORA) * ORA);
+  const tot = ["total", "total_increasing"].includes(attr(id, "state_class"));
+  const r = statistiche([id], da, g7 ? "day" : "hour", tot ? ["change"] : ["max"]); if (r === undefined) return `<div class="small muted">${t("Carico…", "Loading…")}</div>`;
+  let P = (r?.[id] || []).map(p => ({ x: typeof p.start === "number" ? p.start : Date.parse(p.start), v: tot ? Math.max(0, p.change || 0) : p.max || 0 }));
+  /* sensore «di oggi» senza total: ogni ora quanto è salito il massimo (a mezzanotte riparte) */
+  if (!tot && !g7) P = P.map((p, i) => ({ x: p.x, v: i && new Date(p.x).getDate() === new Date(P[i - 1].x).getDate() ? Math.max(0, p.v - P[i - 1].v) : p.v }));
+  const xs = []; for (let x = da.getTime(); x <= Date.now(); x = g7 ? new Date(new Date(x).setDate(new Date(x).getDate() + 1)).getTime() : x + ORA) xs.push(x);
+  const per = new Map(P.map(p => [p.x, p.v]));
+  return barre([{ nome: t("Pioggia", "Rain"), colore: "#64d2ff", valori: xs.map(x => ({ x, v: per.get(x) ?? 0 })) }], { u: unit(id) || "mm", periodo: g7 ? "day" : "hour", tocca: "stPiog" + SG.p, xs });
+}
+/** la temperatura della stazione (per Home, Colpo d'occhio e salvaschermo) */
+export function tempStazione() { const id = sensore("temp"); return id ? num(S[id]?.state) : null; }
+VISTE.tempStazione = () => C().usaStazione && meteoPagina() ? tempStazione() : null;
+/** i dati della stazione per il salvaschermo «Meteo»: { t, min, max, hum, vento, ventoU, perc, piove } */
+export function datiStazione() {
+  if (!haStazione()) return null;
+  const v = k => { const id = sensore(k); return id ? num(S[id]?.state) : null; }, T = v("temp"), id = sensore("temp"), M = id ? minMaxOggi(id) : null;
+  const P = sensore("percepita") ? v("percepita") : percepitaDa(T, v("hum"), kmh(v("vento"), unit(sensore("vento") || "")));
+  return { t: T, min: M?.min?.v ?? null, max: M?.max?.v ?? null, hum: v("hum"), vento: v("vento"), ventoU: sensore("vento") ? unit(sensore("vento")) : "", perc: P,
+    piove: sensore("piove") ? S[sensore("piove")].state === "on" : (v("intensita") || 0) > 0 };
+}
+/** percepita di Steadman da temperatura (°C), umidità e vento (km/h) */
+function percepitaDa(T, RH, v) { if (T == null || RH == null) return null; const e = RH / 100 * 6.105 * Math.exp(17.27 * T / (237.7 + T)); return T + .33 * e - .7 * ((v || 0) / 3.6) - 4; }
+/** punto di rugiada (Magnus) */
+const rugiadaDa = (T, RH) => { if (T == null || RH == null || RH <= 0) return null; const a = 17.62, b = 243.12, g = Math.log(RH / 100) + a * T / (b + T); return b * g / (a - g); };
+function stazioneCard(w) {
+  if (!haStazione()) return "";
+  const s = k => sensore(k), v = k => { const id = s(k); return id ? num(S[id]?.state) : null; };
+  const tid = s("temp"), T = v("temp"), uT = tid ? unit(tid) || "°" : "°", M = tid ? minMaxOggi(tid) : null, H = v("hum"), dev = DEVICES[REG[tid || s("pioggia") || s("vento") || s("pressione")]?.device];
+  const g = x => x == null ? "—" : fnum(x, 1) + "°";
+  /* percepita e rugiada: dalla stazione, altrimenti calcolate */
+  const P = s("percepita") ? { v: v("percepita"), calc: false } : T != null && H != null ? { v: percepitaDa(T, H, kmh(v("vento"), unit(s("vento") || ""))), calc: true } : null;
+  const R = s("rugiada") ? { v: v("rugiada"), calc: false } : T != null && H != null ? { v: rugiadaDa(T, H), calc: true } : null;
+  /* confronto con le previsioni */
+  const Tw = w && S[w] ? inC(A(w, "temperature"), w) : null, conf = T != null && Tw != null ? `<div class="mt2cf">🌐 ${t("Il meteo dice", "The forecast says")} <b>${g(Tw)}</b>, ${t("la tua stazione", "your station")} <b>${g(T)}</b>${Math.abs(T - Tw) >= .5 ? ` <i>(${T > Tw ? "+" : "−"}${fnum(Math.abs(T - Tw), 1)}°)</i>` : ""}</div>` : "";
+  const quando = p => p?.t ? hhmm(p.t) : "";
+  const testa = tid ? `<div class="mt2t"><div class="mt2v" style="--tc:${coloreT(T)}">${T != null ? fnum(T, 1) : "—"}<sup>°</sup></div>
+      <div class="mt2x">${M == null ? `<span class="muted">${t("Carico la minima e la massima…", "Loading today's low and high…")}</span>` : M.min ? `<span class="mm"><b class="lo">↓ ${g(M.min.v)}</b> ${t("alle", "at")} ${quando(M.min)}</span><span class="mm"><b class="hi">↑ ${g(M.max.v)}</b> ${t("alle", "at")} ${quando(M.max)}</span>` : ""}
+        <span>${[P?.v != null ? t("Percepita ", "Feels like ") + g(P.v) + (P.calc ? `<i> · ${t("calcolata", "estimated")}</i>` : "") : "", H != null ? "💧 " + Math.round(H) + "%" : "", R?.v != null ? t("rugiada ", "dew point ") + g(R.v) : ""].filter(Boolean).join(" · ")}</span></div></div>` : "";
+  const K = [];
+  /* pioggia */
+  const pid = s("pioggia"), it = v("intensita"), piove = s("piove") ? S[s("piove")].state === "on" : it != null ? it > 0 : null;
+  if (pid) { const Pg = piogge(pid);
+    K.push(tessera("pg " + (piove ? "on" : ""), "🌧️", t("Pioggia", "Rain"), mm(Pg.oggi) + `<small>${t("oggi", "today")}</small>`,
+      `${piove ? `<b class="si">☔ ${t("Sta piovendo", "It's raining")}${it ? " · " + fnum(it, 1) + " " + esc(unit(s("intensita"))) : ""}</b><br>` : it != null ? t("Non piove adesso", "Not raining now") + "<br>" : ""}`
+      + `${Pg.g7.da === "sett" ? t("Settimana", "Week") : t("7 giorni", "7 days")} <b>${mm(Pg.g7)}</b> · ${t("Mese", "Month")} <b>${mm(Pg.mese)}</b> · ${t("Anno", "Year")} <b>${mm(Pg.anno)}</b>`)); }
+  else if (s("piove") || it != null) K.push(tessera("pg " + (piove ? "on" : ""), "🌂", t("Pioggia", "Rain"), piove ? "☔ " + t("Piove", "Raining") : t("Asciutto", "Dry"), it != null ? t("intensità ", "rate ") + fnum(it, 1) + " " + esc(unit(s("intensita"))) : ""));
+  /* vento */
+  const vid = s("vento"), V = v("vento"), rid = s("raffica"), Rf = v("raffica"), gD = gradi(s("dir") ? S[s("dir")].state : null);
+  if (vid || rid) {
+    const maxS = rid && REG[rid]?.device ? idsDispositivo(REG[rid].device).find(x => x.startsWith("sensor.") && deviceClass(x) === "wind_speed" && /max/i.test(nomeV(x)) && numerico(x)) : null;
+    const RM = maxS ? { v: num(S[maxS].state) } : rid ? minMaxOggi(rid)?.max : null, u = esc(unit(vid || rid));
+    K.push(tessera("ve", "💨", t("Vento", "Wind"), V != null ? `${fnum(V, V < 10 && V % 1 ? 1 : 0)}<small>${u}</small>` : "—",
+      [V != null ? BFN()[beaufort(kmh(V, unit(vid)))] : "", gD != null ? daDove(gD) : "", Rf != null ? t("raffiche ", "gusts ") + fnum(Rf, 0) : "", RM?.v != null ? t("massima di oggi ", "today's max ") + `<b>${fnum(RM.v, 0)} ${u}</b>` + (RM.t ? ` ${t("alle", "at")} ${hhmm(RM.t)}` : "") : ""].filter(Boolean).join(" · "), bussola(gD))); }
+  /* pressione con la tendenza */
+  const prid = s("pressione"), pr = v("pressione");
+  if (prid && pr != null) { const d0 = tendenza3h(prid), d = d0 ?? null, h = hPa(pr, unit(prid)), freccia = d == null ? "" : d > .8 ? "↑" : d < -.8 ? "↓" : "→";
+    const frase = d == null ? "" : d <= -3 ? t("in calo veloce: probabile peggioramento", "falling fast: worse weather likely") : d < -.8 ? t("in calo: possibile peggioramento", "falling: weather may get worse")
+      : d >= 3 ? t("in aumento veloce: tempo in miglioramento, con vento", "rising fast: improving, with wind") : d > .8 ? t("in aumento: tempo in miglioramento", "rising: weather improving") : t("stabile", "steady");
+    K.push(tessera("pr", "⏱️", t("Pressione", "Pressure"), `${fnum(pr, /inhg/i.test(unit(prid)) ? 2 : 0)}<small>${esc(unit(prid))}</small>${freccia ? `<span class="mt2tr ${d < -.8 ? "giu" : d > .8 ? "su" : ""}">${freccia}</span>` : ""}`,
+      (d != null ? `<b>${esc(frase)}</b> · ${(d > 0 ? "+" : d < 0 ? "−" : "") + fnum(Math.abs(d), 1)} hPa ${t("in 3 ore", "in 3 hours")}` : d0 === undefined ? t("calcolo la tendenza…", "working out the trend…") : "")
+      + (h < 1005 ? " · " + t("bassa", "low") : h > 1022 ? " · " + t("alta", "high") : ""))); }
+  /* UV, luce, radiazione */
+  const uv = v("uv"); if (uv != null) { const [, n, col] = uvLiv(uv); K.push(tessera("uv", "🕶️", t("Indice UV", "UV index"), fnum(uv, uv < 10 && uv % 1 ? 1 : 0), `<b style="color:${col}">${n}</b>`, `<div class="mt1uv"><i style="left:${lim(uv / 11 * 100, 0, 100)}%"></i></div>`)); }
+  const lx = v("lux"), rad = v("rad");
+  if (lx != null || rad != null) K.push(tessera("lx", "☀️", rad != null ? t("Radiazione solare", "Solar radiation") : t("Luminosità", "Brightness"),
+    rad != null ? `${fnum(rad, 0)}<small>${esc(unit(s("rad")) || "W/m²")}</small>` : `${fnum(lx >= 10000 ? lx / 1000 : lx, lx >= 10000 ? 1 : 0)}<small>${lx >= 10000 ? "klx" : "lx"}</small>`,
+    rad != null && lx != null ? t("luminosità ", "brightness ") + fnum(lx, 0) + " lx" : ""));
+  /* grafici */
+  const GR = [["temp", "🌡️ " + t("Temperatura", "Temperature"), tid], ["pioggia", "🌧️ " + t("Pioggia", "Rain"), pid], ["vento", "💨 " + t("Vento", "Wind"), vid || rid], ["pressione", "⏱️ " + t("Pressione", "Pressure"), prid]].filter(x => x[2]);
+  const gs = GR.find(x => x[0] === SG.g) || GR[0];
+  const grafico1 = !gs ? "" : gs[0] === "pioggia" ? barrePioggia(gs[2]) : grafico(gs[2], SG.p, { colore: { temp: "#ff9f0a", vento: "#64d2ff", pressione: "#bf5af2" }[gs[0]] });
+  const agg = [tid, pid, vid, prid].filter(Boolean).map(id => Date.parse(S[id].last_updated || S[id].last_changed) || 0), ultimo = agg.length ? Math.max(...agg) : 0;
+  return `<section class="card span3 mt2"><div class="ch"><h2>🏡 ${t("La mia stazione", "My station")}</h2><div class="row" style="gap:6px">
+      <span class="small muted">${esc(dev?.model || dev?.name || t("sensori di casa", "home sensors"))}${ultimo ? " · " + esc(ago(new Date(ultimo).toISOString())) : ""}</span>
+      ${isAdmin() ? `<button class="btn sm" data-act="mtCfg" title="${t("Impostazioni", "Settings")}" aria-label="${t("Impostazioni", "Settings")}">⚙️</button>` : ""}</div></div>
+    ${testa}${conf}
+    ${K.length ? `<div class="mt1g mt2g">${K.join("")}</div>` : ""}
+    ${GR.length ? `<div class="mt2gr"><div class="row between" style="gap:8px;flex-wrap:wrap"><div class="seg">${GR.map(([k, n]) => `<button class="${gs[0] === k ? "act" : ""}" data-act="stG" data-v="${k}">${n}</button>`).join("")}</div>
+      <div class="seg">${[["24h", t("24 ore", "24 h")], ["7g", t("7 giorni", "7 days")]].map(([k, n]) => `<button class="${SG.p === k ? "act" : ""}" data-act="stP" data-v="${k}">${n}</button>`).join("")}</div></div>${grafico1}</div>` : ""}</section>`;
 }
 
 /* ================= E) radar ================= */
@@ -469,12 +633,13 @@ function prossimiGiorni(w, D, largo) {
 /* ================= pagina ================= */
 function pagina() {
   const w = meteoPagina();
-  if (!w || !S[w]) return `<div class="g g3"><section class="card span3">${`<div class="empty">${t("Nessun meteo in Home Assistant: aggiungi un'integrazione meteo (per esempio «Meteorologisk institutt (Met.no)»).", "No weather in Home Assistant: add a weather integration (for example «Meteorologisk institutt (Met.no)»).")}</div>`}</section></div>`;
-  const D = giornaliere(w), H = orarie(w), L = allerte(w);
-  /* i sensori di casa solo accanto al meteo di casa, non a quello di un altro posto */
-  const lato = [w === weatherEnt() ? sensoriCard(w, D) : "", radarCard()].filter(Boolean).join("");
+  /* senza meteo: la stazione da sola, se c'è (0.7.66) */
+  if (!w || !S[w]) return `<div class="g g3 mt1p">${haStazione() ? stazioneCard(null) : ""}<section class="card span3">${`<div class="empty">${haStazione() ? t("Per le previsioni aggiungi un'integrazione meteo (per esempio «Meteorologisk institutt (Met.no)»).", "For the forecast add a weather integration (for example «Meteorologisk institutt (Met.no)»).") : t("Nessun meteo in Home Assistant: aggiungi un'integrazione meteo (per esempio «Meteorologisk institutt (Met.no)»).", "No weather in Home Assistant: add a weather integration (for example «Meteorologisk institutt (Met.no)»).")}</div>`}</section></div>`;
+  const D = giornaliere(w), H = orarie(w), L = allerte(w), casa = w === weatherEnt();
+  /* i sensori di casa solo accanto al meteo di casa, non a quello di un altro posto; con la stazione stanno in «La mia stazione» */
+  const lato = [casa && !haStazione() ? sensoriCard(w, D) : "", radarCard()].filter(Boolean).join("");
   const fonte = attr(w, "attribution");
-  return `<div class="g g3 mt1p">${allerteCard(L)}${adesso(w, D, H)}${oraPerOra(w, H)}${prossimiGiorni(w, D, !!lato)}${lato ? `<div class="mt1sd">${lato}</div>` : ""}
+  return `<div class="g g3 mt1p">${allerteCard(L)}${casa ? stazioneCard(w) : ""}${adesso(w, D, H)}${oraPerOra(w, H)}${prossimiGiorni(w, D, !!lato)}${lato ? `<div class="mt1sd">${lato}</div>` : ""}
     ${!D.length && !H.length ? `<section class="card span3"><div class="small muted">${t("Questo meteo non dà previsioni.", "This weather source has no forecast.")}</div></section>` : ""}
     ${fonte ? `<div class="span3 small muted mt1fo">${esc(fonte)}</div>` : ""}</div>`;
 }
@@ -502,6 +667,7 @@ function impostazioni() {
     <div class="fl1">🏡 ${t("Sensori di casa", "Home sensors")}</div>
     <p class="small muted" style="margin:0 2px 8px">${t("Le misure della tua stazione meteo o dei sensori esterni, mostrate accanto alle previsioni. Li trovo da solo; se sbaglio, scegli tu.", "Readings from your weather station or outdoor sensors, shown next to the forecast. I find them myself; if I get it wrong, pick them.")}</p>
     <div class="stack">${KIND().map(rigaS).join("")}</div>
+    <label class="row" style="gap:8px;margin:10px 2px 0;font-size:13px;align-items:flex-start"><input type="checkbox" data-chg="mtUsaSt" ${c.usaStazione ? "checked" : ""} ${sensore("temp") ? "" : "disabled"}> <span>${t("Nella Home, nel Colpo d'occhio e in alto mostra la temperatura della tua stazione al posto di quella del meteo", "On Home, in Glance and at the top show your station's temperature instead of the forecast's")}${sensore("temp") ? "" : ` <i class="muted">(${t("serve la temperatura esterna", "needs the outdoor temperature")})</i>`}</span></label>
     <div class="fl1">⚠️ ${t("Allerte meteo", "Weather warnings")}</div>
     <p class="small muted" style="margin:0 2px 8px">${t("Da Meteoalarm, Protezione Civile, DWD, Météo-France, NWS e simili. Le trovo da solo; puoi aggiungerne o toglierne.", "From Meteoalarm, Civil Protection, DWD, Météo-France, NWS and similar. I find them myself; you can add or remove them.")}</p>
     <div class="stack">${F.map(id => { const n = allerteDi(id).length; return `<div class="li"><span class="ic">${n ? "⚠️" : "✅"}</span><div class="tx"><b>${esc(nm(id))}</b><span>${esc(id)} · ${n ? n + " " + t(n === 1 ? "allerta" : "allerte", n === 1 ? "warning" : "warnings") : t("nessuna allerta", "no warnings")}</span></div><button class="btn sm" data-act="mtAlMeno" data-id="${id}">✕</button></div>`; }).join("")
@@ -523,6 +689,7 @@ function impostazioni() {
 }
 const riapri = () => openSheet(impostazioni);
 const salvaMeteo = (fn, msg) => cambia(l => { l.meteo = JSON.parse(JSON.stringify(l.meteo || {})); fn(l.meteo); }, msg);
+CHG.mtUsaSt = el => salvaMeteo(m => { if (el.checked) m.usaStazione = true; else delete m.usaStazione; }, el.checked ? "🏡 " + t("Temperatura della stazione", "Station temperature") : "🌐 " + t("Temperatura del meteo", "Forecast temperature")).then(riapri);
 CHG.mtPioggiaPr = el => { const v = +el.value; cambia(l => { const m = { ...(l.meteo || {}) }; if (v === 50) delete m.pioggiaPr; else m.pioggiaPr = v; if (Object.keys(m).length) l.meteo = m; else delete l.meteo; }, "🌂 " + t("Pioggia probabile da ", "Rain likely from ") + v + "%"); };
 Object.assign(ACT, {
   mtCfg: () => riapri(),
@@ -558,6 +725,6 @@ const RICHIEDE = {
   link: [[t("Aggiungi Met.no", "Add Met.no"), linkIntegrazione("met")]],
   anteprima: [["⛅", t("Poco nuvoloso", "Partly cloudy"), t("umidità 64% · vento 9 km/h", "humidity 64% · wind 9 km/h"), "18°"]] };
 page("meteo", { richiede: RICHIEDE, title: t("Meteo", "Weather"), short: t("Meteo", "Weather"), icon: "🌦️", order: 16.5,
-  show: () => !!meteoPagina(),
+  show: () => !!meteoPagina() || haStazione(),
   badge: () => { try { return allerte().some(a => a.lv >= 3); } catch { return false; } },
   render: pagina });

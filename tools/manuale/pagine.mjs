@@ -190,7 +190,7 @@ export const PAGINE = [
         "**Storico**: scegli giorno, settimana, mese o anno.",
         "⚙️ **Sensori** (amministratori): quali usare per «Chi consuma adesso» e «Consumi di oggi».",
       ],
-      sola: "Legge la **configurazione Energia** di Home Assistant; senza, cerca da sola i sensori di potenza. Quello che non hai (pannelli, batteria, auto) non compare.",
+      sola: "Legge la **configurazione Energia** di Home Assistant; senza, cerca da sola i sensori di potenza. Quello che non hai (pannelli, batteria, auto) non compare. Senza fotovoltaico passa da sola a **Solo contatore** (sotto).",
       consigli: [
         "Configura l'Energia in Home Assistant (Impostazioni → Plance → Energia) con i prezzi: avrai anche i costi.",
         "Ti piace la scena? C'è anche come salvaschermo «Fotovoltaico in tempo reale».",
@@ -204,7 +204,7 @@ export const PAGINE = [
         "**History**: pick day, week, month or year.",
         "⚙️ **Sensors** (admins): which to use for «Using power now» and «Today's usage».",
       ],
-      sola: "It reads Home Assistant's **Energy configuration**; without it, it looks for power sensors by itself. What you don't have (panels, battery, car) doesn't show.",
+      sola: "It reads Home Assistant's **Energy configuration**; without it, it looks for power sensors by itself. What you don't have (panels, battery, car) doesn't show. Without solar it switches to **Meter only** by itself (below).",
       consigli: [
         "Set up Energy in Home Assistant (Settings → Dashboards → Energy) with prices: you'll get costs too.",
         "Like the scene? It's also a screensaver, «Live solar».",
@@ -212,7 +212,7 @@ export const PAGINE = [
     },
   },
   {
-    id: "meteo", scatto: { p: "meteo" },
+    id: "meteo", scatto: { p: "meteo", scorri: ".mt1c" },
     it: {
       sotto: "Il meteo completo, con la tua stazione e le allerte.",
       serve: "Il cielo di adesso con temperatura, massima e minima e quando arriva o smette la pioggia; poi percepita, umidità, vento con la bussola, pressione, UV, visibilità, alba e tramonto. Le previsioni **ora per ora** (24 o 48 ore) e dei **prossimi giorni**, le allerte meteo col colore del livello e, se c'è, il radar della pioggia.",
@@ -239,6 +239,68 @@ export const PAGINE = [
       consigli: [
         "Orange and red warnings also go to the Home Alerts; you pick the level in ⚙️.",
         "Change the home weather in Home → ✏️ Edit on the Weather card.",
+      ],
+    },
+  },
+  {
+    id: "contatore", dopo: "energia", icona: "🔌", scatto: { p: "energia", ls: { mockCasa: "contatore-w", mockCntW: "2500" } },
+    it: {
+      titolo: "Energia: solo contatore",
+      sotto: "Per chi non ha il fotovoltaico: consumi, fasce e bolletta.",
+      serve: "Basta il **contatore di energia** della casa (Shelly EM, lettore ottico, misuratore in quadro), anche senza sensore di potenza: la potenza di adesso si **stima** da quanto cresce. La scena mostra casa, contatore e rete, con una **lancetta** verso la potenza impegnata: arancione dall'80%, rossa oltre il 100% («rischio che salti il contatore»). Sotto: **oggi, ieri, settimana, mese, mese scorso, anno** in kWh ed euro con il confronto con prima, i grafici ora per ora, giorno per giorno e mese per mese, le **fasce F1, F2, F3**, la **stima della bolletta** a fine periodo e il **consumo di base** della notte.",
+      tocchi: [
+        "**Tocco su una barra** dei grafici: il suo valore.",
+        "**⚙️ Contatore e bolletta** (amministratori): contatore, potenza impegnata, fasce (Italia o le tue), prezzo fisso, da un sensore o per fascia, quota fissa, giorno di inizio della bolletta.",
+      ],
+      sola: "Si accende da sola quando non trova i pannelli; trova il contatore nella configurazione Energia o da solo. Le fasce italiane seguono il calendario ARERA, con domeniche e festività.",
+      consigli: [
+        "Imposta la potenza impegnata della tua bolletta (3 kW, 4,5 kW, 6 kW…): la lancetta ti avvisa prima che salti il contatore.",
+        "Hai la monoraria? Spegni le fasce in ⚙️.",
+        "Anche il Colpo d'occhio e il salvaschermo «Consumi» mostrano lancetta e kWh di oggi.",
+      ],
+    },
+    en: {
+      titolo: "Energy: meter only",
+      sotto: "For homes without solar: usage, time bands and the bill.",
+      serve: "All it needs is the home's **energy meter** (Shelly EM, optical reader, panel meter), even without a power sensor: the current power is **estimated** from how fast it grows. The scene shows the house, meter and grid, with a **needle** towards your contracted power: orange from 80%, red above 100% («the meter may trip»). Below: **today, yesterday, week, month, last month, year** in kWh and money compared with before, hour-by-hour, day-by-day and month-by-month charts, the **F1, F2, F3 bands**, the **bill estimate** for the period and the night **base load**.",
+      tocchi: [
+        "**Tap a bar** in the charts: its value.",
+        "**⚙️ Meter and bill** (admins): meter, contracted power, bands (Italy or your own), fixed price, from a sensor or per band, fixed fee, billing start day.",
+      ],
+      sola: "It turns on by itself when no panels are found; it finds the meter in the Energy configuration or by itself. Italian bands follow the ARERA calendar, with Sundays and holidays.",
+      consigli: [
+        "Set the contracted power from your bill (3 kW, 4.5 kW, 6 kW…): the needle warns you before the meter trips.",
+        "Flat-rate tariff? Turn the bands off in ⚙️.",
+        "Glance and the «Energy use» screensaver also show the needle and today's kWh.",
+      ],
+    },
+  },
+  {
+    id: "stazione", dopo: "meteo", icona: "🏡", scatto: { p: "meteo", ls: { mockCasa: "stazione" }, scorri: ".mt2" },
+    it: {
+      titolo: "La mia stazione",
+      sotto: "I dati veri di casa, prima delle previsioni.",
+      serve: "Se hai una **stazione meteo** (Ecowitt, Netatmo, Davis, Tempest, Ambient Weather, Fine Offset) o anche solo un termometro esterno e un pluviometro, in cima alla pagina Meteo c'è **«La mia stazione»**: la temperatura con la **minima e la massima di oggi** e a che ora, percepita, umidità e rugiada, la **pioggia** di oggi, della settimana, del mese e dell'anno, il **vento** con la raffica massima di oggi, la **pressione** con la tendenza delle ultime 3 ore («in calo: possibile peggioramento»), UV e luce. Sotto i grafici delle ultime 24 ore e 7 giorni e il confronto con le previsioni.",
+      tocchi: [
+        "**Temperatura, Pioggia, Vento, Pressione** e **24 ore / 7 giorni**: scegli il grafico.",
+        "**⚙️** (amministratori): correggi i sensori; puoi mostrare la temperatura della stazione nella Home e nel Colpo d'occhio.",
+      ],
+      sola: "Trova da sola i sensori della stazione (anche con i nomi in inglese delle integrazioni) e scarta quelli dentro casa, delle caldaie e delle piante.",
+      consigli: [
+        "Il salvaschermo «Meteo» usa i dati veri della stazione.",
+      ],
+    },
+    en: {
+      titolo: "My station",
+      sotto: "Your home's real readings, before the forecast.",
+      serve: "If you have a **weather station** (Ecowitt, Netatmo, Davis, Tempest, Ambient Weather, Fine Offset) or just an outdoor thermometer and a rain gauge, the Weather page starts with **«My station»**: the temperature with **today's low and high** and when, feels-like, humidity and dew point, **rain** today, this week, month and year, **wind** with today's highest gust, **pressure** with the 3-hour trend («falling: weather may get worse»), UV and light. Below, charts of the last 24 hours and 7 days and the comparison with the forecast.",
+      tocchi: [
+        "**Temperature, Rain, Wind, Pressure** and **24 h / 7 days**: pick the chart.",
+        "**⚙️** (admins): fix the sensors; you can show the station temperature on Home and in Glance.",
+      ],
+      sola: "It finds the station's sensors by itself (also with the integrations' English names) and skips indoor, boiler and plant sensors.",
+      consigli: [
+        "The «Weather» screensaver uses the station's real readings.",
       ],
     },
   },

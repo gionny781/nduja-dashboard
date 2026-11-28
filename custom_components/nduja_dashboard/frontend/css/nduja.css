@@ -249,6 +249,67 @@ button.en7k{cursor:pointer}button.en7k:active{transform:translate(-50%,-50%) sca
 .og68 div{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.05)}
 .og68 small{display:block;font-size:11.5px;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em}
 .og68 b{font-size:19px;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* ---------- solo contatore (0.7.66): lancetta verso la potenza impegnata, riquadri dei periodi, fasce, bolletta, consumo di base ---------- */
+.en8{display:flex;align-items:center;gap:12px;min-width:0;padding:10px 14px 10px 10px;border-radius:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
+.en8g{width:118px;height:66px;flex:none;overflow:visible}
+.en8g path{fill:none;stroke-linecap:round}.en8g .tr{stroke:rgba(255,255,255,.1);stroke-width:10}
+.en8g .z1{stroke:#30d158;stroke-width:6;opacity:.75}.en8g .z2{stroke:#ff9f0a;stroke-width:6;opacity:.8}.en8g .z3{stroke:#ff453a;stroke-width:6;opacity:.8}
+.en8g .tk{stroke:var(--tx);stroke-width:2;opacity:.7}
+.en8g .ag{transition:transform .9s cubic-bezier(.3,1.3,.5,1)}.en8g .ag path{fill:var(--tx);stroke:none}.en8g .pv{fill:var(--tx)}
+.en8t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.en8t b{font-size:24px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1;color:#7fdcff}
+.en8t span{font-size:12.5px;color:var(--tx2)}.en8t span i{font-style:normal;color:var(--tx3)}
+.en8t em{font-style:normal;font-size:12.5px;font-weight:700;line-height:1.3;color:#ffb340}
+.en8.at{border-color:rgba(255,159,10,.45);background:linear-gradient(135deg,rgba(255,159,10,.16),rgba(255,255,255,.04))}.en8.at .en8t b{color:#ffb340}
+.en8.ko{border-color:rgba(255,69,58,.55);background:linear-gradient(135deg,rgba(255,69,58,.2),rgba(255,255,255,.04))}.en8.ko .en8t b,.en8.ko .en8t em{color:#ff6961}
+.en8k{display:flex;flex-direction:column;justify-content:center;gap:2px;padding:10px 14px;border-radius:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
+.en8k small{font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--tx3)}.en8k b{font-size:20px;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* sopra la scena, nello schermo largo: in alto a sinistra, nel cielo */
+.en8o{position:absolute;z-index:1;left:2.2%;top:5%;display:flex;gap:8px;align-items:stretch;max-width:56%;font-size:clamp(10px,1.3cqw,14px)}
+.en8o .en8,.en8o .en8k{color:#fff;background:rgba(8,12,22,.62);border-color:rgba(255,255,255,.16);box-shadow:0 6px 18px -8px rgba(0,0,0,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.en8o .en8g{width:clamp(80px,11cqw,124px);height:auto}.en8o .en8g .tk,.en8o .en8g .ag path,.en8o .en8g .pv{fill:#fff;stroke:#fff}.en8o .en8g .ag path{stroke:none}
+.en8o .en8t b{font-size:clamp(16px,2.3cqw,26px)}.en8o .en8t span{color:rgba(255,255,255,.78)}.en8o .en8t span i{color:rgba(255,255,255,.6)}.en8o .en8k small{color:rgba(255,255,255,.65)}
+.en8o .en8.at{background:rgba(70,40,0,.7)}.en8o .en8.ko{background:rgba(80,10,10,.72)}
+body.lite .en8o .en8,body.lite .en8o .en8k{-webkit-backdrop-filter:none;backdrop-filter:none}
+/* sotto la scena (telefono, Colpo d'occhio) */
+.en8r{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:10px}.en8r .en8{min-width:0}
+.en8.sm .en8g{width:96px;height:54px}.en8.sm .en8t b{font-size:20px}
+@media (max-width:440px){.en8{gap:8px;padding:8px 10px 8px 6px}.en8g,.en8.sm .en8g{width:82px;height:46px}.en8t b,.en8.sm .en8t b{font-size:19px}.en8t span,.en8t em{font-size:11.5px}.en8k{padding:8px 10px}.en8k b{font-size:17px}.en8k small{font-size:10.5px}}
+body.rm .en8g .ag{transition:none}
+@media (prefers-reduced-motion:reduce){.en8g .ag{transition:none}}
+/* riquadri dei periodi */
+.en9{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.en9r{display:flex;flex-direction:column;gap:2px;min-width:0;padding:11px 13px 12px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.05)}
+.en9r small{font-size:11.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.en9r b{font-size:21px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.en9e{font-size:14px;font-weight:600;color:var(--tx2);font-variant-numeric:tabular-nums;min-height:1.2em}
+.en9c{font-size:12px;line-height:1.35;color:var(--tx3);min-height:1.35em}
+.en9d{display:inline-block;padding:0 6px;border-radius:7px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--tx2);background:rgba(255,255,255,.08)}
+.en9d.su{color:#ff8a80;background:rgba(255,69,58,.14)}.en9d.giu{color:#4ce07a;background:rgba(48,209,88,.14)}
+.en9s{display:block;margin-top:2px;font-size:12.5px;color:var(--tx2)}.en9p{color:#64d2ff}
+/* fasce */
+.en9fn{display:inline-flex;max-width:100%;flex-wrap:wrap;align-items:center;gap:6px;padding:5px 12px;border-radius:12px;font-size:13.5px;background:rgba(255,255,255,.06);border:1px solid var(--fc)}.en9fn b{color:var(--fc)}
+.en9f{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(50px,1fr) auto;grid-template-rows:auto auto;column-gap:10px;align-items:center;padding:6px 2px}
+.en9f .n{display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;min-width:0}.en9f .n i{width:10px;height:10px;border-radius:3px;flex:none}
+.en9f .b{display:block;height:7px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden}.en9f .b u{display:block;height:100%;border-radius:4px}
+.en9f>b{font-size:14px;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}.en9f small{grid-column:3;text-align:right;font-size:12px;color:var(--tx3);white-space:nowrap}
+.en9f.ora .n{color:var(--tx)}.en9f:not(.ora) .n{color:var(--tx2)}
+/* consumo di base */
+.en9b{display:flex;flex-direction:column;gap:4px}.en9b>b{font-size:30px;font-weight:700;letter-spacing:-.02em;color:#bf8cff;font-variant-numeric:tabular-nums}
+.en9b span{font-size:14.5px;line-height:1.45;color:var(--tx)}.en9b small{font-size:12.5px;line-height:1.4;color:var(--tx3)}
+/* ⚙️ ore delle fasce */
+.en9hh{display:flex;flex-direction:column;gap:6px;margin:10px 0 6px}
+.en9h{display:grid;grid-template-columns:92px minmax(0,1fr);gap:8px;align-items:center}.en9h>span{font-size:12px;color:var(--tx2)}
+.en9hg{display:grid;grid-template-columns:repeat(24,minmax(0,1fr));gap:2px}
+.en9hg button{height:24px;padding:0;border-radius:4px;font-size:9px;font-weight:700;color:rgba(0,0,0,.6);border:0;cursor:pointer}.en9hg button:disabled{cursor:default}
+.en9hg .f1,.en9hl .f1{background:#ff9f0a}.en9hg .f2,.en9hl .f2{background:#64d2ff}.en9hg .f3,.en9hl .f3{background:#30d158}
+.en9hl{display:flex;gap:14px;font-size:12px;color:var(--tx2);margin-left:100px}.en9hl i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+@media (max-width:480px){.en9h{grid-template-columns:1fr}.en9hl{margin-left:0}.en9{grid-template-columns:1fr 1fr}}
+.en2 .fld1 input{width:100%;min-width:0;box-sizing:border-box}
+/* barre da toccare (grafici.js) */
+.grh1{fill:transparent;cursor:pointer}.grh1.on{fill:rgba(255,255,255,.07)}
+.grv1{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;min-height:30px;margin-top:6px;padding:6px 10px;border-radius:12px;background:rgba(255,255,255,.05);font-size:13px}
+.grv1 i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}.grv1 .muted{font-size:12.5px}
 .cn1{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(60px,1fr) 78px;gap:10px;align-items:center;padding:7px 2px;text-align:left;width:100%;border-bottom:1px solid rgba(255,255,255,.05)}
 .cn1 span{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cn1 i{height:7px;border-radius:4px;background:rgba(255,255,255,.07);overflow:hidden}.cn1 i b{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#ffd60a,#ff9f0a)}
@@ -677,6 +738,14 @@ body.ss-on .shell,body.ss-on .tabbar,body.ss-on .sheet,body.ss-on .backdrop,body
 .sscn1 small{display:block;font-size:max(12px,2.6cqmin);opacity:.72}
 .sscn1 b{display:block;font-size:16cqmin;font-weight:200;line-height:1;letter-spacing:-.03em;color:var(--wc);font-variant-numeric:tabular-nums}
 .sscn1 span{display:block;margin-top:1.2cqmin;font-size:max(12px,2.6cqmin);opacity:.85}
+/* solo contatore (0.7.66): lancetta e kWh di oggi, sempre scuri come il resto del salvaschermo */
+.sscn4{display:flex;flex-wrap:wrap;gap:1.6cqmin;margin-top:2.2cqmin;align-items:stretch}
+.ssr1 .sscn .en8{color:#fff!important;background:rgba(255,255,255,.07)!important;border-color:rgba(255,255,255,.12)!important;padding:1.4cqmin 2.2cqmin 1.4cqmin 1.4cqmin;border-radius:2.4cqmin}
+.ssr1 .sscn .en8.at{background:rgba(255,159,10,.16)!important;border-color:rgba(255,159,10,.45)!important}.ssr1 .sscn .en8.ko{background:rgba(255,69,58,.2)!important;border-color:rgba(255,69,58,.55)!important}
+.ssr1 .sscn .en8g{width:max(90px,16cqmin);height:auto}.ssr1 .sscn .en8g .tk,.ssr1 .sscn .en8g .ag path,.ssr1 .sscn .en8g .pv{fill:#fff!important;stroke:#fff!important}.ssr1 .sscn .en8g .ag path{stroke:none!important}
+.ssr1 .sscn .en8t b{display:none}.ssr1 .sscn .en8t span{color:rgba(255,255,255,.8)!important;font-size:max(12px,2.4cqmin)}.ssr1 .sscn .en8t em{font-size:max(12px,2.3cqmin);color:#ffb340!important}.ssr1 .sscn .en8.ko .en8t em{color:#ff6961!important}
+.sscn5{display:flex;flex-direction:column;justify-content:center;gap:.4cqmin;padding:1.4cqmin 2.2cqmin;border-radius:2.4cqmin;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12)}
+.sscn5 small{font-size:max(11px,2.2cqmin)!important;margin:0!important}.sscn5 b{font-size:max(18px,4.4cqmin)!important;font-weight:600!important;color:#fff!important;letter-spacing:-.01em!important}
 .sscn2 h4,.sscn3 h4{font-size:max(11px,2.1cqmin);letter-spacing:.14em;text-transform:uppercase;opacity:.6;font-weight:700;margin-bottom:1.4cqmin}
 .sscn3>div{display:grid;grid-template-columns:minmax(0,1fr) minmax(40px,16cqw) auto;align-items:center;gap:1.6cqmin;padding:.8cqmin 0;font-size:max(12px,2.5cqmin)}
 .sscn3 span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.88}
@@ -2736,6 +2805,17 @@ body.lite .sc1zd *{animation:none!important}
 .mt1p{align-items:start}
 .mt1c .ch{gap:10px;flex-wrap:wrap}
 .mt1sc0{max-width:none}
+/* 🏡 la mia stazione (0.7.66) */
+.mt2t{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.mt2v{font-size:64px;font-weight:700;line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:var(--tc,var(--tx))}.mt2v sup{font-size:.45em;font-weight:600;vertical-align:.9em;margin-left:2px}
+.mt2x{display:flex;flex-direction:column;gap:3px;min-width:0;font-size:13.5px;color:var(--tx2)}.mt2x i{font-style:normal;color:var(--tx3)}
+.mt2x .mm{font-size:14.5px;color:var(--tx2)}.mt2x .mm b{font-size:16px;font-variant-numeric:tabular-nums}.mt2x .lo{color:#64d2ff}.mt2x .hi{color:#ff9f0a}
+.mt2cf{display:inline-block;margin-top:12px;padding:6px 12px;border-radius:12px;font-size:13.5px;color:var(--tx2);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06)}.mt2cf b{color:var(--tx)}.mt2cf i{font-style:normal;color:var(--tx3)}
+.mt2tr{font-size:22px;font-weight:800;color:var(--tx2)}.mt2tr.giu{color:#ff9f0a}.mt2tr.su{color:#30d158}
+.mt2g>.mt1k.pg{flex:2 1 240px}.mt2g>.mt1k.ve{flex:2 1 240px}.mt2g>.mt1k.pr{flex:1.3 1 210px}.mt2g>.mt1k.uv{flex:1 1 150px}.mt1k.pg.on{border-color:rgba(100,210,255,.45);background:linear-gradient(135deg,rgba(100,210,255,.14),rgba(255,255,255,.04))}.mt1k .si{color:#64d2ff}
+.mt2g>.mt1k.lx{flex:1 1 150px}
+.mt2gr{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)}.mt2gr .gr1{margin-top:10px}
+@media (max-width:700px){.mt2v{font-size:52px}.mt2t{gap:12px}.mt2g>.mt1k.pg{grid-column:1/-1}}
 .mt1o{position:absolute;z-index:1;left:2.2%;top:5%;display:flex;align-items:center;gap:14px;padding:10px 18px 10px 14px;border-radius:22px;background:rgba(8,14,28,.34);border:1px solid rgba(245,247,251,.16);
   -webkit-backdrop-filter:blur(14px) saturate(1.3);backdrop-filter:blur(14px) saturate(1.3);color:#f5f7fb;box-shadow:0 10px 30px -14px rgba(0,0,0,.55);max-width:62%}
 .mt1t{font-size:58px;font-weight:700;line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums;text-shadow:0 2px 14px rgba(0,0,0,.25)}

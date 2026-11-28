@@ -329,3 +329,19 @@ movimento, prese, luci, una tapparella ogni 90, aggiornamenti, tracker e numeri)
 node tools/mock/velocita.mjs                          # tutte le pagine, 3000 entità in più, CPU 6×
 PAGES=home,mappa RATE=4 node tools/mock/velocita.mjs
 ```
+
+**Solo contatore e stazione meteo** (0.7.66): `mockCasa` può essere anche il **tipo di casa** invece dei dati delle sezioni (all'avvio va in `mockTipoCasa` e `mockCasa` torna `{}`; per avere anche le sezioni metti `mockTipoCasa` e `mockCasa` insieme):
+- `contatore`: niente fotovoltaico né batteria, solo il contatore kWh di uno Shelly EM (`sensor.shelly_em_energia`) con 14 mesi di statistiche finte (ora, giorno, mese, 5 minuti), senza configurazione Energia e senza sensore di potenza (la potenza si stima);
+- `contatore-w`: in più `sensor.shelly_em_potenza` (valore in `mockCntW`, predefinito 2650 W) e la configurazione Energia nel formato `flow_from` a 0,28 €/kWh;
+- `stazione`: una Ecowitt GW2000 con i nomi veri dell'integrazione (pioggia del giorno, settimana, mese e anno, raffica massima, pressione relativa e assoluta, radiazione) e 7 giorni di storico e statistiche (piove da stamattina, ieri pomeriggio e 4 giorni fa; pressione in calo). `mockStazione` = `netatmo`, `davis`, `tempest`, `ambient`, `fineoffset` o `sparsi` mette al suo posto quella stazione. Anche la stazione di sempre della casa di prova (`sensor.stazione_meteo_*`) ha ora lo stesso storico finto.
+```bash
+ORA="2026-11-28T19:40" LS='{"mockCasa":"contatore"}' node tools/mock/shot.mjs energia 1280 3000 contatore.png
+LS='{"mockCasa":"contatore-w","mockCntW":"3400"}' node tools/mock/shot.mjs energia 390 1100 rosso.png
+LS='{"mockCasa":"stazione"}' node tools/mock/shot.mjs meteo 1280 2400 stazione.png
+node tools/mock/contatore.mjs      # fasce F1/F2/F3 (feriali, sabato, domenica, festivi), fasce scelte a mano, lancetta, previsione della bolletta
+node tools/mock/stazioni.mjs       # quali sensori trova la pagina Meteo per ogni stazione
+ORA="2026-11-28T11:00" LS='{"mockCasa":"stazione"}' node tools/mock/html.mjs energia 1280 > energia.html   # HTML della pagina, per confrontare due versioni
+ATTESA=6000 LS='{"mockCasa":"contatore","nduja_ssMin":"5","nduja_ssStile":"consumi"}' node tools/mock/attesa.mjs impostazioni 1280 800 ss.png '[data-act="ssProva"] >> nth=0'
+LS='{"mockCasa":"contatore"}' PAGES=energia,meteo node tools/mock/velocita.mjs
+LS='{"mockCasa":"stazione"}' node tools/mock/giro.mjs   # tutte le pagine del menu, 1280 e 390, scuro e chiaro: errori e pagine vuote
+```

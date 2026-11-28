@@ -274,6 +274,10 @@ export function weatherEnt() {
   }
   return best;
 }
+/** temperatura di fuori da mostrare: quella della stazione di casa se l'amministratore l'ha scelta (pagina Meteo → ⚙️, 0.7.66), altrimenti quella del meteo */
+export const tempFuori = w => { try { const v = VISTE.tempStazione?.(); if (v != null) return v; } catch {} return attr(w, "temperature"); };
+/** la temperatura viene dalla stazione? */
+export const daStazione = () => { try { return VISTE.tempStazione?.() != null; } catch { return false; } };
 export const forecast = (eid, type = "daily") => cached("fc:" + eid + type, 30 * 60000, async () => (await svcResp("weather", "get_forecasts", { type }, eid))?.[eid]?.forecast || []) || [];
 
 /* ================= componenti ================= */
@@ -622,7 +626,7 @@ function renderStrip() {
   patch($("#strip"), `${canEdit ? `<button class="pillv edt1 ${UI.edit ? "on" : ""}" data-act="edToggle">${UI.edit ? "✓ " + t("Fatto", "Done") : "✏️ " + t("Modifica", "Edit")}</button>` : ""}${extra}
     ${ents("person").length ? `<span class="pillv">🏠 ${home} ${t("in casa", "home")}</span>` : ""}
     ${L ? `<span class="pillv sun" data-act="go" data-id="luci">💡 ${L}</span>` : ""}
-    ${w ? `<span class="pillv">${(WX()[S[w].state] || ["🌡️"])[0]} ${fnum(attr(w, "temperature"))}°</span>` : ""}
+    ${w ? `<span class="pillv">${(WX()[S[w].state] || ["🌡️"])[0]} ${fnum(tempFuori(w))}°</span>` : ""}
     <button class="pillv th1" data-act="theme" title="${t("Tema", "Theme")}">${{ auto: "◐", light: "☀︎", dark: "☾" }[tema()]}</button>
     <button class="pillv th1 ${fsEl() || chiosco() ? "on" : ""}" data-act="fullscreen" title="${t("Tutto schermo", "Full screen")}">${fsEl() ? "🗗" : "⛶"}</button>
     ${UI.page === "home" ? "" : `<span class="pillv"><span class="st ${conn?.connected ? "ok" : ""}"></span>${hhmm(Date.now())}</span>`}`);

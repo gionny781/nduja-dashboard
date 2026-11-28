@@ -2,7 +2,7 @@
 // Uso, dalla radice del repo (una volta: npm i --no-save playwright-core):
 //   node tools/manuale/genera.mjs            i due manuali
 //   node tools/manuale/genera.mjs it         solo l'italiano
-// Variabili: CHROME = percorso di Chromium (predefinito /opt/pw-browsers/chromium); Q = qualità JPEG delle schermate (predefinita 72);
+// Variabili: CHROME = percorso di Chromium (predefinito /opt/pw-browsers/chromium); Q = qualità JPEG delle schermate (predefinita 66: con 43 voci a 72 si superano i 6 MB);
 //   HTML=1 lascia in tools/manuale/out/ anche l'HTML di stampa e le pagine del PDF in PNG (per controllarle).
 // Cosa fa: avvia da solo un piccolo server per il finto Home Assistant, legge l'ordine del menu, fa le schermate (tablet in tema scuro,
 // qualcuna chiara), riempie il modello di stampa (modello.css), stampa il PDF due volte (la prima per sapere su che pagina cade ogni
@@ -21,7 +21,7 @@ import { TESTI } from "./testi.mjs";
 const QUI = dirname(fileURLToPath(import.meta.url)), ROOT = resolve(QUI, "../..");
 const DEST = join(ROOT, "custom_components/nduja_dashboard/frontend/manuale");
 const OUT = join(QUI, "out");
-const MAX = 6e6, Q = +(process.env.Q || 72);   // 6 MB = 6 milioni di byte
+const MAX = 6e6, Q = +(process.env.Q || 66);   // 6 MB = 6 milioni di byte
 const ORA = "2026-11-25T11:00";            // stessa ora della galleria: un mercoledì mattina col sole
 const LINGUE = process.argv.slice(2).filter(l => ["it", "en"].includes(l));
 const versione = JSON.parse(readFileSync(join(ROOT, "custom_components/nduja_dashboard/manifest.json"), "utf8")).version;

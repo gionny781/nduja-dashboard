@@ -5,14 +5,15 @@
 //   node tools/mock/velocita.mjs                       tutte le pagine, 3000 entità in più (mockTante + mockTanteMix), CPU 6×
 //   TANTE=1000 RATE=4 PAGES=home,mappa node tools/mock/velocita.mjs
 // Variabili: TANTE (entità in più), RATE (quante volte più lenta la CPU), W (larghezza), NOMIX=1 (solo sensori di luce, come prima della 0.7.65),
-//   PAGES (elenco), OUT (file JSON dei risultati), PORT, CHROME.
+//   PAGES (elenco), OUT (file JSON dei risultati), PORT, CHROME, LS (altre chiavi di localStorage, es. '{"mockCasa":"contatore"}', 0.7.66).
 import { chromium } from "playwright-core";
 const N = process.env.TANTE || "3000", RATE = +(process.env.RATE || 6), W = +(process.env.W || 1340);
 const b = await chromium.launch({ executablePath: process.env.CHROME || "/opt/pw-browsers/chromium" });
 const p = await b.newPage({ viewport: { width: W, height: 900 } });
 const errs = []; p.on("pageerror", e => errs.push(e.message));
 await p.goto(`http://localhost:${process.env.PORT || 8765}/tools/mock/host.html`);
-await p.evaluate(([n, mix]) => { localStorage.clear(); localStorage.setItem("nduja_theme", "dark"); localStorage.setItem("mockTante", n); if (mix) localStorage.setItem("mockTanteMix", "1"); }, [N, process.env.NOMIX ? "" : "1"]);
+await p.evaluate(([n, mix, ls]) => { localStorage.clear(); localStorage.setItem("nduja_theme", "dark"); localStorage.setItem("mockTante", n); if (mix) localStorage.setItem("mockTanteMix", "1");
+  for (const [k, v] of Object.entries(JSON.parse(ls || "{}"))) localStorage.setItem(k, v); }, [N, process.env.NOMIX ? "" : "1", process.env.LS || ""]);
 await p.reload(); await p.waitForTimeout(6000);
 const f = p.frames()[1];
 const cdp = await p.context().newCDPSession(p); await cdp.send("Emulation.setCPUThrottlingRate", { rate: RATE });

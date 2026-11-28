@@ -24,7 +24,7 @@
    (transform e opacity), tutto si ferma quando la scheda non è visibile e con «Riduci movimento».
    Anteprima dal vivo nel foglio «Personalizza» (stesso disegno, in piccolo). */
 import { S, ACT, CHG, FISSI, UI, AGGIUNGI, VISTE, t, LOC, esc, fnum, attr, W, nm, watts, sGet, sSet, ws, toast, openSheet, closeSheet, render, patch, cached,
-  weatherEnt, WX, ents, roomTemp, roomHum, areasSorted, AREAS, forecast, myHA } from "./core.js";
+  weatherEnt, WX, ents, roomTemp, roomHum, areasSorted, AREAS, forecast, myHA, tempFuori, daStazione } from "./core.js";
 import { inDiretta } from "./video.js";
 import { indirizzoLocale, fileEsiste } from "./edit.js";
 import { calendari, eventi, inizio, fine, allDay, nomeGiorno, colore, nelGiorno } from "./agenda.js";
@@ -41,6 +41,8 @@ function modulo(nome) {
   return MOD[nome];
 }
 const energia = () => modulo("energia");
+/** la stazione meteo di casa (pagina Meteo, 0.7.66): { t, min, max, hum, vento, ventoU, perc, piove } o null */
+const stazione = () => { const m = modulo("meteo"); try { return m?.datiStazione?.() || null; } catch { return null; } };
 /** c'è il fotovoltaico? (null = non lo so ancora: la pagina Energia non è ancora caricata) */
 export function haSolare() { const en = energia(); if (!en) return null; try { return !!en.sensori().pv; } catch { return false; } }
 const haConsumi = () => { const en = energia(); if (!en) return null; try { return en.haEnergia() && en.letture().casa != null; } catch { return false; } };
@@ -99,7 +101,7 @@ function setCfg(s, k, v) { const a = J("ssCfg", {}); a[s] = { ...(a[s] || {}), [
 function disponibile(s) {
   if (s === "solare") return haSolare() !== false;
   if (s === "consumi") return haConsumi() !== false;
-  if (s === "meteo") return !!weatherEnt();
+  if (s === "meteo") return !!weatherEnt() || !!stazione();
   return true;
 }
 /** il fotovoltaico «produce» (con un margine, così non salta avanti e indietro attorno alla soglia) */
@@ -155,7 +157,7 @@ const corto = (s, n = 34) => { s = String(s || ""); return s.length > n ? s.slic
 function pillole(info) {
   const w = weatherEnt(), out = [];
   for (const k of info) {
-    if (k === "meteo" && w && S[w]) { const [ic, tx] = WX()[S[w].state] || ["🌡️", S[w].state]; out.push(`<span>${ic} ${fnum(attr(w, "temperature"), 0)}° <small>${esc(tx)}</small></span>`); }
+    if (k === "meteo" && w && S[w]) { const [ic, tx] = WX()[S[w].state] || ["🌡️", S[w].state]; out.push(`<span>${ic} ${fnum(tempFuori(w), 0)}° <small>${esc(tx)}</small></span>`); }
     if (k === "temp") { const v = tempCasa(); if (v != null) out.push(`<span>🏠 ${fnum(v, 1)}°</span>`); }
     if (k === "persone" && ents("person").length) out.push(`<span>👥 ${inCasa()} <small>${t("in casa", "home")}</small></span>`);
     if (k === "impegno") { const ev = prossimo(); if (ev) out.push(`<span class="ev">📅 <small>${esc(quando(ev))}</small> ${esc(corto(ev.summary))}</span>`); }
@@ -300,9 +302,10 @@ function pannelli(d) {
     const L = en.letture?.(), T = en.totali?.() || {}, kw = w => w == null ? "—" : Math.abs(w) >= 1000 ? fnum(w / 1000, 1) + " kW" : Math.round(w) + " W";
     if (L && L.casa != null) P.push(pan("⚡", t("Consumi", "Energy"), `<div class="ssq6"><div class="tot"><small>${t("La casa adesso", "Home right now")}</small><b>${kw(L.casa)}</b></div><div class="ssq7">
       ${L.pv != null ? `<div><span>☀️ ${t("Sole", "Solar")}</span><b>${kw(L.pv)}</b></div>` : ""}
-      ${L.rete != null ? `<div><span>🔌 ${L.rete < 0 ? t("Alla rete", "To grid") : t("Dalla rete", "From grid")}</span><b>${kw(Math.abs(L.rete))}</b></div>` : ""}
+      ${L.rete != null && !(L.pv == null && en.soloContatore?.()) ? `<div><span>🔌 ${L.rete < 0 ? t("Alla rete", "To grid") : t("Dalla rete", "From grid")}</span><b>${kw(Math.abs(L.rete))}</b></div>` : ""}
+      ${L.pv == null && en.soloContatore?.() && L.casa != null ? `<div><span>🎚️ ${t("Della potenza impegnata", "Of contracted power")}</span><b>${Math.round(Math.max(0, L.casa) / (en.impegnata() * 10))}%</b></div>` : ""}
       ${L.soc != null ? `<div><span>🔋 ${t("Batteria", "Battery")}</span><b>${fnum(L.soc, 0)}%</b></div>` : ""}
-      ${T.casa != null ? `<div><span>🏠 ${t("Oggi", "Today")}</span><b>${fnum(T.casa, 1)} kWh</b></div>` : ""}</div></div>`, "#7a5a1a"));
+      ${(() => { let k = T.casa; if (k == null && en.soloContatore?.()) { const v = (en.contatori?.() || []).map(en.oggi); k = v.length && !v.some(q => q == null) ? v.reduce((a, q) => a + q, 0) : null; } return k != null ? `<div><span>🏠 ${t("Oggi", "Today")}</span><b>${fnum(k, 1)} kWh</b></div>` : ""; })()}</div></div>`, "#7a5a1a"));
   }
   return P;
 }
@@ -359,7 +362,7 @@ const kW = id => { const u = String(attr(id, "unit_of_measurement") || "").toLow
 function serieCasa(ore) {
   const en = energia(); if (!en?.idsPotenza) return [];
   const I = en.idsPotenza(), usa = I.casa.length ? { casa: I.casa } : { pv: I.pv, rete: I.rete, bat: I.bat };
-  const ids = [...new Set(Object.values(usa).flat())]; if (!ids.length) return [];
+  const ids = [...new Set(Object.values(usa).flat())]; if (!ids.length) return serieContatore(en, ore);
   const st = new Date(Date.now() - ore * 3600e3); st.setMinutes(Math.floor(st.getMinutes() / 5) * 5, 0, 0);
   const r = cached("ssCons:" + ids.join(",") + ":" + ore, 5 * 60000, () => ws({ type: "recorder/statistics_during_period", start_time: st.toISOString(), statistic_ids: ids, period: "5minute", types: ["mean"] }).catch(() => ({})));
   if (r === undefined) return null;
@@ -370,6 +373,16 @@ function serieCasa(ore) {
     const o = per[x], y = usa.casa ? somma(o, usa.casa) : Math.max(0, Math.max(0, somma(o, usa.pv)) + somma(o, usa.rete, I.gridInv) + somma(o, usa.bat, I.batInv));
     return { x: typeof x === "number" && x < 1e11 ? x * 1000 : x, y };
   }).filter(p => isFinite(p.y));
+}
+/** solo il contatore (kWh), senza sensore di potenza (0.7.66): la potenza media di ogni 5 minuti da quanto è cresciuto */
+function serieContatore(en, ore) {
+  const ids = en.soloContatore?.() ? (en.contatori?.() || []) : []; if (!ids.length) return [];
+  const st = new Date(Date.now() - ore * 3600e3); st.setMinutes(Math.floor(st.getMinutes() / 5) * 5, 0, 0);
+  const r = cached("ssCnt:" + ids.join(",") + ":" + ore, 5 * 60000, () => ws({ type: "recorder/statistics_during_period", start_time: st.toISOString(), statistic_ids: ids, period: "5minute", types: ["change"] }).catch(() => ({})));
+  if (r === undefined) return null;
+  const k = id => { const u = String(attr(id, "unit_of_measurement") || "").toLowerCase(); return u === "wh" ? .001 : u === "mwh" ? 1000 : 1; }, per = {};
+  for (const id of ids) for (const p of (r?.[id] || [])) if (p.change != null) per[p.start] = (per[p.start] || 0) + p.change * k(id) * 12000;
+  return Object.keys(per).map(Number).sort((a, b) => a - b).map(x => ({ x: x < 1e11 ? x * 1000 : x, y: Math.max(0, per[x]) }));
 }
 /** un numero «tondo» sopra il massimo, per l'asse */
 const tondo = v => { const p = Math.pow(10, Math.floor(Math.log10(Math.max(v, 1)))), q = v / p; return (q <= 1 ? 1 : q <= 2 ? 2 : q <= 2.5 ? 2.5 : q <= 5 ? 5 : 10) * p; };
@@ -401,9 +414,12 @@ function consumi(d, c, x) {
   if (pct(F.reteCasa)) da.push(`🔌 ${pct(F.reteCasa)}% ${t("dalla rete", "from the grid")}`);
   let top = []; try { top = en.chiConsuma(4); } catch {}
   const mx = Math.max(casa || 0, ...top.map(r => r.w), 1);
+  /* solo contatore (0.7.66): la lancetta verso la potenza impegnata e i kWh di oggi al posto di «dal sole, dalla rete» */
+  const cnt = !!en.soloContatore?.() && Lt.pv == null, oggiK = cnt ? (() => { const v = (en.contatori?.() || []).map(en.oggi); return v.length && !v.some(q => q == null) ? v.reduce((a, q) => a + q, 0) : null; })() : null;
   return `<div class="ssk3"></div>${testata(d, c)}
     <div class="sscn ssmv" style="${spinta(c)}">
-      <div class="sscn1" style="--wc:${colW(casa)}"><small>🏠 ${t("La casa adesso", "The house right now")}</small><b>${watts(casa)}</b>${da.length ? `<span>${da.join(" · ")}</span>` : ""}</div>
+      <div class="sscn1" style="--wc:${colW(casa)}"><small>🏠 ${t("La casa adesso", "The house right now")}${cnt && Lt.stim ? " · " + t("stimata", "estimated") : ""}</small><b>${watts(casa)}</b>${!cnt && da.length ? `<span>${da.join(" · ")}</span>` : ""}
+        ${cnt ? `<div class="sscn4">${en.lancetta(casa, Lt.stim, "ss")}${oggiK != null ? `<div class="sscn5"><small>📅 ${t("Oggi", "Today")}</small><b>${fnum(oggiK, oggiK < 10 ? 1 : 0)} kWh</b></div>` : ""}</div>` : ""}</div>
       <div class="sscn3">${top.length ? `<h4>${t("Chi consuma di più", "Using the most")}</h4>${top.map(r => `<div><span>${esc(nm(r.id))}</span><i><u style="width:${r1(r.w / mx * 100)}%;background:${colW(r.w)}"></u></i><b>${watts(r.w)}</b></div>`).join("")}` : ""}</div>
       <div class="sscn2"><h4>${t(`Ultime ${ore} ore`, `Last ${ore} hours`)}</h4>${graficoCasa(serieCasa(ore), ore, casa)}</div></div>`;
 }
@@ -443,18 +459,21 @@ function lancette(x) {
 
 /* ---------- 🌤️ meteo, grande ---------- */
 function meteoSS(d, c, x) {
-  const w = weatherEnt(); if (!w || !S[w]) return orologio(d, { ...cfg("orologio"), info: [] }, x);
-  const a = S[w].attributes, sl = sole(), st = S[w].state === "sunny" && !sl.su ? "clear-night" : S[w].state, [ic0, tx] = WX()[st] || ["🌡️", S[w].state];
-  const ic = sl.su ? ic0 : iconaMeteo(st, Date.now());   // di notte niente sole dietro le nuvole
-  const ore = [6, 12, 24].includes(+c.ore) ? +c.ore : 12, H = (forecast(w, "hourly") || []).filter(f => Date.parse(f.datetime) > Date.now() - 30 * 60000).slice(0, ore);
-  const D = forecast(w, "daily") || [], oggi = D[0], passo = Math.ceil(H.length / 12), HH = H.filter((_, i) => i % passo === 0);
-  const u = esc(a.temperature_unit || "°"), ve = a.wind_speed != null ? fnum(a.wind_speed, 0) + " " + esc(a.wind_speed_unit || "km/h") : null;
-  const pr = H[0]?.precipitation_probability ?? oggi?.precipitation_probability;
-  const det = [a.apparent_temperature != null && `🌡️ ${t("percepita", "feels like")} ${fnum(a.apparent_temperature, 0)}°`, a.humidity != null && `💧 ${fnum(a.humidity, 0)}%`, ve && `💨 ${ve}`, pr != null && `☔ ${fnum(pr, 0)}%`].filter(Boolean);
+  /* la stazione di casa (0.7.66): temperatura, minima e massima di oggi, percepita, umidità e vento veri; senza meteo, da sola */
+  const w0 = weatherEnt(), sz = stazione();
+  if ((!w0 || !S[w0]) && !sz?.t) return orologio(d, { ...cfg("orologio"), info: [] }, x);
+  const w = w0 && S[w0] ? w0 : null, a = w ? S[w].attributes : {}, sl = sole(), st = !w ? "" : S[w].state === "sunny" && !sl.su ? "clear-night" : S[w].state, [ic0, tx] = w ? WX()[st] || ["🌡️", S[w].state] : ["🌡️", t("La tua stazione", "Your station")];
+  const ic = !w ? "🏡" : sl.su ? ic0 : iconaMeteo(st, Date.now());   // di notte niente sole dietro le nuvole
+  const ore = [6, 12, 24].includes(+c.ore) ? +c.ore : 12, H = w ? (forecast(w, "hourly") || []).filter(f => Date.parse(f.datetime) > Date.now() - 30 * 60000).slice(0, ore) : [];
+  const D = w ? forecast(w, "daily") || [] : [], oggi = D[0], passo = Math.ceil(H.length / 12), HH = H.filter((_, i) => i % passo === 0);
+  const u = esc(a.temperature_unit || "°"), ve = sz?.vento != null ? fnum(sz.vento, 0) + " " + esc(sz.ventoU || "km/h") : a.wind_speed != null ? fnum(a.wind_speed, 0) + " " + esc(a.wind_speed_unit || "km/h") : null;
+  const pr = H[0]?.precipitation_probability ?? oggi?.precipitation_probability, perc = sz?.perc ?? a.apparent_temperature, um = sz?.hum ?? a.humidity;
+  const det = [sz?.piove && `☔ ${t("sta piovendo", "it's raining")}`, perc != null && `🌡️ ${t("percepita", "feels like")} ${fnum(perc, 0)}°`, um != null && `💧 ${fnum(um, 0)}%`, ve && `💨 ${ve}`, !sz?.piove && pr != null && `☔ ${fnum(pr, 0)}%`].filter(Boolean);
+  const T = sz?.t ?? a.temperature, hi = sz?.max ?? oggi?.temperature, lo = sz?.min ?? oggi?.templow;
   return `<div class="ssk4" style="background:${fondoCielo(.42)}"></div>${testata(d, c)}
     <div class="ssmt ssmv" style="${spinta(c)}">
-      <div class="ssmt1"><span class="i">${ic}</span><div><b>${fnum(a.temperature, 0)}${u === "°C" || u === "°F" ? "°" : u}</b><span>${esc(tx)}</span>
-        ${oggi && oggi.temperature != null ? `<small>↑ ${fnum(oggi.temperature, 0)}°${oggi.templow != null ? ` · ↓ ${fnum(oggi.templow, 0)}°` : ""}</small>` : ""}</div>
+      <div class="ssmt1"><span class="i">${ic}</span><div><b>${fnum(T, 0)}${u === "°C" || u === "°F" ? "°" : u}</b><span>${esc(tx)}${sz?.t != null ? ` · 🏡 ${t("la tua stazione", "your station")}` : ""}</span>
+        ${hi != null ? `<small>↑ ${fnum(hi, 0)}°${lo != null ? ` · ↓ ${fnum(lo, 0)}°` : ""}</small>` : ""}</div>
         ${det.length ? `<div class="ssmt2">${det.map(z => `<span>${z}</span>`).join("")}</div>` : ""}</div>
       ${HH.length ? `<div class="ssmt3" style="--n:${HH.length}">${HH.map(f => { const p = f.precipitation_probability;
         return `<div><small>${new Date(f.datetime).toLocaleTimeString(LOC, { hour: "2-digit", minute: "2-digit" })}</small><span>${iconaMeteo(f.condition, Date.parse(f.datetime))}</span><b>${fnum(f.temperature, 0)}°</b>

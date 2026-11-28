@@ -32,19 +32,30 @@ export function linea(P, { colore = "#64d2ff", u = "", periodo = "hour", fasce =
     <circle cx="${X(ult.x)}" cy="${Y(ult.y)}" r="4" fill="${colore}"/></svg>
     <div class="grs1"><span>${t("min", "min")} <b>${fnum(mn, 1)}${esc(u)}</b></span><span>${t("max", "max")} <b>${fnum(mx, 1)}${esc(u)}</b></span><span>${t("ultimo", "last")} <b>${fnum(ult.y, 1)}${esc(u)}</b></span></div>`;
 }
-/** barre: serie = [{nome, colore, valori:[{x, v}]}] affiancate per ogni x */
-export function barre(serie, { u = "", periodo = "day" } = {}) {
-  const xs = [...new Set(serie.flatMap(s => s.valori.map(v => v.x)))].sort((a, b) => a - b);
+/** barre: serie = [{nome, colore, valori:[{x, v}]}] affiancate per ogni x.
+    tocca (facoltativo, 0.7.66): chiave del grafico; ogni colonna si tocca e sotto compare il valore (etichetta(x) = come si chiama la colonna).
+    xs (facoltativo): le colonne da mostrare, anche vuote (per esempio tutte le ore del giorno). */
+export function barre(serie, { u = "", periodo = "day", tocca = "", etichetta = null, xs: tutte = null } = {}) {
+  const xs = tutte ? [...tutte] : [...new Set(serie.flatMap(s => s.valori.map(v => v.x)))].sort((a, b) => a - b);
   if (!xs.length) return `<div class="small muted">${t("Nessun dato per questo periodo.", "No data for this period.")}</div>`;
   const max = Math.max(...serie.flatMap(s => s.valori.map(v => v.v || 0)), .01), [, y1] = asse(0, max);
   const bw = (W - PL - 6) / xs.length, n = serie.length, Y = v => PT + (1 - v / y1) * (H - PT - PB);
+  const scelta = tocca && TOC[tocca] != null && TOC[tocca] < xs.length ? TOC[tocca] : null;
   const rett = xs.map((x, i) => serie.map((s, k) => { const v = s.valori.find(q => q.x === x)?.v || 0;
-    return `<rect x="${(PL + i * bw + bw * .12 + k * (bw * .76 / n)).toFixed(1)}" y="${Y(v).toFixed(1)}" width="${(bw * .76 / n).toFixed(1)}" height="${(H - PB - Y(v)).toFixed(1)}" rx="2" fill="${s.colore}"><title>${esc(s.nome)}: ${fnum(v, 2)} ${esc(u)}</title></rect>`; }).join("")).join("");
+    return `<rect x="${(PL + i * bw + bw * .12 + k * (bw * .76 / n)).toFixed(1)}" y="${Y(v).toFixed(1)}" width="${(bw * .76 / n).toFixed(1)}" height="${(H - PB - Y(v)).toFixed(1)}" rx="2" fill="${s.colore}"${scelta != null && scelta !== i ? ` opacity=".45"` : ""}><title>${esc(s.nome)}: ${fnum(v, 2)} ${esc(u)}</title></rect>`; }).join("")).join("");
   const griglia = [0, .5, 1].map(f => { const v = y1 * f; return `<line x1="${PL}" x2="${W}" y1="${Y(v)}" y2="${Y(v)}" class="gg1"/><text x="${PL - 6}" y="${Y(v) + 4}" class="gl1" text-anchor="end">${fnum(v, v < 10 ? 1 : 0)}</text>`; }).join("");
-  const passo = Math.ceil(xs.length / 7), tick = xs.map((x, i) => i % passo ? "" : `<text x="${PL + i * bw + bw / 2}" y="${H - 4}" class="gl1" text-anchor="middle">${fmtX(x, periodo === "month" ? "month" : "day").replace(/^(\d+) (\w+)$/, periodo === "month" ? "$2" : "$1 $2")}</text>`).join("");
-  return `<svg viewBox="0 0 ${W} ${H}" class="gr1">${griglia}${tick}${rett}</svg>
+  const passo = Math.ceil(xs.length / 7), tick = xs.map((x, i) => i % passo ? "" : `<text x="${PL + i * bw + bw / 2}" y="${H - 4}" class="gl1" text-anchor="middle">${periodo === "hour" ? new Date(x).toLocaleTimeString(LOC, { hour: "2-digit" }) : fmtX(x, periodo === "month" ? "month" : "day").replace(/^(\d+) (\w+)$/, periodo === "month" ? "$2" : "$1 $2")}</text>`).join("");
+  /* colonne da toccare: un rettangolo trasparente alto quanto il grafico, più facile da prendere col dito delle barre basse */
+  const tocchi = tocca ? xs.map((x, i) => `<rect class="grh1 ${scelta === i ? "on" : ""}" x="${(PL + i * bw).toFixed(1)}" y="${PT}" width="${bw.toFixed(1)}" height="${H - PT - PB}" data-act="grBar" data-k="${esc(tocca)}" data-i="${i}"/>`).join("") : "";
+  const nomeX = x => etichetta ? etichetta(x) : periodo === "hour" ? new Date(x).toLocaleTimeString(LOC, { hour: "2-digit", minute: "2-digit" }) : periodo === "month" ? new Date(x).toLocaleDateString(LOC, { month: "long", year: "numeric" }) : new Date(x).toLocaleDateString(LOC, { weekday: "short", day: "numeric", month: "short" });
+  const valore = tocca ? `<div class="grv1">${scelta == null ? `<span class="muted">👆 ${t("Tocca una barra per vedere il valore", "Tap a bar to see its value")}</span>`
+    : `<b>${esc(nomeX(xs[scelta]))}</b>${serie.map(s => { const v = s.valori.find(q => q.x === xs[scelta])?.v; return `<span><i style="background:${s.colore}"></i>${serie.length > 1 ? esc(s.nome) + " " : ""}<b>${v == null ? "—" : fnum(v, v < 10 ? 2 : 1) + " " + esc(u)}</b></span>`; }).join("")}`}</div>` : "";
+  return `<svg viewBox="0 0 ${W} ${H}" class="gr1">${griglia}${tick}${rett}${tocchi}</svg>${valore}
     <div class="grs1">${serie.map(s => `<span><i style="background:${s.colore}"></i>${esc(s.nome)} <b>${fnum(s.valori.reduce((a, q) => a + (q.v || 0), 0), 1)} ${esc(u)}</b></span>`).join("")}</div>`;
 }
+/* colonna scelta di ogni grafico a barre che si tocca (0.7.66) */
+const TOC = {};
+ACT.grBar = el => { const k = el.dataset.k, i = +el.dataset.i; TOC[k] = TOC[k] === i ? null : i; render(); };
 
 /* ---------- scheda del grafico di un sensore ---------- */
 const PER = () => [["24h", t("24 ore", "24 h"), 1, "hour"], ["7g", t("7 giorni", "7 days"), 7, "hour"], ["30g", t("30 giorni", "30 days"), 30, "day"]];

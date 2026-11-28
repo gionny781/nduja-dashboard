@@ -71,6 +71,22 @@ body.light .en7ai{background:rgba(0,0,0,0.030)!important;border:1px solid rgba(0
 body.light .en7ai i{background:rgba(0,0,0,0.040)!important}
 body.light .en7ai.top{background:linear-gradient(135deg,rgba(255,159,10,.17),rgba(0,0,0,0.025))!important}
 body.light .og68 div{background:rgba(0,0,0,0.025)!important}
+body.light .en8{background:rgba(0,0,0,0.030)!important;border:1px solid rgba(0,0,0,0.056)!important}
+body.light .en8g .tr{stroke:rgba(0,0,0,0.070)!important}
+body.light .en8.at{background:linear-gradient(135deg,rgba(255,159,10,.16),rgba(0,0,0,0.020))!important}
+body.light .en8.ko{background:linear-gradient(135deg,rgba(255,69,58,.2),rgba(0,0,0,0.020))!important}
+body.light .en8k{background:rgba(0,0,0,0.030)!important;border:1px solid rgba(0,0,0,0.056)!important}
+body.light .en8o .en8,body.light .en8o .en8k{color:#1c1c1e!important;border-color:rgba(0,0,0,0.112)!important}
+body.light .en8o .en8g .tk,body.light .en8o .en8g .ag path,body.light .en8o .en8g .pv{fill:#1c1c1e!important}
+body.light .en8o .en8t span{color:rgba(28,28,30,.78)!important}
+body.light .en8o .en8t span i{color:rgba(28,28,30,.6)!important}
+body.light .en8o .en8k small{color:rgba(28,28,30,.65)!important}
+body.light .en9r{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.035)!important}
+body.light .en9d{background:rgba(0,0,0,0.040)!important}
+body.light .en9fn{background:rgba(0,0,0,0.030)!important}
+body.light .en9f .b{background:rgba(0,0,0,0.040)!important}
+body.light .grh1.on{fill:rgba(28,28,30,.07)!important}
+body.light .grv1{background:rgba(0,0,0,0.025)!important}
 body.light .cn1{border-bottom:1px solid rgba(0,0,0,0.035)!important}
 body.light .cn1 i{background:rgba(0,0,0,0.035)!important}
 body.light body.navauto.navhide .navh1{background:rgba(0,0,0,0.090)!important}
@@ -323,6 +339,9 @@ body.light .sc1zi{background:rgba(0,0,0,0.030)!important}
 body.light .sc1cb i{background:rgba(0,0,0,0.040)!important}
 body.light .sc1cats button{background:rgba(0,0,0,0.030)!important;border:1px solid rgba(0,0,0,0.056)!important}
 body.light .sc1cats button:hover{background:rgba(0,0,0,0.055)!important}
+body.light .mt2cf{background:rgba(0,0,0,0.025)!important;border:1px solid rgba(0,0,0,0.042)!important}
+body.light .mt1k.pg.on{background:linear-gradient(135deg,rgba(100,210,255,.14),rgba(0,0,0,0.020))!important}
+body.light .mt2gr{border-top:1px solid rgba(0,0,0,0.042)!important}
 body.light .mt1k{background:rgba(0,0,0,0.028)!important;border:1px solid rgba(0,0,0,0.042)!important}
 body.light .mt1bar{background:rgba(0,0,0,0.045)!important}
 body.light .mt1bs .o{fill:rgba(28,28,30,.05)!important;stroke:rgba(0,0,0,0.098)!important}
@@ -433,6 +452,14 @@ body.light .sg1v{background:rgba(0,0,0,0.030)!important}
 :where(body.light) .en7k.exp b{color:#147532}
 :where(body.light) .en7k.casa b,:where(body.light) .en7k.ev b{color:#006b93}
 :where(body.light) .en7ai.top .tx>span em{color:#925800}
+:where(body.light) .en8t b{color:#006b93}
+:where(body.light) .en8t em{color:#925800}
+:where(body.light) .en8.at .en8t b{color:#925800}
+:where(body.light) .en8.ko .en8t b,:where(body.light) .en8.ko .en8t em{color:#cc0a00}
+:where(body.light) .en9d.su{color:#cc1000}
+:where(body.light) .en9d.giu{color:#147532}
+:where(body.light) .en9p{color:#006b97}
+:where(body.light) .en9b>b{color:#8321ff}
 :where(body.light) .ds2 .v2.in{color:#1a7631}
 :where(body.light) .hct1 b{color:#8f5700}
 :where(body.light) .ap1.on .aps1 b{color:#1a7631}
@@ -558,6 +585,11 @@ body.light .sg1v{background:rgba(0,0,0,0.030)!important}
 :where(body.light) .sc1q.oggi{color:#8f5700}
 :where(body.light) .sc1q.domani{color:#756200}
 :where(body.light) .sc1zi{color:#006b97}
+:where(body.light) .mt2x .lo{color:#006b97}
+:where(body.light) .mt2x .hi{color:#8f5700}
+:where(body.light) .mt2tr.giu{color:#8f5700}
+:where(body.light) .mt2tr.su{color:#1a7631}
+:where(body.light) .mt1k .si{color:#006b97}
 :where(body.light) .mt1d.oggi .dn b{color:#0063c7}
 :where(body.light) .mt1d .dp{color:#006b97}
 :where(body.light) .mt1d .dp.hi{color:#006b97}
@@ -880,4 +912,14 @@ body.light .auf1{background:rgba(10,132,255,.08);border-color:rgba(10,100,220,.3
 body.light .auch1c{background:rgba(10,132,255,.12);border-color:rgba(10,100,220,.4)}
 body.light .aufc{border-color:rgba(0,0,0,.25)}
 body.light .aut.pz .aut-sw .sw{background:rgba(200,120,0,.5)}
+/* solo contatore (0.7.66): la lancetta e i riquadri sopra la scena diventano vetro chiaro come le etichette della scena; colori leggibili sul chiaro */
+body.light .en8o .en8,body.light .en8o .en8k{background:rgba(255,255,255,.86)!important;box-shadow:0 6px 18px -10px rgba(31,45,80,.45)!important}
+body.light .en8o .en8.at{background:rgba(255,244,228,.92)!important}body.light .en8o .en8.ko{background:rgba(255,235,233,.93)!important}
+body.light .en8t b{color:#0a7fd1}body.light .en8.at .en8t b,body.light .en8t em{color:#b85f00}body.light .en8.ko .en8t b,body.light .en8.ko .en8t em{color:#d70015}
+body.light .en8g .z1{stroke:#1f9e45}body.light .en8g .z2{stroke:#e08600}body.light .en8g .z3{stroke:#e0352b}
+body.light .en9d.su{color:#c4261d}body.light .en9d.giu{color:#17802f}body.light .en9b>b{color:#7438c2}
+body.light .en9hg button{color:rgba(0,0,0,.65)}body.light .grh1.on{fill:rgba(0,0,0,.05)}
+body.light .en9p{color:#0a7fd1}
+body.light .mt2x .lo{color:#0a7fd1}body.light .mt2x .hi{color:#c26a00}body.light .mt2tr.giu{color:#c26a00}body.light .mt2tr.su{color:#17802f}body.light .mt1k .si{color:#0a7fd1}
+body.light .en9fn b{filter:brightness(.72) saturate(1.3)}
 

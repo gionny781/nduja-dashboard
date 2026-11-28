@@ -17,6 +17,9 @@ export function casaFinta(O = {}) {
   /* stessi nomi del codice di prova: qui dentro localStorage, window e console sono quelli scelti da chi chiama */
   const localStorage = O.ls || globalThis.localStorage, window = O.w || globalThis;
   const console = { log: O.log || (() => {}), warn: (...a) => globalThis.console.warn(...a), error: (...a) => globalThis.console.error(...a) };
+  /* tipo di casa di prova (0.7.66): mockCasa = "contatore" | "contatore-w" | "stazione" al posto dei dati delle sezioni; lo sposto in mockTipoCasa */
+  { const v = localStorage.getItem("mockCasa"); if (v && !/^\s*\{/.test(v)) { localStorage.setItem("mockTipoCasa", v.trim()); localStorage.setItem("mockCasa", "{}"); } }
+  const TIPO_CASA = localStorage.getItem("mockTipoCasa") || "";
   const now = Date.now()/1000, H = 3600;
   const st = (s, a = {}, ago = 600) => ({ s, a, lc: now - ago });
   /* liste (0.7.39), dati inventati: tre liste todo.* con voci, scadenze e funzioni diverse (supported_features come in Home Assistant).
@@ -641,6 +644,96 @@ export function casaFinta(O = {}) {
       return { domain: "automation", item_id: id, run_id: id + "_r" + i, state: "stopped", script_execution: ex, timestamp: { start: new Date(s).toISOString(), finish: new Date(s + 1200).toISOString() },
         trigger: i === 3 ? "triggered by action automation.trigger" : descr(c), last_step: ex === "failed_conditions" ? "condition/0" : "action/0", ...(ex === "error" ? { error: "Entity media_player.echo_cucina is unavailable" } : {}) }; }));
   };
+  /* ---------- case di prova della 0.7.66 (mockCasa = "contatore" | "contatore-w" | "stazione", spostato in mockTipoCasa all'avvio) ----------
+     contatore: niente fotovoltaico né batteria, solo il contatore kWh di uno Shelly EM (sensor.shelly_em_energia), statistiche finte da 14 mesi;
+       senza configurazione Energia (lo trovo da solo) e senza sensore di potenza (la potenza si stima). contatore-w: in più la potenza
+       (sensor.shelly_em_potenza) e la configurazione Energia nel formato nuovo (flow_from, 0,28 €/kWh).
+     stazione: una Ecowitt GW2000 vera (nomi dell'integrazione ecowitt) con pluviometro e 7 giorni di storico.
+       mockStazione = "netatmo" | "davis" | "tempest" | "ambient" | "fineoffset" | "sparsi" mette al suo posto quella stazione (nomi tipici di ogni integrazione). */
+  const CASA_CNT = /^contatore/.test(TIPO_CASA), CASA_STAZ = TIPO_CASA === "stazione" || !!localStorage.getItem("mockStazione");
+  const frz = x => x - Math.floor(x), rumore = n => frz(Math.sin(n * 12.9898) * 43758.5453);
+  const CNT_ID = "sensor.shelly_em_energia", CNT_DA = (() => { const d = new Date(); d.setMonth(d.getMonth() - 14, 1); d.setHours(0, 0, 0, 0); return d.getTime(); })();
+  /** kWh consumati in un'ora (sempre gli stessi per la stessa ora): profilo del giorno, fine settimana, inverno più alto */
+  const kwhOra = ms => { if (ms < CNT_DA) return null; const d = new Date(ms), h = d.getHours(), g = d.getDay(), m = d.getMonth();
+    const prof = [.2, .18, .17, .17, .17, .19, .28, .55, .62, .42, .38, .4, .62, .58, .4, .36, .38, .48, .72, .95, .88, .7, .5, .32][h];
+    return +(prof * (1 + .35 * Math.cos((m + .5) / 12 * 2 * Math.PI)) * (g === 0 || g === 6 ? 1.18 : 1) * (.85 + .3 * rumore(Math.floor(ms / 3600e3)))).toFixed(4); };
+  const ora0 = ms => { const d = new Date(ms); d.setMinutes(0, 0, 0); return d.getTime(); };
+  if (CASA_CNT) {
+    for (const id of ["sensor.inverter_pv1_power", "sensor.inverter_pv2_power", "sensor.inverter_pv3_power", "sensor.grid_power", "sensor.battery_power", "sensor.battery_soc"]) delete ENT[id];
+    ENT[CNT_ID] = st("18234.56", { device_class: "energy", unit_of_measurement: "kWh", state_class: "total_increasing", friendly_name: "Shelly EM Energia" }, 40);
+    if (TIPO_CASA === "contatore-w") ENT["sensor.shelly_em_potenza"] = st(localStorage.getItem("mockCntW") || "2650", { device_class: "power", unit_of_measurement: "W", state_class: "measurement", friendly_name: "Shelly EM Potenza" }, 20);
+  }
+  /* stazioni meteo: [entity_id, nome, device_class, unità, stato, state_class] per ogni integrazione */
+  const STAZ_TIPO = localStorage.getItem("mockStazione") || "ecowitt";
+  const STAZIONI = {
+    ecowitt: ["ecowitt", "GW2000A", [["gw2000a_outdoor_temperature", "Outdoor Temperature", "temperature", "°C"], ["gw2000a_outdoor_humidity", "Outdoor Humidity", "humidity", "%"],
+      ["gw2000a_feels_like_temperature", "Feels Like Temperature", "temperature", "°C"], ["gw2000a_dewpoint", "Dewpoint", "temperature", "°C"], ["gw2000a_indoor_temperature", "Indoor Temperature", "temperature", "°C"],
+      ["gw2000a_daily_rain", "Daily Rain", "precipitation", "mm", "total_increasing"], ["gw2000a_weekly_rain", "Weekly Rain", "precipitation", "mm", "total_increasing"], ["gw2000a_monthly_rain", "Monthly Rain", "precipitation", "mm", "total_increasing"],
+      ["gw2000a_yearly_rain", "Yearly Rain", "precipitation", "mm", "total_increasing"], ["gw2000a_rain_rate", "Rain Rate", "precipitation_intensity", "mm/h"],
+      ["gw2000a_wind_speed", "Wind Speed", "wind_speed", "km/h"], ["gw2000a_wind_gust", "Wind Gust", "wind_speed", "km/h"], ["gw2000a_max_daily_gust", "Max Daily Gust", "wind_speed", "km/h"], ["gw2000a_wind_direction", "Wind Direction", "wind_direction", "°"],
+      ["gw2000a_relative_pressure", "Relative Pressure", "atmospheric_pressure", "hPa"], ["gw2000a_absolute_pressure", "Absolute Pressure", "atmospheric_pressure", "hPa"],
+      ["gw2000a_uv_index", "UV Index", null, "UV index"], ["gw2000a_solar_radiation", "Solar Radiation", "irradiance", "W/m²"]]],
+    netatmo: ["netatmo", "Netatmo", [["netatmo_casa_esterno_temperature", "Esterno Temperatura", "temperature", "°C"], ["netatmo_casa_esterno_humidity", "Esterno Umidità", "humidity", "%"],
+      ["netatmo_casa_temperature", "Casa Temperatura", "temperature", "°C", null, "base"], ["netatmo_casa_co2", "Casa CO2", "carbon_dioxide", "ppm", null, "base"], ["netatmo_casa_pressure", "Casa Pressione", "atmospheric_pressure", "mbar", null, "base"],
+      ["netatmo_casa_pluviometro_precipitation", "Pluviometro Precipitazione", "precipitation_intensity", "mm/h", null, "rain"], ["netatmo_casa_pluviometro_precipitation_today", "Pluviometro Precipitazione oggi", "precipitation", "mm", "total_increasing", "rain"],
+      ["netatmo_casa_anemometro_wind_strength", "Anemometro Forza del vento", "wind_speed", "km/h", null, "wind"], ["netatmo_casa_anemometro_gust_strength", "Anemometro Forza della raffica", "wind_speed", "km/h", null, "wind"],
+      ["netatmo_casa_anemometro_wind_angle", "Anemometro Direzione del vento", "wind_direction", "°", null, "wind"]]],
+    davis: ["weatherlink", "WeatherLink", [["weatherlink_outside_temperature", "Outside Temperature", "temperature", "°C"], ["weatherlink_outside_humidity", "Outside Humidity", "humidity", "%"],
+      ["weatherlink_inside_temperature", "Inside Temperature", "temperature", "°C"], ["weatherlink_rain_today", "Rain today", "precipitation", "mm", "total_increasing"], ["weatherlink_rain_rate", "Rain rate", "precipitation_intensity", "mm/h"],
+      ["weatherlink_wind_speed", "Wind speed", "wind_speed", "km/h"], ["weatherlink_wind_gust", "Wind gust", "wind_speed", "km/h"], ["weatherlink_wind_direction", "Wind direction", "wind_direction", "°"],
+      ["weatherlink_barometer", "Barometer", "atmospheric_pressure", "hPa"], ["weatherlink_dewpoint", "Dewpoint", "temperature", "°C"], ["weatherlink_uv_index", "UV index", null, "UV index"]]],
+    tempest: ["weatherflow", "Tempest", [["st_00123456_air_temperature", "ST-00123456 Air temperature", "temperature", "°C"], ["st_00123456_relative_humidity", "ST-00123456 Relative humidity", "humidity", "%"],
+      ["st_00123456_feels_like", "ST-00123456 Feels like", "temperature", "°C"], ["st_00123456_dew_point", "ST-00123456 Dew point", "temperature", "°C"],
+      ["st_00123456_rain_amount", "ST-00123456 Rain amount", "precipitation", "mm", "total_increasing"], ["st_00123456_rain_rate", "ST-00123456 Rain rate", "precipitation_intensity", "mm/h"],
+      ["st_00123456_wind_speed_average", "ST-00123456 Wind speed average", "wind_speed", "km/h"], ["st_00123456_wind_gust", "ST-00123456 Wind gust", "wind_speed", "km/h"], ["st_00123456_wind_direction_average", "ST-00123456 Wind direction average", "wind_direction", "°"],
+      ["st_00123456_sea_level_pressure", "ST-00123456 Sea level pressure", "atmospheric_pressure", "hPa"], ["st_00123456_uv_index", "ST-00123456 UV index", null, "UV index"],
+      ["st_00123456_illuminance", "ST-00123456 Illuminance", "illuminance", "lx"], ["st_00123456_irradiance", "ST-00123456 Irradiance", "irradiance", "W/m²"]]],
+    ambient: ["ambient_station", "WS-2902", [["ws_2902_temp", "WS-2902 Temp", "temperature", "°C"], ["ws_2902_humidity", "WS-2902 Humidity", "humidity", "%"], ["ws_2902_inside_temp", "WS-2902 Inside Temp", "temperature", "°C"],
+      ["ws_2902_feels_like", "WS-2902 Feels Like", "temperature", "°C"], ["ws_2902_dew_point", "WS-2902 Dew Point", "temperature", "°C"],
+      ["ws_2902_daily_rain", "WS-2902 Daily Rain", "precipitation", "mm", "total_increasing"], ["ws_2902_monthly_rain", "WS-2902 Monthly Rain", "precipitation", "mm", "total_increasing"], ["ws_2902_hourly_rain_rate", "WS-2902 Hourly Rain Rate", "precipitation_intensity", "mm/h"],
+      ["ws_2902_wind_speed", "WS-2902 Wind Speed", "wind_speed", "km/h"], ["ws_2902_wind_gust", "WS-2902 Wind Gust", "wind_speed", "km/h"], ["ws_2902_max_daily_gust", "WS-2902 Max Daily Gust", "wind_speed", "km/h"],
+      ["ws_2902_wind_dir", "WS-2902 Wind Dir", "wind_direction", "°"], ["ws_2902_rel_pressure", "WS-2902 Rel Pressure", "atmospheric_pressure", "hPa"], ["ws_2902_uv_index", "WS-2902 UV Index", null, "UV index"], ["ws_2902_solar_rad", "WS-2902 Solar Rad", "irradiance", "W/m²"]]],
+    fineoffset: ["fineoffset", "WH65", [["wh65_temperature", "WH65 Temperature", "temperature", "°C"], ["wh65_humidity", "WH65 Humidity", "humidity", "%"], ["wh65_rain_total", "WH65 Rain total", "precipitation", "mm", "total_increasing"],
+      ["wh65_wind_average", "WH65 Wind average", "wind_speed", "km/h"], ["wh65_wind_gust", "WH65 Wind gust", "wind_speed", "km/h"], ["wh65_wind_direction", "WH65 Wind direction", "wind_direction", "°"], ["wh65_uv", "WH65 UV", null, "UV index"], ["wh65_light", "WH65 Light", "illuminance", "lx"]]],
+    sparsi: ["zha", "", [["termometro_giardino_temperature", "Termometro giardino Temperatura", "temperature", "°C", null, "t", "esterno"], ["termometro_giardino_humidity", "Termometro giardino Umidità", "humidity", "%", null, "t", "esterno"],
+      ["pluviometro_zigbee_precipitation", "Pluviometro Precipitazione", "precipitation", "mm", "total_increasing", "p", "esterno"]]],
+  };
+  const SZ = STAZIONI[STAZ_TIPO] || STAZIONI.ecowitt, STAZ_IDS = {};
+  /* il tempo finto della stazione: temperatura con il giorno e la notte, vento, pressione in calo nelle ultime ore, piogge (ieri pomeriggio, 4 giorni fa e da stamattina) */
+  const SM = { now: Date.now() };
+  const tFuori = ms => { const d = new Date(ms), h = d.getHours() + d.getMinutes() / 60, k = Math.floor(ms / 864e5); return 11.2 + 5.2 * Math.sin((h - 9.5) / 24 * 2 * Math.PI) + 1.6 * Math.sin(k * 1.3) + .4 * Math.sin(ms / 2.1e6); };
+  const ggFa = ms => Math.floor((new Date(SM.now).setHours(0, 0, 0, 0) - new Date(ms).setHours(0, 0, 0, 0)) / 864e5 + .5);
+  const piogInt = ms => { const g = ggFa(ms), h = new Date(ms).getHours() + new Date(ms).getMinutes() / 60; return g === 0 && h >= 6 ? 1.4 + .6 * Math.sin(h) : g === 1 && h >= 15 && h < 19 ? 2.2 : g === 4 && h >= 2 && h < 6 ? 3.1 : 0; };
+  const pioggiaOggi = ms => { const d0 = new Date(ms).setHours(0, 0, 0, 0); let s = 0; for (let x = d0; x < ms; x += 6e5) s += piogInt(x) / 6; return +s.toFixed(1); };
+  const ventoF = ms => 8 + 7 * Math.abs(Math.sin(ms / 5.4e6)) + 2 * rumore(Math.floor(ms / 6e5));
+  const pressF = ms => 1009.2 + Math.min(14, Math.max(0, (SM.now - ms) / 3600e3)) * .85 + .6 * Math.sin(ms / 4e7);
+  const umidF = ms => Math.max(35, Math.min(99, 96 - (tFuori(ms) - 6) * 3.2 + (piogInt(ms) ? 8 : 0)));
+  const rugiada = (T, U) => { const a = 17.62, b = 243.12, g = Math.log(U / 100) + a * T / (b + T); return b * g / (a - g); };
+  /** valore di un sensore della stazione in un momento: per device_class e nome */
+  const valStaz = (dc, n, ms) => { const T = tFuori(ms);
+    if (dc === "temperature") return /indoor|inside|^casa|base/i.test(n) ? 21.4 : /feels|percep/i.test(n) ? T - ventoF(ms) * .08 : /dew|rugiada/i.test(n) ? rugiada(T, umidF(ms)) : T;
+    if (dc === "humidity") return umidF(ms);
+    if (dc === "precipitation") return /week|settim/i.test(n) ? 11.8 + pioggiaOggi(ms) : /month|mens/i.test(n) ? 46.2 + pioggiaOggi(ms) : /year|annual/i.test(n) ? 612.4 + pioggiaOggi(ms) : /total/i.test(n) ? 1534.8 + pioggiaOggi(ms) : pioggiaOggi(ms);
+    if (dc === "precipitation_intensity") return piogInt(ms);
+    if (dc === "wind_speed") return /max/i.test(n) ? 41.8 : /gust|raffic/i.test(n) ? ventoF(ms) * 1.9 : ventoF(ms);
+    if (dc === "wind_direction") return 300 + 25 * Math.sin(ms / 7e6);
+    if (dc === "atmospheric_pressure") return /absol/i.test(n) ? pressF(ms) - 12 : pressF(ms);
+    if (dc === "irradiance") return Math.max(0, Math.sin((new Date(ms).getHours() - 7) / 10 * Math.PI)) * 180;
+    if (dc === "illuminance") return Math.max(0, Math.sin((new Date(ms).getHours() - 7) / 10 * Math.PI)) * 21000;
+    if (dc === "carbon_dioxide") return 640;
+    return Math.max(0, Math.sin((new Date(ms).getHours() - 7) / 10 * Math.PI)) * 2.2; };
+  /* la stazione di sempre della casa di esempio (sensor.stazione_meteo_*): stessi valori e lo stesso storico finto */
+  if (!CASA_STAZ) for (const id of Object.keys(ENT)) if (id.startsWith("sensor.stazione_meteo_")) { const a = ENT[id].a, v = valStaz(a.device_class, a.friendly_name, SM.now);
+    ENT[id].s = String(+v.toFixed(a.device_class === "wind_direction" ? 0 : 1)); if (a.device_class === "precipitation") a.state_class = "total_increasing"; else if (!a.state_class) a.state_class = "measurement";
+    STAZ_IDS[id] = { dc: a.device_class, n: a.friendly_name, mod: "", area: "esterno" }; }
+  if (CASA_STAZ) {
+    for (const id of Object.keys(ENT)) if (id.startsWith("sensor.stazione_meteo_")) delete ENT[id];
+    for (const [k, n, dc, u, sc, mod, area] of SZ[2]) {
+      const id = "sensor." + k, v = valStaz(dc, n, SM.now);
+      ENT[id] = st(String(+v.toFixed(dc === "wind_direction" || dc === "illuminance" || dc === "irradiance" || dc === "carbon_dioxide" ? 0 : 1)), { friendly_name: n, ...(dc ? { device_class: dc } : {}), unit_of_measurement: u, state_class: sc || "measurement" }, 120);
+      STAZ_IDS[id] = { dc, n, mod: mod || "", area: area || null };
+    }
+  }
   /* LS mockVia = espressione regolare: toglie tutte le entità finte il cui id le somiglia (es. "^sensor\\.f1_|rain_bird"), per provare «Cosa puoi aggiungere» (0.7.49) */
   { const v = localStorage.getItem("mockVia"); if (v) { const re = new RegExp(v); for (const id of Object.keys(ENT)) if (re.test(id)) delete ENT[id]; } }
   /* LS mockEnt = { entity_id: [stato, {attributi}] | null (la toglie) } cambia gli stati finti; "@+5h" / "@-30m" negli attributi = adesso + 5 ore / − 30 minuti */
@@ -660,7 +753,7 @@ export function casaFinta(O = {}) {
     "calendar.partite_calcio_demo": [{ start: day(-6, 15), end: day(-6, 17), summary: "Virtus Colle 1-2 Pro Valle" }, { start: day(-13, 15), end: day(-13, 17), summary: "Pro Valle 0-0 Aurora Campi" },
       { start: day(4, 18, 30), end: day(4, 20, 30), summary: "Lega Demo: Pro Valle - Union Mare", location: "Campo di Valle", description: "Diretta su DAZN" }],
   };
-  let LAYOUT = JSON.parse(localStorage.getItem("mockLayout") || '{"configured":true,"mode":"auto","energy":{"pv":["sensor.inverter_pv1_power","sensor.inverter_pv2_power","sensor.inverter_pv3_power"]}}');
+  let LAYOUT = JSON.parse(localStorage.getItem("mockLayout") || (CASA_CNT ? '{"configured":true,"mode":"auto"}' : '{"configured":true,"mode":"auto","energy":{"pv":["sensor.inverter_pv1_power","sensor.inverter_pv2_power","sensor.inverter_pv3_power"]}}'));
   /* aria (0.7.43): [valore di prima, da quanti minuti c'è quello di adesso] */
   const ARIA_STORIA = { "sensor.aria_corridoio_co2": [880, 45], "sensor.aria_cucina_pm25": [7, 20], "sensor.aria_cucina_pm10": [14, 20], "sensor.aria_cucina_no2": [12, 25],
     "sensor.aria_lavanderia_umidita": [58, 190], "sensor.aria_soggiorno_co2": [700, 35], "sensor.radon_lavanderia": [170, 600] };
@@ -702,6 +795,8 @@ export function casaFinta(O = {}) {
     [/^sensor\.stampante_ufficio/, "ipp", "dev_prn"], [/^sensor\.ups_studio_/, "nut", "dev_ups"]];
   /* meteo (0.7.41): stazione in Esterno, Meteoalarm, radar RainViewer */
   for (const e of REG.entities) { if (e.ei.includes("stazione_meteo_")) { e.ai = "esterno"; e.pl = "ecowitt"; e.di = "dev_ecowitt"; } if (e.ei === "binary_sensor.meteoalarm") e.pl = "meteoalarm"; if (e.ei === "camera.radar_pioggia") e.pl = "rainviewer"; }
+  /* stazioni meteo e contatore (0.7.66): integrazione, dispositivo (Netatmo: un dispositivo per modulo) e stanza solo per i sensori sparsi */
+  for (const e of REG.entities) { const z = STAZ_IDS[e.ei]; if (z) { e.pl = SZ[0]; e.di = "dev_staz_" + (z.mod || "1"); e.ai = z.area; } if (e.ei.startsWith("sensor.shelly_em_")) { e.pl = "shelly"; e.di = "dev_shelly_em"; e.ai = null; } }
   /* caldaia (0.7.37): integrazione, dispositivo e categoria «diagnostica» (OpenTherm Gateway) come in Home Assistant */
   for (const e of REG.entities) {
     if (/ariston|^climate\.caldaia_/.test(e.ei)) { e.di = "dev_a"; e.pl = "ariston"; if (e.ei === "climate.ariston_zona_1") e.ai = "soggiorno"; }
@@ -1206,21 +1301,40 @@ export function casaFinta(O = {}) {
           { id: "dev_vm", name: "VM media", manufacturer: "Proxmox VE", model: "QEMU" }, { id: "dev_sysmon", name: "System Monitor" }, { id: "dev_prn", name: "Stampante ufficio", manufacturer: "Demo", model: "InkJet demo" }, { id: "dev_ups", name: "UPS studio", manufacturer: "Demo", model: "UPS 1000" },
           { id: "dev_purif", name: "Purificatore soggiorno", manufacturer: "Demo", model: "Air purifier demo" }, { id: "dev_deum", name: "Deumidificatore portatile", manufacturer: "Demo", model: "Dehumidifier demo" },
           ...["soggiorno", "cucina", "corridoio", "lavanderia"].map(k => ({ id: "dev_aria_" + k, name: "Sensore aria " + k, manufacturer: "Demo", model: "Air monitor demo" })),
+          ...[...new Set(Object.values(STAZ_IDS).map(z => z.mod || "1"))].map(m => ({ id: "dev_staz_" + m, name: SZ[1] + (m === "1" ? "" : " " + m), manufacturer: SZ[0], model: SZ[1] })), ...(CASA_CNT ? [{ id: "dev_shelly_em", name: "Shelly EM", manufacturer: "Shelly", model: "Shelly EM" }] : []),
           { id: "dev_pl_monstera", name: "Monstera", manufacturer: "Plant Monitor", model: "Monstera deliciosa" }, { id: "dev_flora", name: "Flower Care", name_by_user: "Limone", manufacturer: "Xiaomi", model: "HHCCJCY01" }];
         /* mockNoAree: Home Assistant appena installato, senza aree (la Home propone la casa di esempio) */
         case "config/area_registry/list": if (localStorage.getItem("mockNoAree")) return []; { const P = localStorage.getItem("mockPiani"), F = { soggiorno: "terra", cucina: "terra", esterno: "terra", corridoio: "primo", lavanderia: "primo" };
           return [{ area_id: "soggiorno", name: "Soggiorno" }, { area_id: "corridoio", name: "Corridoio" }, { area_id: "cucina", name: "Cucina" }, { area_id: "lavanderia", name: "Lavanderia" }, { area_id: "esterno", name: "Esterno" }].map(a => P ? { ...a, floor_id: F[a.area_id] } : a); }
         /* mockPiani: due piani (prova delle stanze divise per piano) */
         case "config/floor_registry/list": return localStorage.getItem("mockPiani") ? [{ floor_id: "terra", name: "Piano terra", level: 0 }, { floor_id: "primo", name: "Primo piano", level: 1 }] : [];
-        case "recorder/statistic_during_period": return { change: /gas/.test(m.statistic_id) ? (m.calendar?.period === "month" ? 61.3 : 2.84) : /acqua/.test(m.statistic_id) ? (m.calendar?.period === "month" ? 1.482 : 0.214) : 1.23 };
+        case "recorder/statistic_during_period": if (m.statistic_id === CNT_ID) { const n = Date.now(), d0 = new Date(n).setHours(0, 0, 0, 0); let c = 0; for (let x = d0; x < n; x += 3600e3) c += (kwhOra(x) || 0) * Math.min(1, (n - x) / 3600e3); return { change: +c.toFixed(3) }; }
+          return { change: /gas/.test(m.statistic_id) ? (m.calendar?.period === "month" ? 61.3 : 2.84) : /acqua/.test(m.statistic_id) ? (m.calendar?.period === "month" ? 1.482 : 0.214) : 1.23 };
         case "config/auth/list": return [{ id: "u1", name: "Mario", is_owner: true, is_active: true, group_ids: ["system-admin"] }, { id: "u2", name: "Anna", is_active: true, group_ids: ["system-users"] }];
         case "get_services": return { ...(localStorage.getItem("mockNoServPiante") ? {} : { nduja_dashboard: { leggi_casa: {} } }), notify: { mobile_app_telefono_demo: {}, mobile_app_iphone_di_mario: {}, mobile_app_iphone_di_anna: {}, persistent_notification: {},
           ...(localStorage.getItem("mockNoAlexaNotify") ? {} : { alexa_media: {} }), ...Object.fromEntries(Object.keys(ALEXA).filter(id => !/ultimate/.test(id)).map(id => ["alexa_media_" + id.split(".")[1], {}])), alexa_media_last_called: {} }, todo: { get_items: {}, add_item: {}, update_item: {} }, dreame_vacuum: { vacuum_clean_segment: {} }, rainbird: { start_irrigation: {} }, hydrawise: { start_watering: {}, suspend: {}, resume: {} } };
-        case "energy/get_prefs": return { energy_sources: [{ type: "grid", stat_energy_from: "sensor.imp", stat_energy_to: "sensor.exp", number_energy_price: 0.35, number_energy_price_export: 0.044 }, { type: "solar", stat_energy_from: "sensor.prod" },
+        case "energy/get_prefs": return { energy_sources: [...(TIPO_CASA === "contatore" ? [] : TIPO_CASA === "contatore-w" ? [{ type: "grid", flow_from: [{ stat_energy_from: CNT_ID, number_energy_price: 0.28 }], flow_to: [] }]
+            : [{ type: "grid", stat_energy_from: "sensor.imp", stat_energy_to: "sensor.exp", number_energy_price: 0.35, number_energy_price_export: 0.044 }, { type: "solar", stat_energy_from: "sensor.prod" }]),
           ...(localStorage.getItem("mockNoGas") ? [] : [{ type: "gas", stat_energy_from: "sensor.contatore_gas", ...(localStorage.getItem("mockGasNoPrezzo") ? {} : { number_energy_price: 1.05 }) }]),
           ...(localStorage.getItem("mockNoAcqua") || localStorage.getItem("mockAcquaNoPrefs") ? [] : [{ type: "water", stat_energy_from: "sensor.contatore_acqua", number_energy_price: 2.1 }])], device_consumption: [] };
         case "recorder/statistics_during_period": { const out = {}; const st = new Date(m.start_time).getTime(), step = m.period === "hour" ? 3600e3 : m.period === "month" ? 30*864e5 : 864e5;
           for (const id of m.statistic_ids) { out[id] = [];
+            /* contatore (0.7.66): kWh per ora, giorno e mese (solo le ore già finite, come Home Assistant); ogni 5 minuti un dodicesimo dell'ora */
+            if (id === CNT_ID) { const n = Date.now(), fine = m.period === "5minute" ? Math.floor(n / 3e5) * 3e5 : ora0(n);
+              if (m.period === "5minute") { for (let x = Math.floor(st / 3e5) * 3e5; x + 3e5 <= fine; x += 3e5) { const v = kwhOra(ora0(x)); if (v != null) out[id].push({ start: x, change: +(v / 12).toFixed(4) }); } continue; }
+              if (m.period === "hour") { for (let x = ora0(st); x < fine; x += 3600e3) { const v = kwhOra(x); if (v != null) out[id].push({ start: x, change: v }); } continue; }
+              const d = new Date(st); d.setHours(0, 0, 0, 0); if (m.period === "month") d.setDate(1);
+              while (d.getTime() < n) { const a = d.getTime(), b = new Date(d); if (m.period === "month") b.setMonth(b.getMonth() + 1); else if (m.period === "week") b.setDate(b.getDate() + 7); else b.setDate(b.getDate() + 1);
+                let c = 0, ce = false; for (let x = a; x < Math.min(b.getTime(), fine); x += 3600e3) { const v = kwhOra(x); if (v != null) { c += v; ce = true; } }
+                if (ce) out[id].push({ start: a, change: +c.toFixed(3) }); d.setTime(b.getTime()); }
+              continue; }
+            /* stazione meteo (0.7.66): 7 giorni di statistiche orarie (media, minima, massima; pioggia: quanto è cresciuta) */
+            if (STAZ_IDS[id]) { const z = STAZ_IDS[id], n = Date.now(), da = Math.max(st, n - 7 * 864e5), passo = m.period === "5minute" ? 3e5 : m.period === "hour" ? 3600e3 : 864e5;
+              const x0 = m.period === "day" ? new Date(da).setHours(0, 0, 0, 0) : Math.floor(da / passo) * passo;
+              for (let x = x0; x + (m.period === "day" ? 0 : passo) <= n; x += passo) { const L = []; for (let y = x; y < Math.min(x + passo, n); y += 6e5) L.push(valStaz(z.dc, z.n, y)); if (!L.length) continue;
+                const cr = z.dc === "precipitation" ? (() => { let s = 0; for (let y = x; y < Math.min(x + passo, n); y += 6e5) s += piogInt(y) / 6; return +s.toFixed(2); })() : null;
+                out[id].push({ start: x, mean: +(L.reduce((a, v) => a + v, 0) / L.length).toFixed(2), min: +Math.min(...L).toFixed(2), max: +Math.max(...L).toFixed(2), ...(cr != null ? { change: cr, state: L[L.length - 1] } : {}) }); }
+              continue; }
             /* potenze ogni 5 minuti (0.7.52, salvaschermo «Consumi della casa»): sole a campana, casa con i picchi, batteria e rete di conseguenza */
             if (m.period === "5minute") { const kw = ENT[id]?.a?.unit_of_measurement === "kW" ? 1000 : 1, q = { inverter_pv1_power: .43, inverter_pv2_power: .34, inverter_pv3_power: .23 }[id.split(".")[1]];
               for (let x = Math.floor(st / 3e5) * 3e5, i = 0; x < Date.now(); x += 3e5, i++) { const h = new Date(x).getHours() + new Date(x).getMinutes() / 60;
@@ -1240,6 +1354,9 @@ export function casaFinta(O = {}) {
             for (const id of m.entity_ids || []) { const e = ENT[id], c = C[id]; if (!e || !c) continue;
               out[id] = Array.from({ length: 7 }, (_, i) => ({ s: e.s, a: { ...e.a, current_temperature: Math.round((c[0] + (c[1] - c[0]) * i / 6) * 10) / 10 }, lu: ora - (6 - i) * 300 })); }
             return out; }
+          /* stazione meteo (0.7.66): un valore ogni 10 minuti negli ultimi 7 giorni */
+          for (const id of m.entity_ids || []) { const z = STAZ_IDS[id]; if (!z) continue; const n = Date.now(), da = Math.max(t0 * 1000, n - 7 * 864e5);
+            out[id] = []; for (let x = Math.ceil(da / 6e5) * 6e5; x <= n; x += 6e5) out[id].push({ s: String(+valStaz(z.dc, z.n, x).toFixed(1)), lu: x / 1000 }); }
           for (const id of m.entity_ids || []) { const q = ARIA_STORIA[id], e = ENT[id]; if (!q || !e) continue; const da = Date.now() / 1000 - q[1] * 60;
             out[id] = da > t0 ? [{ s: String(q[0]), lu: t0 }, { s: e.s, lu: da }] : [{ s: e.s, lu: t0 }]; }
           return out; }

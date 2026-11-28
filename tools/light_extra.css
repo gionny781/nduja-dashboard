@@ -280,3 +280,13 @@ body.light .auf1{background:rgba(10,132,255,.08);border-color:rgba(10,100,220,.3
 body.light .auch1c{background:rgba(10,132,255,.12);border-color:rgba(10,100,220,.4)}
 body.light .aufc{border-color:rgba(0,0,0,.25)}
 body.light .aut.pz .aut-sw .sw{background:rgba(200,120,0,.5)}
+/* solo contatore (0.7.66): la lancetta e i riquadri sopra la scena diventano vetro chiaro come le etichette della scena; colori leggibili sul chiaro */
+body.light .en8o .en8,body.light .en8o .en8k{background:rgba(255,255,255,.86)!important;box-shadow:0 6px 18px -10px rgba(31,45,80,.45)!important}
+body.light .en8o .en8.at{background:rgba(255,244,228,.92)!important}body.light .en8o .en8.ko{background:rgba(255,235,233,.93)!important}
+body.light .en8t b{color:#0a7fd1}body.light .en8.at .en8t b,body.light .en8t em{color:#b85f00}body.light .en8.ko .en8t b,body.light .en8.ko .en8t em{color:#d70015}
+body.light .en8g .z1{stroke:#1f9e45}body.light .en8g .z2{stroke:#e08600}body.light .en8g .z3{stroke:#e0352b}
+body.light .en9d.su{color:#c4261d}body.light .en9d.giu{color:#17802f}body.light .en9b>b{color:#7438c2}
+body.light .en9hg button{color:rgba(0,0,0,.65)}body.light .grh1.on{fill:rgba(0,0,0,.05)}
+body.light .en9p{color:#0a7fd1}
+body.light .mt2x .lo{color:#0a7fd1}body.light .mt2x .hi{color:#c26a00}body.light .mt2tr.giu{color:#c26a00}body.light .mt2tr.su{color:#17802f}body.light .mt1k .si{color:#0a7fd1}
+body.light .en9fn b{filter:brightness(.72) saturate(1.3)}
